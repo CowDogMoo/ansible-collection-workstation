@@ -1,0 +1,10 @@
+---
+- name: Install packages with chocolatey
+  win_chocolatey:
+    name: "{{ pkgs }}"
+    state: present
+
+- name: Upgrade installed packages
+  win_chocolatey:
+    name: all
+    state: latest
