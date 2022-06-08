@@ -1,5 +1,5 @@
 ---
-- name: Provision windows environment
+- name: Provision windows workstation
   hosts: windows
   roles:
     - role: jborean93.win_openssh

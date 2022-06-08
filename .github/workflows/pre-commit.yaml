@@ -1,0 +1,33 @@
+---
+name: Pre-Commit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  ROLE_NAME: ansible-workstation
+  DEPLOYED_ROLE_NAME: cowdogmoo.workstation
+
+jobs:
+  pre-commit:
+    name: Run pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up git repository
+        uses: actions/checkout@v2
+
+      - name: Appease ansible-lint
+        run: |
+          # https://github.com/ansible/ansible-lint/issues/1329
+          mkdir -p "${HOME}/.ansible/roles"
+          cp -r "../${ROLE_NAME}" "${HOME}/.ansible/roles/${DEPLOYED_ROLE_NAME}"
+      
+      - name: Install python for pre-commit
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3"
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v2.0.3

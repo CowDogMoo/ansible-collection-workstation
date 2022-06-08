@@ -46,7 +46,7 @@ Install ansible dependencies:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y python3-pip git libffi-dev libssl-dev
+sudo apt-get install -y python3-pip git libffi-dev libssl-dev ssh
 pip install --user ansible pywinrm
 ```
 
@@ -64,6 +64,9 @@ ansible-galaxy install -r requirements.yml
 
 # Install collections
 ansible-galaxy collection install -r requirements.yml
+
+# Run nix playbook
+ansible-playbook nix.yml
 
 # Run windows playbook
 ansible-playbook windows.yml

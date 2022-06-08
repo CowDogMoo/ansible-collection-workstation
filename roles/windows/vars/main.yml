@@ -1,6 +1,9 @@
 pkgs:
   - chocolatey
   - chocolatey-core.extension
-  - keeper
+  #- chrome
   - docker
+  - git
+  - keeper
+  - python
   - 7zip
