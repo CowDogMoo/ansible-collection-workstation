@@ -23,7 +23,7 @@ jobs:
           # https://github.com/ansible/ansible-lint/issues/1329
           mkdir -p "${HOME}/.ansible/roles"
           cp -r "../${ROLE_NAME}" "${HOME}/.ansible/roles/${DEPLOYED_ROLE_NAME}"
-      
+
       - name: Install python for pre-commit
         uses: actions/setup-python@v2
         with:

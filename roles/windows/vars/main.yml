@@ -1,9 +1,10 @@
 pkgs:
   - chocolatey
   - chocolatey-core.extension
-  #- chrome
+  - chrome
   - docker
   - git
   - keeper
+  - nordvpn
   - python
   - 7zip

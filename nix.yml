@@ -3,15 +3,15 @@
   hosts: cowdogmoo
   tasks:
     - name: Download homebrew installer
-      get_url: 
-        url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh 
+      get_url:
+        url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
         dest: /tmp/brew-installer.sh
         mode: 0755
-    
+
     - name: Execute the brew-installer.sh
       shell: /tmp/brew-installer.sh
 
     - name: Remove the brew-installer.sh
-      file: 
-        path: /tmp/brew-installer.sh 
+      file:
+        path: /tmp/brew-installer.sh
         state: absent
