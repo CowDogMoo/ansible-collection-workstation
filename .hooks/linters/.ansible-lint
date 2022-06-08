@@ -4,3 +4,4 @@ skip_list:
 
 warn_list:
   - git-latest
+  - package-latest
