@@ -1,0 +1,27 @@
+install_packages:
+  - bison
+  - curl
+  - gdb
+  - git
+  - golang-go
+  - jq
+  - python3-pip
+  - strace
+  - tmux
+  - tree
+  - unzip
+  - vim
+  - zsh
+
+pip_packages:
+  - ansible
+  - botocore
+  - boto3
+  - docker
+  - docker-compose
+  - keepercommander
+  - molecule
+  - molecule[docker,lint]
+  - pre-commit
+
+target_dotfile: "{{ lookup('env', 'HOME') }}/.zshrc"
