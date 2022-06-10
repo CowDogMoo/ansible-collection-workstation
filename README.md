@@ -92,42 +92,25 @@ cd $HOME/AppData/Local/keeperpasswordmanager
 
 ## Access Windows System Remotely
 
-### Install Dependencies
+Change `hosts`:
 
-Open a powershell terminal:
+```yaml
+[windows]
+orbitty
+
+[windows:vars]
+ansible_ssh_host=orbitty
+ansible_user=ansible
+ansible_password=changeme
+ansible_connection=winrm
+ansible_winrm_transport=ntlm
+ansible_port=5985
+```
+
+Run this if you're on a mac ([see this for more info](https://github.com/ansible/ansible/issues/32499https://github.com/ansible/ansible/issues/32499)):
 
 ```bash
-pwsh-preview
-```
-
-Next, run the following commands:
-
-```pwsh
-Install-Module -Name PowerShellGet
-Install-Module -Name PSWSMan
-exit
-```
-
-Back on the mac:
-
-```bash
-sudo pwsh -Command 'Install-WSMan'
-```
-
-Create `bla.ps1`:
-
-```pwsh
-$Username = 'ansible'
-$Password = 'changeme'
-$pass = ConvertTo-SecureString -AsPlainText $Password -Force
-$Cred = New-Object System.Management.Automation.PSCredential `
--ArgumentList $Username,$pass
-
-Enter-PSSession -ComputerName orbitty -Credential $Cred
-
-Invoke-Command -Credential $Cred `
--ComputerName orbitty `
--scriptblock { cmd.exe /c whoami }
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 ```
 
 ---
