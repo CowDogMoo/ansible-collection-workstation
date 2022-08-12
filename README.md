@@ -1,13 +1,14 @@
 # ansible-workstation
 
 ## Linux Setup
+
 1. Install ansible dependencies:
 
-    ```bash
-    sudo apt-get update
-    sudo apt-get install -y python3-pip git libffi-dev libssl-dev ssh
-    pip install --user ansible pywinrm
-    ```
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y python3-pip git libffi-dev libssl-dev ssh
+   pip install --user ansible pywinrm
+   ```
 
 2. Run the playbook
 
@@ -42,7 +43,6 @@ ansible-playbook windows.yml
 ```
 
 ---
-
 
 ---
 
@@ -90,7 +90,6 @@ Enter-PSSession -Session $s
 ```
 
 ---
-
 
 ## Package Instructions
 
