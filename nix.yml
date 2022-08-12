@@ -1,7 +1,24 @@
 ---
 - name: Provision linux workstation
   hosts: cowdogmoo
+  environment:
+    DEBIAN_FRONTEND: noninteractive
   tasks:
+
+    - name: Install packages
+      become: yes
+      ansible.builtin.apt:
+        name: "{{ install_packages }}"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install pip packages
+      ansible.builtin.pip:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ pip_packages }}"
+
     - name: Download homebrew installer
       get_url:
         url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
