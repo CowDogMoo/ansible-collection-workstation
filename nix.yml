@@ -4,7 +4,6 @@
   environment:
     DEBIAN_FRONTEND: noninteractive
   tasks:
-
     - name: Install packages
       become: yes
       ansible.builtin.apt:
