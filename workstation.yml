@@ -1,6 +1,0 @@
----
-- name: Provision CowDogMoo workstation
-  hosts: cowdogmoo
-  roles:
-    - role: andrewrothstein.powershell
-      become: yes

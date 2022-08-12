@@ -1,5 +1,51 @@
 # ansible-workstation
 
+## Linux Setup
+1. Install ansible dependencies:
+
+    ```bash
+    sudo apt-get update
+    sudo apt-get install -y python3-pip git libffi-dev libssl-dev ssh
+    pip install --user ansible pywinrm
+    ```
+
+2. Run the playbook
+
+   ```bash
+   ansible-playbook \
+       --connection=local \
+       --inventory=hosts \
+       --limit=127.0.0.1
+       nix.yml
+   ```
+
+Test connectivity in WSL:
+
+```bash
+ansible windows -m win_ping
+```
+
+Install dependencies:
+
+```bash
+# Install galaxy roles
+ansible-galaxy install -r requirements.yml
+
+# Install collections
+ansible-galaxy collection install -r requirements.yml
+
+# Run nix playbook
+ansible-playbook nix.yml
+
+# Run windows playbook
+ansible-playbook windows.yml
+```
+
+---
+
+
+---
+
 ## Windows Setup
 
 ```pwsh
@@ -45,39 +91,6 @@ Enter-PSSession -Session $s
 
 ---
 
-## Linux Setup
-
-Install ansible dependencies:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y python3-pip git libffi-dev libssl-dev ssh
-pip install --user ansible pywinrm
-```
-
-Test connectivity in WSL:
-
-```bash
-ansible windows -m win_ping
-```
-
-Install dependencies:
-
-```bash
-# Install galaxy roles
-ansible-galaxy install -r requirements.yml
-
-# Install collections
-ansible-galaxy collection install -r requirements.yml
-
-# Run nix playbook
-ansible-playbook nix.yml
-
-# Run windows playbook
-ansible-playbook windows.yml
-```
-
----
 
 ## Package Instructions
 
