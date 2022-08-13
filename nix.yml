@@ -3,13 +3,15 @@
   hosts: cowdogmoo
   environment:
     DEBIAN_FRONTEND: noninteractive
+
   tasks:
     - name: Install packages
       become: yes
       ansible.builtin.apt:
-        name: "{{ install_packages }}"
+        name: "{{ item }}"
         state: present
         update_cache: yes
+      loop: "{{ install_packages }}"
       when: ansible_os_family == "Debian"
 
     - name: Install pip packages
