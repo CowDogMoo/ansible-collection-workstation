@@ -1,0 +1,3 @@
+---
+brew_install_script: "/tmp/brew-installer.sh"
+target_dotfile: "{{ lookup('env', 'HOME') }}/.zshrc"

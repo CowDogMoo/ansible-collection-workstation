@@ -1,0 +1,44 @@
+---
+- name: Download homebrew installation script
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+    dest: "{{brew_install_script}}"
+    mode: "0755"
+  changed_when: false
+
+- name: Add homebrew to {{ target_dotfile }} on Linux
+  ansible.builtin.blockinfile:
+    insertafter: EOF
+    path: "{{ target_dotfile }}"
+    block: "{{ lookup('template', 'brew_dotfile_nix.j2') }}"
+    marker: ""
+  changed_when: false
+  when: {{ ansible_os_family }} != 'Darwin'
+
+- name: Add homebrew to {{ target_dotfile }} on Darwin
+  ansible.builtin.blockinfile:
+    insertafter: EOF
+    path: "{{ target_dotfile }}"
+    block: "{{ lookup('template', 'brew_dotfile_macos.j2') }}"
+    marker: ""
+  changed_when: false
+  when: {{ ansible_os_family }} == 'Darwin'
+
+- name: Add homebrew to {{ target_dotfile }}
+  ansible.builtin.blockinfile:
+    insertafter: EOF
+    path: "{{ target_dotfile }}"
+    block: |
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    marker: ""
+  changed_when: false
+
+- name: Execute {{ brew_install_script }}
+  ansible.builtin.shell: "{{ brew_install_script }}"
+  changed_when: false
+
+- name: Clean up {{ brew_install_script }}
+  ansible.builtin.file:
+    path: "{{ brew_install_script }}"
+    state: absent
+  changed_when: false
