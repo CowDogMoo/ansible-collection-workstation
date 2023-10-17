@@ -1,4 +1,6 @@
 ---
+release_summary: "Added a new `asdf` role"
+
 added:
   - "asdf role - Added a new `asdf` role with enhanced functionality including OS-specific setup. Updated metadata and created new documentation under `roles/asdf/README.md` detailing role usage and variables."
   - "`molecule` configuration - Added new `molecule` configuration for the `asdf` role to support local testing and verification."
