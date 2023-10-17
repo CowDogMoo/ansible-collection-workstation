@@ -31,21 +31,21 @@
 
 - name: Download ~/.tool-versions
   ansible.builtin.get_url:
-    url: "https://github.com/l50/dotfiles/blob/main/.tool-versions"
+    url: "{{ asdf_tool_versions_url }}"
     dest: "{{ asdf_tool_versions }}"
     mode: "0644"
   when: not asdf_tool_versions_stat.stat.exists
 
 - name: Execute setup_asdf.sh for Bash
   ansible.builtin.script:
-    cmd: "{{ asdf_setup_script }} golang python ruby" # TODO variableize this
+    cmd: "{{ asdf_setup_script }} {{ asdf_languages }}"
   args:
     executable: /bin/bash
   when: ansible_user_shell is search('/bash')
 
 - name: Execute setup_asdf.sh for Zsh
   ansible.builtin.script:
-    cmd: "{{ asdf_setup_script }} golang python ruby" # TODO variableize this
+    cmd: "{{ asdf_setup_script }} {{ asdf_languages }}"
   args:
     executable: /bin/zsh
   when: ansible_user_shell is search('/zsh')

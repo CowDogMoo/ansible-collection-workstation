@@ -1,7 +1,9 @@
 ---
-asdf_tool_versions: "{{ ansible_env.HOME }}/.tool-versions"
 asdf_dest_folder: "{{ ansible_env.HOME }}/.asdf"
 asdf_git_repo: "https://github.com/asdf-vm/asdf.git"
+asdf_languages: "golang python ruby"
 asdf_os_family: "{{ ansible_os_family | lower }}"
 asdf_setup_script: "/tmp/setup_asdf.sh"
 asdf_setup_script_url: "https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"
+asdf_tool_versions: "{{ ansible_env.HOME }}/.tool-versions"
+asdf_tool_versions_url: "https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"
