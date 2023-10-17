@@ -1,8 +1,0 @@
-roles:
-  - name: andrewrothstein.powershell
-    become: yes
-  - name: jborean93.win_openssh
-    become: yes
-
-collections:
-  - name: chocolatey.chocolatey
