@@ -1,145 +1,53 @@
-# Ansible Role: vnc + oh-my-zsh
+# ASDF Role for Ansible
 
-[![Pre-Commit](https://github.com/cowdogmoo/ansible-vnc-zsh/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/cowdogmoo/ansible-vnc-zsh/actions/workflows/pre-commit.yaml)
-[![Molecule Test](https://github.com/cowdogmoo/ansible-vnc-zsh/actions/workflows/molecule.yaml/badge.svg)](https://github.com/cowdogmoo/ansible-vnc-zsh/actions/workflows/molecule.yaml)
-[![Ansible Galaxy](https://img.shields.io/badge/Galaxy-cowdogmoo.vnc_zsh-660198.svg?style=flat)](https://galaxy.ansible.com/ui/standalone/roles/CowDogMoo/vnc_zsh)
-[![License](https://img.shields.io/github/license/CowDogMoo/ansible-vnc-zsh?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/ansible-vnc-zsh/blob/main/LICENSE)
-
-This role installs [vnc](https://tigervnc.org/) and
-[oh-my-zsh](https://ohmyz.sh/) on Debian-based systems.
+This Ansible role installs and configures
+[asdf](https://asdf-vm.com/#/), a CLI tool that can manage multiple language
+runtime versions on a per-project basis.
 
 ## Requirements
 
-- Python packages
+- Ansible version 2.15 or higher
 
-  Install with:
+## Supported Platforms
 
-  ```bash
-  python3 -m pip install --upgrade \
-    ansible-core \
-    molecule \
-    molecule-docker \
-    "molecule-plugins[docker]"
-  ```
-
----
+- Ubuntu (all versions)
+- macOS (all versions)
+- Windows (all versions)
 
 ## Role Variables
 
-Available variables are listed below, along with default values (see `defaults/main.yaml`):
+| Variable               | Default Value                                                               | Description                                           |
+| ---------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `asdf_tool_versions`   | `"{{ ansible_env.HOME }}/.tool-versions"`                                   | Path to the `.tool-versions` file                     |
+| `dest_folder`          | `"{{ ansible_env.HOME }}/.asdf"`                                            | Destination folder for cloning the asdf repository    |
+| `git_repo`             | `"https://github.com/asdf-vm/asdf.git"`                                     | Git repository URL of asdf                            |
+| `os_family`            | `"{{ ansible_os_family \| lower }}"`                                        | OS family variable used for loading OS-specific tasks |
+| `setup_script`         | `"/tmp/setup_asdf.sh"`                                                      | Local path to the setup script                        |
+| `setup_script_url`     | `"https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"` | URL to download the setup script                      |
+| `deb_install_packages` | `["curl", "git", "wget"]`                                                   | Debian packages to be installed                       |
 
-Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
+## Dependencies
 
-```yaml
-vncpwd_clone_path: /tmp/vncpwd
-```
+- None
 
-URL for the oh-my-zsh install script.
-
-```yaml
-omz_install_script_url: "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
-```
-
-URL to clone [vncpwd](https://github.com/jeroennijhof/vncpwd) from.
-
-```yaml
-vncpwd_repo_url: https://github.com/jeroennijhof/vncpwd.git
-```
-
-Location on disk to install vncpwd.
+## Example Playbook
 
 ```yaml
-vncpwd_path: /usr/local/bin/vncpwd
-```
-
-Client options for `vnc`.
-
-```yaml
-vnc_client_options: "-geometry 1920x1080 --localhost no"
-```
-
-Specify whether to setup a systemd service to manage
-the vnc installation. Worth considering if you are
-using this role outside of a container.
-
-```yaml
-setup_systemd: false
-```
-
-Oh-my-zsh theme to install.
-
-```yaml
-zsh_theme: "af-magic"
-```
-
-**Debian-specific vars:**
-
-Users to configure `vnc` for.
-
-```yaml
-vnc_users:
-  - username: "ubuntu"
-    usergroup: "ubuntu"
-    sudo: true
-    # port 5901
-    vnc_num: 1
-```
-
-Required packages for the installation.
-
-```yaml:
-install_packages:
-  - bash
-  - ca-certificates
-  - colordiff
-  - curl
-...
-```
-
 ---
-
-## Local Development
-
-Make sure to run the following to develop locally:
-
-```bash
-ansible-galaxy install -r requirements.yml
-PATH_TO_ROLE="${PWD}"
-ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.vnc_zsh"
+- hosts: all
+  roles:
+    - role: cowdogmoo.asdf
 ```
 
----
+## Molecule Tests
 
-## Get vnc password
+Molecule is used to test the `asdf` role. Tests are located in the
+`molecule/default` directory, and can be run with the `molecule test` command.
 
-A random 8-character password is generated when the role
-is run initially. To retrieve it, run this command on the
-provisioned system:
+## License
 
-```bash
-/usr/local/bin/vncpwd /home/ubuntu/.vnc/passwd
-```
+MIT
 
----
+## Author Information
 
-## Testing
-
-To test actions locally, you can install [act](https://github.com/nektos/act)
-and use the following command:
-
-```bash
-ACTION="molecule"
-if [[ $(uname) == "Darwin" ]]; then
-  act -j $ACTION --container-architecture linux/amd64
-fi
-```
-
-To test changes made to this role locally, run the following commands:
-
-```bash
-molecule create
-molecule converge
-molecule idempotence
-# If everything passed, tear down the docker container spawned by molecule:
-molecule destroy
-```
+- Jayson Grace (jayson.e.grace@gmail.com)
