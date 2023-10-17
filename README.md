@@ -1,9 +1,9 @@
 # Workstation Ansible Collection
 
-[![License](https://img.shields.io/github/license/CowDogMoo/Workstation?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/Workstation/blob/main/LICENSE)
-[![Pre-Commit](https://github.com/CowDogMoo/workstation/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/CowDogMoo/workstation/actions/workflows/pre-commit.yaml)
-[![Molecule Test](https://github.com/CowDogMoo/workstation/actions/workflows/molecule.yaml/badge.svg)](https://github.com/CowDogMoo/Workstation/actions/workflows/molecule.yaml)
-[![Renovate](https://github.com/CowDogMoo/workstation/actions/workflows/renovate.yaml/badge.svg)](https://github.com/CowDogMoo/workstation/actions/workflows/renovate.yaml)
+[![License](https://img.shields.io/github/license/CowDogMoo/ansible-collection-workstation?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/ansible-collection-workstation/blob/main/LICENSE)
+[![Pre-Commit](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/pre-commit.yaml)
+[![Molecule Test](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/molecule.yaml/badge.svg)](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/molecule.yaml)
+[![Renovate](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/renovate.yaml/badge.svg)](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/renovate.yaml)
 
 This Ansible collection provides a suite of utilities and
 applications that I use across my various workstations.
@@ -51,8 +51,8 @@ This collection is licensed under the MIT License - see the
 
 ## Support
 
-- Repository: [CowDogMoo/workstation](http://github.com/CowDogMoo/workstation)
-- Issue Tracker: [GitHub Issues](https://github.com/CowDogMoo/workstation/issues)
+- Repository: [cowdogmoo/ansible-collection-workstation](http://github.com/CowDogMoo/ansible-collection-workstation)
+- Issue Tracker: [GitHub Issues](https://github.com/CowDogMoo/ansible-collection-workstation/issues)
 
 ## Authors
 

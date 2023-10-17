@@ -9,7 +9,7 @@
     ":enablePreCommit",
     ":automergeDigest",
     ":automergeBranch",
-    "github>cowdogmoo/workstation//.github/renovate/autoMerge.json5",
+    "github>cowdogmoo/ansible-collection-workstation//.github/renovate/autoMerge.json5",
     "helpers:pinGitHubActionDigests"
   ],
   "platform": "github",

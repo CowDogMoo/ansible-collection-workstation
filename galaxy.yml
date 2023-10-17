@@ -10,5 +10,5 @@ license:
   - MIT
 license_file: "LICENSE"
 tags: [tools, asdf, golang, python, ruby]
-repository: http://github.com/CowDogMoo/workstation
-issues: https://github.com/CowDogMoo/workstation/issues
+repository: https://github.com/CowDogMoo/ansible-collection-workstation
+issues: https://github.com/CowDogMoo/ansible-collection-workstation/issues
