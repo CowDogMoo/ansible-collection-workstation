@@ -1,0 +1,4 @@
+---
+asdf_dnf_install_packages:
+  - git
+  - wget

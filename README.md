@@ -17,7 +17,7 @@ applications that I use across my various workstations.
 Install the Workstation collection from Ansible Galaxy:
 
 ```bash
-ansible-galaxy collection install cowdogmoo.workstation
+ansible-galaxy collection install git+https://github.com/cowdogmoo/workstation.git,main
 ```
 
 ## Roles
@@ -34,11 +34,10 @@ Include the roles from this collection in your playbook. Here's an example:
 
 ```yaml
 ---
-- hosts: all
-  collections:
-    - cowdogmoo.workstation
+- name: Provision container
+  hosts: localhost
   roles:
-    - asdf
+    - cowdogmoo.workstation.asdf
 ```
 
 ## License

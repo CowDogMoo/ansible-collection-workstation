@@ -44,9 +44,7 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          pushd magefiles
-          git add go.mod go.sum
-          popd
+          git add magefiles/go.mod magefiles/go.sum
           git diff --quiet && git diff --staged --quiet || git commit -m "Update go.mod and go.sum"
 
       - name: Install pre-commit dependencies

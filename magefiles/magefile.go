@@ -175,7 +175,7 @@ func RunMoleculeTests() error {
 		}()
 
 		if cdErr != nil {
-			return fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), err)
+			return fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), cdErr)
 		}
 
 		if err := runCmds(cmds); err != nil {

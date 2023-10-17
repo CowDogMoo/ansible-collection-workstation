@@ -35,9 +35,10 @@ runtime versions on a per-project basis.
 
 ```yaml
 ---
-- hosts: all
+- name: Provision container
+  hosts: localhost
   roles:
-    - role: cowdogmoo.asdf
+    - cowdogmoo.workstation.asdf
 ```
 
 ## Molecule Tests

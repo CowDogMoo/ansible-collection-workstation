@@ -23,6 +23,7 @@ jobs:
         run: |
           python3 -m pip install ansible molecule docker
           python3 -m pip install molecule-docker
+          ansible-galaxy collection install git+https://github.com/cowdogmoo/workstation.git,main
 
       - name: Test role with molecule
         run: molecule test

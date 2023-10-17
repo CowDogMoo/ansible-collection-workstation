@@ -25,16 +25,65 @@
     loop_var: item
 
 - name: Check if setup is already done
+  block:
+    - name: Check for .asdf directory
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.asdf"
+      register: asdf_dir_check
+
+    - name: Check for .tool-versions file
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.tool-versions"
+      register: tool_versions_check
+
+    - name: Check for ruby plugin directory
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.asdf/plugins/ruby"
+      register: ruby_plugin_check
+
+- name: Check if asdf_setup_script exists
   ansible.builtin.stat:
     path: "{{ asdf_setup_script }}"
-  register: setup_check
+
+- name: Ensure setup_asdf.sh is executable
+  ansible.builtin.file:
+    path: "{{ asdf_setup_script }}"
+    mode: "0755"
 
 - name: Execute setup_asdf.sh
-  ansible.builtin.script:
+  ansible.builtin.shell:
     cmd: "{{ asdf_setup_script }} {{ asdf_languages }}"
-    remote_src: true
   args:
     executable: "{{ ansible_user_shell }}"
   when:
     - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
-    - not setup_check.stat.exists # Only execute if setup is not done
+    - not asdf_dir_check.stat.exists or not tool_versions_check.stat.exists or not ruby_plugin_check.stat.exists # Only execute if setup is not done
+  changed_when: false
+
+- name: Update shell profile with ASDF_PATH
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: 'ASDF_PATH="{{ ansible_env.HOME }}/.asdf"'
+    state: present
+
+- name: Update shell profile with updated PATH
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: "export PATH=$PATH:$ASDF_PATH"
+    state: present
+
+- name: Update shell profile with ASDF source command
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: '. "{{ ansible_env.HOME }}/.asdf/asdf.sh"'
+    state: present
+  changed_when: false
+
+- name: Reload shell to apply ASDF settings
+  ansible.builtin.shell:
+    cmd: "source {{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+  when:
+    - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
+  args:
+    executable: "{{ ansible_user_shell }}"
+  changed_when: false
