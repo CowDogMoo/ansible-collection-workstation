@@ -11,7 +11,10 @@ import (
 	"github.com/fatih/color"
 	"github.com/l50/goutils/v2/dev/lint"
 	mageutils "github.com/l50/goutils/v2/dev/mage"
+	"github.com/l50/goutils/v2/docs"
+	"github.com/l50/goutils/v2/git"
 	"github.com/l50/goutils/v2/sys"
+	"github.com/spf13/afero"
 )
 
 func init() {
@@ -193,6 +196,40 @@ func CreateRelease() error {
 		"gh release create " + version + " -F " + filepath.Join("changelogs", "CHANGELOG.rst"),
 	}
 
-	fmt.Printf(color.YellowString("Creating release %s", version))
+	fmt.Printf(color.YellowString("Creating release %s\n", version))
 	return runCmds(cmds)
+}
+
+// GeneratePackageDocs creates documentation for the various packages
+// in the project.
+//
+// Example usage:
+//
+// ```go
+// mage generatepackagedocs
+// ```
+//
+// **Returns:**
+//
+// error: An error if any issue occurs during documentation generation.
+func GeneratePackageDocs() error {
+	fs := afero.NewOsFs()
+
+	repoRoot, err := git.RepoRoot()
+	if err != nil {
+		return fmt.Errorf("failed to get repo root: %v", err)
+	}
+	sys.Cd(repoRoot)
+
+	repo := docs.Repo{
+		Owner: "CowDogMoo",
+		Name:  "ansible-collection-workstation",
+	}
+
+	templatePath := filepath.Join("magefiles", "tmpl", "README.md.tmpl")
+	if err := docs.CreatePackageDocs(fs, repo, templatePath); err != nil {
+		return fmt.Errorf("failed to create package docs: %v", err)
+	}
+
+	return nil
 }
