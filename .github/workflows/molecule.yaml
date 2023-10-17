@@ -1,5 +1,5 @@
 ---
-name: Molecule Test
+name: Role molecule tests
 on:
   pull_request:
   push:

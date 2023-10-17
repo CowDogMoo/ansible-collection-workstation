@@ -12,7 +12,6 @@ runtime versions on a per-project basis.
 
 - Ubuntu (all versions)
 - macOS (all versions)
-- Windows (all versions)
 
 ## Role Variables
 
