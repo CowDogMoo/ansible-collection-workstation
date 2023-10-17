@@ -8,10 +8,6 @@
 This Ansible collection provides a suite of utilities and
 applications that I use across my various workstations.
 
-## Version
-
-1.0.0
-
 ## Requirements
 
 - Ansible 2.15 or higher

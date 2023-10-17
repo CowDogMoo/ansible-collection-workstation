@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/bitfield/script"
 	"github.com/fatih/color"
@@ -121,11 +122,7 @@ func LintAnsible() error {
 	}
 
 	fmt.Println(color.YellowString("Running ansible-lint."))
-	if err := runCmds(cmds); err != nil {
-		return fmt.Errorf(color.RedString("failed to run ansible-lint: %v", err))
-	}
-
-	return nil
+	return runCmds(cmds)
 }
 
 // RunMoleculeTests runs the molecule tests.
@@ -145,11 +142,7 @@ func RunMoleculeTests() error {
 	}
 
 	fmt.Println(color.YellowString("Running molecule tests."))
-	if err := runCmds(cmds); err != nil {
-		return fmt.Errorf(color.RedString("failed to run molecule tests: %v", err))
-	}
-
-	return nil
+	return runCmds(cmds)
 }
 
 // GenChangeLog generates the changelog used by Ansible Galaxy.
@@ -170,9 +163,36 @@ func GenChangeLog() error {
 	}
 
 	fmt.Println(color.YellowString("Generating changelog"))
-	if err := runCmds(cmds); err != nil {
-		return fmt.Errorf(color.RedString("failed to generate changelog: %v", err))
+	return runCmds(cmds)
+}
+
+// CreateRelease creates a release on GitHub.
+//
+// **Parameters:**
+//
+// version: A string representing the version to use for the release.
+//
+// Example usage:
+//
+// ```bash
+// NEXT_VERSION=1.0.0 mage createrelease
+// ```
+//
+// **Returns:**
+//
+// error: An error if any issue occurs while trying to create the release.
+func CreateRelease() error {
+	// Check for the presence of the 'release' environment variable
+	version, ok := os.LookupEnv("NEXT_VERSION")
+	if !ok {
+		return fmt.Errorf("'NEXT_VERSION' environment variable not set. \n" +
+			"Example: NEXT_VERSION=1.0.0 mage createrelease")
 	}
 
-	return nil
+	cmds := []string{
+		"gh release create " + version + " -F " + filepath.Join("changelogs", "CHANGELOG.rst"),
+	}
+
+	fmt.Printf(color.YellowString("Creating release %s", version))
+	return runCmds(cmds)
 }
