@@ -9,7 +9,7 @@
 
     - name: Check if asdf is cloned
       ansible.builtin.stat:
-        path: "{{ dest_folder }}"
+        path: "{{ asdf_dest_folder }}"
       register: result
 
     - name: Assert that asdf is cloned
