@@ -5,6 +5,7 @@ added:
   - "asdf role - Added a new `asdf` role with enhanced functionality including OS-specific setup. Updated metadata and created new documentation under `roles/asdf/README.md` detailing role usage and variables."
   - "`molecule` configuration - Added new `molecule` configuration for the `asdf` role to support local testing and verification."
   - "Automated Release Playbook - Introduced `galaxy-deploy.yml`, an automated release playbook for publishing the collection to Ansible Galaxy."
+  - "Added automated documentation generation for magefile utilities"
   - "Molecule Workflow - Added a new GitHub Actions workflow `molecule.yaml` for running Molecule tests on pull requests and pushes."
   - "Renovate Bot Configuration - Updated Renovate Bot configurations to reflect the new repository structure and naming."
 

@@ -6,6 +6,7 @@ Created new `asdf` role with tests and linting.
 
 ### Added
 
+- Added automated documentation generation for magefile utilities
 - Automated Release Playbook - Introduced `galaxy-deploy.yml`, an automated release playbook for publishing the collection to Ansible Galaxy.
 - Molecule Workflow - Added a new GitHub Actions workflow `molecule.yaml` for running Molecule tests on pull requests and pushes.
 - Renovate Bot Configuration - Updated Renovate Bot configurations to reflect the new repository structure and naming.
@@ -23,4 +24,5 @@ Created new `asdf` role with tests and linting.
 ### Removed
 
 - Removed old files in preparation for later refactoring.
-- Windows Support for asdf role - Removed Windows support from `roles/asdf/README.md` as it is not supported in the tasks.
+- Windows Support for asdf role - Removed Windows support
+  from `roles/asdf/README.md` as it is not supported in the tasks.

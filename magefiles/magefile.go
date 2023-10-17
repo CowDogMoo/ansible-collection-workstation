@@ -140,12 +140,54 @@ func LintAnsible() error {
 //
 // error: An error if any issue occurs while trying to run the tests.
 func RunMoleculeTests() error {
+	fs := afero.NewOsFs() // Create a new Afero FS instance for file system operations
+	rolesDir := "roles"
+
+	// List all the roles in the roles directory
+	roles, err := afero.ReadDir(fs, rolesDir)
+	if err != nil {
+		return fmt.Errorf("failed to list roles: %v", err)
+	}
+
 	cmds := []string{
 		"molecule test",
 	}
 
-	fmt.Println(color.YellowString("Running molecule tests."))
-	return runCmds(cmds)
+	for _, role := range roles {
+		if !role.IsDir() {
+			continue // Skip any non-directory files
+		}
+
+		rolePath := filepath.Join(rolesDir, role.Name())
+		fmt.Printf(color.YellowString("Running molecule tests for the %s role\n"), role.Name())
+
+		cwd := sys.Gwd()
+
+		// Change to the role's directory
+		if err := sys.Cd(rolePath); err != nil {
+			return fmt.Errorf("failed to cd into %s role directory: %v", role.Name(), err)
+		}
+
+		var cdErr error
+		// Change back to the original directory
+		defer func() {
+			cdErr = sys.Cd(cwd)
+		}()
+
+		if cdErr != nil {
+			return fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), err)
+		}
+
+		if err := runCmds(cmds); err != nil {
+			return fmt.Errorf("failed to run molecule tests for role %s: %v", role.Name(), err)
+		}
+
+		if err := sys.Cd(cwd); err != nil {
+			return fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), err)
+		}
+	}
+
+	return nil
 }
 
 // GenChangeLog generates the changelog used by Ansible Galaxy.

@@ -24,7 +24,8 @@ ansible-galaxy collection install cowdogmoo.workstation
 
 ### ASDF
 
-Installs and configures ASDF, a version manager for multiple language runtimes.
+Installs and configures [ASDF](https://asdf-vm.com/), a version manager for
+multiple language runtimes.
 Check out the [ASDF role README](roles/asdf/README.md) for more details.
 
 ## Usage
