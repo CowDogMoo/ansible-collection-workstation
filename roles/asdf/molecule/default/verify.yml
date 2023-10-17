@@ -1,18 +1,53 @@
 ---
 - name: Verify
   hosts: all
-  gather_facts: false
+  gather_facts: true
   tasks:
-    - name: Include variables
+    - name: Include main variables
       ansible.builtin.include_vars:
-        file: "{{ role_path }}/vars/main.yml"
+        file: "../../vars/main.yml"
+
+    - name: Include OS-specific variables
+      ansible.builtin.include_vars:
+        file: "../../vars/{{ ansible_facts['os_family'] | lower }}.yml"
+
+    - name: Check if necessary packages are installed on Debian-based systems
+      ansible.builtin.command: dpkg -l {{ item }}
+      changed_when: false
+      with_items: "{{ asdf_deb_install_packages }}"
+      register: dpkg_result
+      failed_when: "'no packages found' in dpkg_result.stdout"
+      when: asdf_os_family == 'debian'
 
     - name: Check if asdf is cloned
       ansible.builtin.stat:
         path: "{{ asdf_dest_folder }}"
-      register: result
+      register: asdf_clone_result
 
     - name: Assert that asdf is cloned
       ansible.builtin.assert:
         that:
-          - result.stat.exists
+          - asdf_clone_result.stat.exists
+          - asdf_clone_result.stat.isdir
+
+    - name: Check if setup_asdf.sh exists locally
+      ansible.builtin.stat:
+        path: "{{ asdf_setup_script }}"
+      register: setup_asdf_stat
+
+    - name: Assert that setup_asdf.sh exists and is executable
+      ansible.builtin.assert:
+        that:
+          - setup_asdf_stat.stat.exists
+          - setup_asdf_stat.stat.mode == "0644"
+
+    - name: Check if ~/.tool-versions exists locally
+      ansible.builtin.stat:
+        path: "{{ asdf_tool_versions }}"
+      register: asdf_tool_versions_stat
+
+    - name: Assert that ~/.tool-versions exists
+      ansible.builtin.assert:
+        that:
+          - asdf_tool_versions_stat.stat.exists
+          - asdf_tool_versions_stat.stat.mode == "0644"
