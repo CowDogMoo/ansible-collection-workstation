@@ -25,8 +25,8 @@ jobs:
           python3 -m pip install molecule-docker
 
       - name: Test role with molecule
-        run: molecule test -s ${{ matrix.role }}
-        working-directory: ./collections/ansible_collections/cowdogmoo/${{ matrix.role }}
+        run: molecule test
+        working-directory: roles/${{ matrix.role }}
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
