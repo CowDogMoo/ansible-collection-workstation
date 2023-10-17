@@ -1,5 +1,7 @@
 # Workstation Ansible Collection
 
+[![Pre-Commit](https://github.com/CowDogMoo/workstation/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/CowDogMoo/workstation/actions/workflows/pre-commit.yaml)
+
 This Ansible collection provides a suite of utilities and
 applications that I use across my various workstations.
 
