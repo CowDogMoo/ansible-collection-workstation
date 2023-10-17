@@ -1,0 +1,12 @@
+---
+- name: Check if item exists locally
+  ansible.builtin.stat:
+    path: "{{ item.path }}"
+  register: script_stat
+
+- name: Download item
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.path }}"
+    mode: "0644"
+  when: not script_stat.stat.exists
