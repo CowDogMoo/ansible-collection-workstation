@@ -10,6 +10,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/l50/goutils/v2/dev/lint"
 	mageutils "github.com/l50/goutils/v2/dev/mage"
+	"github.com/l50/goutils/v2/sys"
 )
 
 func init() {
@@ -32,8 +33,17 @@ func init() {
 func InstallDeps() error {
 	fmt.Println("Installing dependencies.")
 
+	cwd := sys.Gwd()
+	if err := sys.Cd("magefiles"); err != nil {
+		return fmt.Errorf("failed to cd into magefiles directory: %v", err)
+	}
+
 	if err := mageutils.Tidy(); err != nil {
 		return fmt.Errorf("failed to install dependencies: %v", err)
+	}
+
+	if err := sys.Cd(cwd); err != nil {
+		return fmt.Errorf("failed to cd into project root directory: %v", err)
 	}
 
 	if err := lint.InstallGoPCDeps(); err != nil {
@@ -107,7 +117,7 @@ func runCmds(cmds []string) error {
 // error: An error if any issue occurs while trying to run the linter.
 func LintAnsible() error {
 	cmds := []string{
-		"ansible-lint --force-color -c .hooks/linters/.ansible-lint",
+		"ansible-lint --force-color -c .hooks/linters/.ansible-lint.yaml",
 	}
 
 	fmt.Println(color.YellowString("Running ansible-lint."))
