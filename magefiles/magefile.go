@@ -151,3 +151,28 @@ func RunMoleculeTests() error {
 
 	return nil
 }
+
+// GenChangeLog generates the changelog used by Ansible Galaxy.
+//
+// Example usage:
+//
+// ```bash
+// mage genchangelog
+// ```
+//
+// **Returns:**
+//
+// error: An error if any issue occurs while trying to generate the changelog.
+func GenChangeLog() error {
+	cmds := []string{
+		"antsibull-changelog lint",
+		"antsibull-changelog release",
+	}
+
+	fmt.Println(color.YellowString("Generating changelog"))
+	if err := runCmds(cmds); err != nil {
+		return fmt.Errorf(color.RedString("failed to generate changelog: %v", err))
+	}
+
+	return nil
+}
