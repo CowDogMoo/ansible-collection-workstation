@@ -1,13 +1,11 @@
 ---
 namespace: cowdogmoo
 name: workstation
-version: 1.0.0
+version: "1.0.0"
 readme: README.md
 authors:
   - Jayson Grace <techvomit.net>
 description: Installs utilities and applications that I use across all of my workstations.
-license:
-  - MIT
 license_file: "LICENSE"
 tags: [tools, asdf, golang, python, ruby]
 repository: https://github.com/CowDogMoo/ansible-collection-workstation
