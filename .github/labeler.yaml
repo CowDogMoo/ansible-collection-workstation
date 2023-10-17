@@ -1,0 +1,28 @@
+---
+area/github:
+  - ".github/**/*"
+
+area/pre-commit:
+  - ".pre-commit-config.yaml"
+  - ".hooks/**/*"
+
+area/license:
+  - "LICENSE"
+
+area/readme:
+  - "README.md"
+
+area/changelogs:
+  - "changelogs/**/*"
+
+area/meta:
+  - "meta/**/*"
+
+area/roles:
+  - "roles/**/*"
+
+area/magefiles:
+  - "magefiles/**/*"
+
+area/galaxy:
+  - "galaxy.yml"
