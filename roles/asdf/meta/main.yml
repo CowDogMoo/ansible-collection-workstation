@@ -3,7 +3,7 @@ galaxy_info:
   role_name: asdf
   namespace: cowdogmoo
   author: Jayson Grace
-  description: Install asdf and specified packages"
+  description: Install asdf and associated dependencies"
   company: CowDogMoo
   license: MIT
   min_ansible_version: "2.15"
