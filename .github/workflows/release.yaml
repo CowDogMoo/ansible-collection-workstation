@@ -13,19 +13,27 @@ on:
 
 defaults:
   run:
-    working-directory: "cowdogmoo.workstation"
+    working-directory: ansible_collections/geerlingguy/mac
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      ANSIBLE_GALAXY_TOKEN: ${{ secrets.GALAXY_API_KEY }}
+      ANSIBLE_FORCE_COLOR: 1
     steps:
       - name: Checkout code
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
-          path: "cowdogmoo.workstation"
+          path: ansible_collections/cowdogmoo/workstation
 
-      - name: Add role to ansible galaxy
-        uses: robertdebock/galaxy-action@7d89099e09f4385ec4b53eb58c0d120f1ad806dd # 1.2.1
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          galaxy_api_key: ${{ secrets.GALAXY_API_KEY }}
-          git_branch: main
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: python3 -m pip install ansible-core
+
+      - name: Release to Ansible Galaxy.
+        run: ansible-playbook -i 'localhost,' galaxy-deploy.yml -e "github_tag=${{ github.ref }}"
