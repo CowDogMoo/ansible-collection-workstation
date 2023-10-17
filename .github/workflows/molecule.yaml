@@ -1,0 +1,33 @@
+---
+name: Molecule Test
+on:
+  pull_request:
+  push:
+
+jobs:
+  molecule:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        role: [asdf]
+    steps:
+      - name: Set up git repository
+        uses: actions/checkout@v3.6.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install ansible molecule docker
+          python3 -m pip install molecule-docker
+
+      - name: Test role with molecule
+        run: molecule test -s ${{ matrix.role }}
+        working-directory: ./collections/ansible_collections/cowdogmoo/${{ matrix.role }}
+        env:
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
+          MOLECULE_DISTRO: geerlingguy/docker-ubuntu2204-ansible
