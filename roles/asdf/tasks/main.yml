@@ -24,9 +24,17 @@
   loop_control:
     loop_var: item
 
+- name: Check if setup is already done
+  ansible.builtin.stat:
+    path: "{{ asdf_setup_script }}"
+  register: setup_check
+
 - name: Execute setup_asdf.sh
   ansible.builtin.script:
     cmd: "{{ asdf_setup_script }} {{ asdf_languages }}"
+    remote_src: true
   args:
     executable: "{{ ansible_user_shell }}"
-  when: ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
+  when:
+    - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
+    - not setup_check.stat.exists # Only execute if setup is not done
