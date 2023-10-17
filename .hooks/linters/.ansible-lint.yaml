@@ -1,0 +1,7 @@
+---
+skip_list:
+  - "yaml"
+  - "command-instead-of-shell"
+  - "role-name"
+  - git-latest
+  - package-latest

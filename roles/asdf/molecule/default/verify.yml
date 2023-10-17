@@ -1,0 +1,18 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Include variables
+      ansible.builtin.include_vars:
+        file: "{{ role_path }}/vars/main.yml"
+
+    - name: Check if asdf is cloned
+      ansible.builtin.stat:
+        path: "{{ dest_folder }}"
+      register: result
+
+    - name: Assert that asdf is cloned
+      ansible.builtin.assert:
+        that:
+          - result.stat.exists

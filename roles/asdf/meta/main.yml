@@ -1,11 +1,11 @@
 ---
 galaxy_info:
-  author: Jayson Grace
+  role_name: asdf
   namespace: cowdogmoo
-  description: Installs VNC and zsh running with oh-my-zsh on debian-based systems.
+  author: Jayson Grace
+  description: Install asdf and specified packages"
   company: CowDogMoo
   license: MIT
-  role_name: asdf
   min_ansible_version: "2.15"
   platforms:
     - name: Ubuntu
@@ -17,4 +17,5 @@ galaxy_info:
     - name: Windows
       versions:
         - all
-
+  galaxy_tags:
+    - asdf
