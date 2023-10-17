@@ -1,6 +1,8 @@
 # Workstation Ansible Collection
 
+[![License](https://img.shields.io/github/license/CowDogMoo/Workstation?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/Workstation/blob/main/LICENSE)
 [![Pre-Commit](https://github.com/CowDogMoo/workstation/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/CowDogMoo/workstation/actions/workflows/pre-commit.yaml)
+[![Molecule Test](https://github.com/CowDogMoo/workstation/actions/workflows/molecule.yaml/badge.svg)](https://github.com/CowDogMoo/Workstation/actions/workflows/molecule.yaml)
 [![Renovate](https://github.com/CowDogMoo/workstation/actions/workflows/renovate.yaml/badge.svg)](https://github.com/CowDogMoo/workstation/actions/workflows/renovate.yaml)
 
 This Ansible collection provides a suite of utilities and
