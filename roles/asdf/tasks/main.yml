@@ -1,26 +1,26 @@
 ---
 - name: Include OS-specific variables.
-  ansible.builtin.include_vars: "{{ os_family }}.yml"
+  ansible.builtin.include_vars: "{{ asdf_os_family }}.yml"
 
 - name: Include OS-Specific tasks
-  ansible.builtin.include_tasks: "setup-{{ os_family }}.yml"
+  ansible.builtin.include_tasks: "setup-{{ asdf_os_family }}.yml"
 
 - name: Clone asdf
   ansible.builtin.git:
-    repo: "{{ git_repo }}"
-    dest: "{{ dest_folder }}"
+    repo: "{{ asdf_git_repo }}"
+    dest: "{{ asdf_dest_folder }}"
     clone: yes
     update: no
 
 - name: Check if setup_asdf.sh exists locally
   ansible.builtin.stat:
-    path: "{{ setup_script }}"
+    path: "{{ asdf_setup_script }}"
   register: setup_asdf_stat
 
 - name: Download setup_asdf.sh
   ansible.builtin.get_url:
-    url: "{{ setup_script_url }}"
-    dest: "{{ setup_script }}"
+    url: "{{ asdf_setup_script_url }}"
+    dest: "{{ asdf_setup_script }}"
     mode: "0644"
   when: not setup_asdf_stat.stat.exists
 
@@ -38,14 +38,14 @@
 
 - name: Execute setup_asdf.sh for Bash
   ansible.builtin.script:
-    cmd: "{{ setup_script }} golang python ruby" # TODO variableize this
+    cmd: "{{ asdf_setup_script }} golang python ruby" # TODO variableize this
   args:
     executable: /bin/bash
   when: ansible_user_shell is search('/bash')
 
 - name: Execute setup_asdf.sh for Zsh
   ansible.builtin.script:
-    cmd: "{{ setup_script }} golang python ruby" # TODO variableize this
+    cmd: "{{ asdf_setup_script }} golang python ruby" # TODO variableize this
   args:
     executable: /bin/zsh
   when: ansible_user_shell is search('/zsh')

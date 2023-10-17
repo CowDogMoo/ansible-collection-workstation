@@ -1,5 +1,5 @@
 ---
-deb_install_packages:
+asdf_deb_install_packages:
   - curl
   - git
   - wget
