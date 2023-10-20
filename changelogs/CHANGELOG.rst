@@ -1,10 +1,59 @@
-# cowdogmoo.workstation Release Notes
+===================================
+cowdogmoo.workstation Release Notes
+===================================
 
-## Release Summary - v1.0.0
+.. contents:: Topics
 
-Created new `asdf` role with tests and linting.
 
-### Added
+v1.1.0
+======
+
+Release Summary
+---------------
+
+Extended `asdf` role functionality and improved project configurations.
+
+Added
+-----
+
+- Added `ansible-galaxy` collection installation from GitHub repository in GitHub Actions workflow.
+- Documentation Generation Hook: Implemented a pre-commit hook for automated documentation generation of Go packages.
+- New Example Provision Playbook: Added `provision.yml` in the examples directory illustrating the usage of the `asdf` role.
+- RedHat Specific Tasks: Created `setup-redhat.yml` for RedHat specific setup tasks within the `asdf` role.
+- RedHat Support: Added support for RedHat-based systems in the `asdf` role.
+- Shell Profile Update: Automated the update of shell profiles with ASDF settings ensuring idempotency.
+- Test Enhancements: Expanded Molecule tests to verify the `asdf` role on RedHat and Debian-based systems.
+
+Changed
+-------
+
+- ASDF Setup Logic: Modified the ASDF setup logic in `asdf` role for better clarity and maintainability.
+- Error Handling Improvement: Corrected the error handling in `magefile.go` to reflect the correct variable.
+- File Renames: Renamed linting configuration files to remove leading dots and comply with standard naming conventions.
+- Refactored `pre-commit.yaml` to add new hooks for checking symlinks, private keys, and ensuring shebang scripts are executable.
+- Refactored file addition in `pre-commit.yaml` to use a single `git add` command.
+- Shell Profile Update: Enhanced the shell profile update tasks in `asdf` role to ensure idempotency and clarity.
+- Updated `README.md` in both the repository root and `roles/asdf` directory to reflect new changes and provide clearer instructions.
+- Updated `README.md` to reflect the new installation command using `git+https` URL.
+- Updated `ansible-lint` and `yamllint` paths in `.pre-commit-config.yaml` to reflect the new file names.
+- Updated `molecule.yaml` in GitHub Actions workflow to include `ansible-galaxy` collection installation step.
+- Updated minimum Ansible version in `roles/asdf/meta/main.yml` to 2.14
+
+Removed
+-------
+
+- Removed the separate ShellCheck repository in `.pre-commit-config.yaml` and consolidated ShellCheck hook under `jumanjihouse/pre-commit-hooks`.
+
+v1.0.0
+======
+
+Release Summary
+---------------
+
+Added a new `asdf` role
+
+Added
+-----
 
 - Added automated documentation generation for magefile utilities
 - Automated Release Playbook - Introduced `galaxy-deploy.yml`, an automated release playbook for publishing the collection to Ansible Galaxy.
@@ -13,7 +62,8 @@ Created new `asdf` role with tests and linting.
 - `molecule` configuration - Added new `molecule` configuration for the `asdf` role to support local testing and verification.
 - asdf role - Added a new `asdf` role with enhanced functionality including OS-specific setup. Updated metadata and created new documentation under `roles/asdf/README.md` detailing role usage and variables.
 
-### Changed
+Changed
+-------
 
 - GitHub Actions Workflows - Refactored the `release.yaml` workflow to align with Ansible collection standards, including updating working directory paths, setting up Python, installing dependencies, and automating the release to Ansible Galaxy.
 - Pre-commit hooks - Added new pre-commit hooks for shell script validation and formatting.
@@ -21,8 +71,8 @@ Created new `asdf` role with tests and linting.
 - Repository Metadata - Updated repository links in `README.md` and `galaxy.yml` to reflect the new repository naming and structure.
 - Upgrade dependencies - Upgraded versions of pre-commit hooks and dependencies in `.pre-commit-config.yaml`, updated mage's `go.sum` to reflect the new dependency tree, and removed unused dependencies from mage's `go.sum`.
 
-### Removed
+Removed
+-------
 
 - Removed old files in preparation for later refactoring.
-- Windows Support for asdf role - Removed Windows support
-  from `roles/asdf/README.md` as it is not supported in the tasks.
+- Windows Support for asdf role - Removed Windows support from `roles/asdf/README.md` as it is not supported in the tasks.
