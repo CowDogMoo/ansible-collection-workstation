@@ -42,7 +42,7 @@ repos:
         entry: codespell -q 3 -f -S ".git,.github,README.md,magefiles/go.*"
 
   - repo: https://github.com/ansible/ansible-lint
-    rev: v6.20.3
+    rev: v6.21.1
     hooks:
       - id: ansible-lint
         entry: ansible-lint -v --force-color -c .hooks/linters/ansible-lint.yaml
