@@ -7,7 +7,7 @@ toolchain go1.21.2
 require (
 	github.com/bitfield/script v0.22.0
 	github.com/fatih/color v1.15.0
-	github.com/l50/goutils/v2 v2.1.3
+	github.com/l50/goutils/v2 v2.1.4
 	github.com/spf13/afero v1.10.0
 )
 
