@@ -121,7 +121,7 @@ func runCmds(cmds []string) error {
 // error: An error if any issue occurs while trying to run the linter.
 func LintAnsible() error {
 	cmds := []string{
-		"ansible-lint --force-color -c .hooks/linters/.ansible-lint.yaml",
+		"ansible-lint --force-color -c .hooks/linters/ansible-lint.yaml",
 	}
 
 	fmt.Println(color.YellowString("Running ansible-lint."))
