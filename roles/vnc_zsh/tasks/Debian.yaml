@@ -1,0 +1,17 @@
+---
+- name: Ensure dependencies are installed.
+  become: true
+  ansible.builtin.apt:
+    name: "{{ vnc_zsh_install_packages }}"
+    state: present
+    update_cache: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Cleanup packages.
+  become: true
+  ansible.builtin.apt:
+    name: "{{ vnc_zsh_cleanup_packages }}"
+    state: absent
+  environment:
+    DEBIAN_FRONTEND: noninteractive

@@ -1,0 +1,25 @@
+# $PATH setup
+export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+# oh-my-zsh components
+export ZSH=$HOME/.oh-my-zsh
+vnc_zsh_theme="{{ vnc_zsh_theme }}"
+source $ZSH/oh-my-zsh.sh
+plugins=(git)
+
+# start_vnc starts VNC with a random password
+# whenever a container is spun up.
+start_vnc() {
+	# Create random 8 character VNC password
+	VNC_PWD="$(
+		head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8
+		echo ''
+	)"
+	export VNC_PW
+
+	# Set the random 8 character VNC password
+	/usr/bin/vncpasswd -f <<<"${VNC_PWD}" >"${HOME}/.vnc/passwd"
+
+	# Start vncserver
+	/usr/bin/vncserver :{{ item.vnc_num }} {{ vnc_zsh_vnc_client_options }}
+}

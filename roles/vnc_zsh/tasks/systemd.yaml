@@ -1,0 +1,60 @@
+---
+- name: Enable persistent services for all users
+  ansible.builtin.shell: /bin/loginctl enable-linger {{ item.username }}
+  changed_when: false
+  with_items: "{{ vnc_zsh_vnc_users }}"
+
+- name: Create systemd directories
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.config/systemd/user"
+    state: directory
+    mode: 0744
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+  with_items: "{{ vnc_zsh_vnc_users }}"
+
+- name: Check existence of per-user systemd service files
+  ansible.builtin.stat:
+    path: "/home/{{ item.username }}/.config/systemd/user/vncserver.service"
+  with_items: "{{ vnc_zsh_vnc_users }}"
+
+- name: Update per-user systemd service files
+  ansible.builtin.template:
+    src: vncserver.j2
+    dest: "/home/{{ item.username }}/.config/systemd/user/vncserver.service"
+    mode: 0744
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+  with_items: "{{ vnc_zsh_vnc_users }}"
+
+- name: Get uids of {{ vnc_zsh_vnc_users }}
+  ansible.builtin.command: "id -u {{ item.username }}"
+  # Run even in check mode, otherwise the playbook fails with --check.
+  check_mode: false
+  changed_when: false
+  register: uids
+  with_items: "{{ vnc_zsh_vnc_users }}"
+
+- name: "Create uid_results from {{ uids.results }}"
+  ansible.builtin.set_fact:
+    uid_results: "{{ uid_results | default([]) + [item] }}"
+  with_items: "{{ uids.results | map(attribute='stdout') | list }}"
+
+- name: "Merge uids into vnc_zsh_vnc_users"
+  merge_list_dicts_into_list:
+    ls_dicts: "{{ vnc_zsh_vnc_users }}"
+    ls: "{{ uid_results }}"
+  register: vnc_zsh_vnc_users_uid
+
+- name: "Enable VNC service for {{ vnc_zsh_vnc_users_uid }}"
+  become: true
+  become_user: "{{ item.username }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ item.uid }}"
+  ansible.builtin.systemd:
+    daemon_reload: true
+    enabled: true
+    name: vncserver.service
+    scope: user
+    state: started
+  with_items: "{{ vnc_zsh_vnc_users_uid.result }}"
