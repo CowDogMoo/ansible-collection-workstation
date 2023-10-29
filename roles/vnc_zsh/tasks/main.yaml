@@ -41,7 +41,7 @@
   with_items: "{{ vnc_zsh_vnc_users }}"
 
 - name: Generate random passwords for vnc_zsh_vnc_users with vnc_pw.py
-  vnc_pw:
+  cowdogmoo.workstation.vnc_pw:
     vnc_zsh_vnc_users: "{{ vnc_zsh_vnc_users }}"
   register: updated_data
 

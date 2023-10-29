@@ -41,7 +41,7 @@
   with_items: "{{ uids.results | map(attribute='stdout') | list }}"
 
 - name: "Merge uids into vnc_zsh_vnc_users"
-  merge_list_dicts_into_list:
+  cowdogmoo.workstation.merge_list_dicts_into_list:
     ls_dicts: "{{ vnc_zsh_vnc_users }}"
     ls: "{{ uid_results }}"
   register: vnc_zsh_vnc_users_uid

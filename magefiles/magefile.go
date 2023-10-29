@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/bitfield/script"
 	"github.com/fatih/color"
@@ -160,39 +161,56 @@ func RunMoleculeTests() error {
 		if role.IsDir() {
 			fmt.Println(color.YellowString(role.Name()))
 		}
-
 	}
+
+	// Create a channel to collect errors from goroutines
+	errCh := make(chan error, len(roles))
+	// Create a wait group to wait for all goroutines to complete
+	var wg sync.WaitGroup
+
 	for _, role := range roles {
 		if !role.IsDir() {
 			continue // Skip any non-directory files
 		}
-		rolePath := filepath.Join(rolesDir, role.Name())
-		fmt.Printf(color.YellowString("Running molecule tests for the %s role\n"), role.Name())
 
-		cwd := sys.Gwd()
+		wg.Add(1) // Increment the wait group counter
+		go func(role os.FileInfo) {
+			defer wg.Done() // Decrement the counter when the goroutine completes
 
-		// Change to the role's directory
-		if err := sys.Cd(rolePath); err != nil {
-			return fmt.Errorf("failed to cd into %s role directory: %v", role.Name(), err)
-		}
+			rolePath := filepath.Join(rolesDir, role.Name())
+			fmt.Printf(color.YellowString("Running molecule tests for the %s role\n"), role.Name())
 
-		var cdErr error
-		// Change back to the original directory
-		defer func() {
-			cdErr = sys.Cd(cwd)
-		}()
+			cwd := sys.Gwd()
 
-		if cdErr != nil {
-			return fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), cdErr)
-		}
+			// Change to the role's directory
+			if err := sys.Cd(rolePath); err != nil {
+				errCh <- fmt.Errorf("failed to cd into %s role directory: %v", role.Name(), err)
+				return
+			}
 
-		if err := runCmds(cmds); err != nil {
-			return fmt.Errorf("failed to run molecule tests for role %s: %v", role.Name(), err)
-		}
+			if err := runCmds(cmds); err != nil {
+				errCh <- fmt.Errorf("failed to run molecule tests for role %s: %v", role.Name(), err)
+			}
 
-		if err := sys.Cd(cwd); err != nil {
-			return fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), err)
-		}
+			// Change back to the original directory
+			if err := sys.Cd(cwd); err != nil {
+				errCh <- fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), err)
+			}
+		}(role) // Pass the role to the goroutine
+	}
+
+	wg.Wait() // Wait for all goroutines to complete
+
+	close(errCh) // Close the error channel
+
+	// Collect any errors from the channel
+	var errors []error
+	for err := range errCh {
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("encountered errors: %v", errors)
 	}
 
 	return nil
