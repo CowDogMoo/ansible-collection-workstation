@@ -153,11 +153,19 @@ func RunMoleculeTests() error {
 		"molecule test",
 	}
 
+	// Print all of the roles before running the tests
+	fmt.Println(color.YellowString("Running molecule tests for the following roles:"))
+	fmt.Println(color.YellowString("=============================================="))
+	for _, role := range roles {
+		if role.IsDir() {
+			fmt.Println(color.YellowString(role.Name()))
+		}
+
+	}
 	for _, role := range roles {
 		if !role.IsDir() {
 			continue // Skip any non-directory files
 		}
-
 		rolePath := filepath.Join(rolesDir, role.Name())
 		fmt.Printf(color.YellowString("Running molecule tests for the %s role\n"), role.Name())
 
