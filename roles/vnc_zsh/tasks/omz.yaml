@@ -1,5 +1,5 @@
 ---
-- name: Download oh-my-zsh install script for all vnc_zsh_vnc_users
+- name: Download oh-my-zsh install script for all vnc_zsh_users
   ansible.builtin.get_url:
     url: "{{ vnc_zsh_omz_install_script_url }}"
     dest: "/home/{{ item.username }}/zsh-installer.sh"
@@ -7,23 +7,23 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
   changed_when: false
-  with_items: "{{ vnc_zsh_vnc_users }}"
+  with_items: "{{ vnc_zsh_users }}"
 
-- name: Install oh-my-zsh for all vnc_zsh_vnc_users
+- name: Install oh-my-zsh for all vnc_zsh_users
   ansible.builtin.command: "bash /home/{{ item.username }}/zsh-installer.sh"
   args:
     creates: "/home/{{ item.username }}/.oh-my-zsh"
   changed_when: false
   become: true
   become_user: "{{ item.username }}"
-  with_items: "{{ vnc_zsh_vnc_users }}"
+  with_items: "{{ vnc_zsh_users }}"
 
-- name: Remove zsh-installer.sh for all vnc_zsh_vnc_users
+- name: Remove zsh-installer.sh for all vnc_zsh_users
   ansible.builtin.file:
     path: "/home/{{ item.username }}/zsh-installer.sh"
     state: absent
   changed_when: false
-  with_items: "{{ vnc_zsh_vnc_users }}"
+  with_items: "{{ vnc_zsh_users }}"
 
 - name: Create per-user $HOME/.zshrc files
   ansible.builtin.template:
@@ -32,4 +32,4 @@
     mode: 0744
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
-  with_items: "{{ vnc_zsh_vnc_users }}"
+  with_items: "{{ vnc_zsh_users }}"

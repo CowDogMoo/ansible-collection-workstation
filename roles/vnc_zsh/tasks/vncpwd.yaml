@@ -2,17 +2,17 @@
 - name: Clone repo
   ansible.builtin.git:
     repo: "{{ vnc_zsh_vncpwd_repo_url }}"
-    dest: "{{ vncpwd_clone_path }}"
+    dest: "{{ vnc_zsh_vncpwd_clone_path }}"
   changed_when: false
 
 - name: Build vncpwd
   community.general.make:
-    chdir: "{{ vncpwd_clone_path }}"
+    chdir: "{{ vnc_zsh_vncpwd_clone_path }}"
   changed_when: false
 
 - name: Move vncpwd into $PATH
   ansible.builtin.copy:
-    src: "{{ vncpwd_clone_path }}/vncpwd"
+    src: "{{ vnc_zsh_vncpwd_clone_path }}/vncpwd"
     dest: "{{ vnc_zsh_vncpwd_path }}"
     mode: 0755
     remote_src: true
@@ -21,6 +21,6 @@
 
 - name: Clean up
   ansible.builtin.file:
-    path: "{{ vncpwd_clone_path }}"
+    path: "{{ vnc_zsh_vncpwd_clone_path }}"
     state: absent
   changed_when: false

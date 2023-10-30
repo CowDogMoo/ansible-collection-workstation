@@ -25,7 +25,7 @@ def run_cmd(cmd):
 
 def run_module():
     module_args = dict(
-	vnc_users = dict(type='list', required=True),
+	vnc_zsh_users = dict(type='list', required=True),
     )
 
     module = AnsibleModule(
@@ -33,7 +33,8 @@ def run_module():
 	supports_check_mode=True
     )
 
-    vnc_users = module.params['vnc_users']
+    vnc_users = module.params['vnc_zsh_users']
+
     for user in vnc_users:
         if not file_exists(f"/home/{user['username']}/.vnc/passwd"):
             user['pass'] = gen_pw(8)

@@ -3,7 +3,7 @@
 # docker-entrypoint.sh for docker image creation.
 set -x
 
-. /home/{{ vnc_zsh_vnc_users[0].username }}/.zshrc
+. /home/{{ vnc_zsh_users[0].username }}/.zshrc
 start_vnc
 
 exec "$@"

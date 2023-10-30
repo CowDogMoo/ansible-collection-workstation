@@ -31,7 +31,7 @@ Available variables are listed below, along with default values (see `defaults/m
 Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
 
 ```yaml
-vncpwd_clone_path: /tmp/vncpwd
+vnc_zsh_vncpwd_clone_path: /tmp/vncpwd
 ```
 
 URL for the oh-my-zsh install script.
@@ -77,7 +77,7 @@ vnc_zsh_theme: "af-magic"
 Users to configure `vnc` for.
 
 ```yaml
-vnc_zsh_vnc_users:
+vnc_zsh_users:
   - username: "ubuntu"
     usergroup: "ubuntu"
     sudo: true

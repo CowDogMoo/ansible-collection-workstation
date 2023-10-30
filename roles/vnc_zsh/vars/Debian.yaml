@@ -1,5 +1,5 @@
 ---
-vnc_zsh_vnc_users:
+vnc_zsh_users:
   # Set to the os family
   # i.e. ubuntu for ubuntu
   # debian for debian

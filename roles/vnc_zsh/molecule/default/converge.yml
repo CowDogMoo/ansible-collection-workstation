@@ -6,7 +6,7 @@
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
 
   post_tasks:
-    - name: Confirm vnc passwd files exist for all vnc_zsh_vnc_users
+    - name: Confirm vnc passwd files exist for all vnc_zsh_users
       ansible.builtin.stat:
         path: "/home/{{ item.username }}/.vnc/passwd"
-      with_items: "{{ vnc_zsh_vnc_users }}"
+      with_items: "{{ vnc_zsh_users }}"

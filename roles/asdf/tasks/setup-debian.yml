@@ -5,3 +5,5 @@
     name: "{{ asdf_deb_install_packages }}"
     state: present
     update_cache: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
