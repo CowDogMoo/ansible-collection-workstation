@@ -1,5 +1,5 @@
 ---
-- name: Ensure dependencies are installed.
+- name: Install packages
   become: true
   ansible.builtin.apt:
     name: "{{ vnc_zsh_install_packages }}"
