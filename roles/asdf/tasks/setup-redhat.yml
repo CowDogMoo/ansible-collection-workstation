@@ -2,6 +2,6 @@
 - name: Install packages
   become: true
   ansible.builtin.dnf:
-    name: "{{ asdf_dnf_install_packages }}"
+    name: "{{ asdf_install_packages }}"
     state: present
     update_cache: yes

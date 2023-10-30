@@ -24,26 +24,23 @@
   loop_control:
     loop_var: item
 
-- name: Check if setup is already done
-  block:
-    - name: Check for .asdf directory
-      ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.asdf"
-      register: asdf_dir_check
-
-    - name: Check for .tool-versions file
-      ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.tool-versions"
-      register: tool_versions_check
-
-    - name: Check for ruby plugin directory
-      ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.asdf/plugins/ruby"
-      register: ruby_plugin_check
-
 - name: Check if asdf_setup_script exists
   ansible.builtin.stat:
     path: "{{ asdf_setup_script }}"
+
+- name: Check if necessary items exist
+  ansible.builtin.stat:
+    path: "{{ item.path }}"
+  loop:
+    - name: .asdf directory
+      path: "{{ ansible_env.HOME }}/.asdf"
+    - name: .tool-versions file
+      path: "{{ ansible_env.HOME }}/.tool-versions"
+    - name: ruby plugin directory
+      path: "{{ ansible_env.HOME }}/.asdf/plugins/ruby"
+  loop_control:
+    loop_var: item
+  register: check_results
 
 - name: Ensure setup_asdf.sh is executable
   ansible.builtin.file:
@@ -55,9 +52,9 @@
     cmd: "{{ asdf_setup_script }} {{ asdf_languages }}"
   args:
     executable: "{{ ansible_user_shell }}"
-  when:
-    - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
-    - not asdf_dir_check.stat.exists or not tool_versions_check.stat.exists or not ruby_plugin_check.stat.exists # Only execute if setup is not done
+  when: >
+    ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh') and
+    (check_results.results | selectattr('stat.exists', 'equalto', false) | list | length > 0)
   changed_when: false
 
 - name: Update shell profile with ASDF_PATH

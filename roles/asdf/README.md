@@ -15,17 +15,17 @@ runtime versions on a per-project basis.
 
 ## Role Variables
 
-| Variable                    | Default Value                                                               | Description                                           |
-| --------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `asdf_dest_folder`          | `"{{ ansible_env.HOME }}/.asdf"`                                            | Destination folder for cloning the asdf repository    |
-| `asdf_git_repo`             | `"https://github.com/asdf-vm/asdf.git"`                                     | Git repository URL of asdf                            |
-| `asdf_languages`            | `"golang python ruby"`                                                      | Languages to be setup by `setup_asdf.sh` script       |
-| `asdf_os_family`            | `"{{ ansible_os_family \| lower }}"`                                        | OS family variable used for loading OS-specific tasks |
-| `asdf_setup_script`         | `"/tmp/setup_asdf.sh"`                                                      | Local path to the setup script                        |
-| `asdf_setup_script_url`     | `"https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"` | URL to download the setup script                      |
-| `asdf_tool_versions`        | `"{{ ansible_env.HOME }}/.tool-versions"`                                   | Path to the `.tool-versions` file                     |
-| `asdf_tool_versions_url`    | `"https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"`      | URL to download the `.tool-versions` file             |
-| `asdf_deb_install_packages` | `["curl", "git", "wget"]`                                                   | Debian packages to be installed                       |
+| Variable                 | Default Value                                                               | Description                                           |
+| ------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `asdf_dest_folder`       | `"{{ ansible_env.HOME }}/.asdf"`                                            | Destination folder for cloning the asdf repository    |
+| `asdf_git_repo`          | `"https://github.com/asdf-vm/asdf.git"`                                     | Git repository URL of asdf                            |
+| `asdf_languages`         | `"golang python ruby"`                                                      | Languages to be setup by `setup_asdf.sh` script       |
+| `asdf_os_family`         | `"{{ ansible_os_family \| lower }}"`                                        | OS family variable used for loading OS-specific tasks |
+| `asdf_setup_script`      | `"/tmp/setup_asdf.sh"`                                                      | Local path to the setup script                        |
+| `asdf_setup_script_url`  | `"https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"` | URL to download the setup script                      |
+| `asdf_tool_versions`     | `"{{ ansible_env.HOME }}/.tool-versions"`                                   | Path to the `.tool-versions` file                     |
+| `asdf_tool_versions_url` | `"https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"`      | URL to download the `.tool-versions` file             |
+| `asdf_install_packages`  | `["curl", "git", "wget"]`                                                   | Debian packages to be installed                       |
 
 ## Dependencies
 

@@ -2,8 +2,12 @@
 - name: Install packages
   become: true
   ansible.builtin.apt:
-    name: "{{ asdf_deb_install_packages }}"
+    name: "{{ asdf_install_packages }}"
     state: present
     update_cache: yes
   environment:
     DEBIAN_FRONTEND: noninteractive
+  failed_when: >
+    ansible_failed_result is defined and
+    ("No package matching" in ansible_failed_result.msg or
+    "Unable to fetch some archives" in ansible_failed_result.msg)

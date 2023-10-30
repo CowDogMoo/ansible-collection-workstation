@@ -14,7 +14,7 @@
     - name: Check if necessary packages are installed on Debian-based systems
       ansible.builtin.command: "dpkg -l {{ item }}"
       changed_when: false
-      with_items: "{{ asdf_deb_install_packages }}"
+      with_items: "{{ asdf_install_packages }}"
       register: dpkg_result
       failed_when: "'no packages found' in dpkg_result.stdout"
       when: asdf_os_family == 'debian'
@@ -22,7 +22,7 @@
     - name: Check if necessary packages are installed on redhat-based systems
       ansible.builtin.command: "dnf list installed {{ item }}"
       changed_when: false
-      with_items: "{{ asdf_dnf_install_packages }}"
+      with_items: "{{ asdf_install_packages }}"
       register: dnf_result
       failed_when: "'no packages found' in dnf_result.stdout"
       when: asdf_os_family == 'redhat'
@@ -95,3 +95,29 @@
       register: asdf_check
       failed_when: asdf_check.rc != 0
       changed_when: false
+
+    - name: Simulate failed package installation
+      block:
+        - name: Rename package manager temporarily (Debian)
+          ansible.builtin.command: mv /usr/bin/apt /usr/bin/apt_backup
+          when: ansible_facts.os_family == 'Debian'
+          changed_when: false
+
+        - name: Rename package manager temporarily (RedHat)
+          ansible.builtin.command: mv /usr/bin/dnf /usr/bin/dnf_backup
+          when: ansible_facts.os_family == 'RedHat'
+          changed_when: false
+
+        - name: Run role to check error handling
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+      rescue:
+        - name: Restore package manager (Debian)
+          ansible.builtin.command: mv /usr/bin/apt_backup /usr/bin/apt
+          when: ansible_facts.os_family == 'Debian'
+          changed_when: false
+
+        - name: Restore package manager (RedHat)
+          ansible.builtin.command: mv /usr/bin/dnf_backup /usr/bin/dnf
+          when: ansible_facts.os_family == 'RedHat'
+          changed_when: false
