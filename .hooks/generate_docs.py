@@ -57,16 +57,28 @@ def generate_table(role_path):
     os_vars = {}
     general_vars = {}
 
-    for var_file in os.listdir(os.path.join(role_path, 'vars')):
-        os_family = os.path.splitext(var_file)[0]  # e.g., 'redhat', 'debian'
-        var_path = os.path.join(role_path, 'vars', var_file)
-        if os.path.exists(var_path):
-            vars_dict = process_yaml(var_path)
-            if os_family == 'main':
-                general_vars.update(vars_dict)
-            else:
-                os_family_cap = os_family.capitalize()
-                os_vars.setdefault(os_family_cap, {}).update(vars_dict)
+    # Function to process a directory and update a dictionary with the processed YAML files
+    def process_directory(directory_path, target_dict):
+        for var_file in os.listdir(directory_path):
+            os_family = os.path.splitext(var_file)[0]  # e.g., 'redhat', 'debian'
+            var_path = os.path.join(directory_path, var_file)
+            if os.path.exists(var_path):
+                vars_dict = process_yaml(var_path)
+                if os_family == 'main':
+                    target_dict.update(vars_dict)
+                else:
+                    os_family_cap = os_family.capitalize()
+                    target_dict.setdefault(os_family_cap, {}).update(vars_dict)
+
+    # Process vars and defaults directories
+    vars_directory_path = os.path.join(role_path, 'vars')
+    defaults_directory_path = os.path.join(role_path, 'defaults')
+
+    if os.path.exists(vars_directory_path):
+        process_directory(vars_directory_path, os_vars)
+
+    if os.path.exists(defaults_directory_path):
+        process_directory(defaults_directory_path, general_vars)
 
     general_table_header = "| Variable | Default Value | Description |\n| --- | --- | --- |\n"
     general_table_rows = "\n".join([generate_row(var, value_desc_tuple) for var, value_desc_tuple in general_vars.items()])
@@ -79,6 +91,7 @@ def generate_table(role_path):
         os_tables.append(table_header + table_rows)
 
     return general_table + "\n" + "\n".join(os_tables)
+
 
 def main():
     roles_path = "roles"
