@@ -3,9 +3,17 @@
   hosts: all
   gather_facts: true
   tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Set OS family variable
+      ansible.builtin.set_fact:
+        asdf_os_family: "{{ ansible_facts['os_family'] | lower }}"
+
     - name: Include OS-specific variables
       ansible.builtin.include_vars:
-        file: "../../vars/{{ ansible_facts['os_family'] | lower }}.yml"
+        file: "../../vars/{{ asdf_os_family }}.yml"
 
     - name: Check if necessary packages are installed on Debian-based systems
       ansible.builtin.command: "dpkg -l {{ item }}"
