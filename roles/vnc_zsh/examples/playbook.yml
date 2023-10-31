@@ -1,8 +1,0 @@
----
-- name: Example playbook
-  hosts: all
-  become: true
-  environment:
-    DEBIAN_FRONTEND: noninteractive
-  roles:
-    - role: vnc_zsh

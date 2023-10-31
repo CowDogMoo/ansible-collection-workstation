@@ -9,11 +9,11 @@
 
     - name: Set OS family variable
       ansible.builtin.set_fact:
-        asdf_os_family: "{{ ansible_facts['os_family'] | lower }}"
+        vnc_zsh_os_family: "{{ ansible_facts['os_family'] | lower }}"
 
     - name: Include OS-specific variables
       ansible.builtin.include_vars:
-        file: "../../vars/{{ asdf_os_family }}.yml"
+        file: "../../vars/{{ vnz_zsh_os_family }}.yml"
 
     - name: Check if necessary packages are installed on Debian-based systems
       ansible.builtin.command: "dpkg -l {{ item }}"
@@ -21,7 +21,7 @@
       with_items: "{{ vnc_zsh_install_packages }}"
       register: dpkg_result
       failed_when: "'no packages found' in dpkg_result.stdout"
-      when: asdf_os_family == 'debian'
+      when: vnc_zsh_install_packages == 'debian'
 
     - name: Check if necessary packages are installed on redhat-based systems
       ansible.builtin.command: "dnf list installed {{ item }}"
@@ -61,3 +61,31 @@
           ansible.builtin.command: mv /usr/bin/dnf_backup /usr/bin/dnf
           when: ansible_facts.os_family == 'RedHat'
           changed_when: false
+
+        - name: Verify VNC service is running for each user
+          ansible.builtin.systemd:
+            name: "vncserver@:{{ item.vnc_num }}.service"
+            user: true
+            state: started
+          become: true
+          become_user: "{{ item.username }}"
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Check contents of .zshrc
+          ansible.builtin.command: "cat /home/{{ item.username }}/.zshrc"
+          register: zshrc_contents
+          changed_when: false
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Check VNC password file permissions
+          ansible.builtin.stat:
+            path: "/home/{{ item.username }}/.vnc/passwd"
+          register: vnc_passwd_file
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Assert VNC password file permissions
+          ansible.builtin.assert:
+            that:
+              - "vnc_passwd_file.stat.exists"
+              - "vnc_passwd_file.stat.mode == '0600'"
+            with_items: "{{ vnc_zsh_users }}"
