@@ -36,7 +36,7 @@ releases:
         - Windows Support for asdf role - Removed Windows support from `roles/asdf/README.md`
           as it is not supported in the tasks.
     fragments:
-      - asdf-role.yml
+      - workshop-collection.yaml
     release_date: "2023-10-17"
   1.1.0:
     changes:
@@ -80,5 +80,5 @@ releases:
         - Removed the separate ShellCheck repository in `.pre-commit-config.yaml` and
           consolidated ShellCheck hook under `jumanjihouse/pre-commit-hooks`.
     fragments:
-      - asdf-role.yaml
+      - workshop-collection.yaml
     release_date: "2023-10-20"

@@ -10,7 +10,17 @@ plugins:
   httpapi: {}
   inventory: {}
   lookup: {}
-  module: {}
+  module:
+    merge_list_dicts_into_list:
+      description: Manage VNC passwords for users.
+      name: merge_list_dicts_into_list
+      namespace: ""
+      version_added: null
+    vnc_pw:
+      description: Merge list of dictionaries with a list.
+      name: vnc_pw
+      namespace: ""
+      version_added: null
   netconf: {}
   shell: {}
   strategy: {}
