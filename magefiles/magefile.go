@@ -157,11 +157,6 @@ func RunMoleculeTests() error {
 	// Print all of the roles before running the tests
 	fmt.Println(color.YellowString("Running molecule tests for the following roles:"))
 	fmt.Println(color.YellowString("=============================================="))
-	for _, role := range roles {
-		if role.IsDir() {
-			fmt.Println(color.YellowString(role.Name()))
-		}
-	}
 
 	// Create a channel to collect errors from goroutines
 	errCh := make(chan error, len(roles))
