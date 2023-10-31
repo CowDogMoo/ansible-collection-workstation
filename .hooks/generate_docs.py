@@ -39,14 +39,19 @@ def generate_row(var, value_desc_tuple):
     if value is None:
         value_str = '`None`'
     elif isinstance(value, str) and (value.startswith('{{') and value.endswith('}}')):
-        value_str = f'`{value}`'
+        value_str = f'`{value.replace("|", "\\|")}`'  # Escape the pipe character
     elif isinstance(value, list):
-        # If value is a list, convert the list to a string and enclose it in backticks
-        value_str = f'`{", ".join(value)}`'
+        # If value is a list, convert the list to a string, escape the pipe characters,
+        # and enclose it in backticks
+        value_str = f'`{", ".join(value).replace("|", "\\|")}`'  # Escape the pipe character
     else:
-        # For other types, convert them to string and enclose it in backticks
-        value_str = f'`{str(value)}`'
+        # For other types, convert them to string, escape the pipe characters,
+        # and enclose it in backticks
+        value_str = f'`{str(value).replace("|", "\\|")}`'  # Escape the pipe character
+    # Escape the pipe characters in the description as well
+    description = description.replace("|", "\\|")
     return f"| `{var}` | {value_str} | {description} |"
+
 
 def generate_table(role_path):
     os_vars = {}

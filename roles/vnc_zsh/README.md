@@ -32,10 +32,14 @@ This role installs [vnc](https://tigervnc.org/) and
 
 | Variable | Default Value (Debian) | Description |
 | --- | --- | --- |
-| `vnc_num` | `1 # Port number offset for VNC server (e.g., 5901 for vnc_num: 1)` | List of users for whom vnc is to be configured |
-| `vnc_zsh_default_username` | `"{{ ansible_distribution \| lower }}"` | Default username value, derived from the ansible_distribution variable |
-| `vnc_zsh_cleanup_packages` | `['xfce4-power-manager # Package for managing power on xfce desktop environment']` | List of packages to be removed as part of the cleanup process |
-| `vnc_zsh_install_packages` | `['bash # Bourne Again SHell, a shell, or command language interpreter', 'ca-certificates # Common CA certificates', 'colordiff # Tool to colorize diff output', 'curl # Command line tool for transferring data with URLs', 'dbus-x11 # Simple interprocess messaging system (X11 deps)', 'file # Determines file type using "magic" numbers', 'fonts-powerline # Powerline fonts', 'git # Fast, scalable, distributed revision control system', 'inetutils-ping # Internet utilities - ping', 'less # Pager program similar to more', 'locales # System localization configuration', 'net-tools # NETwork TOOLS for the Linux networking community', 'rsync # Fast remote file copy program (like rcp)', 'software-properties-common # Manage the repositories that you install software from', 'sudo # Provide limited super user privileges to specific users', 'terminator # Multiple GNOME terminals in one window', 'tigervnc-standalone-server # Standalone VNC server', 'tigervnc-tools # VNC server utilities', 'wget # Retrieves files from the web', 'vim # Vi IMproved, a programmers text editor', 'xfce4 # Meta-package for the Xfce Lightweight Desktop Environment', 'xfce4-goodies # Enhancements for the Xfce4 Desktop Environment', 'zsh # Z shell, a command interpreter of the Bourne shell family', 'zsh-autosuggestions # Zsh plugin for auto-suggestions']` | List of packages to be installed for vnc and zsh setup |
+| `vnc_zsh_users` | `None` | List of users for whom vnc is to be configured |
+| `- username` | `{{ vnc_zsh_default_username }}` |  |
+| `usergroup` | `{{ vnc_zsh_default_username }}` |  |
+| `sudo` | `True` |  |
+| `vnc_num` | `1` |  |
+| `vnc_zsh_default_username` | `{{ ansible_distribution \| lower }}` | Default username value, derived from the ansible_distribution variable |
+| `vnc_zsh_cleanup_packages` | `xfce4-power-manager` | List of packages to be removed as part of the cleanup process |
+| `vnc_zsh_install_packages` | `bash, ca-certificates, colordiff, curl, dbus-x11, file, fonts-powerline, git, inetutils-ping, less, locales, net-tools, rsync, software-properties-common, sudo, terminator, tigervnc-standalone-server, tigervnc-tools, wget, vim, xfce4, xfce4-goodies, zsh, zsh-autosuggestions` | List of packages to be installed for vnc and zsh setup |
 <!--- end vars table -->
 
 Available variables are listed below, along with default values (see `defaults/main.yml`):
