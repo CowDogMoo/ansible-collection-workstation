@@ -1,9 +1,17 @@
 ---
+# Destination folder for cloning the asdf repository
 asdf_dest_folder: "{{ ansible_env.HOME }}/.asdf"
+# Git repository URL of asdf
 asdf_git_repo: "https://github.com/asdf-vm/asdf.git"
+# Languages to be setup by `setup_asdf.sh` script
 asdf_languages: "golang python ruby"
+# OS family variable used for loading OS-specific tasks
 asdf_os_family: "{{ ansible_os_family | lower }}"
+# Local path to the setup script
 asdf_setup_script: "/tmp/setup_asdf.sh"
+# URL to download the setup script
 asdf_setup_script_url: "https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"
+# Path to the `.tool-versions` file
 asdf_tool_versions: "{{ ansible_env.HOME }}/.tool-versions"
+# URL to download the `.tool-versions` file
 asdf_tool_versions_url: "https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"

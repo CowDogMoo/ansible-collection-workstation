@@ -26,6 +26,13 @@ This role installs [vnc](https://tigervnc.org/) and
 
 ## Role Variables
 
+<!-- markdownlint-disable -->
+<!--- vars table -->
+| Variable | Default Value | Description |
+| --- | --- | --- |
+<!--- end vars table -->
+<!-- markdownlint-enable -->
+
 Available variables are listed below, along with default values (see `defaults/main.yaml`):
 
 Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).

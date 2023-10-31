@@ -1,4 +1,5 @@
 ---
+# Red Hat packages to be installed
 asdf_install_packages:
   - git
   - wget

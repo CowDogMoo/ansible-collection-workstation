@@ -22,7 +22,7 @@ repos:
     rev: v3.0.3
     hooks:
       - id: prettier
-        files: \.(json|md|yaml|yml)$
+        files: \.(json|yaml|yml)$
 
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
@@ -61,7 +61,8 @@ repos:
   - repo: local
     hooks:
       - id: generate-docs
-        name: Update package docs
-        language: script
-        entry: .hooks/generate-docs.sh
-        require_serial: true
+        name: Generate Documentation
+        entry: python3 .hooks/generate_docs.py
+        language: system
+        files: ^roles/.+/defaults/main\.yml$|^roles/.+/vars/main\.yml$
+        pass_filenames: false
