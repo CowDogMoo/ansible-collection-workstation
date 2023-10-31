@@ -1,11 +1,32 @@
-===================================
-cowdogmoo.workstation Release Notes
-===================================
+1.2.0
+======
 
-.. contents:: Topics
+Release Summary
+---------------
 
+Refactored `asdf` and created new `vnc_zsh` role enhancing functionality.
 
-v1.1.0
+Added
+-----
+
+- Failure conditions in `asdf` role's `check-and-download.yml`.
+- Molecule setup for testing `vnc_zsh` role with various scenarios.
+- OS-specific setup tasks and variables for Debian in `vnc_zsh` role.
+- Unified `asdf_install_packages` variable for package installation.
+- Variables, tasks, templates for configuring VNC and ZSH in `vnc_zsh` role.
+
+Changed
+-------
+
+- Restructured table, moved variables, modified tasks in `asdf` role.
+- Updated package installation tasks in `asdf` role's `setup-debian.yml`, `setup-redhat.yml`.
+
+Removed
+-------
+
+- Windows support, redundant block in `asdf` role's `README.md` and `tasks/main.yml`.
+
+1.1.0
 ======
 
 Release Summary
@@ -44,7 +65,7 @@ Removed
 
 - Removed the separate ShellCheck repository in `.pre-commit-config.yaml` and consolidated ShellCheck hook under `jumanjihouse/pre-commit-hooks`.
 
-v1.0.0
+1.0.0
 ======
 
 Release Summary

@@ -14,16 +14,16 @@ plugins:
     merge_list_dicts_into_list:
       description: Manage VNC passwords for users.
       name: merge_list_dicts_into_list
-      namespace: ""
+      namespace: "CowdogMoo"
       version_added: null
     vnc_pw:
       description: Merge list of dictionaries with a list.
       name: vnc_pw
-      namespace: ""
+      namespace: "CowdogMoo"
       version_added: null
   netconf: {}
   shell: {}
   strategy: {}
   test: {}
   vars: {}
-version: 1.1.0
+version: 1.2.0

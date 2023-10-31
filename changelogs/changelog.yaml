@@ -82,3 +82,22 @@ releases:
     fragments:
       - workshop-collection.yaml
     release_date: "2023-10-20"
+  1.2.0:
+    changes:
+      added:
+        - Failure conditions in `asdf` role's `check-and-download.yml`.
+        - Molecule setup for testing `vnc_zsh` role with various scenarios.
+        - OS-specific setup tasks and variables for Debian in `vnc_zsh` role.
+        - Unified `asdf_install_packages` variable for package installation.
+        - Variables, tasks, templates for configuring VNC and ZSH in `vnc_zsh` role.
+      changed:
+        - Restructured table, moved variables, modified tasks in `asdf` role.
+        - Updated package installation tasks in `asdf` role's `setup-debian.yml`, `setup-redhat.yml`.
+      release_summary:
+        Refactored `asdf` and created new `vnc_zsh` role enhancing
+        functionality.
+      removed:
+        - Windows support, redundant block in `asdf` role's `README.md` and `tasks/main.yml`.
+    fragments:
+      - workshop-collection.yaml
+    release_date: "2023-10-31"
