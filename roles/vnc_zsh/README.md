@@ -1,7 +1,7 @@
 # Ansible Role: vnc + oh-my-zsh
 
-[![Pre-Commit](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yaml)
-[![Molecule Test](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yaml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yaml)
+[![Pre-Commit](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yml)
+[![Molecule Test](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yml)
 [![Ansible Galaxy](https://img.shields.io/badge/Galaxy-cowdogmoo.vnc_zsh-660198.svg?style=flat)](https://galaxy.ansible.com/ui/standalone/roles/CowDogMoo/vnc_zsh)
 [![License](https://img.shields.io/github/license/CowDogMoo/ansible_vnc_zsh?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/ansible_vnc_zsh/blob/main/LICENSE)
 
@@ -26,14 +26,29 @@ This role installs [vnc](https://tigervnc.org/) and
 
 ## Role Variables
 
-<!-- markdownlint-disable -->
 <!--- vars table -->
 | Variable | Default Value | Description |
 | --- | --- | --- |
+| `vnc_zsh_vncpwd_clone_path` | `/tmp/vncpwd` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd). |
+| `vnc_zsh_omz_install_script_url` | `https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh` | Path to clone [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh). |
+| `vnc_zsh_vncpwd_repo_url` | `https://github.com/jeroennijhof/vncpwd.git` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd) |
+| `vnc_zsh_vncpwd_path` | `/usr/local/bin/vncpwd` | Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd) |
+| `vnc_zsh_vnc_client_options` | `-geometry 1920x1080 --localhost no` | VNC client options |
+| `vnc_zsh_setup_systemd` | `False` | Setup systemd service for VNC |
+| `vnc_zsh_theme` | `af-magic` | ZSH theme |
+| Variable | Default Value (Debian) | Description |
+| --- | --- | --- |
+| `vnc_zsh_users` | `None` | List of users for whom vnc is to be configured |
+| `- username` | `{{ vnc_zsh_default_username }}` |  |
+| `usergroup` | `{{ vnc_zsh_default_username }}` |  |
+| `sudo` | `True` |  |
+| `vnc_num` | `1` |  |
+| `vnc_zsh_default_username` | `{{ ansible_distribution \| lower }}` | Default username value, derived from the ansible_distribution variable |
+| `vnc_zsh_cleanup_packages` | `xfce4-power-manager` | List of packages to be removed as part of the cleanup process |
+| `vnc_zsh_install_packages` | `bash, ca-certificates, colordiff, curl, dbus-x11, file, fonts-powerline, git, inetutils-ping, less, locales, net-tools, rsync, software-properties-common, sudo, terminator, tigervnc-standalone-server, tigervnc-tools, wget, vim, xfce4, xfce4-goodies, zsh, zsh-autosuggestions` | List of packages to be installed for vnc and zsh setup |
 <!--- end vars table -->
-<!-- markdownlint-enable -->
 
-Available variables are listed below, along with default values (see `defaults/main.yaml`):
+Available variables are listed below, along with default values (see `defaults/main.yml`):
 
 Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
 
@@ -88,7 +103,6 @@ vnc_zsh_users:
   - username: "ubuntu"
     usergroup: "ubuntu"
     sudo: true
-    # port 5901
     vnc_num: 1
 ```
 

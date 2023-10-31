@@ -1,8 +1,15 @@
 ---
+# Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
 vnc_zsh_vncpwd_clone_path: /tmp/vncpwd
+# Path to clone [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh).
 vnc_zsh_omz_install_script_url: "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
+# Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd)
 vnc_zsh_vncpwd_repo_url: https://github.com/jeroennijhof/vncpwd.git
+# Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd)
 vnc_zsh_vncpwd_path: /usr/local/bin/vncpwd
+# VNC client options
 vnc_zsh_vnc_client_options: "-geometry 1920x1080 --localhost no"
+# Setup systemd service for VNC
 vnc_zsh_setup_systemd: false
+# ZSH theme
 vnc_zsh_theme: "af-magic"
