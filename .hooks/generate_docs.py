@@ -32,8 +32,6 @@ def process_yaml(var_path):
 
     return var_dict
 
-
-
 def generate_row(var, value_desc_tuple):
     value, description = value_desc_tuple
     if value is None:
@@ -51,7 +49,6 @@ def generate_row(var, value_desc_tuple):
     # Escape the pipe characters in the description as well
     description = description.replace("|", "\\|")
     return f"| `{var}` | {value_str} | {description} |"
-
 
 def generate_table(role_path):
     os_vars = {}
@@ -92,7 +89,6 @@ def generate_table(role_path):
         os_tables.append(table_header + table_rows)
 
     return general_table + "\n" + "\n".join(os_tables)
-
 
 def main():
     roles_path = "roles"

@@ -1,10 +1,5 @@
 # Ansible Role: vnc + oh-my-zsh
 
-[![Pre-Commit](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yml)
-[![Molecule Test](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yml)
-[![Ansible Galaxy](https://img.shields.io/badge/Galaxy-cowdogmoo.vnc_zsh-660198.svg?style=flat)](https://galaxy.ansible.com/ui/standalone/roles/CowDogMoo/vnc_zsh)
-[![License](https://img.shields.io/github/license/CowDogMoo/ansible_vnc_zsh?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/ansible_vnc_zsh/blob/main/LICENSE)
-
 This role installs [vnc](https://tigervnc.org/) and
 [oh-my-zsh](https://ohmyz.sh/) on Debian-based systems.
 
