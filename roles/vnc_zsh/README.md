@@ -29,7 +29,13 @@ This role installs [vnc](https://tigervnc.org/) and
 <!--- vars table -->
 | Variable | Default Value | Description |
 | --- | --- | --- |
-
+| `vnc_zsh_vncpwd_clone_path` | `/tmp/vncpwd` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd). |
+| `vnc_zsh_omz_install_script_url` | `https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh` | Path to clone [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh). |
+| `vnc_zsh_vncpwd_repo_url` | `https://github.com/jeroennijhof/vncpwd.git` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd) |
+| `vnc_zsh_vncpwd_path` | `/usr/local/bin/vncpwd` | Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd) |
+| `vnc_zsh_vnc_client_options` | `-geometry 1920x1080 --localhost no` | VNC client options |
+| `vnc_zsh_setup_systemd` | `False` | Setup systemd service for VNC |
+| `vnc_zsh_theme` | `af-magic` | ZSH theme |
 | Variable | Default Value (Debian) | Description |
 | --- | --- | --- |
 | `vnc_zsh_users` | `None` | List of users for whom vnc is to be configured |

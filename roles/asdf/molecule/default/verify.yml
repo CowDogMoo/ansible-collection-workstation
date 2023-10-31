@@ -3,10 +3,6 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Include main variables
-      ansible.builtin.include_vars:
-        file: "../../vars/main.yml"
-
     - name: Include OS-specific variables
       ansible.builtin.include_vars:
         file: "../../vars/{{ ansible_facts['os_family'] | lower }}.yml"
