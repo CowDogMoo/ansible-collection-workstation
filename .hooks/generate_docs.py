@@ -1,28 +1,47 @@
-import yaml
 import os
+import yaml
 
 def generate_table(role_path):
-    variables = {}
-    descriptions = {}
-    for var_file in ["defaults/main.yml", "vars/main.yml"]:
-        var_path = os.path.join(role_path, var_file)
+    os_vars = {}
+    general_vars = {}
+
+    for var_file in os.listdir(os.path.join(role_path, 'vars')):
+        os_family = os.path.splitext(var_file)[0]  # e.g., 'redhat', 'debian'
+        var_path = os.path.join(role_path, 'vars', var_file)
         if os.path.exists(var_path):
             with open(var_path, 'r') as file:
                 lines = file.readlines()
-            for i, line in enumerate(lines):
-                if line.strip().startswith('#'):
-                    description = line.strip('# ').strip()
-                    var_line = lines[i + 1].strip()
-                    var_name, var_value = var_line.split(':', 1)
-                    variables[var_name.strip()] = var_value.strip()
-                    descriptions[var_name.strip()] = description
 
-    table_header = "| Variable | Default Value | Description |\n| --- | --- | --- |\n"
-    table_rows = "".join([f"| `{var}` | `{variables[var].replace('|', '\\|')}` | {descriptions[var]} |\n"
-                          for var in variables])
+            # Process the lines to extract variables and descriptions
+            i = 0
+            while i < len(lines):
+                if lines[i].strip().startswith('#'):
+                    description = lines[i].strip('# ').strip()
+                    i += 1
+                    if i < len(lines) and ':' in lines[i]:
+                        var_line = lines[i].strip()
+                        var_name, var_value = var_line.split(':', 1)
+                        if os_family == 'main':
+                            general_vars[var_name.strip()] = (var_value.strip(), description)
+                        else:
+                            os_family_cap = os_family.capitalize()
+                            os_vars.setdefault(os_family_cap, {})[var_name.strip()] = (var_value.strip(), description)
+                i += 1
 
-    return table_header + table_rows
+    # Generate table for general variables
+    general_table_header = "| Variable | Default Value | Description |\n| --- | --- | --- |\n"
+    general_table_rows = "".join([f"| `{var}` | `{value.replace('|', '\\|')}` | {desc} |\n" for var, (value, desc) in general_vars.items()])
 
+    general_table = general_table_header + general_table_rows
+
+    # Generate tables for OS-specific variables
+    os_tables = []
+    for os_family, var_dict in os_vars.items():
+        table_header = f"| Variable | Default Value ({os_family}) | Description |\n| --- | --- | --- |\n"
+        table_rows = "".join([f"| `{var}` | `{value.replace('|', '\\|')}` | {desc} |\n" for var, (value, desc) in var_dict.items()])
+        os_tables.append(table_header + table_rows)
+
+    return general_table + "\n" + "\n".join(os_tables)
 
 def main():
     roles_path = "roles"

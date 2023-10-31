@@ -60,7 +60,7 @@ repos:
 
   - repo: local
     hooks:
-      - id: generate-docs
+      - id: generate-ansible-docs
         name: Generate Documentation
         entry: python3 .hooks/generate_docs.py
         language: system

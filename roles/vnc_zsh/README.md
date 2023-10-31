@@ -30,6 +30,10 @@ This role installs [vnc](https://tigervnc.org/) and
 <!--- vars table -->
 | Variable | Default Value | Description |
 | --- | --- | --- |
+
+| Variable | Default Value (Debian) | Description |
+| --- | --- | --- |
+| `vnc_num` | `1` | port 5901 |
 <!--- end vars table -->
 <!-- markdownlint-enable -->
 
