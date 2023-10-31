@@ -1,12 +1,12 @@
 ---
 - name: Include OS-Specific variables
-  ansible.builtin.include_vars: "{{ ansible_os_family }}.yaml"
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
 
 - name: Include OS-Specific tasks
   ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
 
 - name: Install vncpwd
-  ansible.builtin.import_tasks: vncpwd.yaml
+  ansible.builtin.import_tasks: vncpwd.yml
 
 - name: Set vnc_zsh_default_username
   ansible.builtin.set_fact:
@@ -73,11 +73,11 @@
   with_items: "{{ vnc_zsh_users }}"
 
 - name: Configure systemd auto-start service
-  ansible.builtin.import_tasks: systemd.yaml
+  ansible.builtin.import_tasks: systemd.yml
   when: vnc_zsh_setup_systemd|bool
 
 - name: Install omz for vnc_zsh_users
-  ansible.builtin.import_tasks: omz.yaml
+  ansible.builtin.import_tasks: omz.yml
   when: vnc_zsh_omz_install_script_url is defined
 
 - name: Create docker-entrypoint.sh

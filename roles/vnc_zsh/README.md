@@ -1,7 +1,7 @@
 # Ansible Role: vnc + oh-my-zsh
 
-[![Pre-Commit](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yaml)
-[![Molecule Test](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yaml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yaml)
+[![Pre-Commit](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/pre-commit.yml)
+[![Molecule Test](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yml/badge.svg)](https://github.com/cowdogmoo/ansible_vnc_zsh/actions/workflows/molecule.yml)
 [![Ansible Galaxy](https://img.shields.io/badge/Galaxy-cowdogmoo.vnc_zsh-660198.svg?style=flat)](https://galaxy.ansible.com/ui/standalone/roles/CowDogMoo/vnc_zsh)
 [![License](https://img.shields.io/github/license/CowDogMoo/ansible_vnc_zsh?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/ansible_vnc_zsh/blob/main/LICENSE)
 
@@ -26,18 +26,19 @@ This role installs [vnc](https://tigervnc.org/) and
 
 ## Role Variables
 
-<!-- markdownlint-disable -->
 <!--- vars table -->
 | Variable | Default Value | Description |
 | --- | --- | --- |
 
 | Variable | Default Value (Debian) | Description |
 | --- | --- | --- |
-| `vnc_num` | `1` | port 5901 |
+| `vnc_num` | `1 # Port number offset for VNC server (e.g., 5901 for vnc_num: 1)` | List of users for whom vnc is to be configured |
+| `vnc_zsh_default_username` | `"{{ ansible_distribution \| lower }}"` | Default username value, derived from the ansible_distribution variable |
+| `vnc_zsh_cleanup_packages` | `['xfce4-power-manager # Package for managing power on xfce desktop environment']` | List of packages to be removed as part of the cleanup process |
+| `vnc_zsh_install_packages` | `['bash # Bourne Again SHell, a shell, or command language interpreter', 'ca-certificates # Common CA certificates', 'colordiff # Tool to colorize diff output', 'curl # Command line tool for transferring data with URLs', 'dbus-x11 # Simple interprocess messaging system (X11 deps)', 'file # Determines file type using "magic" numbers', 'fonts-powerline # Powerline fonts', 'git # Fast, scalable, distributed revision control system', 'inetutils-ping # Internet utilities - ping', 'less # Pager program similar to more', 'locales # System localization configuration', 'net-tools # NETwork TOOLS for the Linux networking community', 'rsync # Fast remote file copy program (like rcp)', 'software-properties-common # Manage the repositories that you install software from', 'sudo # Provide limited super user privileges to specific users', 'terminator # Multiple GNOME terminals in one window', 'tigervnc-standalone-server # Standalone VNC server', 'tigervnc-tools # VNC server utilities', 'wget # Retrieves files from the web', 'vim # Vi IMproved, a programmers text editor', 'xfce4 # Meta-package for the Xfce Lightweight Desktop Environment', 'xfce4-goodies # Enhancements for the Xfce4 Desktop Environment', 'zsh # Z shell, a command interpreter of the Bourne shell family', 'zsh-autosuggestions # Zsh plugin for auto-suggestions']` | List of packages to be installed for vnc and zsh setup |
 <!--- end vars table -->
-<!-- markdownlint-enable -->
 
-Available variables are listed below, along with default values (see `defaults/main.yaml`):
+Available variables are listed below, along with default values (see `defaults/main.yml`):
 
 Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
 
@@ -92,7 +93,6 @@ vnc_zsh_users:
   - username: "ubuntu"
     usergroup: "ubuntu"
     sudo: true
-    # port 5901
     vnc_num: 1
 ```
 
