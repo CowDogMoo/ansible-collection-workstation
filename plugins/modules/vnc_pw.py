@@ -8,6 +8,25 @@ import secrets
 import string
 import subprocess
 
+DOCUMENTATION = r'''
+---
+module: merge_list_dicts_into_list
+short_description: Merge list of dictionaries with a list.
+description:
+  - Merges a list of dictionaries with a list by adding an 'uid' key to each dictionary.
+options:
+  ls_dicts:
+    description:
+      - List of dictionaries to be merged.
+    type: list
+    required: True
+  ls:
+    description:
+      - List to merge with the list of dictionaries.
+    type: list
+    required: True
+'''
+
 def file_exists(file):
     if os.path.isfile(file):
         return True

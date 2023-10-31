@@ -4,6 +4,20 @@
 from ansible.module_utils.basic import AnsibleModule
 import json
 
+DOCUMENTATION = r'''
+---
+module: vnc_pw
+short_description: Manage VNC passwords for users.
+description:
+  - Generates or retrieves VNC passwords for a list of users.
+options:
+  vnc_zsh_users:
+    description:
+      - List of users to manage VNC passwords for.
+    type: list
+    required: True
+'''
+
 def run_module():
     module_args = dict(
         ls_dicts = dict(type='list', required=True),
