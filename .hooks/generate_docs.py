@@ -85,7 +85,8 @@ def generate_table(role_path):
     general_table = general_table_header + general_table_rows
 
     os_tables = []
-    for os_family, var_dict in os_vars.items():
+    # Ensure a consistent order by sorting based on OS family names
+    for os_family, var_dict in sorted(os_vars.items(), key=lambda item: item[0]):
         table_header = f"| Variable | Default Value ({os_family}) | Description |\n| --- | --- | --- |\n"
         table_rows = "\n".join([generate_row(var, value_desc_tuple) for var, value_desc_tuple in var_dict.items()])
         os_tables.append(table_header + table_rows)

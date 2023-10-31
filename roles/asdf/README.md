@@ -26,12 +26,12 @@ runtime versions on a per-project basis.
 | `asdf_setup_script_url` | `https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh` | URL to download the setup script |
 | `asdf_tool_versions` | `{{ ansible_env.HOME }}/.tool-versions` | Path to the `.tool-versions` file |
 | `asdf_tool_versions_url` | `https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions` | URL to download the `.tool-versions` file |
-| Variable | Default Value (Redhat) | Description |
-| --- | --- | --- |
-| `asdf_install_packages` | `git, wget` | Red Hat packages to be installed |
 | Variable | Default Value (Debian) | Description |
 | --- | --- | --- |
 | `asdf_install_packages` | `curl, git, wget` | Debian packages to be installed |
+| Variable | Default Value (Redhat) | Description |
+| --- | --- | --- |
+| `asdf_install_packages` | `git, wget` | Red Hat packages to be installed |
 <!--- end vars table -->
 
 ## Dependencies
