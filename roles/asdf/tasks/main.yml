@@ -1,9 +1,9 @@
 ---
 - name: Include OS-specific variables.
-  ansible.builtin.include_vars: "{{ asdf_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
 
 - name: Include OS-Specific tasks
-  ansible.builtin.include_tasks: "setup-{{ asdf_os_family }}.yml"
+  ansible.builtin.include_tasks: "setup-{{ asdf_os_family | lower }}.yml"
 
 - name: Clone asdf
   ansible.builtin.git:

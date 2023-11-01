@@ -1,12 +1,12 @@
 ---
 - name: Attack Box
-  hosts: all
+  hosts: localhost
   environment:
     DEBIAN_FRONTEND: noninteractive
   roles:
     - role: cowdogmoo.workstation.vnc_zsh
     - role: cowdogmoo.workstation.asdf
-    - role: l50.sliver
+    # - role: l50.sliver
     - role: cowdogmoo.firefox
   tasks:
     - name: Install packages

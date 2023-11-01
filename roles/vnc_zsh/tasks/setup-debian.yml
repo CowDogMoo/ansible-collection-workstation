@@ -8,7 +8,7 @@
   environment:
     DEBIAN_FRONTEND: noninteractive
 
-- name: Cleanup packages.
+- name: Cleanup packages
   become: true
   ansible.builtin.apt:
     name: "{{ vnc_zsh_cleanup_packages }}"
