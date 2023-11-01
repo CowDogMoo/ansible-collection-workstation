@@ -3,3 +3,4 @@ TODO
 chrome.sh
 library/__pycache__
 .DS_Store
+logs

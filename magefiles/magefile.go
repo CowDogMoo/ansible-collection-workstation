@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/bitfield/script"
 	"github.com/fatih/color"
@@ -107,109 +106,6 @@ func runCmds(cmds []string) error {
 	}
 
 	return nil
-
-}
-
-// LintAnsible runs the ansible-lint linter.
-//
-// Example usage:
-//
-// ```bash
-// mage lintansible
-// ```
-//
-// **Returns:**
-//
-// error: An error if any issue occurs while trying to run the linter.
-func LintAnsible() error {
-	cmds := []string{
-		"ansible-lint --force-color -c .hooks/linters/ansible-lint.yaml",
-	}
-
-	fmt.Println(color.YellowString("Running ansible-lint."))
-	return runCmds(cmds)
-}
-
-// RunMoleculeTests runs the molecule tests.
-//
-// Example usage:
-//
-// ```bash
-// mage runmoleculetests
-// ```
-//
-// **Returns:**
-//
-// error: An error if any issue occurs while trying to run the tests.
-func RunMoleculeTests() error {
-	fs := afero.NewOsFs() // Create a new Afero FS instance for file system operations
-	rolesDir := "roles"
-
-	// List all the roles in the roles directory
-	roles, err := afero.ReadDir(fs, rolesDir)
-	if err != nil {
-		return fmt.Errorf("failed to list roles: %v", err)
-	}
-
-	cmds := []string{
-		"molecule test",
-	}
-
-	// Print all of the roles before running the tests
-	fmt.Println(color.YellowString("Running molecule tests for the following roles:"))
-	fmt.Println(color.YellowString("=============================================="))
-
-	// Create a channel to collect errors from goroutines
-	errCh := make(chan error, len(roles))
-	// Create a wait group to wait for all goroutines to complete
-	var wg sync.WaitGroup
-
-	for _, role := range roles {
-		if !role.IsDir() {
-			continue // Skip any non-directory files
-		}
-
-		wg.Add(1) // Increment the wait group counter
-		go func(role os.FileInfo) {
-			defer wg.Done() // Decrement the counter when the goroutine completes
-
-			rolePath := filepath.Join(rolesDir, role.Name())
-			fmt.Printf(color.YellowString("Running molecule tests for the %s role\n"), role.Name())
-
-			cwd := sys.Gwd()
-
-			// Change to the role's directory
-			if err := sys.Cd(rolePath); err != nil {
-				errCh <- fmt.Errorf("failed to cd into %s role directory: %v", role.Name(), err)
-				return
-			}
-
-			if err := runCmds(cmds); err != nil {
-				errCh <- fmt.Errorf("failed to run molecule tests for role %s: %v", role.Name(), err)
-			}
-
-			// Change back to the original directory
-			if err := sys.Cd(cwd); err != nil {
-				errCh <- fmt.Errorf("failed to cd out of %s role directory: %v", role.Name(), err)
-			}
-		}(role) // Pass the role to the goroutine
-	}
-
-	wg.Wait() // Wait for all goroutines to complete
-
-	close(errCh) // Close the error channel
-
-	// Collect any errors from the channel
-	var errors []error
-	for err := range errCh {
-		errors = append(errors, err)
-	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("encountered errors: %v", errors)
-	}
-
-	return nil
 }
 
 // GenChangeLog generates the changelog used by Ansible Galaxy.
@@ -256,12 +152,10 @@ func CreateRelease() error {
 			"Example: NEXT_VERSION=1.0.0 mage createrelease")
 	}
 
-	cmds := []string{
-		"gh release create " + version + " -F " + filepath.Join("changelogs", "CHANGELOG.rst"),
-	}
-
 	fmt.Printf(color.YellowString("Creating release %s\n", version))
-	return runCmds(cmds)
+	_, err := sys.RunCommand("gh", "release", "create", version, "-F",
+		filepath.Join("changelogs", "CHANGELOG.rst"))
+	return err
 }
 
 // GeneratePackageDocs creates documentation for the various packages

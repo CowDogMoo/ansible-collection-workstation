@@ -29,6 +29,7 @@ jobs:
         run: molecule test
         working-directory: roles/${{ matrix.role }}
         env:
+          ANSIBLE_CONFIG: ansible.cfg
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
           MOLECULE_DISTRO: geerlingguy/docker-ubuntu2204-ansible
