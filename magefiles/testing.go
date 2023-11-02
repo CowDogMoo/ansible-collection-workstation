@@ -97,7 +97,7 @@ func RunMoleculeTests() error {
 		}
 		return fmt.Errorf("encountered errors: %v", errors)
 	} else {
-		logger.Printf("Molecule tests passed for all %d role(s).", len(roles))
+		logger.Printf("Molecule tests passed for %d/%d role(s).", len(roles), len(roles))
 	}
 
 	return nil
