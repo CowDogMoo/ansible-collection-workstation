@@ -40,7 +40,7 @@ This role installs [vnc](https://tigervnc.org/) and
 | `vnc_num` | `1` |  |
 | `vnc_zsh_default_username` | `{{ ansible_distribution \| lower }}` | Default username value, derived from the ansible_distribution variable |
 | `vnc_zsh_cleanup_packages` | `xfce4-power-manager` | List of packages to be removed as part of the cleanup process |
-| `vnc_zsh_install_packages` | `bash, ca-certificates, colordiff, curl, dbus-x11, file, fonts-powerline, git, inetutils-ping, less, locales, net-tools, rsync, software-properties-common, sudo, terminator, tigervnc-standalone-server, tigervnc-tools, wget, vim, xfce4, xfce4-goodies, zsh, zsh-autosuggestions` | List of packages to be installed for vnc and zsh setup |
+| `vnc_zsh_install_packages` | `bash, ca-certificates, colordiff, curl, dbus-x11, file, fonts-powerline, git, inetutils-ping, less, locales, net-tools, procps, rsync, software-properties-common, sudo, terminator, tigervnc-standalone-server, tigervnc-tools, wget, vim, xfce4, xfce4-goodies, zsh, zsh-autosuggestions` | List of packages to be installed for vnc and zsh setup |
 <!--- end vars table -->
 
 ---
