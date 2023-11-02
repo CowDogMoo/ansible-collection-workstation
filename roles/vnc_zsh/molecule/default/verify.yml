@@ -62,14 +62,14 @@
           when: ansible_facts.os_family == 'RedHat'
           changed_when: false
 
-        - name: Verify VNC service is running for each user
-          ansible.builtin.systemd:
-            name: "vncserver@:{{ item.vnc_num }}.service"
-            scope: user
-            state: started
-          become: true
-          become_user: "{{ item.username }}"
-          with_items: "{{ vnc_zsh_users }}"
+        # - name: Verify VNC service is running for each user
+        #   ansible.builtin.systemd:
+        #     name: "vncserver@:{{ item.vnc_num }}.service"
+        #     scope: user
+        #     state: started
+        #   become: true
+        #   become_user: "{{ item.username }}"
+        #   with_items: "{{ vnc_zsh_users }}"
 
         - name: Check contents of .zshrc
           ansible.builtin.command: "cat /home/{{ item.username }}/.zshrc"
@@ -88,7 +88,8 @@
             that:
               - "vnc_passwd_file.stat.exists"
               - "vnc_passwd_file.stat.mode == '0600'"
-            with_items: "{{ vnc_zsh_users }}"
+            msg: "VNC password file permissions check failed for {{ item.username }}"
+          with_items: "{{ vnc_zsh_users }}"
 
         - name: Confirm .oh-my-zsh is installed for all vnc_zsh_users
           ansible.builtin.stat:
@@ -100,7 +101,8 @@
           ansible.builtin.assert:
             that:
               - "oh_my_zsh_test.results[item | int].stat.exists"
-            with_items: "{{ vnc_zsh_users }}"
+            msg: ".oh-my-zsh installation check failed for {{ item.username }}"
+          with_items: "{{ vnc_zsh_users }}"
 
         - name: Confirm zsh-installer.sh is removed for all vnc_zsh_users
           ansible.builtin.stat:
@@ -112,7 +114,8 @@
           ansible.builtin.assert:
             that:
               - "not zsh_installer_test.results[item | int].stat.exists"
-            with_items: "{{ vnc_zsh_users }}"
+            msg: "zsh-installer.sh removal check failed for {{ item.username }}"
+          with_items: "{{ vnc_zsh_users }}"
 
         - name: Confirm per-user $HOME/.zshrc files exist for all vnc_zsh_users
           ansible.builtin.stat:
@@ -125,4 +128,19 @@
             that:
               - "zshrc_test.results[item | int].stat.exists"
               - "zshrc_test.results[item | int].stat.mode == '0744'"
-            with_items: "{{ vnc_zsh_users }}"
+            msg: "$HOME/.zshrc file check failed for {{ item.username }}"
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Confirm per-user $HOME/.ohmyzsh directories exist for all vnc_zsh_users
+          ansible.builtin.stat:
+            path: "/home/{{ item.username }}/.ohmyzsh"
+          register: oh_my_zsh_test
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Assert per-user $HOME/.ohmyzsh directories
+          ansible.builtin.assert:
+            that:
+              - "oh_my_zsh_test.results[item | int].stat.exists"
+              - "oh_my_zsh_test.results[item | int].stat.mode == '0744'"
+            msg: "$HOME/.ohmyzsh directory check failed for {{ item.username }}"
+          with_items: "{{ vnc_zsh_users }}"

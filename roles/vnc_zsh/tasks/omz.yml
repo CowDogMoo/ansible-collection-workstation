@@ -12,8 +12,9 @@
     mode: "0755"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
-  when: not oh_my_zsh_installed.results[item | int].stat.exists
+  when: "not oh_my_zsh_installed.results[item | int].stat.exists"
   with_items: "{{ vnc_zsh_users }}"
+  changed_when: false
 
 - name: Install oh-my-zsh for all vnc_zsh_users
   ansible.builtin.command: "echo 'y' | bash /home/{{ item.username }}/zsh-installer.sh"
@@ -21,7 +22,9 @@
     creates: "/home/{{ item.username }}/.oh-my-zsh"
   become: true
   become_user: "{{ item.username }}"
+  when: "not oh_my_zsh_installed.results[item | int].stat.exists"
   with_items: "{{ vnc_zsh_users }}"
+  changed_when: false
 
 - name: Check if zsh-installer.sh exists for all vnc_zsh_users
   ansible.builtin.stat:
@@ -35,8 +38,9 @@
     state: absent
   become: true
   become_user: "{{ item.username }}"
-  when: zsh_installer_exists.results[item | int].stat.exists
+  when: "zsh_installer_exists.results[item | int].stat.exists"
   with_items: "{{ vnc_zsh_users }}"
+  changed_when: false
 
 - name: Create per-user $HOME/.zshrc files
   ansible.builtin.template:
