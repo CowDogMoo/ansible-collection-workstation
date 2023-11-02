@@ -27,6 +27,7 @@ vnc_zsh_install_packages:
   - less # Pager program similar to more
   - locales # System localization configuration
   - net-tools # NETwork TOOLS for the Linux networking community
+  - procps # ps and other utilities that report process status
   - rsync # Fast remote file copy program (like rcp)
   - software-properties-common # Manage the repositories that you install software from
   - sudo # Provide limited super user privileges to specific users
