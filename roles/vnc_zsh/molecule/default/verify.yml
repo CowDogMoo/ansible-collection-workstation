@@ -89,3 +89,40 @@
               - "vnc_passwd_file.stat.exists"
               - "vnc_passwd_file.stat.mode == '0600'"
             with_items: "{{ vnc_zsh_users }}"
+
+        - name: Confirm .oh-my-zsh is installed for all vnc_zsh_users
+          ansible.builtin.stat:
+            path: "/home/{{ item.username }}/.oh-my-zsh"
+          register: oh_my_zsh_test
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Assert .oh-my-zsh installation
+          ansible.builtin.assert:
+            that:
+              - "oh_my_zsh_test.results[item | int].stat.exists"
+            with_items: "{{ vnc_zsh_users }}"
+
+        - name: Confirm zsh-installer.sh is removed for all vnc_zsh_users
+          ansible.builtin.stat:
+            path: "/home/{{ item.username }}/zsh-installer.sh"
+          register: zsh_installer_test
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Assert zsh-installer.sh removal
+          ansible.builtin.assert:
+            that:
+              - "not zsh_installer_test.results[item | int].stat.exists"
+            with_items: "{{ vnc_zsh_users }}"
+
+        - name: Confirm per-user $HOME/.zshrc files exist for all vnc_zsh_users
+          ansible.builtin.stat:
+            path: "/home/{{ item.username }}/.zshrc"
+          register: zshrc_test
+          with_items: "{{ vnc_zsh_users }}"
+
+        - name: Assert per-user $HOME/.zshrc files
+          ansible.builtin.assert:
+            that:
+              - "zshrc_test.results[item | int].stat.exists"
+              - "zshrc_test.results[item | int].stat.mode == '0744'"
+            with_items: "{{ vnc_zsh_users }}"

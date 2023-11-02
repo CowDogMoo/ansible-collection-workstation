@@ -2,10 +2,10 @@
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # oh-my-zsh components
-export ZSH=$HOME/.oh-my-zsh
-vnc_zsh_theme="{{ vnc_zsh_theme }}"
-source $ZSH/oh-my-zsh.sh
-plugins=(git)
+export ZSH="${HOME}/.oh-my-zsh"
+export ZSH_THEME="af-magic"
+source "${ZSH}/oh-my-zsh.sh"
+export plugins=(asdf git)
 
 # start_vnc starts VNC with a random password
 # whenever a container is spun up.
