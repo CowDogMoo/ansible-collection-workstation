@@ -6,7 +6,13 @@ export ZSH="${HOME}/.oh-my-zsh"
 export ZSH_THEME="af-magic"
 source "${ZSH}/oh-my-zsh.sh"
 export plugins=(asdf git)
-source "${HOME}/{{ item.username }}/.oh-my-zsh/oh-my-zsh.sh"
+homedir=/home
+# Check if root and if root, set the path to /root
+if [[ $EUID -eq 0 ]]; then
+	homedir=/root
+fi
+
+source "${homedir}/{{ item.username }}/.oh-my-zsh/oh-my-zsh.sh"
 
 # start_vnc starts VNC with a random password
 # whenever a container is spun up.

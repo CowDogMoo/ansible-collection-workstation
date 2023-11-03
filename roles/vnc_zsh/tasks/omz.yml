@@ -53,17 +53,15 @@
   with_items: "{{ vnc_zsh_users }}"
   changed_when: false
 
-# ... (rest of your tasks)
-
-# - name: Remove zsh-installer.sh for all vnc_zsh_users
-#   ansible.builtin.file:
-#     path: "/home/{{ item.username }}/zsh-installer.sh"
-#     state: absent
-#   become: true
-#   become_user: "{{ item.username }}"
-#   when: "zsh_installer_exists.results[item | int].stat.exists"
-#   with_items: "{{ vnc_zsh_users }}"
-#   changed_when: false
+- name: Remove zsh-installer.sh for all vnc_zsh_users
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/zsh-installer.sh"
+    state: absent
+  become: true
+  become_user: "{{ item.username }}"
+  when: "zsh_installer_exists.results[item | int].stat.exists"
+  with_items: "{{ vnc_zsh_users }}"
+  changed_when: false
 
 - name: Create per-user $HOME/.zshrc files
   ansible.builtin.template:
