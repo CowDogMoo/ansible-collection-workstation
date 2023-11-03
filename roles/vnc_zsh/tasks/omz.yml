@@ -32,6 +32,29 @@
   register: zsh_installer_exists
   with_items: "{{ vnc_zsh_users }}"
 
+- name: Ensure zsh-installer.sh is executable for all vnc_zsh_users
+  ansible.builtin.file:
+    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/zsh-installer.sh"
+    mode: "0755"
+  become: true
+  become_user: "{{ item.username }}"
+  when: "zsh_installer_exists.results[item | int].stat.exists"
+  with_items: "{{ vnc_zsh_users }}"
+  changed_when: false
+
+- name: Execute zsh-installer.sh for all vnc_zsh_users
+  ansible.builtin.shell:
+    cmd: "bash {{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/zsh-installer.sh"
+  args:
+    executable: "/bin/bash"
+  become: true
+  become_user: "{{ item.username }}"
+  when: "zsh_installer_exists.results[item | int].stat.exists"
+  with_items: "{{ vnc_zsh_users }}"
+  changed_when: false
+
+# ... (rest of your tasks)
+
 # - name: Remove zsh-installer.sh for all vnc_zsh_users
 #   ansible.builtin.file:
 #     path: "/home/{{ item.username }}/zsh-installer.sh"
