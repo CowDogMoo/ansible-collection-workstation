@@ -10,8 +10,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/fatih/color"
 	"github.com/l50/goutils/v2/git"
 	"github.com/l50/goutils/v2/logging"
+	"github.com/l50/goutils/v2/sys"
 	"github.com/spf13/afero"
 )
 
@@ -98,6 +100,33 @@ func RunMoleculeTests() error {
 		return fmt.Errorf("encountered errors: %v", errors)
 	} else {
 		logger.Printf("Molecule tests passed for %d/%d role(s).", len(roles), len(roles))
+	}
+
+	return nil
+}
+
+// LintAnsible runs the ansible-lint linter.
+//
+// Example usage:
+//
+// ```bash
+// mage lintansible
+// ```
+//
+// **Returns:**
+//
+// error: An error if any issue occurs while trying to run the linter.
+func LintAnsible() error {
+	cmds := []string{
+		"ansible-lint",
+		"--force-color",
+		"-c",
+		".hooks/linters/ansible-lint.yaml",
+	}
+
+	fmt.Println(color.YellowString("Running ansible-lint."))
+	if _, err := sys.RunCommand(cmds[0], cmds[1:]...); err != nil {
+		return fmt.Errorf(color.RedString("failed to run ansible-lint: %v", err))
 	}
 
 	return nil
