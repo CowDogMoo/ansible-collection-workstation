@@ -17,7 +17,7 @@
   changed_when: false
 
 - name: Install oh-my-zsh for all vnc_zsh_users
-  ansible.builtin.command: "echo 'y' | bash /home/{{ item.username }}/zsh-installer.sh"
+  ansible.builtin.command: "echo 'y' | ZSH=/home/{{ item.username }}/.oh-my-zsh bash /home/{{ item.username }}/zsh-installer.sh"
   args:
     creates: "/home/{{ item.username }}/.oh-my-zsh"
   become: true
