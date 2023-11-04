@@ -5,9 +5,9 @@
     DEBIAN_FRONTEND: noninteractive
   roles:
     - role: cowdogmoo.workstation.vnc_zsh
-    - role: cowdogmoo.workstation.asdf
-    # - role: l50.sliver
+    - role: l50.sliver
     - role: cowdogmoo.firefox
+    - role: cowdogmoo.workstation.asdf
   tasks:
     - name: Install packages
       become: true
