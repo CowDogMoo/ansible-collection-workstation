@@ -9,30 +9,9 @@
     - role: cowdogmoo.firefox
     - role: cowdogmoo.workstation.asdf
   tasks:
-    - name: Install packages
-      become: true
-      ansible.builtin.apt:
-        name: "{{ install_packages }}"
-        state: present
-        update_cache: true
-      when: ansible_distribution_release == "kali-rolling"
-
-    - name: Install pip packages
-      ansible.builtin.pip:
-        name: "{{ item }}"
-        state: present
-      when: ansible_distribution_release == "kali-rolling"
-      loop: "{{ pip_packages }}"
-
     - name: Add MSF tools to PATH
       become: true
       ansible.builtin.lineinfile:
         path: /etc/zsh/zshrc
         line: export PATH=$PATH:/usr/share/metasploit-framework/tools/exploit
       when: ansible_distribution_release == "kali-rolling"
-
-    - name: Clean up installation script
-      ansible.builtin.file:
-        path: /tmp/install.sh
-        state: absent
-      changed_when: false
