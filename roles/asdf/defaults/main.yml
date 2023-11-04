@@ -1,10 +1,15 @@
 ---
 # Destination folder for cloning the asdf repository
 asdf_dest_folder: "{{ ansible_env.HOME }}/.asdf"
+# Set to true to install for all users
+asdf_install_for_all_users: false
 # Git repository URL of asdf
 asdf_git_repo: "https://github.com/asdf-vm/asdf.git"
-# Languages to be setup by `setup_asdf.sh` script
-asdf_languages: "golang python ruby"
+# Languages to configure with asdf
+asdf_languages:
+  - golang
+  - python
+  - ruby
 # OS family variable used for loading OS-specific tasks
 asdf_os_family: "{{ ansible_os_family | lower }}"
 # Local path to the setup script
@@ -15,3 +20,7 @@ asdf_setup_script_url: "https://raw.githubusercontent.com/l50/dotfiles/main/file
 asdf_tool_versions: "{{ ansible_env.HOME }}/.tool-versions"
 # URL to download the `.tool-versions` file
 asdf_tool_versions_url: "https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"
+# Users to setup with asdf
+asdf_users:
+  - username: "root" # Username for the vnc configuration for root user
+    usergroup: "root" # Usergroup for the vnc configuration for root user

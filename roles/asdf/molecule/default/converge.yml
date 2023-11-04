@@ -3,3 +3,18 @@
   hosts: all
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+      vars:
+        asdf_install_for_all_users: true
+        asdf_install_plugins:
+          - name: ruby
+            version: 3.2.2
+          - name: golang
+            version: 1.21.3
+          - name: python
+            version: 3.12.0
+          - name: kubectl
+            version: 1.28.2
+          - name: helm
+            version: 3.13.1
+          - name: packer
+            version: 1.9.4

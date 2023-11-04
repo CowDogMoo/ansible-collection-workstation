@@ -63,24 +63,27 @@
           - asdf_tool_versions_stat.stat.exists
           - asdf_tool_versions_stat.stat.mode == "0644"
 
-    - name: Check if ~/.asdf directory is created
-      ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.asdf"
-      register: asdf_directory
-
-    - name: Assert that ~/.asdf directory exists
+    - name: Assert asdf directory based on asdf_install_for_all_users
       ansible.builtin.assert:
         that:
-          - asdf_directory.stat.exists
-          - asdf_directory.stat.isdir
-        fail_msg: "{{ ansible_env.HOME }}/.asdf directory does not exist or is not a directory"
-        success_msg: "{{ ansible_env.HOME }}/.asdf directory exists and is a directory"
+          - "'/usr/local/asdf' == asdf_dest_folder when asdf_install_for_all_users else '{{ ansible_env.HOME }}/.asdf' == asdf_dest_folder"
+
+    - name: Check if ~/.asdf or /usr/local/asdf directory is created
+      ansible.builtin.stat:
+        path: "{{ asdf_dest_folder }}"
+      register: asdf_directory
 
     - name: Check ASDF path in PATH variable in shell profile
       ansible.builtin.lineinfile:
-        path: "/root/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-        line: "export PATH=$PATH:$ASDF_PATH"
+        path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+        line: "export PATH=$PATH:{{ asdf_dest_folder }}/bin"
         state: present
+
+    - name: Verify ASDF is accessible
+      ansible.builtin.command: "{{ asdf_dest_folder }}/bin/asdf --version"
+      register: asdf_check
+      failed_when: asdf_check.rc != 0
+      changed_when: false
 
     - name: Check sourcing of asdf.sh in shell profile
       ansible.builtin.lineinfile:
@@ -92,12 +95,6 @@
       ansible.builtin.command:
         cmd: "cat {{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
       register: shell_profile_contents
-      changed_when: false
-
-    - name: Verify ASDF is accessible
-      ansible.builtin.command: "/root/.asdf/bin/asdf --version"
-      register: asdf_check
-      failed_when: asdf_check.rc != 0
       changed_when: false
 
     - name: Simulate failed package installation
@@ -125,3 +122,16 @@
           ansible.builtin.command: mv /usr/bin/dnf_backup /usr/bin/dnf
           when: ansible_facts.os_family == 'RedHat'
           changed_when: false
+
+    - name: Check if necessary items exist for each user
+      ansible.builtin.stat:
+        path: "/home/{{ item.user.username }}/{{ item_check.path }}"
+      loop: "{{ asdf_users | product(item_checks) | list }}"
+      loop_control:
+        loop_var: user_item_check
+      vars:
+        item_checks:
+          - name: .asdf directory
+            path: .asdf
+          - name: .tool-versions file
+            path: .tool-versions

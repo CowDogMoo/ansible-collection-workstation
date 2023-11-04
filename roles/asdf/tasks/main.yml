@@ -8,9 +8,13 @@
 - name: Clone asdf
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
-    dest: "{{ asdf_dest_folder }}"
+    dest: "{{ asdf_install_for_all_users | ternary('/usr/local/asdf', '/home/' + item.username + '/.asdf') }}"
     clone: yes
     update: no
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: asdf_users is defined
 
 - name: Check and Download necessary files
   ansible.builtin.include_tasks: "{{ role_path }}/tasks/check-and-download.yml"
@@ -49,38 +53,65 @@
 
 - name: Execute setup_asdf.sh
   ansible.builtin.shell:
-    cmd: "{{ asdf_setup_script }} {{ asdf_languages }}"
+    cmd: "{{ asdf_setup_script }} {{ asdf_languages | join(' ') }}"
   args:
     executable: "{{ ansible_user_shell }}"
   when: >
     ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh') and
     (check_results.results | selectattr('stat.exists', 'equalto', false) | list | length > 0)
   changed_when: false
+  become: "{{ asdf_install_for_all_users }}"
+
+- name: Ensure .bashrc or .zshrc exists
+  ansible.builtin.copy:
+    dest: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    content: ""
+    force: no
+    mode: "0644"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: asdf_users is defined
 
 - name: Update shell profile with ASDF_PATH
   ansible.builtin.lineinfile:
-    path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: 'ASDF_PATH="{{ ansible_env.HOME }}/.asdf"'
+    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: 'export ASDF_PATH="{{ (item.username == ''root'') | ternary(''/root'', ''/home/'' + item.username) }}/.asdf"'
     state: present
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: asdf_users is defined
 
 - name: Update shell profile with updated PATH
   ansible.builtin.lineinfile:
-    path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: "export PATH=$PATH:$ASDF_PATH"
+    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: 'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"'
     state: present
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: asdf_users is defined
 
 - name: Update shell profile with ASDF source command
   ansible.builtin.lineinfile:
-    path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: '. "{{ ansible_env.HOME }}/.asdf/asdf.sh"'
+    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: '. "{{ (item.username == ''root'') | ternary(''/root'', ''/home/'' + item.username) }}/.asdf/asdf.sh"'
     state: present
-  changed_when: false
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: asdf_users is defined
 
 - name: Reload shell to apply ASDF settings
   ansible.builtin.shell:
-    cmd: "source {{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-  when:
-    - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
+    cmd: "source {{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
   args:
     executable: "{{ ansible_user_shell }}"
   changed_when: false
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when:
+    - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
+    - asdf_users is defined
