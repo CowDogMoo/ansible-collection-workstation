@@ -5,7 +5,7 @@
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
       vars:
         asdf_install_for_all_users: true
-        asdf_install_plugins:
+        asdf_languages:
           - name: ruby
             version: 3.2.2
           - name: golang

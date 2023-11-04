@@ -63,10 +63,17 @@
           - asdf_tool_versions_stat.stat.exists
           - asdf_tool_versions_stat.stat.mode == "0644"
 
-    - name: Assert asdf directory based on asdf_install_for_all_users
+    - name: Assert asdf directory is '/usr/local/asdf' when asdf_install_for_all_users is true
       ansible.builtin.assert:
         that:
-          - "'/usr/local/asdf' == asdf_dest_folder when asdf_install_for_all_users else '{{ ansible_env.HOME }}/.asdf' == asdf_dest_folder"
+          - asdf_dest_folder == '/usr/local/asdf'
+      when: asdf_install_for_all_users
+
+    - name: Assert asdf directory is `~/.asdf` when `asdf_install_for_all_users` is false
+      ansible.builtin.assert:
+        that:
+          - asdf_dest_folder == '{{ ansible_env.HOME }}/.asdf'
+      when: not asdf_install_for_all_users
 
     - name: Check if ~/.asdf or /usr/local/asdf directory is created
       ansible.builtin.stat:
@@ -123,9 +130,9 @@
           when: ansible_facts.os_family == 'RedHat'
           changed_when: false
 
-    - name: Check if necessary items exist for each user
+    - name: Confirm necessary files are present for each user
       ansible.builtin.stat:
-        path: "/home/{{ item.user.username }}/{{ item_check.path }}"
+        path: "/home/{{ user_item_check.0.username }}/{{ user_item_check.1.path }}"
       loop: "{{ asdf_users | product(item_checks) | list }}"
       loop_control:
         loop_var: user_item_check

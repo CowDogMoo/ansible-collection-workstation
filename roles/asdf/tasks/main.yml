@@ -32,18 +32,18 @@
   ansible.builtin.stat:
     path: "{{ asdf_setup_script }}"
 
-- name: Check if necessary items exist
+- name: Check if necessary items exist for each user
   ansible.builtin.stat:
-    path: "{{ item.path }}"
-  loop:
-    - name: .asdf directory
-      path: "{{ ansible_env.HOME }}/.asdf"
-    - name: .tool-versions file
-      path: "{{ ansible_env.HOME }}/.tool-versions"
-    - name: ruby plugin directory
-      path: "{{ ansible_env.HOME }}/.asdf/plugins/ruby"
+    path: "/home/{{ item.0.username }}/{{ item.1.path }}"
+  loop: "{{ asdf_users | product(item_checks) | list }}"
   loop_control:
     loop_var: item
+  vars:
+    item_checks:
+      - name: .asdf directory
+        path: .asdf
+      - name: .tool-versions file
+        path: .tool-versions
   register: check_results
 
 - name: Ensure setup_asdf.sh is executable
