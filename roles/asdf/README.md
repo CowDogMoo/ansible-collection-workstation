@@ -30,6 +30,7 @@ runtime versions on a per-project basis.
 | `asdf_users` | `None` | Users to setup with asdf |
 | `- username` | `root` |  |
 | `usergroup` | `root` |  |
+| `log_path` | `/root/.ansible/ansible.log` |  |
 | Variable | Default Value (Debian) | Description |
 | --- | --- | --- |
 | `asdf_install_packages` | `curl, git, wget` | Debian packages to be installed |

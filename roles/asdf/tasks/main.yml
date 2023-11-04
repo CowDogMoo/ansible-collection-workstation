@@ -116,10 +116,22 @@
     - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
     - asdf_users is defined
 
-- name: Setup log rotation for Ansible logs
+- name: Ensure log directory exists with correct permissions for each user
+  ansible.builtin.file:
+    path: "{{ item.log_path | dirname }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup }}"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: asdf_users is defined
+
+- name: Setup log rotation for Ansible logs for each user
   ansible.builtin.copy:
     content: |
-      {{ ansible_env.HOME }}/.ansible/logs/workstation.log {
+      {{ item.log_path }} {
           rotate 4
           weekly
           prerotate
@@ -135,9 +147,13 @@
           notifempty
           compress
           delaycompress
-          create 0644 {{ ansible_user_id }} {{ ansible_user_gid }}
+          create 0644 {{ item.username }} {{ item.usergroup }}
       }
-    dest: /etc/logrotate.d/ansible-workstation
+    dest: "/etc/logrotate.d/ansible-{{ item.username }}"
     owner: root
     group: root
     mode: "0644"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: asdf_users is defined
