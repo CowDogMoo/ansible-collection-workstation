@@ -115,3 +115,29 @@
   when:
     - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
     - asdf_users is defined
+
+- name: Setup log rotation for Ansible logs
+  ansible.builtin.copy:
+    content: |
+      {{ ansible_env.HOME }}/.ansible/logs/workstation.log {
+          rotate 4
+          weekly
+          prerotate
+              if [[ ! -e /var/lib/logrotate/ansible-stamp || $(find /var/lib/logrotate -name ansible-stamp -mtime +14) ]]; then
+                  exit 0
+              fi
+              exit 1
+          endscript
+          postrotate
+              touch /var/lib/logrotate/ansible-stamp
+          endscript
+          missingok
+          notifempty
+          compress
+          delaycompress
+          create 0644 {{ ansible_user_id }} {{ ansible_user_gid }}
+      }
+    dest: /etc/logrotate.d/ansible-workstation
+    owner: root
+    group: root
+    mode: "0644"
