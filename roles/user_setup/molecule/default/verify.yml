@@ -1,0 +1,47 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+      when: user_setup_default_users is not defined
+
+    - name: Set OS family variable
+      ansible.builtin.set_fact:
+        asdf_os_family: "{{ ansible_facts['os_family'] | lower }}"
+
+    - name: Include OS-specific variables
+      ansible.builtin.include_vars:
+        file: "../../vars/{{ asdf_os_family }}.yml"
+
+    - name: Include OS-Specific tasks
+      ansible.builtin.include_tasks: "../../tasks/setup_{{ ansible_os_family | lower }}.yml"
+
+    - name: Check user exists
+      ansible.builtin.command: "id -un {{ item.username }}"
+      register: user_check
+      changed_when: false
+      failed_when: user_check.rc != 0
+      loop: "{{ user_setup_default_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+
+    - name: Check user is in sudoers
+      ansible.builtin.command: "grep '{{ item.username }}' /etc/sudoers"
+      register: sudoers_check
+      changed_when: false
+      failed_when: sudoers_check.rc != 0
+      loop: "{{ user_setup_default_users }}"
+      when: item.sudo
+      loop_control:
+        label: "{{ item.username }}"
+
+    - name: Assert user creation
+      ansible.builtin.assert:
+        that:
+          - "'{{ item.username }}' in (user_check.results | map(attribute='stdout') | list)"
+      loop: "{{ user_setup_default_users }}"
+      loop_control:
+        label: "{{ item.username }}"

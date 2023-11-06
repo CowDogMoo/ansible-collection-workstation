@@ -1,0 +1,31 @@
+---
+- name: Include OS-specific variables.
+  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+
+- name: Include OS-Specific tasks
+  ansible.builtin.include_tasks: "setup_{{ ansible_os_family | lower }}.yml"
+
+- name: Ensure groups exist for users
+  become: true
+  ansible.builtin.group:
+    name: "{{ item.usergroup }}"
+    state: present
+  loop: "{{ user_setup_default_users }}"
+  when: item.usergroup is defined and item.usergroup != ''
+
+- name: Create users
+  become: true
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    group: "{{ item.usergroup }}"
+    shell: "{{ item.shell }}"
+  loop: "{{ user_setup_default_users }}"
+
+- name: Provide sudoers access for relevant users
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/sudoers
+    insertafter: "root    ALL=(ALL)       ALL"
+    block: "{{ item.username }} ALL=(ALL:ALL) NOPASSWD:ALL"
+  when: item.sudo
+  loop: "{{ user_setup_default_users }}"
