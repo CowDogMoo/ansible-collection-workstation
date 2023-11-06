@@ -1,0 +1,12 @@
+---
+{{ item.path }} {
+    rotate {{ item.options.rotate }}
+    {{ item.options.frequency }}
+    {% if item.options.compress %}compress{% endif %}
+    {% if item.options.missingok %}missingok{% endif %}
+    {% if item.options.notifempty %}notifempty{% endif %}
+    {% if item.options.create %}
+    create 0644 {{ item.options.owner | default('root') }} {{ item.options.group | default('root') }}
+    {% endif %}
+    {% if item.options.dateext %}dateext{% endif %}
+}

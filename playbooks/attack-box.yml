@@ -4,8 +4,13 @@
   environment:
     DEBIAN_FRONTEND: noninteractive
   roles:
+    - role: cowdogmoo.workstation.logging
+      logging_directories:
+        - "/var/log/ansible"
+      logging_logrotate_interval: "daily"
+      logging_logrotate_keep: 7
     - role: cowdogmoo.workstation.vnc_zsh
-    - role: l50.sliver
+    # - role: l50.sliver
     - role: cowdogmoo.firefox
     - role: cowdogmoo.workstation.asdf
   tasks:

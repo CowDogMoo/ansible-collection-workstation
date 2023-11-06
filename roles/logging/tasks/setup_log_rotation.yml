@@ -1,0 +1,8 @@
+---
+- name: Setup log rotation for application logs
+  ansible.builtin.template:
+    src: logrotate.j2
+    dest: "/etc/logrotate.d/{{ item.name | default('ansible') }}"
+    mode: "0644"
+  loop: "{{ logging_log_rotation_configs | default([logging_log_rotation_defaults]) }}"
+  when: logging_log_rotation_configs is defined or logging_log_rotation_defaults is defined

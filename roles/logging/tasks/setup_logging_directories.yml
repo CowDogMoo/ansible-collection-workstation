@@ -1,0 +1,9 @@
+---
+- name: Ensure logging directories exist with correct permissions
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode | default('0755') }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+  loop: "{{ logging_directories }}"
