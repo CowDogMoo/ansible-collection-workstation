@@ -25,24 +25,23 @@ RedHat-based distributions.
 Here's a table of role variables and their default values:
 
 <!--- vars table -->
-
-| Variable                        | Default Value            | Description |
-| ------------------------------- | ------------------------ | ----------- |
-| `logging_directories`           | `None`                   |             |
-| `- path`                        | `/var/log/ansible`       |             |
-| `owner`                         | `root`                   |             |
-| `group`                         | `root`                   |             |
-| `mode`                          | `0755`                   |             |
-| `logging_log_rotation_defaults` | `None`                   |             |
-| `path`                          | `/var/log/ansible/*.log` |             |
-| `options`                       | `None`                   |             |
-| `rotate`                        | `4`                      |             |
-| `frequency`                     | `weekly`                 |             |
-| `compress`                      | `True`                   |             |
-| `missingok`                     | `True`                   |             |
-| `notifempty`                    | `True`                   |             |
-| `create`                        | `True`                   |             |
-| `dateext`                       | `True`                   |             |
+| Variable | Default Value | Description |
+| --- | --- | --- |
+| `logging_directories` | `None` |  |
+| `- path` | `/var/log/ansible` |  |
+| `owner` | `root` |  |
+| `group` | `root` |  |
+| `mode` | `0755` |  |
+| `logging_log_rotation_defaults` | `None` |  |
+| `path` | `/var/log/ansible/*.log` |  |
+| `options` | `None` |  |
+| `rotate` | `4` |  |
+| `frequency` | `weekly` |  |
+| `compress` | `True` |  |
+| `missingok` | `True` |  |
+| `notifempty` | `True` |  |
+| `create` | `True` |  |
+| `dateext` | `True` |  |
 
 <!--- end vars table -->
 
