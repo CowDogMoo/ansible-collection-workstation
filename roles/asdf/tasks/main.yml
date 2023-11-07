@@ -3,7 +3,12 @@
   ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
 
 - name: Include OS-Specific tasks
-  ansible.builtin.include_tasks: "setup-{{ asdf_os_family | lower }}.yml"
+  ansible.builtin.include_tasks: "setup_{{ ansible_os_family | lower }}.yml"
+
+- name: Set default username
+  ansible.builtin.set_fact:
+    vnc_zsh_default_username: "kali"
+  when: ansible_distribution_release == "kali-rolling"
 
 - name: Clone asdf
   ansible.builtin.git:
@@ -17,7 +22,7 @@
   when: asdf_users is defined
 
 - name: Check and Download necessary files
-  ansible.builtin.include_tasks: "{{ role_path }}/tasks/check-and-download.yml"
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
   loop:
     - name: setup_asdf.sh
       path: "{{ asdf_setup_script }}"
@@ -115,45 +120,3 @@
   when:
     - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
     - asdf_users is defined
-
-- name: Ensure log directory exists with correct permissions for each user
-  ansible.builtin.file:
-    path: "{{ item.log_path | dirname }}"
-    state: directory
-    mode: "0755"
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup }}"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when: asdf_users is defined
-
-- name: Setup log rotation for Ansible logs for each user
-  ansible.builtin.copy:
-    content: |
-      {{ item.log_path }} {
-          rotate 4
-          weekly
-          prerotate
-              if [[ ! -e /var/lib/logrotate/ansible-stamp || $(find /var/lib/logrotate -name ansible-stamp -mtime +14) ]]; then
-                  exit 0
-              fi
-              exit 1
-          endscript
-          postrotate
-              touch /var/lib/logrotate/ansible-stamp
-          endscript
-          missingok
-          notifempty
-          compress
-          delaycompress
-          create 0644 {{ item.username }} {{ item.usergroup }}
-      }
-    dest: "/etc/logrotate.d/ansible-{{ item.username }}"
-    owner: root
-    group: root
-    mode: "0644"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when: asdf_users is defined

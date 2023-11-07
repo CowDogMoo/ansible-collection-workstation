@@ -24,4 +24,3 @@ asdf_tool_versions_url: "https://raw.githubusercontent.com/l50/dotfiles/main/.to
 asdf_users:
   - username: "root" # Username for the vnc configuration for root user
     usergroup: "root" # Usergroup for the vnc configuration for root user
-    log_path: "/root/.ansible/ansible.log" # Log path for the ansible log for root user

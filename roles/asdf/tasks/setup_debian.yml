@@ -11,3 +11,4 @@
     ansible_failed_result is defined and
     ("No package matching" in ansible_failed_result.msg or
     "Unable to fetch some archives" in ansible_failed_result.msg)
+  tags: packages

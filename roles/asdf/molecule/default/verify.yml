@@ -15,6 +15,9 @@
       ansible.builtin.include_vars:
         file: "../../vars/{{ asdf_os_family }}.yml"
 
+    - name: Include OS-Specific tasks
+      ansible.builtin.include_tasks: "../../tasks/setup_{{ ansible_os_family | lower }}.yml"
+
     - name: Check if necessary packages are installed on Debian-based systems
       ansible.builtin.command: "dpkg -l {{ item }}"
       changed_when: false
