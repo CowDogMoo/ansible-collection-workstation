@@ -2,8 +2,7 @@
 
 This role configures logging for applications on Unix-like systems, ensuring
 that logs are properly rotated and maintained. It supports Debian and
-RedHat-based distributions and is intended to be used alongside roles such as
-`user_setup` that configure user accounts.
+RedHat-based distributions.
 
 ---
 
@@ -26,23 +25,24 @@ RedHat-based distributions and is intended to be used alongside roles such as
 Here's a table of role variables and their default values:
 
 <!--- vars table -->
-| Variable | Default Value | Description |
-| --- | --- | --- |
-| `logging_directories` | `None` |  |
-| `- path` | `/var/log/ansible` |  |
-| `owner` | `root` |  |
-| `group` | `root` |  |
-| `mode` | `0755` |  |
-| `logging_log_rotation_defaults` | `None` |  |
-| `path` | `/var/log/ansible/*.log` |  |
-| `options` | `None` |  |
-| `rotate` | `4` |  |
-| `frequency` | `weekly` |  |
-| `compress` | `True` |  |
-| `missingok` | `True` |  |
-| `notifempty` | `True` |  |
-| `create` | `True` |  |
-| `dateext` | `True` |  |
+
+| Variable                        | Default Value            | Description |
+| ------------------------------- | ------------------------ | ----------- |
+| `logging_directories`           | `None`                   |             |
+| `- path`                        | `/var/log/ansible`       |             |
+| `owner`                         | `root`                   |             |
+| `group`                         | `root`                   |             |
+| `mode`                          | `0755`                   |             |
+| `logging_log_rotation_defaults` | `None`                   |             |
+| `path`                          | `/var/log/ansible/*.log` |             |
+| `options`                       | `None`                   |             |
+| `rotate`                        | `4`                      |             |
+| `frequency`                     | `weekly`                 |             |
+| `compress`                      | `True`                   |             |
+| `missingok`                     | `True`                   |             |
+| `notifempty`                    | `True`                   |             |
+| `create`                        | `True`                   |             |
+| `dateext`                       | `True`                   |             |
 
 <!--- end vars table -->
 
