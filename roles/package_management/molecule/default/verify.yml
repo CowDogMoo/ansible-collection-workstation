@@ -1,0 +1,46 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    # - name: Include OS-specific variables
+    #   ansible.builtin.include_vars:
+    #     file: "../../vars/{{ ansible_os_family | lower }}.yml"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../vars/main.yml"
+
+    - name: Exclude unavailable packages on Red Hat
+      ansible.builtin.set_fact:
+        package_management_common_install_packages: "{{ package_management_common_install_packages | difference(package_management_redhat_excluded_packages) }}"
+      when: ansible_os_family == 'RedHat'
+
+    - name: Check if necessary packages are installed (Debian)
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      register: package_status
+      with_items: "{{ package_management_common_install_packages }}"
+      when: ansible_os_family == 'Debian'
+      failed_when: package_status is failed
+      changed_when: false
+
+    - name: Check if necessary packages are installed (Red Hat)
+      ansible.builtin.yum:
+        name: "{{ item }}"
+        state: present
+      register: package_status
+      with_items: "{{ package_management_common_install_packages }}"
+      when: ansible_os_family == 'RedHat'
+      failed_when: package_status is failed
+      changed_when: false
+
+    - name: Assert all required packages are installed
+      ansible.builtin.assert:
+        that: "item.changed == false"
+        fail_msg: "{{ item.item }} is not installed"
+        success_msg: "{{ item.item }} is installed"
+      loop: "{{ package_status.results }}"
+      loop_control:
+        label: "{{ item.item }}"

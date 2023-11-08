@@ -1,0 +1,30 @@
+---
+# Common packages to be installed on all systems
+package_management_common_install_packages:
+  - bash
+  - ca-certificates
+  - colordiff
+  - dbus-x11
+  - file
+  - git
+  - inetutils-ping
+  - less
+  - net-tools
+  - procps
+  - rsync
+  - sudo
+  - terminator
+  - wget
+  - vim
+  - zsh
+  - zsh-autosuggestions
+
+# Packages to be installed on Debian systems
+package_management_redhat_excluded_packages:
+  - curl
+  - inetutils-ping
+  - zsh-autosuggestions
+
+# Common packages to be cleaned up on all systems
+package_management_common_cleanup_packages:
+  - xfce4-power-manager
