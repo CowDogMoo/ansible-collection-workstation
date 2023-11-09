@@ -6,14 +6,19 @@ import json
 
 DOCUMENTATION = r'''
 ---
-module: vnc_pw
-short_description: Manage VNC passwords for users.
+module: merge_list_dicts_into_list
+short_description: Merge list of dictionaries with a list.
 description:
-  - Generates or retrieves VNC passwords for a list of users.
+  - Merges a list of dictionaries with a list by adding an 'uid' key to each dictionary.
 options:
-  vnc_zsh_users:
+  ls_dicts:
     description:
-      - List of users to manage VNC passwords for.
+      - List of dictionaries to be merged.
+    type: list
+    required: True
+  ls:
+    description:
+      - List to merge with the list of dictionaries.
     type: list
     required: True
 '''

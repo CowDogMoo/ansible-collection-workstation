@@ -1,8 +1,6 @@
 #!/usr/bin/python3
-# Author: Jayson Grace <jayson.e.grace@gmail.com>
 
 from ansible.module_utils.basic import AnsibleModule
-import json
 import os
 import secrets
 import string
@@ -10,55 +8,53 @@ import subprocess
 
 DOCUMENTATION = r'''
 ---
-module: merge_list_dicts_into_list
-short_description: Merge list of dictionaries with a list.
+module: vnc_pw
+short_description: Manage VNC passwords for users.
 description:
-  - Merges a list of dictionaries with a list by adding an 'uid' key to each dictionary.
+  - Generates or retrieves VNC passwords for a list of users.
 options:
-  ls_dicts:
+  vnc_users:
     description:
-      - List of dictionaries to be merged.
-    type: list
-    required: True
-  ls:
-    description:
-      - List to merge with the list of dictionaries.
+      - List of users to manage VNC passwords for.
     type: list
     required: True
 '''
 
 def file_exists(file):
-    if os.path.isfile(file):
-        return True
-    else:
-        return False
+    return os.path.isfile(file)
 
 def gen_pw(size):
-    return ''.join((secrets.choice(string.ascii_letters + string.digits) for i in range(size)))
+    return ''.join(secrets.choice(string.ascii_letters + string.digits) for i in range(size))
 
 def run_cmd(cmd):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
-    p_status = p.wait()
+    p.wait()
     return output
+
+def get_home_dir(username):
+    return '/root' if username == 'root' else f"/home/{username}"
 
 def run_module():
     module_args = dict(
-	vnc_zsh_users = dict(type='list', required=True),
+        vnc_users=dict(type='list', required=True),
     )
 
     module = AnsibleModule(
-	argument_spec=module_args,
-	supports_check_mode=True
+        argument_spec=module_args,
+        supports_check_mode=True
     )
 
-    vnc_users = module.params['vnc_zsh_users']
+    vnc_users = module.params['vnc_users']
 
     for user in vnc_users:
-        if not file_exists(f"/home/{user['username']}/.vnc/passwd"):
+        home_dir = get_home_dir(user['username'])
+        passwd_file = f"{home_dir}/.vnc/passwd"
+        
+        if not file_exists(passwd_file):
             user['pass'] = gen_pw(8)
         else:
-            command = f"vncpwd /home/{user['username']}/.vnc/passwd"
+            command = f"vncpwd {passwd_file}"
             user['pass'] = run_cmd(command).strip().decode('utf-8').split()[1]
 
     module.exit_json(changed=False, result=vnc_users)

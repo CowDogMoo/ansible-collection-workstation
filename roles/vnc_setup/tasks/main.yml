@@ -1,0 +1,61 @@
+---
+- name: Install vncpwd
+  ansible.builtin.import_tasks: vncpwd.yml
+
+- name: Create .vnc dirs
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.vnc"
+    state: directory
+    mode: 0700
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+  changed_when: false
+  with_items: "{{ vnc_users }}"
+
+- name: Generate random passwords for vnc_users with vnc_pw.py
+  cowdogmoo.workstation.vnc_pw:
+    vnc_users: "{{ vnc_users }}"
+  register: updated_data
+
+- name: Update vnc_users with the random generated passwords
+  ansible.builtin.set_fact:
+    vnc_users_pw: "{{ vnc_users_pw | default([]) + [item] }}"
+  with_items: "{{ updated_data.result }}"
+
+- name: Ensure .vnc directory exists for each user
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.vnc"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: '0700'
+  loop: "{{ vnc_users }}"
+  become: true
+
+- name: Set random passwords for vnc_users (if one isn't already set)
+  ansible.builtin.shell: |
+    if [[ ! -f /home/{{ item.username }}/.vnc/passwd ]]; then
+      mkdir -p /home/{{ item.username }}/.vnc
+      chown {{ item.username }}:{{ item.usergroup | default(item.username) }} /home/{{ item.username }}/.vnc
+      chmod 0700 /home/{{ item.username }}/.vnc
+      echo "{{ item.pass }}" | vncpwd -f > /home/{{ item.username }}/.vnc/passwd
+      chown {{ item.username }}:{{ item.usergroup | default(item.username) }} /home/{{ item.username }}/.vnc/passwd
+      chmod 0600 /home/{{ item.username }}/.vnc/passwd
+    fi
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ item.username }}"
+  loop: "{{ vnc_users_pw }}"
+
+- name: Set perms on vnc passwords
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.vnc/passwd"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: 0700
+  with_items: "{{ vnc_users }}"
+
+- name: Configure systemd auto-start service
+  ansible.builtin.import_tasks: systemd.yml
+  when: vnc_setup_systemd|bool

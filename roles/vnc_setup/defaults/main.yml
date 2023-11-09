@@ -1,0 +1,18 @@
+---
+# VNC client options
+vnc_client_options: "-geometry 1920x1080 --localhost no"
+
+# Define whether to setup systemd
+vnc_setup_systemd: true
+
+# Define default users for VNC setup
+vnc_users:
+  - username: "root" 
+    usergroup: "root" 
+    vnc_num: 1 
+
+# Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
+vncpwd_clone_path: /tmp/vncpwd
+
+# Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd)
+vncpwd_path: /usr/local/bin/vncpwd
