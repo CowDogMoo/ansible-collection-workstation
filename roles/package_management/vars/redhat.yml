@@ -1,0 +1,6 @@
+---
+# Red Hat packages to be installed
+package_management_install_packages:
+  - epel-release
+  - tigervnc
+  - tigervnc-server

@@ -1,17 +1,9 @@
 ---
-- name: Exclude unavailable packages on Red Hat
-  ansible.builtin.set_fact:
-    package_management_common_install_packages: "{{ package_management_common_install_packages | difference(package_management_redhat_excluded_packages) }}"
-
 - name: Install special Red Hat packages
   become: true
   ansible.builtin.dnf:
-    name: "{{ package_management_redhat_special_packages }}"
+    name: "{{ package_management_install_packages }}"
     state: present
-
-- name: Merge Red Hat equivalent packages
-  ansible.builtin.set_fact:
-    package_management_common_install_packages: "{{ package_management_common_install_packages + (package_management_redhat_equivalent_packages | default([])) }}"
 
 - name: Configure .xinitrc for XFCE (Red Hat)
   become: true

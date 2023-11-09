@@ -17,28 +17,6 @@ package_management_common_install_packages:
   - vim
   - zsh
 
-# Packages to be excluded on Red Hat systems
-package_management_redhat_excluded_packages:
-  - curl
-  - fonts-powerline
-  - inetutils-ping
-  - locales
-  - software-properties-common
-  - tigervnc-standalone-server
-  - tigervnc-tools
-  - xfce4-goodies
-  - xfce4
-  - zsh-autosuggestions
-
-# Equivalent packages for Red Hat systems
-package_management_redhat_equivalent_packages:
-  - tigervnc-server
-  - tigervnc
-
-# Special installation steps for Red Hat systems (XFCE Desktop)
-package_management_redhat_special_packages:
-  - epel-release
-
 # Common packages to be cleaned up on all systems
 package_management_common_cleanup_packages:
   - xfce4-power-manager

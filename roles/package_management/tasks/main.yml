@@ -2,7 +2,11 @@
 - name: Include common variables
   ansible.builtin.include_vars: "main.yml"
 
-- include_tasks: "{{ ansible_os_family | lower }}.yml"
+- name: Include OS-specific variables.
+  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+
+- name: Include OS-Specific tasks
+  ansible.builtin.include_tasks: "setup_{{ ansible_os_family | lower }}.yml"
 
 - name: Cleanup packages
   become: true

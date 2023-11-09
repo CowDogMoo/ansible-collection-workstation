@@ -1,0 +1,9 @@
+---
+- name: Install packages (Debian)
+  become: true
+  ansible.builtin.package:
+    name: "{{ package_management_common_install_packages }}"
+    state: present
+    update_cache: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive

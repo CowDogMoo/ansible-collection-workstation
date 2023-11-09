@@ -1,0 +1,13 @@
+---
+# Debian packages to be installed
+package_management_install_packages:
+  - curl
+  - fonts-powerline
+  - inetutils-ping
+  - locales
+  - software-properties-common
+  - tigervnc-standalone-server
+  - tigervnc-tools
+  - xfce4-goodies
+  - xfce4
+  - zsh-autosuggestions
