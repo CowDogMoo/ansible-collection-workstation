@@ -1,0 +1,39 @@
+---
+- name: Exclude unavailable packages on Red Hat
+  ansible.builtin.set_fact:
+    package_management_common_install_packages: "{{ package_management_common_install_packages | difference(package_management_redhat_excluded_packages) }}"
+
+- name: Install special Red Hat packages
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ package_management_redhat_special_packages }}"
+    state: present
+
+- name: Merge Red Hat equivalent packages
+  ansible.builtin.set_fact:
+    package_management_common_install_packages: "{{ package_management_common_install_packages + (package_management_redhat_equivalent_packages | default([])) }}"
+
+- name: Configure .xinitrc for XFCE (Red Hat)
+  become: true
+  ansible.builtin.lineinfile:
+    path: "~/.xinitrc"
+    line: "exec /usr/bin/xfce4-session"
+    create: yes
+
+- name: Check current default target (Red Hat)
+  ansible.builtin.command:
+    cmd: systemctl get-default
+  register: current_default_target
+  changed_when: false
+
+- name: Set default target to graphical (Red Hat)
+  become: true
+  ansible.builtin.command:
+    cmd: systemctl set-default graphical.target
+  when: current_default_target.stdout != 'graphical.target'
+
+- name: Install packages (Red Hat)
+  become: true
+  ansible.builtin.yum:
+    name: "{{ package_management_common_install_packages }}"
+    state: present

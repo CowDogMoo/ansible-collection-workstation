@@ -2,53 +2,11 @@
 - name: Include common variables
   ansible.builtin.include_vars: "main.yml"
 
-- name: Merge common and OS-specific install packages
-  ansible.builtin.set_fact:
-    package_management_common_install_packages: "{{ package_management_common_install_packages + (package_management_debian_install_packages | default([])) + (package_management_redhat_install_packages | default([])) }}"
-
-- name: Exclude unavailable packages on Red Hat
-  ansible.builtin.set_fact:
-    package_management_common_install_packages: "{{ package_management_common_install_packages | difference(package_management_redhat_excluded_packages) }}"
-  when: ansible_os_family == 'RedHat'
-
-- name: Resolve curl package conflict on Red Hat
-  ansible.builtin.set_fact:
-    package_management_common_install_packages: "{{ package_management_common_install_packages | difference(['curl-minimal']) }}"
-  when: '"curl-minimal" in package_management_common_install_packages and ansible_os_family == RedHat'
-
-- name: Merge common and OS-specific cleanup packages
-  ansible.builtin.set_fact:
-    package_management_cleanup_packages: "{{ package_management_common_cleanup_packages + (package_management_debian_cleanup_packages | default([])) + (package_management_redhat_cleanup_packages | default([])) }}"
-
-- name: Install packages
-  become: true
-  ansible.builtin.package:
-    name: "{{ package_management_common_install_packages }}"
-    state: present
-    update_cache: true
-  when: ansible_os_family == 'Debian'
-  environment:
-    DEBIAN_FRONTEND: noninteractive
+- include_tasks: "{{ ansible_os_family | lower }}.yml"
 
 - name: Cleanup packages
   become: true
   ansible.builtin.package:
-    name: "{{ package_management_cleanup_packages }}"
+    name: "{{ package_management_common_cleanup_packages }}"
     state: absent
-  when: ansible_os_family == 'Debian'
-  environment:
-    DEBIAN_FRONTEND: noninteractive
-
-- name: Install packages (Red Hat)
-  become: true
-  ansible.builtin.yum:
-    name: "{{ package_management_common_install_packages }}"
-    state: present
-  when: ansible_os_family == 'RedHat'
-
-- name: Cleanup packages (Red Hat)
-  become: true
-  ansible.builtin.yum:
-    name: "{{ package_management_cleanup_packages }}"
-    state: absent
-  when: ansible_os_family == 'RedHat'
+  environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
