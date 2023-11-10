@@ -18,7 +18,7 @@
       changed_when: false
 
     - name: Check if necessary packages are installed (Red Hat)
-      ansible.builtin.yum:
+      ansible.builtin.dnf:
         name: "{{ item }}"
         state: present
       register: package_status

@@ -8,6 +8,14 @@
 - name: Include OS-Specific tasks
   ansible.builtin.include_tasks: "setup_{{ ansible_os_family | lower }}.yml"
 
+- name: Install packages
+  become: true
+  ansible.builtin.package:
+    name: "{{ package_management_common_install_packages }}"
+    state: present
+    update_cache: true
+  environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
+
 - name: Cleanup packages
   become: true
   ansible.builtin.package:

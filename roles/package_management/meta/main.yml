@@ -23,7 +23,7 @@ galaxy_info:
   galaxy_tags:
     - pkgmgmt
     - apt
-    - yum
+    - dnf
     - debian
     - ubuntu
     - kali
