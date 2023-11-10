@@ -6,7 +6,7 @@ After=syslog.target network.target
 Type=forking
 PAMName=login
 ExecStartPre=/bin/sh -c '/usr/bin/vncserver -kill :{{ item.vnc_num }} > /dev/null 2>&1 || :'
-ExecStart=/usr/bin/vncserver :{{ item.vnc_num }} {{ vnc_client_options }}
+ExecStart=/usr/bin/vncserver :{{ item.vnc_num }} {{ vnc_setup_vnc_client_options }}
 ExecStop=/usr/bin/vncserver -kill :{{ item.vnc_num }}
 
 [Install]

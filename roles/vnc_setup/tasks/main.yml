@@ -2,6 +2,11 @@
 - name: Install vncpwd
   ansible.builtin.import_tasks: vncpwd.yml
 
+- name: Set vnc_setup_default_username
+  ansible.builtin.set_fact:
+    vnc_default_username: "kali"
+  when: ansible_distribution_release == "kali-rolling"
+
 - name: Create .vnc dirs
   ansible.builtin.file:
     path: "/home/{{ item.username }}/.vnc"
@@ -10,16 +15,16 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
   changed_when: false
-  with_items: "{{ vnc_users }}"
+  with_items: "{{ vnc_setup_vnc_users }}"
 
-- name: Generate random passwords for vnc_users with vnc_pw.py
+- name: Generate random passwords for vnc_setup_vnc_users with vnc_pw.py
   cowdogmoo.workstation.vnc_pw:
-    vnc_users: "{{ vnc_users }}"
+    vnc_setup_vnc_users: "{{ vnc_setup_vnc_users }}"
   register: updated_data
 
-- name: Update vnc_users with the random generated passwords
+- name: Update vnc_setup_vnc_users with the random generated passwords
   ansible.builtin.set_fact:
-    vnc_users_pw: "{{ vnc_users_pw | default([]) + [item] }}"
+    vnc_setup_vnc_users_pw: "{{ vnc_setup_vnc_users_pw | default([]) + [item] }}"
   with_items: "{{ updated_data.result }}"
 
 - name: Ensure .vnc directory exists for each user
@@ -28,12 +33,13 @@
     state: directory
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
-    mode: '0700'
-  loop: "{{ vnc_users }}"
+    mode: "0700"
+  loop: "{{ vnc_setup_vnc_users }}"
   become: true
 
-- name: Set random passwords for vnc_users (if one isn't already set)
+- name: Set random passwords for vnc_setup_vnc_users (if one isn't already set)
   ansible.builtin.shell: |
+    set -o pipefail
     if [[ ! -f /home/{{ item.username }}/.vnc/passwd ]]; then
       mkdir -p /home/{{ item.username }}/.vnc
       chown {{ item.username }}:{{ item.usergroup | default(item.username) }} /home/{{ item.username }}/.vnc
@@ -41,12 +47,16 @@
       echo "{{ item.pass }}" | vncpwd -f > /home/{{ item.username }}/.vnc/passwd
       chown {{ item.username }}:{{ item.usergroup | default(item.username) }} /home/{{ item.username }}/.vnc/passwd
       chmod 0600 /home/{{ item.username }}/.vnc/passwd
+      echo true
+    else
+      echo false
     fi
   args:
     executable: /bin/bash
   become: true
   become_user: "{{ item.username }}"
-  loop: "{{ vnc_users_pw }}"
+  loop: "{{ vnc_setup_vnc_users_pw }}"
+  changed_when: "'true' in result.stdout"
 
 - name: Set perms on vnc passwords
   ansible.builtin.file:
@@ -54,7 +64,7 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: 0700
-  with_items: "{{ vnc_users }}"
+  with_items: "{{ vnc_setup_vnc_users }}"
 
 - name: Configure systemd auto-start service
   ansible.builtin.import_tasks: systemd.yml

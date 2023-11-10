@@ -25,17 +25,18 @@ RedHat-based distributions.
 Here's a table of role variables and their default values:
 
 <!--- vars table -->
-| Variable | Default Value | Description |
-| --- | --- | --- |
-| `vnc_client_options` | `-geometry 1920x1080 --localhost no` | VNC client options |
-| `vnc_setup_systemd` | `False` | Define whether to setup systemd |
-| `vnc_users` | `None` | Define default users for VNC setup |
-| `- username` | `root` |  |
-| `usergroup` | `root` |  |
-| `vnc_num` | `1` |  |
-| `vncpwd_clone_path` | `/tmp/vncpwd` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd). |
-| `vncpwd_path` | `/usr/local/bin/vncpwd` | Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd) |
-| `vncpwd_repo_url` | `https://github.com/jeroennijhof/vncpwd.git` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd) |
+
+| Variable                       | Default Value                                | Description                                                                   |
+| ------------------------------ | -------------------------------------------- | ----------------------------------------------------------------------------- |
+| `vnc_setup_vnc_client_options` | `-geometry 1920x1080 --localhost no`         | VNC client options                                                            |
+| `vnc_setup_systemd`            | `False`                                      | Define whether to setup systemd                                               |
+| `vnc_setup_vnc_users`          | `None`                                       | Define default users for VNC setup                                            |
+| `- username`                   | `root`                                       |                                                                               |
+| `usergroup`                    | `root`                                       |                                                                               |
+| `vnc_num`                      | `1`                                          |                                                                               |
+| `vnc_setup_vncpwd_clone_path`  | `/tmp/vncpwd`                                | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).               |
+| `vnc_setup_vncpwd_path`        | `/usr/local/bin/vncpwd`                      | Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd) |
+| `vncpwd_repo_url`              | `https://github.com/jeroennijhof/vncpwd.git` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd)                |
 
 <!--- end vars table -->
 

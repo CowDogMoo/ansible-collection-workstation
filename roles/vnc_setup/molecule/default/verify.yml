@@ -6,12 +6,12 @@
     - name: Include default variables for VNC setup role
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
-      when: vnc_users is not defined
+      when: vnc_setup_vnc_users is not defined
 
     - name: Check VNC systemd service file
       ansible.builtin.stat:
         path: "/home/{{ item.username }}/.config/systemd/user/vncserver.service"
-      with_items: "{{ vnc_users }}"
+      with_items: "{{ vnc_setup_vnc_users }}"
       register: vnc_systemd_service
 
     - name: Assert VNC systemd service file exists

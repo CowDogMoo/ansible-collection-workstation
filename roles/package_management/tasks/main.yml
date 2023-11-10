@@ -2,13 +2,13 @@
 - name: Include common variables
   ansible.builtin.include_vars: "main.yml"
 
-- name: Include OS-specific variables.
+- name: Include OS-specific variables
   ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
 
 - name: Include OS-Specific tasks
   ansible.builtin.include_tasks: "setup_{{ ansible_os_family | lower }}.yml"
 
-- name: Install packages
+- name: Install common packages
   become: true
   ansible.builtin.package:
     name: "{{ package_management_common_install_packages }}"
