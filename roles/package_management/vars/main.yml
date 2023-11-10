@@ -19,4 +19,4 @@ package_management_common_install_packages:
 
 # Common packages to be cleaned up on all systems
 package_management_common_cleanup_packages:
-  - xfce4-power-manager
+  - xfce4-power-manager-data

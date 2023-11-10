@@ -36,7 +36,7 @@ Here's a table of role variables and their default values:
 | `vnc_num`                      | `1`                                          |                                                                               |
 | `vnc_setup_vncpwd_clone_path`  | `/tmp/vncpwd`                                | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).               |
 | `vnc_setup_vncpwd_path`        | `/usr/local/bin/vncpwd`                      | Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd) |
-| `vncpwd_repo_url`              | `https://github.com/jeroennijhof/vncpwd.git` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd)                |
+| `vnc_setup_vncpwd_repo_url`    | `https://github.com/jeroennijhof/vncpwd.git` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd)                |
 
 <!--- end vars table -->
 

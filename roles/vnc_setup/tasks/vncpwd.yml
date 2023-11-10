@@ -1,7 +1,7 @@
 ---
 - name: Clone repo
   ansible.builtin.git:
-    repo: "{{ vncpwd_repo_url }}"
+    repo: "{{ vnc_setup_vncpwd_repo_url }}"
     dest: "{{ vnc_setup_vncpwd_clone_path }}"
   changed_when: false
 
