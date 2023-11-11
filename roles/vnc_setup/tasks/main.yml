@@ -2,10 +2,34 @@
 - name: Install vncpwd
   ansible.builtin.import_tasks: vncpwd.yml
 
-- name: Set vnc_setup_default_username
+- name: Check if systemd is present
+  ansible.builtin.command: systemctl --version
+  ignore_errors: true
+  register: systemd_check
+  changed_when: false
+
+- name: Set fact for systemd presence
+  ansible.builtin.set_fact:
+    is_systemd_present: "{{ systemd_check.rc == 0 }}"
+
+- name: Set the default username for kali systems
   ansible.builtin.set_fact:
     vnc_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
+
+- name: Ensure zsh sources /etc/profile.d scripts
+  ansible.builtin.lineinfile:
+    path: /etc/zsh/zshrc
+    line: "for file in /etc/profile.d/*.sh; do source $file; done"
+    create: yes
+    insertafter: EOF
+  when: "'/bin/zsh' in user_setup_default_users | map(attribute='shell') | list"
+
+- name: Add start_vnc script to profile.d
+  ansible.builtin.template:
+    src: start_vnc.sh.j2
+    dest: "/etc/profile.d/start_vnc.sh"
+    mode: 0755
 
 - name: Create .vnc dirs
   ansible.builtin.file:
@@ -39,7 +63,7 @@
 
 - name: Set random passwords for vnc_setup_vnc_users (if one isn't already set)
   ansible.builtin.shell: |
-    set -o pipefail
+    if [[ "$0" != "sh" ]]; then set -o pipefail; fi
     if [[ ! -f /home/{{ item.username }}/.vnc/passwd ]]; then
       mkdir -p /home/{{ item.username }}/.vnc
       chown {{ item.username }}:{{ item.usergroup | default(item.username) }} /home/{{ item.username }}/.vnc
@@ -52,10 +76,11 @@
       echo false
     fi
   args:
-    executable: /bin/bash
+    executable: "{{ ansible_shell_executable }}"
   become: true
   become_user: "{{ item.username }}"
   loop: "{{ vnc_setup_vnc_users_pw }}"
+  no_log: True
   register: password_set_result
   changed_when: "'true' in password_set_result.stdout"
 
@@ -69,4 +94,10 @@
 
 - name: Configure systemd auto-start service
   ansible.builtin.import_tasks: systemd.yml
-  when: vnc_setup_systemd|bool
+  when: vnc_setup_systemd|bool and is_systemd_present
+
+- name: Create docker-entrypoint.sh
+  ansible.builtin.template:
+    src: docker-entrypoint.sh.j2
+    dest: "/run/docker-entrypoint.sh"
+    mode: 0755
