@@ -13,6 +13,7 @@ package_management_common_install_packages:
   - rsync
   - sudo
   - terminator
+  - tree
   - wget
   - vim
   - zsh

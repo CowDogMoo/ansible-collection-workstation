@@ -56,7 +56,8 @@
   become: true
   become_user: "{{ item.username }}"
   loop: "{{ vnc_setup_vnc_users_pw }}"
-  changed_when: "'true' in result.stdout"
+  register: password_set_result
+  changed_when: "'true' in password_set_result.stdout"
 
 - name: Set perms on vnc passwords
   ansible.builtin.file:
