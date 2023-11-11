@@ -11,6 +11,7 @@
   changed_when: false
 
 - name: Move vncpwd into $PATH
+  become: true
   ansible.builtin.copy:
     src: "{{ vnc_setup_vncpwd_clone_path }}/vncpwd"
     dest: "{{ vnc_setup_vncpwd_path }}"

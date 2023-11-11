@@ -14,9 +14,20 @@
       with_items: "{{ vnc_setup_vnc_users }}"
       register: vnc_systemd_service
 
+    - name: Check if systemd is present
+      ansible.builtin.command: systemctl --version
+      ignore_errors: true
+      register: systemd_check
+      changed_when: false
+
+    - name: Set fact for systemd presence
+      ansible.builtin.set_fact:
+        is_systemd_present: "{{ systemd_check.rc == 0 }}"
+
     - name: Assert VNC systemd service file exists
       ansible.builtin.assert:
         that:
           - "item.stat.exists"
         msg: "VNC systemd service file does not exist for {{ item.item.username }}"
       with_items: "{{ vnc_systemd_service.results }}"
+      when: vnc_setup_systemd | bool and is_systemd_present

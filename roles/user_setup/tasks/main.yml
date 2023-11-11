@@ -26,7 +26,7 @@
   ansible.builtin.copy:
     dest: "/etc/sudoers.d/{{ item.username }}"
     content: "{{ item.username }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
-    validate: 'visudo -cf %s'
+    validate: "visudo -cf %s"
     mode: "0440"
   when: item.sudo
   loop: "{{ user_setup_default_users }}"

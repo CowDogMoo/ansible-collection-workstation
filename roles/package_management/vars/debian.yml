@@ -7,7 +7,7 @@ package_management_install_packages:
   - locales
   - software-properties-common
   - tigervnc-standalone-server
-  - tigervnc-tools
+  # - tigervnc-tools
   - xfce4-goodies
   - xfce4
   - zsh-autosuggestions
