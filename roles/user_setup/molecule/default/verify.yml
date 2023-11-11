@@ -28,11 +28,12 @@
       loop_control:
         label: "{{ item.username }}"
 
-    - name: Check user is in sudoers
-      ansible.builtin.command: "grep '{{ item.username }}' /etc/sudoers"
-      register: sudoers_check
+    - name: Check user is in sudoers.d
+      ansible.builtin.stat:
+        path: "/etc/sudoers.d/{{ item.username }}"
+      register: sudoers_file_check
       changed_when: false
-      failed_when: sudoers_check.rc != 0
+      failed_when: not sudoers_file_check.stat.exists
       loop: "{{ user_setup_default_users }}"
       when: item.sudo
       loop_control:

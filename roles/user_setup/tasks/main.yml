@@ -21,11 +21,12 @@
     shell: "{{ item.shell }}"
   loop: "{{ user_setup_default_users }}"
 
-- name: Provide sudoers access for relevant users
+- name: Provide sudoers access for relevant users in sudoers.d
   become: true
-  ansible.builtin.blockinfile:
-    path: /etc/sudoers
-    insertafter: "root    ALL=(ALL)       ALL"
-    block: "{{ item.username }} ALL=(ALL:ALL) NOPASSWD:ALL"
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ item.username }}"
+    content: "{{ item.username }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
+    validate: 'visudo -cf %s'
+    mode: "0440"
   when: item.sudo
   loop: "{{ user_setup_default_users }}"
