@@ -14,5 +14,8 @@ galaxy_info:
     - name: macOS
       versions:
         - all
+    - name: EL
+      versions:
+        - all
   galaxy_tags:
     - asdf

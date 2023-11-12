@@ -16,7 +16,7 @@
         file: "../../vars/{{ asdf_os_family }}.yml"
 
     - name: Include OS-Specific tasks
-      ansible.builtin.include_tasks: "../../tasks/setup_{{ ansible_os_family | lower }}.yml"
+      ansible.builtin.include_tasks: "../../tasks/setup_{{ asdf_os_family }}.yml"
 
     - name: Check if necessary packages are installed on Debian-based systems
       ansible.builtin.command: "dpkg -l {{ item }}"
@@ -57,7 +57,7 @@
 
     - name: Check if ~/.tool-versions exists locally
       ansible.builtin.stat:
-        path: "{{ asdf_tool_versions }}"
+        path: "{{ (asdf_setup_script | selectattr('name', 'equalto', '.tool-versions') | map(attribute='path') | first) }}"
       register: asdf_tool_versions_stat
 
     - name: Assert that ~/.tool-versions exists

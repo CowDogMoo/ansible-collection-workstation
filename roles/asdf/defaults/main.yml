@@ -1,8 +1,8 @@
 ---
 # Destination folder for cloning the asdf repository
 asdf_dest_folder: "{{ ansible_env.HOME }}/.asdf"
-# Set to true to install for all users
-asdf_install_for_all_users: false
+# Set to false to install for only the current user
+asdf_install_for_all_users: true
 # Git repository URL of asdf
 asdf_git_repo: "https://github.com/asdf-vm/asdf.git"
 # Languages to configure with asdf
@@ -12,16 +12,21 @@ asdf_languages:
   - ruby
 # OS family variable used for loading OS-specific tasks
 asdf_os_family: "{{ ansible_os_family | lower }}"
-# Local path to the setup script
-asdf_setup_script: "/tmp/setup_asdf.sh"
-# URL to download the setup script
-asdf_setup_script_url: "https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"
+# Script to setup and customize asdf
+asdf_setup_script:
+  - name: setup_asdf.sh
+    path: "/tmp/setup_asdf.sh"
+    url: "https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"
+  - name: .tool-versions
+    path: "{{ ansible_env.HOME }}/.tool-versions"
+    url: "https://raw.githubusercontent.com/username/dotfiles/main/.tool-versions"
 # Path to the `.tool-versions` file
 asdf_tool_versions: "{{ ansible_env.HOME }}/.tool-versions"
 # URL to download the `.tool-versions` file
 asdf_tool_versions_url: "https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"
-# Users to setup with asdf
+# Default username is the distribution name
 asdf_default_username: "{{ ansible_distribution | lower }}"
+# Users to setup with asdf
 asdf_users:
   - username: "{{ asdf_default_username }}"
     usergroup: "{{ asdf_default_username }}"
