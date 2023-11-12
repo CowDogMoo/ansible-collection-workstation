@@ -16,17 +16,15 @@
   ansible.builtin.command:
     cmd: systemctl get-default
   register: systemd_units
+  check_mode: false
   changed_when: false
+  # noqa command-instead-of-module
 
-- name: Set fact for current default target (Red Hat)
-  ansible.builtin.set_fact:
-    is_graphical_default: "{{ 'graphical.target' in systemd_units.stdout }}"
-
-- name: Set default target to graphical (Red Hat)
+- name: Set default target to graphical if not already set (Red Hat)
   ansible.builtin.systemd:
     name: graphical.target
     state: started
-  when: not is_graphical_default
+  when: "'graphical.target' not in systemd_units.stdout"
 
 - name: Install packages (Red Hat)
   become: true
