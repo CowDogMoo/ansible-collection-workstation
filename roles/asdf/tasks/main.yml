@@ -14,8 +14,8 @@
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
     dest: "{{ asdf_install_for_all_users | ternary('/usr/local/asdf', '/home/' + item.username + '/.asdf') }}"
-    clone: yes
-    update: no
+    clone: true
+    update: false
   loop: "{{ asdf_users }}"
   loop_control:
     loop_var: item
