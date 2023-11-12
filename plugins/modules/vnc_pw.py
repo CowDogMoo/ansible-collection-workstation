@@ -13,7 +13,7 @@ short_description: Manage VNC passwords for users.
 description:
   - Generates or retrieves VNC passwords for a list of users.
 options:
-  vnc_setup_vnc_users:
+  vnc_setup_users:
     description:
       - List of users to manage VNC passwords for.
     type: list
@@ -44,7 +44,7 @@ def set_vnc_password(user, password):
 
 def run_module():
     module_args = dict(
-        vnc_setup_vnc_users=dict(type='list', required=True),
+        vnc_setup_users=dict(type='list', required=True),
     )
 
     module = AnsibleModule(
@@ -52,10 +52,10 @@ def run_module():
         supports_check_mode=True
     )
 
-    vnc_setup_vnc_users = module.params['vnc_setup_vnc_users']
+    vnc_setup_users = module.params['vnc_setup_users']
     changed = False
 
-    for user in vnc_setup_vnc_users:
+    for user in vnc_setup_users:
         home_dir = get_home_dir(user['username'])
         passwd_file = f"{home_dir}/.vnc/passwd"
 
@@ -71,7 +71,7 @@ def run_module():
                 module.fail_json(msg=f"Error running vncpwd: {error}")
             user['pass'] = output.strip().split()[1]
 
-    module.exit_json(changed=changed, result=vnc_setup_vnc_users)
+    module.exit_json(changed=changed, result=vnc_setup_users)
 
 def main():
     run_module()

@@ -24,16 +24,16 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
   changed_when: false
-  with_items: "{{ vnc_setup_vnc_users }}"
+  with_items: "{{ vnc_setup_users }}"
 
-- name: Generate random passwords for vnc_setup_vnc_users with vnc_pw.py
+- name: Generate random passwords for vnc_setup_users with vnc_pw.py
   cowdogmoo.workstation.vnc_pw:
-    vnc_setup_vnc_users: "{{ vnc_setup_vnc_users }}"
+    vnc_setup_users: "{{ vnc_setup_users }}"
   register: updated_data
 
-- name: Update vnc_setup_vnc_users with the random generated passwords
+- name: Update vnc_setup_users with the random generated passwords
   ansible.builtin.set_fact:
-    vnc_setup_vnc_users_pw: "{{ vnc_setup_vnc_users_pw | default([]) + [item] }}"
+    vnc_setup_users_pw: "{{ vnc_setup_users_pw | default([]) + [item] }}"
   with_items: "{{ updated_data.result }}"
 
 - name: Ensure .vnc directory exists for each user
@@ -44,9 +44,9 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0700"
-  loop: "{{ vnc_setup_vnc_users }}"
+  loop: "{{ vnc_setup_users }}"
 
-- name: Set random passwords for vnc_setup_vnc_users (if one isn't already set)
+- name: Set random passwords for vnc_setup_users (if one isn't already set)
   become: true
   #no_log: true
   block:
@@ -63,7 +63,7 @@
         executable: /bin/bash
       register: password_set_result
       changed_when: "'passwd' not in password_set_result.stdout"
-      loop: "{{ vnc_setup_vnc_users_pw }}"
+      loop: "{{ vnc_setup_users_pw }}"
 
 
 - name: Check if VNC password file exists
@@ -71,7 +71,7 @@
   ansible.builtin.stat:
     path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.vnc/passwd"
   register: vnc_passwd_stat
-  loop: "{{ vnc_setup_vnc_users }}"
+  loop: "{{ vnc_setup_users }}"
   loop_control:
     loop_var: item
 
@@ -83,7 +83,7 @@
     group: "{{ item.usergroup | default(item.username) }}"
     mode: 0700
   when: vnc_passwd_stat.results | selectattr('item.username','equalto',item.username) | map(attribute='stat.exists') | first
-  with_items: "{{ vnc_setup_vnc_users }}"
+  with_items: "{{ vnc_setup_users }}"
 
 - name: Create docker-entrypoint.sh
   become: true

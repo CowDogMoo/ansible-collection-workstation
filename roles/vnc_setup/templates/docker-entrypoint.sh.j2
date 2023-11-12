@@ -4,7 +4,7 @@
 set -e
 
 # Start VNC for each user
-{% for user in vnc_setup_vnc_users %}
+{% for user in vnc_setup_users %}
 start_vnc "{{ user.username }}"
 {% endfor %}
 
