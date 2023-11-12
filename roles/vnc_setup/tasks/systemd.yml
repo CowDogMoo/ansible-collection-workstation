@@ -1,10 +1,10 @@
 ---
 - name: Enable persistent services for all users
-  ansible.builtin.shell: |
-    for file in /etc/profile.d/*.sh; do . $file; done \
-    && /bin/loginctl enable-linger {{ item.username }}
-  changed_when: false
-  with_items: "{{ vnc_setup_vnc_users }}"
+  become: true
+  ansible.builtin.command: 
+    cmd: "/bin/loginctl enable-linger {{ item.username }}"
+  loop: "{{ vnc_setup_vnc_users }}"
+  when: item.username != 'root'
 
 - name: Create systemd directories
   ansible.builtin.file:
