@@ -6,8 +6,10 @@ package_management_common_install_packages:
   - colordiff
   - dbus-x11
   - file
+  - gcc
   - git
   - less
+  - make
   - net-tools
   - procps
   - rsync
