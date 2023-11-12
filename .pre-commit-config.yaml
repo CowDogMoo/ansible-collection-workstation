@@ -58,11 +58,11 @@ repos:
         # version of Ansible you want to install as a dependency.
         additional_dependencies: [".[community]"]
 
-  - repo: local
-    hooks:
-      - id: generate-ansible-docs
-        name: Generate Documentation
-        entry: python3 .hooks/generate_docs.py
-        language: system
-        files: ^roles/.+/defaults/main\.yml$|^roles/.+/vars/main\.yml$
-        pass_filenames: false
+  # - repo: local
+  #   hooks:
+  #     - id: generate-ansible-docs
+  #       name: Generate Documentation
+  #       entry: python3 .hooks/generate_docs.py
+  #       language: system
+  #       files: ^roles/.+/defaults/main\.yml$|^roles/.+/vars/main\.yml$
+  #       pass_filenames: false
