@@ -18,9 +18,12 @@
   when: item.username != 'root'
 
 - name: Check existence of per-user systemd service files
+  become: true
   ansible.builtin.stat:
     path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.config/systemd/user/vncserver.service"
   with_items: "{{ vnc_setup_vnc_users }}"
+  when: item.username != 'root'
+  register: vncserver_service_check
 
 - name: Update per-user systemd service files
   ansible.builtin.template:
