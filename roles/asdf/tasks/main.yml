@@ -7,7 +7,7 @@
 
 - name: Set default username
   ansible.builtin.set_fact:
-    vnc_zsh_default_username: "kali"
+    asdf_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
 
 - name: Clone asdf

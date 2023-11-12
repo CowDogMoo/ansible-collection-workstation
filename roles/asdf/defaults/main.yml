@@ -21,8 +21,7 @@ asdf_tool_versions: "{{ ansible_env.HOME }}/.tool-versions"
 # URL to download the `.tool-versions` file
 asdf_tool_versions_url: "https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"
 # Users to setup with asdf
+asdf_default_username: "{{ ansible_distribution | lower }}"
 asdf_users:
-  - username: "{{ vnc_setup_default_username }}"
-    usergroup: "{{ vnc_setup_default_username }}"
-    sudo: true
-    vnc_num: 1
+  - username: "{{ asdf_default_username }}"
+    usergroup: "{{ asdf_default_username }}"
