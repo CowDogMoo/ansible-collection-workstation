@@ -84,12 +84,14 @@
   register: vnc_setup_users_uid
 
 - name: Add start_vnc script to profile.d
+  become: true
   ansible.builtin.template:
     src: start_vnc.sh.j2
     dest: "/etc/profile.d/start_vnc.sh"
     mode: 0755
 
 - name: Create XDG_RUNTIME_DIR script in /etc/profile.d
+  become: true
   ansible.builtin.copy:
     dest: /etc/profile.d/xdg_runtime_dir.sh
     content: |
