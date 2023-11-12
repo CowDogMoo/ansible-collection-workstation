@@ -26,4 +26,4 @@
       ansible.builtin.lineinfile:
         path: /etc/zsh/zshrc
         line: export PATH=$PATH:/usr/share/metasploit-framework/tools/exploit
-      when: ansible_distribution_release == "kali-rolling"
+      when: ansible_distribution_release is search("kali")
