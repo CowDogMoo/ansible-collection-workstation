@@ -27,11 +27,10 @@ runtime versions on a per-project basis.
 | `asdf_setup_script_url` | `https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh` | URL to download the setup script |
 | `asdf_tool_versions` | `{{ ansible_env.HOME }}/.tool-versions` | Path to the `.tool-versions` file |
 | `asdf_tool_versions_url` | `https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions` | URL to download the `.tool-versions` file |
-| `asdf_users` | `None` | Users to setup with asdf |
-| `- username` | `{{ vnc_setup_default_username }}` |  |
-| `usergroup` | `{{ vnc_setup_default_username }}` |  |
-| `sudo` | `True` |  |
-| `vnc_num` | `1` |  |
+| `asdf_default_username` | `{{ ansible_distribution \| lower }}` | Users to setup with asdf |
+| `asdf_users` | `None` |  |
+| `- username` | `{{ asdf_default_username }}` |  |
+| `usergroup` | `{{ asdf_default_username }}` |  |
 | Variable | Default Value (Debian) | Description |
 | --- | --- | --- |
 | `asdf_install_packages` | `curl, git, wget` | Debian packages to be installed |

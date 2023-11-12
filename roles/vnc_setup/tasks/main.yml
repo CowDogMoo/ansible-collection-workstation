@@ -19,7 +19,7 @@
 - name: Create .vnc dirs
   become: true
   ansible.builtin.file:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.vnc"
+    path: "/home/{{ item.username }}/.vnc"
     state: directory
     mode: 0700
     owner: "{{ item.username }}"
@@ -40,7 +40,7 @@
 - name: Ensure .vnc directory exists for each user
   become: true
   ansible.builtin.file:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.vnc"
+    path: "/home/{{ item.username }}/.vnc"
     state: directory
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
@@ -49,11 +49,11 @@
 
 - name: Set random passwords for vnc_setup_users (if one isn't already set)
   become: true
-  #no_log: true
+  no_log: true
   block:
     - name: Generate and set password if passwd file does not exist
       ansible.builtin.shell: |
-        user_home="{{ '/root' if item.username == 'root' else '/home/' + item.username }}"
+        user_home="/home/{{ item.username }}"
         if [[ ! -f ${user_home}/.vnc/passwd ]]; then
           mkdir -p ${user_home}/.vnc
           echo -n "{{ item.pass }}" > passwd_input
@@ -69,7 +69,7 @@
 - name: Check if VNC password file exists
   become: true
   ansible.builtin.stat:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.vnc/passwd"
+    path: "/home/{{ item.username }}/.vnc/passwd"
   register: vnc_passwd_stat
   loop: "{{ vnc_setup_users }}"
   loop_control:
@@ -78,7 +78,7 @@
 - name: Set perms on vnc passwords
   become: true
   ansible.builtin.file:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.vnc/passwd"
+    path: "/home/{{ item.username }}/.vnc/passwd"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: 0700
