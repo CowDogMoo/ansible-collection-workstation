@@ -1,0 +1,73 @@
+---
+- name: Check if .oh-my-zsh exists for all zsh_setup_users
+  ansible.builtin.stat:
+    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/.oh-my-zsh"
+  register: oh_my_zsh_installed
+  with_items: "{{ zsh_setup_users }}"
+
+- name: Download oh-my-zsh install script for all zsh_setup_users
+  ansible.builtin.get_url:
+    url: "{{ zsh_setup_omz_install_script_url }}"
+    dest: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/zsh-installer.sh"
+    mode: "0755"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+  when: "not oh_my_zsh_installed.results[item | int].stat.exists"
+  with_items: "{{ zsh_setup_users }}"
+  changed_when: false
+
+- name: Install oh-my-zsh for all zsh_setup_users
+  ansible.builtin.command: "echo 'y' | ZSH=/home/{{ item.username }}/.oh-my-zsh bash /home/{{ item.username }}/zsh-installer.sh"
+  args:
+    creates: "/home/{{ item.username }}/.oh-my-zsh"
+  become: true
+  become_user: "{{ item.username }}"
+  when: "not oh_my_zsh_installed.results[item | int].stat.exists"
+  with_items: "{{ zsh_setup_users }}"
+  changed_when: false
+
+- name: Check if zsh-installer.sh exists for all zsh_setup_users
+  ansible.builtin.stat:
+    path: "/home/{{ item.username }}/zsh-installer.sh"
+  register: zsh_installer_exists
+  with_items: "{{ zsh_setup_users }}"
+
+- name: Ensure zsh-installer.sh is executable for all zsh_setup_users
+  ansible.builtin.file:
+    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/zsh-installer.sh"
+    mode: "0755"
+  become: true
+  become_user: "{{ item.username }}"
+  when: "zsh_installer_exists.results[item | int].stat.exists"
+  with_items: "{{ zsh_setup_users }}"
+  changed_when: false
+
+- name: Execute zsh-installer.sh for all zsh_setup_users
+  ansible.builtin.shell:
+    cmd: "bash {{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/zsh-installer.sh"
+  args:
+    executable: "/bin/bash"
+  become: true
+  become_user: "{{ item.username }}"
+  when: "zsh_installer_exists.results[item | int].stat.exists"
+  with_items: "{{ zsh_setup_users }}"
+  changed_when: false
+
+- name: Remove zsh-installer.sh for all zsh_setup_users
+  ansible.builtin.file:
+    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/zsh-installer.sh"
+    state: absent
+  become: true
+  become_user: "{{ item.username }}"
+  when: "zsh_installer_exists.results[item | int].stat.exists"
+  with_items: "{{ zsh_setup_users }}"
+  changed_when: false
+
+- name: Create per-user $HOME/.zshrc files
+  ansible.builtin.template:
+    src: zshrc.j2
+    dest: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/.zshrc"
+    mode: "0755"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+  loop: "{{ zsh_setup_users }}"
