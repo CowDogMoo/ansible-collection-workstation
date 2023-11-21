@@ -1,9 +1,28 @@
 ---
-- name: Include OS-specific variables.
-  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+- name: Gather the list of unique shells to install
+  ansible.builtin.set_fact:
+    unique_shells: "{{ user_setup_default_users | map(attribute='shell') | unique | map('regex_replace', '^/bin/(.*)$', '\\1') | list }}"
+  tags: always
 
-- name: Include OS-Specific tasks
-  ansible.builtin.include_tasks: "setup_{{ ansible_os_family | lower }}.yml"
+- name: Install base packages
+  become: true
+  ansible.builtin.package:
+    name: "{{ user_setup_install_packages }}"
+    state: present
+    update_cache: true
+  environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
+  tags: packages
+
+- name: Install user-specific shells
+  become: true
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ unique_shells }}"
+  when: item != '' and item != 'bash'
+  environment:
+    DEBIAN_FRONTEND: "{{ 'noninteractive' if ansible_distribution == 'Debian' else '' }}"
+  tags: shells
 
 - name: Ensure groups exist for users
   become: true

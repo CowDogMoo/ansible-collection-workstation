@@ -6,18 +6,10 @@
     - name: Include default variables
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
-      when: user_setup_default_users is not defined
 
-    - name: Set OS family variable
-      ansible.builtin.set_fact:
-        asdf_os_family: "{{ ansible_facts['os_family'] | lower }}"
-
-    - name: Include OS-specific variables
+    - name: Include user setup variables
       ansible.builtin.include_vars:
-        file: "../../vars/{{ asdf_os_family }}.yml"
-
-    - name: Include OS-Specific tasks
-      ansible.builtin.include_tasks: "../../tasks/setup_{{ ansible_os_family | lower }}.yml"
+        file: "../../vars/main.yml"
 
     - name: Check user exists
       ansible.builtin.command: "id -un {{ item.username }}"

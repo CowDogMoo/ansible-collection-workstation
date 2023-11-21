@@ -44,3 +44,9 @@ exclude_rule 'MD033' # Inline HTML
 
 # Using bare URLs is fine.
 exclude_rule 'MD034'
+
+# Exclude rules reverted by markdownlint
+# (https://github.com/markdownlint/markdownlint/commit/f97a364ed880a690f509d144641b89ba16dd92e5)
+exclude_rule 'MD055'
+exclude_rule 'MD056'
+exclude_rule 'MD057'
