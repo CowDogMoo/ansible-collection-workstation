@@ -1,88 +1,78 @@
-# Package Management Role
+# Ansible Role: Package Management
 
-This Ansible role is designed to manage package installations and cleanups on
-Debian-based and Red Hat-based systems. It leverages Ansible best practices to
-ensure that the necessary packages are installed and unnecessary ones are
-removed, maintaining system hygiene.
+This role manages package installations and cleanups on Debian-based
+and Red Hat-based systems.
+
+---
 
 ## Requirements
 
-- Ansible version 2.14 or higher
+- Ansible 2.14 or higher.
+- Python packages. Install with:
 
-## Supported Platforms
-
-- Ubuntu (all versions)
-- Debian (all versions)
-- Kali (all versions)
-- EL (all versions, including Red Hat Enterprise Linux and derivatives)
+  ```bash
+  python3 -m pip install --upgrade \
+    ansible-core \
+    molecule \
+    molecule-docker \
+    "molecule-plugins[docker]"
+  ```
 
 ## Role Variables
 
-The role uses variables from `vars/main.yml` to manage packages. Here's a list
-of the primary variables:
+| Variable                                    | Default Value                                                                                                                                                     | Description                     |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| package_management_common_install_packages  | bash, ca-certificates, colordiff, dbus-x11, file, gcc, git, less, make, net-tools, procps, rsync, sudo, terminator, tree, wget, vim, zsh                          | Common packages for all systems |
+| package_management_debian_specific_packages | curl, fonts-powerline, inetutils-ping, locales, software-properties-common, tigervnc-standalone-server, tigervnc-tools, xfce4-goodies, xfce4, zsh-autosuggestions | Debian-specific packages        |
+| package_management_redhat_specific_packages | epel-release, tigervnc, tigervnc-server                                                                                                                           | Red Hat-specific packages       |
 
-<!--- vars table -->
-
-| Variable                                      | Description                                  |
-| --------------------------------------------- | -------------------------------------------- |
-| `package_management_common_install_packages`  | Packages to install on all supported systems |
-| `package_management_redhat_excluded_packages` | Packages to exclude on Red Hat systems       |
-| `package_management_common_cleanup_packages`  | Packages to clean up on all systems          |
-
-<!--- end vars table -->
-
-For more detailed information, refer to the `vars/main.yml` file within the role
-directory.
-
-## Tasks
-
-Tasks are defined in `tasks/main.yml`. They include:
-
-- Including common variables for package names.
-- Merging common and OS-specific packages.
-- Installing and cleaning up packages on Debian and Red Hat systems.
-
-Each task is idempotent, ensuring that the desired state is achieved without
-repeating actions on subsequent playbook runs.
-
-## Molecule Tests
-
-The `molecule/default` directory contains configuration for testing with
-Molecule, including:
-
-- A verification playbook (`verify.yml`) to assert that the correct packages
-  are present or absent.
-- A Docker-based test environment defined in `molecule.yml` and `converge.yml`
-  for Debian and Red Hat platforms.
-
-Tests can be run using the `molecule test` command to ensure that the role
-behaves as expected.
-
-## Meta Information
-
-- Role Name: package_management
-- Namespace: cowdogmoo
-- Author: Jayson Grace
-- License: MIT
-
-For more details, see `meta/main.yml`.
-
-## Usage Example
-
-To use this role, include it in your playbook as follows:
-
-```yaml
 ---
-- name: Manage packages
-  hosts: all
-  roles:
-    - cowdogmoo.package_management
+
+## Local Development
+
+To develop locally, run the following from the repository root:
+
+```bash
+ansible-galaxy install -r requirements.yml
+export PATH_TO_ROLE="${PWD}"
+ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.package_management"
 ```
 
-## License
+## Testing
 
-This role is distributed under the MIT license.
+- Use [act](https://github.com/nektos/act) for local GitHub Actions testing.
+
+- Run Molecule tests:
+
+  ```bash
+  molecule create
+  molecule converge
+  molecule idempotence
+  molecule destroy
+  ```
+
+## Role Tasks
+
+1. Include common variables.
+2. Install distribution-specific packages.
+3. Install common packages.
+4. Cleanup unnecessary packages.
+5. Configure .xinitrc for XFCE (Red Hat).
+6. Manage systemd default target (Red Hat).
+
+## Platforms
+
+Tested on:
+
+- Ubuntu
+- Kali
+- EL (Enterprise Linux)
+
+## Dependencies
+
+No dependencies.
 
 ## Author Information
 
-- Jayson Grace (jayson.e.grace@gmail.com)
+This role was created by Jayson Grace and is maintained as part of
+the CowDogMoo project.

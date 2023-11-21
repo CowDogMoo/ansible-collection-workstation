@@ -7,27 +7,16 @@
       ansible.builtin.include_vars:
         file: "../../vars/main.yml"
 
-    - name: Check if necessary packages are installed (Debian)
-      ansible.builtin.apt:
+    - name: Check if common packages are installed
+      ansible.builtin.package:
         name: "{{ item }}"
         state: present
       register: package_status
       with_items: "{{ package_management_common_install_packages }}"
-      when: ansible_os_family == 'Debian'
       failed_when: package_status is failed
       changed_when: false
 
-    - name: Check if necessary packages are installed (Red Hat)
-      ansible.builtin.dnf:
-        name: "{{ item }}"
-        state: present
-      register: package_status
-      with_items: "{{ package_management_common_install_packages }}"
-      when: ansible_os_family == 'RedHat'
-      failed_when: package_status is failed
-      changed_when: false
-
-    - name: Assert all required packages are installed
+    - name: Assert all common packages are installed
       ansible.builtin.assert:
         that: "item.changed == false"
         fail_msg: "{{ item.item }} is not installed"
@@ -35,3 +24,42 @@
       loop: "{{ package_status.results }}"
       loop_control:
         label: "{{ item.item }}"
+
+    - name: Check if distribution-specific packages are installed
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: present
+      register: distro_package_status
+      with_items: "{{ package_management_install_packages }}"
+      when: ansible_os_family in ['Debian', 'RedHat']
+      failed_when: distro_package_status is failed
+      changed_when: false
+
+    - name: Check .xinitrc file exists (Red Hat)
+      ansible.builtin.stat:
+        path: "~/.xinitrc"
+      register: xinitrc_status
+      when: ansible_os_family == 'RedHat'
+
+    - name: Assert .xinitrc file content (Red Hat)
+      ansible.builtin.command:
+        cmd: grep -q 'exec /usr/bin/xfce4-session' ~/.xinitrc
+      when: ansible_os_family == 'RedHat' and xinitrc_status.stat.exists
+      failed_when: false
+      changed_when: false
+
+    - name: Check if graphical.target is the default (Red Hat)
+      ansible.builtin.command:
+        cmd: systemctl get-default
+      register: systemd_default_target
+      when: ansible_os_family == 'RedHat'
+      failed_when: false
+      changed_when: false
+      # noqa command-instead-of-module
+
+    - name: Assert graphical.target is the default (Red Hat)
+      ansible.builtin.assert:
+        that: "'graphical.target' in systemd_default_target.stdout"
+        fail_msg: "Graphical target is not set as default"
+        success_msg: "Graphical target is set as default"
+      when: ansible_os_family == 'RedHat'
