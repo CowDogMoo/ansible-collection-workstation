@@ -9,7 +9,5 @@ zsh_setup_default_username: "{{ ansible_distribution | lower }}"
 zsh_setup_users:
   - username: "{{ zsh_setup_default_username }}"
     usergroup: "{{ zsh_setup_default_username }}"
-    sudo: true
   - username: "root"
     usergroup: "root"
-    sudo: true

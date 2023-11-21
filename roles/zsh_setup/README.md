@@ -1,7 +1,7 @@
-# Ansible Role: Configure oh-my-zsh with zsh
+# Ansible Role: ZSH Setup
 
-This role installs and configures [oh-my-zsh](https://ohmyz.sh/) for multiple
-users.
+This role installs and configures `zsh` with `oh-my-zsh` for user accounts on
+Unix-like systems.
 
 ---
 
@@ -18,33 +18,41 @@ users.
     "molecule-plugins[docker]"
   ```
 
----
-
 ## Role Variables
 
-The role uses the following variables:
+| Variable                         | Default Value                                                           | Description                                                                       |
+| -------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| zsh_setup_omz_install_script_url | "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | URL for oh-my-zsh install script                                                  |
+| zsh_setup_theme                  | "af-magic"                                                              | Default theme for zsh                                                             |
+| zsh_setup_default_username       | {{ ansible_distribution \| lower }}                                     | Default username based on the Ansible distribution                                |
+| zsh_setup_users                  | Configurable                                                            | List of users for zsh setup. Each user dictionary includes username and usergroup |
 
-- `zsh_setup_omz_install_script_url_url`: URL to the oh-my-zsh install script.
-- `zsh_setup_theme`: The theme to be used with oh-my-zsh.
-- `zsh_setup_default_username`: Default username (set to the distribution name).
-- `zsh_setup_users`: List of users for whom oh-my-zsh will be configured.
+### Default Configuration for `zsh_setup_users`
+
+The `zsh_setup_users` variable is a list of dictionaries, each containing:
+
+- `username`: Specified user or default `{{ zsh_setup_default_username }}`
+- `usergroup`: User's group, default is `{{ zsh_setup_default_username }}`
+
+---
 
 ## Local Development
 
-To develop locally, run:
+To develop locally, run the following from the repository root:
 
 ```bash
 ansible-galaxy install -r requirements.yml
 PATH_TO_ROLE="${PWD}"
-ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.zsh"
+ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.zsh_setup"
 ```
 
 ## Testing
 
 For local testing:
 
-- Install [act](https://github.com/nektos/act) for running GitHub Actions locally.
-- Run:
+- Use [act](https://github.com/nektos/act) for local GitHub Actions testing.
+
+- Run Molecule tests:
 
   ```bash
   ACTION="molecule"
@@ -59,39 +67,34 @@ To test changes made to this role locally:
 molecule create
 molecule converge
 molecule idempotence
-molecule destroy # To tear down the docker container
+molecule destroy
 ```
 
 ## Role Tasks
 
 The role includes the following main tasks:
 
-1. Check if `.oh-my-zsh` exists for each user.
-2. Download the oh-my-zsh install script.
-3. Install oh-my-zsh.
-4. Check for the existence of the zsh-installer script.
-5. Ensure the zsh-installer script is executable.
-6. Execute the zsh-installer script.
-7. Remove the zsh-installer script.
-8. Create per-user `.zshrc` files.
+1. Check if .oh-my-zsh exists for users.
+2. Download oh-my-zsh install script for users.
+3. Install oh-my-zsh for users.
+4. Check and ensure zsh-installer.sh is executable.
+5. Execute zsh-installer.sh for users.
+6. Remove zsh-installer.sh after installation.
+7. Create per-user $HOME/.zshrc files.
 
 ## Platforms
 
 This role is tested on the following platforms:
 
 - Ubuntu
-- Kali Linux
-- Rocky Linux
+- Kali
+- EL (Enterprise Linux)
 
 ## Dependencies
 
-This role depends on the following roles:
-
 - `cowdogmoo.workstation.package_management`
-
-Ensure these dependencies are installed or available before using this role.
 
 ## Author Information
 
-This role was created by [Jayson Grace](https://techvomit.net) and is
-maintained as part of the CowDogMoo project.
+This role was created by Jayson Grace and is maintained as part of
+the CowDogMoo project.
