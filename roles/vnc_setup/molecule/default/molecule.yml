@@ -14,7 +14,7 @@ driver:
 
 platforms:
   - name: ubuntu-vnc-setup
-    image: "geerlingguy/docker-ubuntu2204-ansible:latest"
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
     # Setting the command to this is necessary for systemd containers
     command: ""
     volumes:
@@ -22,24 +22,24 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  - name: kali-vnc-setup
-    image: cisagov/docker-kali-ansible:latest
-    # Setting the command to this is necessary for systemd containers
-    command: ""
-    pre_build_image: true
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
-    privileged: true
-
-  # - name: redhat_vnc_setup
-  #   image: "geerlingguy/docker-rockylinux9-ansible:latest"
+  # - name: kali-vnc-setup
+  #   image: cisagov/docker-kali-ansible:latest
   #   # Setting the command to this is necessary for systemd containers
   #   command: ""
+  #   pre_build_image: true
   #   volumes:
   #     - /sys/fs/cgroup:/sys/fs/cgroup:rw
   #   cgroupns_mode: host
   #   privileged: true
+
+  - name: redhat-vnc-setup
+    image: "geerlingguy/docker-rockylinux9-ansible:latest"
+    # Setting the command to this is necessary for systemd containers
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
 
 provisioner:
   name: ansible

@@ -1,6 +1,6 @@
 ---
 # VNC client options
-vnc_setup_client_options: "-geometry 1920x1080 --localhost no"
+vnc_setup_client_options: "-geometry 1920x1080"
 
 # Define whether to setup systemd
 vnc_setup_systemd: true
@@ -9,7 +9,6 @@ vnc_setup_systemd: true
 vnc_setup_users:
   - username: "{{ vnc_setup_default_username }}" # Username for the vnc configuration
     usergroup: "{{ vnc_setup_default_username }}" # Usergroup for the vnc configuration
-    sudo: true # Flag to indicate if the user has sudo privileges
     vnc_num: 1 # Port number offset for VNC server (e.g., 5901 for vnc_num: 1)
 
 # Default username value, derived from the ansible_distribution variable

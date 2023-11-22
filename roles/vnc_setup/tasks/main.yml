@@ -63,7 +63,7 @@
       args:
         executable: /bin/bash
       register: password_set_result
-      changed_when: "'passwd' not in password_set_result.stdout"
+      changed_when: password_set_result.changed
       loop: "{{ vnc_setup_users_pw }}"
 
 - name: Check if VNC password file exists
