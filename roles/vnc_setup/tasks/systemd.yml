@@ -70,6 +70,18 @@
       export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     mode: "0755"
 
+- name: Check if VNC service is enabled and running
+  become: true
+  become_user: "{{ item.username }}"
+  ansible.builtin.command: systemctl --user is-active --quiet vncserver.service
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ item.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ item.uid }}/bus"
+  register: vnc_service_status
+  loop: "{{ vnc_setup_users_uid.result }}"
+  ignore_errors: true
+  changed_when: false
+
 - name: "Enable VNC service for {{ vnc_setup_users_uid }}"
   become: true
   become_user: "{{ item.0.username }}"
@@ -82,4 +94,5 @@
   environment:
     XDG_RUNTIME_DIR: "/run/user/{{ item.0.uid }}"
     DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ item.0.uid }}/bus"
+  when: vnc_service_status.results | selectattr('item.username', 'equalto', item.0.username) | map(attribute='rc') | first == 3
   loop: "{{ vnc_setup_users_uid.result | zip(vncserver_service_exists) | list }}"
