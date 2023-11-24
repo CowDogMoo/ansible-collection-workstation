@@ -23,7 +23,7 @@ platforms:
 
   - name: kali-vnc-setup
     image: cisagov/docker-kali-ansible:latest
-    command: /lib/systemd/systemd
+    command: "" # necessary for systemd
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     cgroupns_mode: host

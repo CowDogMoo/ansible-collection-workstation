@@ -1,6 +1,7 @@
 ---
 - name: Converge
   hosts: all
+  gather_facts: true
   roles:
     - role: cowdogmoo.workstation.user_setup
     - role: cowdogmoo.workstation.package_management

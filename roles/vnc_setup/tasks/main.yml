@@ -31,11 +31,13 @@
   cowdogmoo.workstation.vnc_pw:
     vnc_setup_users: "{{ vnc_setup_users }}"
   register: updated_data
+  # changed_when: updated_data.changed
 
 - name: Update vnc_setup_users with the random generated passwords
   ansible.builtin.set_fact:
     vnc_setup_users_pw: "{{ vnc_setup_users_pw | default([]) + [item] }}"
-  with_items: "{{ updated_data.result }}"
+  loop: "{{ updated_data.result }}"
+  # changed_when: false
 
 - name: Ensure .vnc directory exists for each user
   become: true
@@ -68,6 +70,7 @@
         executable: /bin/bash
       when: not passwd_file.results | selectattr('item.username', 'equalto', item.username) | map(attribute='stat.exists') | first | bool
       loop: "{{ vnc_setup_users_pw }}"
+      changed_when: true
 
 - name: Check if VNC password file exists
   become: true
