@@ -1,0 +1,70 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Simulate failed package installation
+      block:
+        - name: Check contents of .zshrc
+          ansible.builtin.command: "cat {{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/.zshrc"
+          register: zshrc_contents
+          changed_when: false
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Confirm .oh-my-zsh is installed for all zsh_setup_users
+          ansible.builtin.stat:
+            path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/.oh-my-zsh"
+          register: oh_my_zsh_test
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Assert .oh-my-zsh installation
+          ansible.builtin.assert:
+            that:
+              - "oh_my_zsh_test.results[item | int].stat.exists"
+            msg: ".oh-my-zsh installation check failed for {{ item.username }}"
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Confirm zsh-installer.sh is removed for all zsh_setup_users
+          ansible.builtin.stat:
+            path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/zsh-installer.sh"
+          register: zsh_installer_test
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Assert zsh-installer.sh removal
+          ansible.builtin.assert:
+            that:
+              - "not zsh_installer_test.results[item | int].stat.exists"
+            msg: "zsh-installer.sh removal check failed for {{ item.username }}"
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Confirm per-user $HOME/.zshrc files exist for all zsh_setup_users
+          ansible.builtin.stat:
+            path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/.zshrc"
+          register: zshrc_test
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Assert per-user $HOME/.zshrc files
+          ansible.builtin.assert:
+            that:
+              - "zshrc_test.results[item | int].stat.exists"
+              - "zshrc_test.results[item | int].stat.mode == '0755'"
+            msg: "$HOME/.zshrc file check failed for {{ item.username }}"
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Confirm per-user $HOME/.oh-my-zsh directories exist for all zsh_setup_users
+          ansible.builtin.stat:
+            path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/.oh-my-zsh"
+          register: oh_my_zsh_test
+          with_items: "{{ zsh_setup_users }}"
+
+        - name: Assert per-user $HOME/.oh-my-zsh directories
+          ansible.builtin.assert:
+            that:
+              - "oh_my_zsh_test.results[item | int].stat.exists"
+              - "oh_my_zsh_test.results[item | int].stat.mode == '0755'"
+            msg: "$HOME/.oh-my-zsh directory check failed for {{ item.username }}"
+          with_items: "{{ zsh_setup_users }}"

@@ -1,14 +1,13 @@
 # Ansible Role: User Setup
 
-This role sets up user accounts with optional sudo privileges and installs
-[zsh](https://www.zsh.org/) for Unix-like systems, supporting Debian and
-RedHat-based distributions.
+This role sets up user accounts with optional sudo privileges for Unix-like systems.
+
+---
 
 ## Requirements
 
-- Python packages
-
-  Install with:
+- Ansible 2.14 or higher.
+- Python packages. Install with:
 
   ```bash
   python3 -m pip install --upgrade \
@@ -18,44 +17,83 @@ RedHat-based distributions.
     "molecule-plugins[docker]"
   ```
 
----
-
 ## Role Variables
 
-Here's a table of role variables and their default values:
+| Variable                    | Default Value                       | Description                                                                                  |
+| --------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
+| user_setup_install_packages | ["bash", "sudo"]                    | Base packages to install                                                                     |
+| user_setup_default_username | {{ ansible_distribution \| lower }} | Default username based on the Ansible distribution                                           |
+| user_setup_default_users    | Configurable                        | List of users with attributes: username, usergroup, sudo, shell (defaults provided in below) |
 
-<!--- vars table -->
-| Variable | Default Value | Description |
-| --- | --- | --- |
-| `user_setup_default_username` | `{{ ansible_distribution \| lower }}` |  |
-| `user_setup_default_users` | `None` |  |
-| `- username` | `{{ user_setup_default_username }}` |  |
-| `usergroup` | `{{ user_setup_default_username }}` |  |
-| `sudo` | `True` |  |
-| `shell` | `/bin/zsh` |  |
-| Variable | Default Value (Debian) | Description |
-| --- | --- | --- |
-| `user_setup_install_packages` | `bash, sudo` | List of packages to be installed for each user |
-| Variable | Default Value (Redhat) | Description |
-| --- | --- | --- |
-| `user_setup_install_packages` | `bash, sudo` | List of packages to be installed for each user |
-<!--- end vars table -->
+### Default Configuration for `user_setup_default_users`
 
-Note: See `vars/debian.yml` and `vars/redhat.yml` for
-distribution-specific package lists.
+The `user_setup_default_users` variable is a list of dictionaries, each containing:
+
+- `username`: Default is `{{ user_setup_default_username }}`
+- `usergroup`: Group of the user, default is `{{ user_setup_default_username }}`
+- `sudo`: Whether the user has sudo access, default is `true`
+- `shell`: Default shell for the user, default is `/bin/zsh`
 
 ---
+
+## Local Development
+
+To develop locally, run the following from the repository root:
+
+```bash
+ansible-galaxy install -r requirements.yml
+PATH_TO_ROLE="${PWD}"
+ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.user_setup"
+```
 
 ## Testing
 
-To test changes made to this role locally, run the following commands:
+For local testing:
+
+- Install [act](https://github.com/nektos/act) for running GitHub Actions locally.
+
+- Run:
+
+  ```bash
+  ACTION="molecule"
+  if [[ $(uname) == "Darwin" ]]; then
+    act -j $ACTION --container-architecture linux/amd64
+  fi
+  ```
+
+To test changes made to this role locally:
 
 ```bash
 molecule create
 molecule converge
 molecule idempotence
-# If everything passes, tear down the docker container(s) spawned by molecule:
 molecule destroy
 ```
 
-Refer to `./molecule/default/` directory for molecule scenarios and testing configurations.
+## Role Tasks
+
+The role includes the following main tasks:
+
+1. Gather the list of unique shells to install.
+2. Install base packages.
+3. Install user-specific shells.
+4. Ensure groups exist for users.
+5. Create users.
+6. Provide sudoers access for relevant users.
+
+## Platforms
+
+This role is tested on the following platforms:
+
+- Ubuntu
+- Kali
+- EL (Enterprise Linux)
+
+## Dependencies
+
+No dependencies.
+
+## Author Information
+
+This role was created by Jayson Grace and is maintained as part of
+the CowDogMoo project.

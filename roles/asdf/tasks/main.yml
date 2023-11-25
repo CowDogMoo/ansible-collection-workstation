@@ -1,122 +1,40 @@
 ---
-- name: Include OS-specific variables.
-  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
-
-- name: Include OS-Specific tasks
-  ansible.builtin.include_tasks: "setup_{{ ansible_os_family | lower }}.yml"
-
-- name: Set default username
+- name: Set default username for Kali systems
   ansible.builtin.set_fact:
-    vnc_zsh_default_username: "kali"
+    asdf_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
 
-- name: Clone asdf
+- name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
-    dest: "{{ asdf_install_for_all_users | ternary('/usr/local/asdf', '/home/' + item.username + '/.asdf') }}"
-    clone: yes
-    update: no
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when: asdf_users is defined
-
-- name: Check and Download necessary files
-  ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
-  loop:
-    - name: setup_asdf.sh
-      path: "{{ asdf_setup_script }}"
-      url: "{{ asdf_setup_script_url }}"
-    - name: .tool-versions
-      path: "{{ asdf_tool_versions }}"
-      url: "{{ asdf_tool_versions_url }}"
-  loop_control:
-    loop_var: item
-
-- name: Check if asdf_setup_script exists
-  ansible.builtin.stat:
-    path: "{{ asdf_setup_script }}"
-
-- name: Check if necessary items exist for each user
-  ansible.builtin.stat:
-    path: "/home/{{ item.0.username }}/{{ item.1.path }}"
-  loop: "{{ asdf_users | product(item_checks) | list }}"
-  loop_control:
-    loop_var: item
-  vars:
-    item_checks:
-      - name: .asdf directory
-        path: .asdf
-      - name: .tool-versions file
-        path: .tool-versions
-  register: check_results
-
-- name: Ensure setup_asdf.sh is executable
-  ansible.builtin.file:
-    path: "{{ asdf_setup_script }}"
-    mode: "0755"
-
-- name: Execute setup_asdf.sh
-  ansible.builtin.shell:
-    cmd: "{{ asdf_setup_script }} {{ asdf_languages | join(' ') }}"
-  args:
-    executable: "{{ ansible_user_shell }}"
-  when: >
-    ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh') and
-    (check_results.results | selectattr('stat.exists', 'equalto', false) | list | length > 0)
-  changed_when: false
-  become: "{{ asdf_install_for_all_users }}"
-
-- name: Ensure .bashrc or .zshrc exists
-  ansible.builtin.copy:
-    dest: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    content: ""
-    force: no
-    mode: "0644"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when: asdf_users is defined
-
-- name: Update shell profile with ASDF_PATH
-  ansible.builtin.lineinfile:
-    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: 'export ASDF_PATH="{{ (item.username == ''root'') | ternary(''/root'', ''/home/'' + item.username) }}/.asdf"'
-    state: present
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when: asdf_users is defined
-
-- name: Update shell profile with updated PATH
-  ansible.builtin.lineinfile:
-    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: 'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"'
-    state: present
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when: asdf_users is defined
-
-- name: Update shell profile with ASDF source command
-  ansible.builtin.lineinfile:
-    path: "{{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: '. "{{ (item.username == ''root'') | ternary(''/root'', ''/home/'' + item.username) }}/.asdf/asdf.sh"'
-    state: present
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when: asdf_users is defined
-
-- name: Reload shell to apply ASDF settings
-  ansible.builtin.shell:
-    cmd: "source {{ (item.username == 'root') | ternary('/root', '/home/' + item.username) }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-  args:
-    executable: "{{ ansible_user_shell }}"
-  changed_when: false
+    dest: "/home/{{ item.username }}/.asdf"
+    clone: true
+    update: false
   loop: "{{ asdf_users }}"
   loop_control:
     loop_var: item
   when:
-    - ansible_user_shell is search('/bash') or ansible_user_shell is search('/zsh')
     - asdf_users is defined
+    - item.username != 'root'
+
+- name: Check and download necessary files for each user
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: asdf_user
+
+- name: Iterate over users for setting up scripts
+  ansible.builtin.include_tasks: setup_scripts.yml
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: asdf_user
+
+- name: Update shell profiles for each user
+  ansible.builtin.lineinfile:
+    path: "/home/{{ user_line.0.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: "{{ user_line.1 }}"
+    state: present
+  loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
+  loop_control:
+    loop_var: user_line
+  when: user_line.0.username != 'root'

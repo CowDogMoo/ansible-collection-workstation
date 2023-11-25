@@ -13,7 +13,7 @@ driver:
   name: docker
 
 platforms:
-  - name: ubuntu_vnc_zsh
+  - name: ubuntu_zsh
     image: "geerlingguy/docker-ubuntu2204-ansible:latest"
     # Setting the command to this is necessary for systemd containers
     command: ""
@@ -22,7 +22,7 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  - name: kali_vnc_zsh
+  - name: kali_zsh
     image: cisagov/docker-kali-ansible:latest
     # Setting the command to this is necessary for systemd containers
     command: ""
@@ -32,14 +32,14 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  # - name: redhat_vnc_zsh
-  #   image: "geerlingguy/docker-rockylinux9-ansible:latest"
-  #   # Setting the command to this is necessary for systemd containers
-  #   command: ""
-  #   volumes:
-  #     - /sys/fs/cgroup:/sys/fs/cgroup:rw
-  #   cgroupns_mode: host
-  #   privileged: true
+  - name: redhat_zsh
+    image: "geerlingguy/docker-rockylinux9-ansible:latest"
+    # Setting the command to this is necessary for systemd containers
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
 
 provisioner:
   name: ansible

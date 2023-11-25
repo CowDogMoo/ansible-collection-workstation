@@ -1,81 +1,98 @@
-# Ansible Role: Logging Setup
+# Ansible Role: VNC Setup
 
-This role configures logging for applications on Unix-like systems, ensuring
-that logs are properly rotated and maintained. It supports Debian and
-RedHat-based distributions.
+This role configures VNC services with systemd integration, ensuring isolated
+and secure remote desktop access for each user on Unix-like systems.
 
 ---
 
 ## Requirements
 
-- Ansible version 2.15 or higher
+- Ansible 2.14 or higher.
+- Python packages. Install with:
 
----
-
-## Supported Platforms
-
-- Ubuntu (all versions)
-- Kali Linux (all versions)
-- EL (all versions)
-
----
+  ```bash
+  python3 -m pip install --upgrade \
+    ansible-core \
+    molecule \
+    molecule-docker \
+    "molecule-plugins[docker]"
+  ```
 
 ## Role Variables
 
-Here's a table of role variables and their default values:
-
-<!--- vars table -->
-
-| Variable                       | Default Value                                | Description                                                                   |
-| ------------------------------ | -------------------------------------------- | ----------------------------------------------------------------------------- |
-| `vnc_setup_vnc_client_options` | `-geometry 1920x1080 --localhost no`         | VNC client options                                                            |
-| `vnc_setup_systemd`            | `False`                                      | Define whether to setup systemd                                               |
-| `vnc_setup_vnc_users`          | `None`                                       | Define default users for VNC setup                                            |
-| `- username`                   | `root`                                       |                                                                               |
-| `usergroup`                    | `root`                                       |                                                                               |
-| `vnc_num`                      | `1`                                          |                                                                               |
-| `vnc_setup_vncpwd_clone_path`  | `/tmp/vncpwd`                                | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).               |
-| `vnc_setup_vncpwd_path`        | `/usr/local/bin/vncpwd`                      | Location in $PATH to install [vncpwd](https://github.com/jeroennijhof/vncpwd) |
-| `vnc_setup_vncpwd_repo_url`    | `https://github.com/jeroennijhof/vncpwd.git` | Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd)                |
-
-<!--- end vars table -->
-
-Default values for these variables can be found in `defaults/main.yml`.
+| Variable                    | Default Value                                                     | Description                                         |
+| --------------------------- | ----------------------------------------------------------------- | --------------------------------------------------- |
+| vnc_setup_vncpwd_repo_url   | [vncpwd Git repo URL](https://github.com/jeroennijhof/vncpwd.git) | URL for cloning vncpwd repo.                        |
+| vnc_setup_client_options    | "-geometry 1920x1080"                                             | Options for VNC client configuration.               |
+| vnc_setup_systemd           | true                                                              | Determines if systemd services are set up.          |
+| vnc_setup_users             | Configurable                                                      | List of users to set up with VNC.                   |
+| vnc_setup_default_username  | "{{ ansible_distribution \| lower }}"                             | Default username derived from ansible_distribution. |
+| vnc_setup_vncpwd_clone_path | "/tmp/vncpwd"                                                     | Path to clone vncpwd repo.                          |
+| vnc_setup_vncpwd_path       | "/usr/local/bin/vncpwd"                                           | Path to install vncpwd executable.                  |
 
 ---
 
-## Example Playbook
+## Local Development
 
-Here's an example of how to use this role:
-
-```yaml
-- hosts: all
-  roles:
-    - role: logging_setup
-      logging_directories:
-        - "/var/log/myapp"
-      logrotate_interval: "daily"
-      logrotate_keep: 7
-```
-
----
-
-## Testing with Molecule
-
-This role uses Molecule for testing:
+To develop locally, run the following from the repository root:
 
 ```bash
-molecule test
+ansible-galaxy install -r requirements.yml
+PATH_TO_ROLE="${PWD}"
+ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.vnc_setup"
 ```
 
-This will execute a full test suite, which includes linting with yamllint and
-ansible-lint, as well as running the actual Ansible playbook to apply the role.
+## Testing
 
-Refer to the `./molecule/default/` directory for test scenarios and
-configuration settings.
+For local testing:
 
----
+- Use [act](https://github.com/nektos/act) for local GitHub Actions testing.
 
-For more information on the role's capabilities and additional configurations,
-inspect the `meta/main.yml`, `tasks/`, and `vars/` directories within the role
-structure.
+- Run Molecule tests:
+
+  ```bash
+  ACTION="molecule"
+  if [[ $(uname) == "Darwin" ]]; then
+    act -j $ACTION --container-architecture linux/amd64
+  fi
+  ```
+
+To test changes made to this role locally:
+
+```bash
+molecule create
+molecule converge
+molecule idempotence
+molecule destroy
+```
+
+## Role Tasks
+
+The role includes the following main tasks:
+
+1. Install and configure vncpwd.
+2. Set up user-specific .vnc directories.
+3. Generate random VNC passwords.
+4. Create user runtime directories.
+5. Enable lingering and systemd directories for users.
+6. Configure VNC service files and permissions.
+7. Add scripts to start VNC and set XDG_RUNTIME_DIR.
+
+## Platforms
+
+This role is tested on the following platforms:
+
+- Ubuntu
+- Kali
+- EL (Enterprise Linux)
+
+## Dependencies
+
+- `cowdogmoo.workstation.user_setup`
+- `cowdogmoo.workstation.package_management`
+- `cowdogmoo.workstation.zsh_setup`
+
+## Author Information
+
+This role was created by Jayson Grace and is maintained as part of
+the CowDogMoo project.

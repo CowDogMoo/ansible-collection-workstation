@@ -1,13 +1,9 @@
 ---
-- name: Check if item exists locally
-  ansible.builtin.stat:
-    path: "{{ item.path }}"
-  register: script_stat
-
-- name: Download item
-  ansible.builtin.get_url:
-    url: "{{ item.url }}"
-    dest: "{{ item.path }}"
-    mode: "0644"
-  when: not script_stat.stat.exists
-  failed_when: ansible_failed_result is defined and "Failed to download" in ansible_failed_result.msg
+- name: Iterate over scripts for each user
+  ansible.builtin.include_tasks: script_check_and_download.yml
+  loop: "{{ asdf_user.asdf_setup_scripts }}"
+  loop_control:
+    loop_var: script_item
+  vars:
+    script_path: "{{ script_item.path }}"
+    script_url: "{{ script_item.url }}"

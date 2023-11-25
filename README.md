@@ -1,12 +1,14 @@
-# Workstation Ansible Collection
+# Ansible Collection: CowDogMoo Workstation
 
 [![License](https://img.shields.io/github/license/CowDogMoo/ansible-collection-workstation?label=License&style=flat&color=blue&logo=github)](https://github.com/CowDogMoo/ansible-collection-workstation/blob/main/LICENSE)
 [![Pre-Commit](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/pre-commit.yaml)
 [![Molecule Test](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/molecule.yaml/badge.svg)](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/molecule.yaml)
 [![Renovate](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/renovate.yaml/badge.svg)](https://github.com/CowDogMoo/ansible-collection-workstation/actions/workflows/renovate.yaml)
 
-This Ansible collection provides a suite of utilities and
-applications that I use across my various workstations.
+This Ansible collection provides a comprehensive setup for my
+workstation environment, covering various aspects, including user setup,
+package management, ZSH configuration, VNC setup, ASDF version manager, and
+various cybersecurity tools.
 
 ## Requirements
 
@@ -26,7 +28,31 @@ ansible-galaxy collection install git+https://github.com/cowdogmoo/workstation.g
 
 Installs and configures [ASDF](https://asdf-vm.com/), a version manager for
 multiple language runtimes.
-Check out the [ASDF role README](roles/asdf/README.md) for more details.
+
+### User Setup
+
+Sets up user accounts with optional sudo privileges on Unix-like systems.
+
+### Package Management
+
+Manages package installations and cleanups on Debian-based and Red Hat-based systems.
+
+### Zsh Setup
+
+Installs and configures Zsh with Oh-My-Zsh, setting up a robust shell environment.
+
+### VNC Setup
+
+Configures VNC services for remote desktop access, including password
+management and service setup.
+
+### Logging
+
+Provides logging directories and log rotation configurations for other roles.
+
+### Sliver
+
+Installs the Sliver framework, a post-exploitation tool used in cybersecurity assessments.
 
 ## Usage
 
@@ -38,12 +64,15 @@ Include the roles from this collection in your playbook. Here's an example:
   hosts: localhost
   roles:
     - cowdogmoo.workstation.asdf
+    - cowdogmoo.workstation.user_setup
+    - cowdogmoo.workstation.package_management
+    ...
 ```
 
 ## License
 
-This collection is licensed under the MIT License - see the
-[LICENSE](LICENSE) file for details.
+This collection is licensed under the MIT License - see the [LICENSE](LICENSE)
+file for details.
 
 ## Support
 

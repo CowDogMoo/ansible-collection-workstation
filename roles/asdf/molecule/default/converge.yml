@@ -2,9 +2,11 @@
 - name: Converge
   hosts: all
   roles:
+    - role: cowdogmoo.workstation.user_setup
+    - role: cowdogmoo.workstation.package_management
+    - role: cowdogmoo.workstation.zsh_setup
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
       vars:
-        asdf_install_for_all_users: true
         asdf_languages:
           - name: ruby
             version: 3.2.2
@@ -18,3 +20,7 @@
             version: 3.13.1
           - name: packer
             version: 1.9.4
+        # asdf_users:
+        #   - username: "{{ asdf_default_username }}"
+        #     usergroup: "{{ asdf_default_username }}"
+        #     asdf_setup_scripts: "{{ asdf_setup_scripts }}"

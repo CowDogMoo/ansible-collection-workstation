@@ -1,103 +1,85 @@
 ---
-- name: Enable persistent services for all users
-  ansible.builtin.shell: |
-    for file in /etc/profile.d/*.sh; do . $file; done \
-    && /bin/loginctl enable-linger {{ item.username }}
-  changed_when: false
-  with_items: "{{ vnc_setup_vnc_users }}"
-
-- name: Create systemd directories
-  ansible.builtin.file:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.config/systemd/user"
-    state: directory
-    mode: 0744
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
-  with_items: "{{ vnc_setup_vnc_users }}"
-
-- name: Check existence of per-user systemd service files
-  ansible.builtin.stat:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.config/systemd/user/vncserver.service"
-  with_items: "{{ vnc_setup_vnc_users }}"
-
-- name: Update per-user systemd service files
-  ansible.builtin.template:
-    src: vncserver.j2
-    dest: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.config/systemd/user/vncserver.service"
-    mode: 0744
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
-  with_items: "{{ vnc_setup_vnc_users }}"
-
-- name: Get uids of {{ vnc_setup_vnc_users }}
-  ansible.builtin.command: "id -u {{ item.username }}"
+- name: Get uids of {{ vnc_setup_users }}
+  ansible.builtin.command: id -u {{ item.username }}
+  loop: "{{ vnc_setup_users }}"
   check_mode: false
   changed_when: false
   register: uids
-  with_items: "{{ vnc_setup_vnc_users }}"
 
 - name: "Create uid_results from {{ uids.results }}"
   ansible.builtin.set_fact:
-    uid_results: "{{ uid_results | default([]) + [item] }}"
-  with_items: "{{ uids.results | map(attribute='stdout') | list }}"
+    uid_results: "{{ uid_results | default([]) + [item.stdout] }}"
+  loop: "{{ uids.results }}"
 
-- name: "Merge uids into vnc_setup_vnc_users"
+- name: "Merge uids into vnc_setup_users"
   cowdogmoo.workstation.merge_list_dicts_into_list:
-    ls_dicts: "{{ vnc_setup_vnc_users }}"
+    ls_dicts: "{{ vnc_setup_users }}"
     ls: "{{ uid_results }}"
-  register: vnc_setup_vnc_users_uid
+  register: vnc_setup_users_uid
+
+- name: Ensure dbus service is running
+  become: true
+  ansible.builtin.service:
+    name: dbus
+    state: started
+    enabled: true
+
+- name: Ensure user runtime directory exists
+  become: true
+  ansible.builtin.file:
+    path: "/run/user/{{ item.uid }}"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: "0700"
+  loop: "{{ vnc_setup_users_uid.result }}"
+
+- name: Enable persistent services for all users
+  become: true
+  ansible.builtin.command: loginctl enable-linger {{ item.username }}
+  loop: "{{ vnc_setup_users }}"
+  changed_when: false
+
+- name: Create systemd directories
+  become: true
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.config/systemd/user"
+    state: directory
+    mode: "0744"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+  loop: "{{ vnc_setup_users }}"
 
 - name: Check existence of per-user systemd service files
+  become: true
   ansible.builtin.stat:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.config/systemd/user/vncserver.service"
-  loop: "{{ vnc_setup_vnc_users_uid.result }}"
+    path: "/home/{{ item.username }}/.config/systemd/user/vncserver.service"
+  loop: "{{ vnc_setup_users }}"
   register: vncserver_service_check
+
+- name: Update per-user systemd service files
+  become: true
+  ansible.builtin.template:
+    src: vncserver.j2
+    dest: "/home/{{ item.username }}/.config/systemd/user/vncserver.service"
+    mode: "0744"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+  loop: "{{ vnc_setup_users }}"
 
 - name: Set fact for vncserver service file existence
   ansible.builtin.set_fact:
     vncserver_service_exists: "{{ vncserver_service_check.results | map(attribute='stat.exists') | list }}"
 
-- name: Update per-user systemd service files
-  ansible.builtin.template:
-    src: vncserver.j2
-    dest: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.config/systemd/user/vncserver.service"
-    mode: 0744
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
-  with_items: "{{ vnc_setup_vnc_users }}"
-
-- name: Get uids of {{ vnc_setup_vnc_users }}
-  ansible.builtin.command: "id -u {{ item.username }}"
-  check_mode: false
-  changed_when: false
-  register: uids
-  with_items: "{{ vnc_setup_vnc_users }}"
-
-- name: "Create uid_results from {{ uids.results }}"
-  ansible.builtin.set_fact:
-    uid_results: "{{ uid_results | default([]) + [item] }}"
-  with_items: "{{ uids.results | map(attribute='stdout') | list }}"
-
-- name: "Merge uids into vnc_setup_vnc_users"
-  cowdogmoo.workstation.merge_list_dicts_into_list:
-    ls_dicts: "{{ vnc_setup_vnc_users }}"
-    ls: "{{ uid_results }}"
-  register: vnc_setup_vnc_users_uid
-
-- name: Verify vncserver.service exists
-  ansible.builtin.stat:
-    path: "{{ '/root' if item.username == 'root' else '/home/' + item.username }}/.config/systemd/user/vncserver.service"
-  register: vncserver_service
-  with_items: "{{ vnc_setup_vnc_users_uid.result }}"
-  # when: item.username != 'root'
-
 - name: Add start_vnc script to profile.d
+  become: true
   ansible.builtin.template:
     src: start_vnc.sh.j2
     dest: "/etc/profile.d/start_vnc.sh"
-    mode: 0755
+    mode: "0755"
 
 - name: Create XDG_RUNTIME_DIR script in /etc/profile.d
+  become: true
   ansible.builtin.copy:
     dest: /etc/profile.d/xdg_runtime_dir.sh
     content: |
@@ -105,16 +87,34 @@
       export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     mode: "0755"
 
-- name: "Enable VNC service for {{ vnc_setup_vnc_users_uid }}"
+- name: Check if VNC service is enabled and running
+  become: true
+  become_user: "{{ item.username }}"
+  ansible.builtin.systemd:
+    name: vncserver.service
+    state: started
+    enabled: true
+    daemon_reload: true
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ item.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ item.uid }}/bus"
+  loop: "{{ vnc_setup_users_uid.result }}"
+  ignore_errors: true
+  register: vnc_service_status
+  changed_when: false
+
+- name: "Enable VNC service for {{ vnc_setup_users_uid }}"
   become: true
   become_user: "{{ item.0.username }}"
   ansible.builtin.systemd:
-    # daemon_reload: true
-    enabled: true
     name: vncserver.service
-    scope: user
     state: started
-  loop: "{{ vnc_setup_vnc_users_uid.result | zip(vncserver_service_exists) | list }}"
-  # when:
-  # - item.0.username != 'root'
-  # - item.1
+    enabled: true
+    daemon_reload: true
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ item.0.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ item.0.uid }}/bus"
+  when: "'inactive' in (vnc_service_status.results | selectattr('item.username', 'equalto', item.0.username) | map(attribute='status.ActiveState') | first)"
+  loop: "{{ vnc_setup_users_uid.result | zip(vncserver_service_exists) | list }}"

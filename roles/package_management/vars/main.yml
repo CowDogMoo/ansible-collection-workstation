@@ -20,6 +20,22 @@ package_management_common_install_packages:
   - vim
   - zsh
 
+package_management_install_packages: "{{ (ansible_os_family == 'Debian') | ternary(package_management_debian_specific_packages, package_management_redhat_specific_packages) }}"
+
+package_management_debian_specific_packages:
+  - curl
+  - fonts-powerline
+  - inetutils-ping
+  - locales
+  - software-properties-common
+  - tigervnc-standalone-server
+  - tigervnc-tools
+  - xfce4-goodies
+  - xfce4
+  - zsh-autosuggestions
+
 # Common packages to be cleaned up on all systems
-package_management_common_cleanup_packages:
-  - xfce4-power-manager-data
+package_management_redhat_specific_packages:
+  - epel-release
+  - tigervnc
+  - tigervnc-server

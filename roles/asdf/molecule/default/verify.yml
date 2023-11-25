@@ -7,131 +7,66 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Set OS family variable
-      ansible.builtin.set_fact:
-        asdf_os_family: "{{ ansible_facts['os_family'] | lower }}"
-
-    - name: Include OS-specific variables
-      ansible.builtin.include_vars:
-        file: "../../vars/{{ asdf_os_family }}.yml"
-
-    - name: Include OS-Specific tasks
-      ansible.builtin.include_tasks: "../../tasks/setup_{{ ansible_os_family | lower }}.yml"
-
-    - name: Check if necessary packages are installed on Debian-based systems
-      ansible.builtin.command: "dpkg -l {{ item }}"
-      changed_when: false
-      with_items: "{{ asdf_install_packages }}"
-      register: dpkg_result
-      failed_when: "'no packages found' in dpkg_result.stdout"
-      when: asdf_os_family == 'debian'
-
-    - name: Check if necessary packages are installed on redhat-based systems
-      ansible.builtin.command: "dnf list installed {{ item }}"
-      changed_when: false
-      with_items: "{{ asdf_install_packages }}"
-      register: dnf_result
-      failed_when: "'no packages found' in dnf_result.stdout"
-      when: asdf_os_family == 'redhat'
-
-    - name: Check if asdf is cloned
+    - name: Check if asdf is cloned for each user
       ansible.builtin.stat:
-        path: "{{ asdf_dest_folder }}"
+        path: "/home/{{ user.username }}/.asdf"
       register: asdf_clone_result
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
 
-    - name: Assert that asdf is cloned
+    - name: Assert that asdf is cloned for each user
       ansible.builtin.assert:
         that:
-          - asdf_clone_result.stat.exists
-          - asdf_clone_result.stat.isdir
+          - item.stat.exists
+          - item.stat.isdir
+      loop: "{{ asdf_clone_result.results }}"
+      loop_control:
+        loop_var: item
 
-    - name: Check if setup_asdf.sh exists locally
+    - name: Check if setup_asdf.sh exists and is executable for each user
       ansible.builtin.stat:
-        path: "{{ asdf_setup_script }}"
+        path: "/tmp/setup_asdf.sh"
       register: setup_asdf_stat
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
 
-    - name: Assert that setup_asdf.sh exists and is executable
+    - name: Assert that setup_asdf.sh exists and is executable for each user
       ansible.builtin.assert:
         that:
-          - setup_asdf_stat.stat.exists
+          - user_result.stat.exists
+          - user_result.stat.executable
+      loop: "{{ setup_asdf_stat.results }}"
+      loop_control:
+        loop_var: user_result
 
-    - name: Check if ~/.tool-versions exists locally
-      ansible.builtin.stat:
-        path: "{{ asdf_tool_versions }}"
-      register: asdf_tool_versions_stat
-
-    - name: Assert that ~/.tool-versions exists
-      ansible.builtin.assert:
-        that:
-          - asdf_tool_versions_stat.stat.exists
-          - asdf_tool_versions_stat.stat.mode == "0644"
-
-    - name: Assert asdf directory is '/usr/local/asdf' when asdf_install_for_all_users is true
-      ansible.builtin.assert:
-        that:
-          - asdf_dest_folder == '/usr/local/asdf'
-      when: asdf_install_for_all_users
-
-    - name: Assert asdf directory is `~/.asdf` when `asdf_install_for_all_users` is false
-      ansible.builtin.assert:
-        that:
-          - asdf_dest_folder == '{{ ansible_env.HOME }}/.asdf'
-      when: not asdf_install_for_all_users
-
-    - name: Check if ~/.asdf or /usr/local/asdf directory is created
-      ansible.builtin.stat:
-        path: "{{ asdf_dest_folder }}"
-      register: asdf_directory
-
-    - name: Check ASDF path in PATH variable in shell profile
-      ansible.builtin.lineinfile:
-        path: "{{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-        line: "export PATH=$PATH:{{ asdf_dest_folder }}/bin"
-        state: present
-
-    - name: Verify ASDF is accessible
-      ansible.builtin.command: "{{ asdf_dest_folder }}/bin/asdf --version"
+    - name: Verify ASDF is accessible for each user
+      ansible.builtin.command: "{{ '/home/' + user.username + '/.asdf/bin/asdf --version' }}"
       register: asdf_check
       failed_when: asdf_check.rc != 0
       changed_when: false
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
 
-    - name: Check sourcing of asdf.sh in shell profile
+    - name: Check sourcing of asdf.sh in shell profile for each user
       ansible.builtin.lineinfile:
-        path: "/root/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-        line: '. "/root/.asdf/asdf.sh"'
+        path: "/home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+        line: '. "/home/{{ user.username }}/.asdf/asdf.sh"'
         state: present
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
 
-    - name: Check contents of shell profile
+    - name: Check contents of shell profile for each user
       ansible.builtin.command:
-        cmd: "cat {{ ansible_env.HOME }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+        cmd: "cat /home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
       register: shell_profile_contents
       changed_when: false
-
-    - name: Simulate failed package installation
-      block:
-        - name: Rename package manager temporarily (Debian)
-          ansible.builtin.command: mv /usr/bin/apt /usr/bin/apt_backup
-          when: ansible_facts.os_family == 'Debian'
-          changed_when: false
-
-        - name: Rename package manager temporarily (RedHat)
-          ansible.builtin.command: mv /usr/bin/dnf /usr/bin/dnf_backup
-          when: ansible_facts.os_family == 'RedHat'
-          changed_when: false
-
-        - name: Run role to check error handling
-          ansible.builtin.include_role:
-            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
-      rescue:
-        - name: Restore package manager (Debian)
-          ansible.builtin.command: mv /usr/bin/apt_backup /usr/bin/apt
-          when: ansible_facts.os_family == 'Debian'
-          changed_when: false
-
-        - name: Restore package manager (RedHat)
-          ansible.builtin.command: mv /usr/bin/dnf_backup /usr/bin/dnf
-          when: ansible_facts.os_family == 'RedHat'
-          changed_when: false
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
 
     - name: Confirm necessary files are present for each user
       ansible.builtin.stat:

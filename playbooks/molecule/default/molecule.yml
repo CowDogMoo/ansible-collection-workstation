@@ -13,7 +13,7 @@ driver:
   name: docker
 
 platforms:
-  - name: ubuntu-vnc-setup
+  - name: ubuntu-attack-box
     image: geerlingguy/docker-ubuntu2204-ansible:latest
     command: "" # necessary for systemd
     volumes:
@@ -21,7 +21,7 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  - name: kali-vnc-setup
+  - name: kali-attack-box
     image: cisagov/docker-kali-ansible:latest
     command: "" # necessary for systemd
     volumes:
@@ -30,7 +30,7 @@ platforms:
     privileged: true
     pre_build_image: true
 
-  - name: redhat-vnc-setup
+  - name: redhat-attack-box
     image: "geerlingguy/docker-rockylinux9-ansible:latest"
     command: "" # necessary for systemd
     volumes:

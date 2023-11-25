@@ -2,10 +2,10 @@
 galaxy_info:
   author: Jayson Grace
   namespace: cowdogmoo
-  description: Installs VNC and zsh running with oh-my-zsh on debian-based systems.
+  description: Installs and configures zsh with oh-my-zsh.
   company: CowDogMoo
   license: MIT
-  role_name: vnc_zsh
+  role_name: zsh_setup
   min_ansible_version: "2.14"
   platforms:
     - name: Ubuntu
@@ -15,5 +15,6 @@ galaxy_info:
       versions:
         - all
   galaxy_tags:
-    - vnc
     - zsh
+dependencies:
+  - role: cowdogmoo.workstation.package_management
