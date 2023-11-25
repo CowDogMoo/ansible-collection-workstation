@@ -1,12 +1,12 @@
 ---
-- name: Check if item exists locally
+- name: Check if script exists locally
   ansible.builtin.stat:
-    path: "{{ script_item.path }}"
+    path: "{{ script_path }}"
   register: script_stat
 
-- name: Download item
+- name: Download script
   ansible.builtin.get_url:
-    url: "{{ script_item.url }}"
-    dest: "{{ script_item.path }}"
+    url: "{{ script_url }}"
+    dest: "{{ script_path }}"
     mode: "0644"
   when: not script_stat.stat.exists

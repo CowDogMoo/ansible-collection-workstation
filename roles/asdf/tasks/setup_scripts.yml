@@ -1,0 +1,34 @@
+---
+- name: Ensure .tool-versions file is present for each user
+  ansible.builtin.get_url:
+    url: "{{ script.url }}"
+    dest: "{{ script.path }}"
+    mode: "0644"
+  loop: "{{ asdf_user.asdf_setup_scripts }}"
+  loop_control:
+    loop_var: script
+  when: script.name == '.tool-versions'
+
+- name: Ensure setup_asdf.sh script is executable for each user
+  ansible.builtin.file:
+    path: "{{ script.path }}"
+    mode: "0755"
+  loop: "{{ asdf_user.asdf_setup_scripts }}"
+  loop_control:
+    loop_var: script
+  when: script.name == 'setup_asdf.sh'
+
+- name: Execute setup_asdf.sh for each user
+  ansible.builtin.shell:
+    cmd: "{{ script.path }} {{ asdf_languages | map(attribute='name') | join(' ') }}"
+  args:
+    executable: "{{ ansible_user_shell }}"
+  become: true
+  become_user: "{{ asdf_user.username }}"
+  when:
+    - script.name == 'setup_asdf.sh'
+    - script.path is file
+  loop: "{{ asdf_user.asdf_setup_scripts }}"
+  loop_control:
+    loop_var: script
+  changed_when: false

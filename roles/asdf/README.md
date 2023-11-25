@@ -1,69 +1,101 @@
-# ASDF Role for Ansible
+# Ansible Role: ASDF
 
-This Ansible role installs and configures
-[asdf](https://asdf-vm.com/#/), a CLI tool that can manage multiple language
-runtime versions on a per-project basis.
+This role installs and configures the ASDF version manager for managing
+multiple language runtime versions on Unix-like systems.
+
+---
 
 ## Requirements
 
-- Ansible version 2.15 or higher
+- Ansible 2.14 or higher.
+- Python packages. Install with:
 
-## Supported Platforms
-
-- Ubuntu (all versions)
-- macOS (all versions)
+  ```bash
+  python3 -m pip install --upgrade \
+    ansible-core \
+    molecule \
+    molecule-docker \
+    "molecule-plugins[docker]"
+  ```
 
 ## Role Variables
 
-<!--- vars table -->
-| Variable | Default Value | Description |
-| --- | --- | --- |
-| `asdf_dest_folder` | `{{ ansible_env.HOME }}/.asdf` | Destination folder for cloning the asdf repository |
-| `asdf_install_for_all_users` | `False` | Set to true to install for all users |
-| `asdf_git_repo` | `https://github.com/asdf-vm/asdf.git` | Git repository URL of asdf |
-| `asdf_languages` | `golang, python, ruby` | Languages to configure with asdf |
-| `asdf_os_family` | `{{ ansible_os_family \| lower }}` | OS family variable used for loading OS-specific tasks |
-| `asdf_setup_script` | `/tmp/setup_asdf.sh` | Local path to the setup script |
-| `asdf_setup_script_url` | `https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh` | URL to download the setup script |
-| `asdf_tool_versions` | `{{ ansible_env.HOME }}/.tool-versions` | Path to the `.tool-versions` file |
-| `asdf_tool_versions_url` | `https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions` | URL to download the `.tool-versions` file |
-| `asdf_default_username` | `{{ ansible_distribution \| lower }}` | Users to setup with asdf |
-| `asdf_users` | `None` |  |
-| `- username` | `{{ asdf_default_username }}` |  |
-| `usergroup` | `{{ asdf_default_username }}` |  |
-| Variable | Default Value (Debian) | Description |
-| --- | --- | --- |
-| `asdf_install_packages` | `curl, git, wget` | Debian packages to be installed |
-| Variable | Default Value (Redhat) | Description |
-| --- | --- | --- |
-| `asdf_install_packages` | `git, wget` | Red Hat packages to be installed |
-<!--- end vars table -->
+| Variable              | Default Value                         | Description                                                 |
+| --------------------- | ------------------------------------- | ----------------------------------------------------------- |
+| asdf_git_repo         | "https://github.com/asdf-vm/asdf.git" | Git repository URL for ASDF.                                |
+| asdf_languages        | Configurable                          | Languages to configure with ASDF.                           |
+| asdf_os_family        | "{{ ansible_os_family \| lower }}"    | OS family for loading specific tasks.                       |
+| asdf_install_packages | Varies based on OS                    | Packages to be installed, listed in OS-specific vars files. |
+| asdf_default_username | "{{ ansible_distribution \| lower }}" | Default username, typically the distribution name.          |
+| asdf_users            | Configurable                          | List of users to set up with ASDF.                          |
+
+### OS-Specific Variables
+
+- `./vars/redhat.yml` for Red Hat-based systems.
+- `./vars/debian.yml` for Debian-based systems.
+
+---
+
+## Local Development
+
+To develop locally:
+
+```bash
+ansible-galaxy install -r requirements.yml
+PATH_TO_ROLE="${PWD}"
+ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.asdf"
+```
+
+## Testing
+
+For local testing:
+
+- Use [act](https://github.com/nektos/act) for local GitHub Actions testing.
+
+- Run Molecule tests:
+
+  ```bash
+  ACTION="molecule"
+  if [[ $(uname) == "Darwin" ]]; then
+    act -j $ACTION --container-architecture linux/amd64
+  fi
+  ```
+
+To test changes made to this role locally:
+
+```bash
+molecule create
+molecule converge
+molecule idempotence
+molecule destroy
+```
+
+## Role Tasks
+
+The role includes the following main tasks:
+
+1. Install necessary packages based on the operating system.
+2. Clone the ASDF repository.
+3. Check and download necessary scripts for each user.
+4. Ensure .bashrc or .zshrc exists and is configured correctly.
+5. Update shell profiles with ASDF settings.
+6. Reload shell to apply ASDF settings.
+
+## Platforms
+
+This role is tested on the following platforms:
+
+- Ubuntu
+- Kali
+- EL (Enterprise Linux)
 
 ## Dependencies
 
-- None
-
-## Example Playbook
-
-Here's an example of how to use this role:
-
-```yaml
----
-- name: Provision container
-  hosts: localhost
-  roles:
-    - cowdogmoo.workstation.asdf
-```
-
-## Molecule Tests
-
-Molecule is used to test the `asdf` role. Tests are located in the
-`molecule/default` directory, and can be run with the `molecule test` command.
-
-## License
-
-MIT
+- `cowdogmoo.workstation.user_setup`
+- `cowdogmoo.workstation.package_management`
+- `cowdogmoo.workstation.zsh_setup`
 
 ## Author Information
 
-- Jayson Grace <jayson.e.grace@gmail.com>
+This role was created by Jayson Grace and is maintained as part of
+the CowDogMoo project.

@@ -1,6 +1,0 @@
----
-# Debian packages to be installed
-asdf_install_packages:
-  - curl
-  - git
-  - wget
