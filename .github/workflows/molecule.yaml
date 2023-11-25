@@ -1,7 +1,8 @@
-name: Role and Playbook molecule tests
+name: Molecule Test
 on:
   pull_request:
   push:
+    branches: [main]
 
 jobs:
   molecule:
@@ -23,8 +24,7 @@ jobs:
           - name: "Role Test - logging"
             path: "roles/logging"
           - name: "Playbook Test - Attack Box"
-            path: "playbooks/attack-box/molecule/default"
-
+            path: "playbooks/attack-box"
     steps:
       - name: Set up git repository
         uses: actions/checkout@v3.6.0
@@ -39,11 +39,18 @@ jobs:
           python3 -m pip install ansible molecule docker
           python3 -m pip install molecule-docker
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Install galaxy dependencies
+        run: |
+          ansible-galaxy install -v -r requirements.yml
+          ansible-galaxy collection install -v -r requirements.yml
+
       - name: ${{ matrix.name }}
         run: molecule test
-        working-directory: ${{ matrix.path }}
+        working-directory: ./${{ matrix.path }}
         env:
-          ANSIBLE_CONFIG: ansible.cfg
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
           MOLECULE_DISTRO: geerlingguy/docker-ubuntu2204-ansible

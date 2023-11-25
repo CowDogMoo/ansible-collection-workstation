@@ -7,6 +7,7 @@
     - role: cowdogmoo.workstation.zsh_setup
     - role: cowdogmoo.workstation.vnc_setup
     - role: cowdogmoo.workstation.asdf
+    - role: l50.sliver
   tasks:
     - name: Add MSF tools to PATH
       become: true
