@@ -75,7 +75,7 @@ func RunMoleculeTests() error {
 		cmd := exec.Command("molecule", "test")
 		cmd.Dir = rolePath // Set the working directory for the command
 
-		logger.Printf("Executing command: %v in directory: %s\n", cmd.Args, cmd.Dir) // Debug statement
+		logger.Printf("Executing command: %v in directory: %s\n", cmd.Args, cmd.Dir)
 
 		output, err := cmd.CombinedOutput()
 		if err != nil {
