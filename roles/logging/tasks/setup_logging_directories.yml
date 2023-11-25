@@ -1,5 +1,6 @@
 ---
 - name: Ensure logging directories exist with correct permissions
+  become: true
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: directory

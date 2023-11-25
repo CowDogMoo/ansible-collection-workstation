@@ -1,5 +1,6 @@
 ---
 - name: Setup log rotation for application logs
+  become: true
   ansible.builtin.template:
     src: logrotate.j2
     dest: "/etc/logrotate.d/{{ item.name | default('ansible') }}"

@@ -2,22 +2,12 @@
 - name: Attack Box
   hosts: all
   roles:
-    # - role: cowdogmoo.workstation.logging
-    #   become: true
-    # logging_directories:
-    #   - path: "/var/log/ansible"
-    #     owner: "root"
-    #     group: "root"
-    #     mode: "0755"
-    # logging_logrotate_interval: "daily"
-    # logging_logrotate_keep: 7
     - role: cowdogmoo.workstation.user_setup
     - role: cowdogmoo.workstation.package_management
     - role: cowdogmoo.workstation.zsh_setup
     - role: cowdogmoo.workstation.vnc_setup
     - role: cowdogmoo.workstation.asdf
-    # - role: l50.sliver
-    # - role: cowdogmoo.firefox
+    - role: l50.sliver
   tasks:
     - name: Add MSF tools to PATH
       become: true

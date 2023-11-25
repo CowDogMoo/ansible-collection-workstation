@@ -1,5 +1,4 @@
----
-name: Role molecule tests
+name: Role and Playbook molecule tests
 on:
   pull_request:
   push:
@@ -8,8 +7,24 @@ jobs:
   molecule:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        role: [asdf]
+        include:
+          - name: "Role Test - asdf"
+            path: "roles/asdf"
+          - name: "Role Test - user_setup"
+            path: "roles/user_setup"
+          - name: "Role Test - package_management"
+            path: "roles/package_management"
+          - name: "Role Test - zsh_setup"
+            path: "roles/zsh_setup"
+          - name: "Role Test - vnc_setup"
+            path: "roles/vnc_setup"
+          - name: "Role Test - logging"
+            path: "roles/logging"
+          - name: "Playbook Test - Attack Box"
+            path: "playbooks/attack-box/molecule/default"
+
     steps:
       - name: Set up git repository
         uses: actions/checkout@v3.6.0
@@ -23,11 +38,10 @@ jobs:
         run: |
           python3 -m pip install ansible molecule docker
           python3 -m pip install molecule-docker
-          ansible-galaxy collection install git+https://github.com/cowdogmoo/workstation.git,main
 
-      - name: Test role with molecule
+      - name: ${{ matrix.name }}
         run: molecule test
-        working-directory: roles/${{ matrix.role }}
+        working-directory: ${{ matrix.path }}
         env:
           ANSIBLE_CONFIG: ansible.cfg
           PY_COLORS: "1"
