@@ -33,6 +33,7 @@
   register: updated_data
 
 - name: Update vnc_setup_users with the random generated passwords
+  no_log: true
   ansible.builtin.set_fact:
     vnc_setup_users_pw: "{{ vnc_setup_users_pw | default([]) + [item] }}"
   loop: "{{ updated_data.result }}"
