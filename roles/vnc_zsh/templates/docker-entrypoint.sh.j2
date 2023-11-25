@@ -1,9 +1,0 @@
-#!/usr/bin/env zsh
-# Author: Jayson Grace <Jayson Grace <jayson.e.grace@gmail.com>
-# docker-entrypoint.sh for docker image creation.
-set -e
-
-. /home/{{ vnc_zsh_users[0].username }}/.zshrc
-start_vnc
-
-exec "$@"
