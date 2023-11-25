@@ -20,15 +20,15 @@
 
 - name: Execute setup_asdf.sh for each user
   ansible.builtin.shell:
-    cmd: "{{ script_item.path }} {{ asdf_languages | map(attribute='name') | join(' ') }}"
+    cmd: "{{ item.path }} {{ asdf_languages | map(attribute='name') | join(' ') }}"
   args:
     executable: "{{ ansible_user_shell }}"
   become: true
   become_user: "{{ asdf_user.username }}"
   when:
-    - script_item.name == 'setup_asdf.sh'
-    - script_item.path is file
+    - item.name == 'setup_asdf.sh'
+    - item.path is file
   loop: "{{ asdf_user.asdf_setup_scripts }}"
   loop_control:
-    loop_var: script_item
+    loop_var: item
   changed_when: false
