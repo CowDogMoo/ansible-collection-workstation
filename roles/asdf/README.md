@@ -23,7 +23,7 @@ This role installs and configures the `asdf` version manager on Unix-like system
 | --------------------- | ------------------------------------- | ------------------------------------------ |
 | asdf_git_repo         | "https://github.com/asdf-vm/asdf.git" | Git repository URL of asdf                 |
 | asdf_os_family        | "{{ ansible_os_family \| lower }}"    | OS family variable for OS-specific tasks   |
-| asdf_languages        | [golang, python, ruby]                | Languages to configure with asdf           |
+| asdf_packages         | [golang, python, ruby]                | Languages to configure with asdf           |
 | asdf_default_username | "{{ ansible_distribution \| lower }}" | Default username                           |
 | asdf_users            | Configurable                          | Users to setup with asdf and their scripts |
 

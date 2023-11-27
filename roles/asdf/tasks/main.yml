@@ -4,6 +4,17 @@
     asdf_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
 
+# - name: Export ASDF environment variables for each user
+#   ansible.builtin.command: "echo 'export ASDF_PATH=\"{{ asdf_dir }}\"' >> /home/{{ item.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+#   loop: "{{ asdf_users }}"
+#   # ansible.builtin.lineinfile:
+#   #   path: "/home/{{ item.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+#   #   line: "{{ item.line }}"
+#   #   state: present
+#   loop_control:
+#     loop_var: item
+#   when: item.item.username != 'root' and item.file != '.tool-versions'
+
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
@@ -17,14 +28,82 @@
     - asdf_users is defined
     - item.username != 'root'
 
-- name: Check and download necessary files for each user
-  ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
+- name: Adjust permissions of ASDF directory
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.asdf"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    recurse: true
   loop: "{{ asdf_users }}"
   loop_control:
-    loop_var: asdf_user
+    loop_var: item
+  when:
+    - asdf_users is defined
+    - item.username != 'root'
 
-- name: Iterate over users for setting up scripts
-  ansible.builtin.include_tasks: setup_scripts.yml
+# - name: Check and download necessary files for each user
+#   ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
+#   loop: "{{ asdf_users }}"
+#   loop_control:
+#     loop_var: asdf_user
+
+- name: Deploy .tool-versions file
+  ansible.builtin.template:
+    src: tool-versions.j2
+    dest: "/home/{{ item.username }}/.tool-versions"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: '0644'
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when:
+    - asdf_users is defined
+    - item.username != 'root'
+
+# - name: Ensure .tool-versions file is present for each user
+#   ansible.builtin.get_url:
+#     url: "{{ script.url }}"
+#     dest: "{{ script.path }}"
+#     mode: "0644"
+#   loop: "{{ asdf_user.asdf_setup_scripts }}"
+#   loop_control:
+#     loop_var: script
+#   when: script.name == '.tool-versions'
+
+- name: Ensure correct permissions for .tool-versions
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.tool-versions"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: '0644'
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when:
+    - asdf_users is defined
+    - item.username != 'root'
+
+- name: Gather installed ASDF plugins and versions for each user
+  ansible.builtin.shell:
+    cmd: >-
+      echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
+  register: asdf_info
+  become: true
+  become_user: "{{ item.username }}"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+
+- name: Set ASDF installed plugins and versions facts
+  ansible.builtin.set_fact:
+    asdf_installed_plugins: "{{ asdf_installed_plugins | default({}) | combine({ item.item.username: item.stdout_lines | first | split() }) }}"
+  loop: "{{ asdf_info.results }}"
+  loop_control:
+    loop_var: item
+
+- name: Install and configure asdf packages for each user
+  ansible.builtin.include_tasks: package_setup.yml
   loop: "{{ asdf_users }}"
   loop_control:
     loop_var: asdf_user

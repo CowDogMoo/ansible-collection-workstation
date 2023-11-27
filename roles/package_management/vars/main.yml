@@ -1,7 +1,9 @@
 ---
 # Common packages to be installed on all systems
 package_management_common_install_packages:
+  - autoconf
   - bash
+  - bison
   - ca-certificates
   - colordiff
   - dbus-x11
@@ -16,26 +18,48 @@ package_management_common_install_packages:
   - sudo
   - terminator
   - tree
-  - wget
+  - unzip
   - vim
+  - wget
   - zsh
 
+# Conditional assignment based on OS family
 package_management_install_packages: "{{ (ansible_os_family == 'Debian') | ternary(package_management_debian_specific_packages, package_management_redhat_specific_packages) }}"
 
+# Debian-specific packages
 package_management_debian_specific_packages:
+  - build-essential
   - curl
   - fonts-powerline
   - inetutils-ping
+  - libdb-dev
+  - libffi-dev
+  - libgdbm-dev
+  - libgdbm6
+  - libncurses5-dev
+  - libreadline6-dev
+  - libssl-dev
+  - libyaml-dev
   - locales
   - software-properties-common
   - tigervnc-standalone-server
   - tigervnc-tools
   - xfce4-goodies
   - xfce4
+  - zlib1g-dev
   - zsh-autosuggestions
 
-# Common packages to be cleaned up on all systems
+# RedHat-specific packages
 package_management_redhat_specific_packages:
+  - bzip2-devel
   - epel-release
+  - gcc
+  - gcc-c++
+  - libffi-devel
+  - libtool
+  - openssl-devel
+  - readline-devel
+  - sqlite-devel
   - tigervnc
   - tigervnc-server
+  - zlib-devel

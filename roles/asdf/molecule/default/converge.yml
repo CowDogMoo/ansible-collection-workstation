@@ -7,19 +7,25 @@
     - role: cowdogmoo.workstation.zsh_setup
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
       vars:
-        asdf_languages:
-          - name: ruby
-            version: 3.2.2
+        asdf_packages:
           - name: golang
-            version: 1.21.3
+            version: "1.21.4"
+            scope: "global"
           - name: python
-            version: 3.12.0
+            version: "3.12.0"
+            scope: "local"
+          - name: ruby
+            version: "3.2.2"
+            scope: "local"
           - name: kubectl
-            version: 1.28.2
+            version: "1.28.2"
+            scope: "local"
           - name: helm
-            version: 3.13.1
+            version: "3.13.1"
+            scope: "local"
           - name: packer
-            version: 1.9.4
+            version: "1.9.4"
+            scope: "local"
         # asdf_users:
         #   - username: "{{ asdf_default_username }}"
         #     usergroup: "{{ asdf_default_username }}"
