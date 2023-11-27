@@ -25,7 +25,10 @@
 
     - name: Check logrotate configuration
       ansible.builtin.stat:
-        path: "/etc/logrotate.d/{{ item.name | default('application') }}"
+        path: "/etc/logrotate.d/{{ logging_log_rotation_config.path.split('/')[-1].split('.')[0] }}"
       register: logrotate_config
-      loop: "{{ log_rotation_configs | default([log_rotation_defaults]) }}"
-      when: log_rotation_configs is defined or log_rotation_defaults is defined
+
+    - name: Assert logrotate configuration exists
+      ansible.builtin.assert:
+        that:
+          - "logrotate_config.stat.exists"

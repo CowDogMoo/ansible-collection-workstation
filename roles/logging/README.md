@@ -1,86 +1,109 @@
-# Ansible Role: Logging Setup
+# Ansible Role: Logging
 
-This role configures logging for applications on Unix-like systems, ensuring
-that logs are properly rotated and maintained. It supports Debian and
-RedHat-based distributions.
+This role provides logging directories and log rotation for other roles.
 
 ---
 
 ## Requirements
 
-- Ansible version 2.15 or higher
+- Ansible 2.14 or higher.
+- Python packages. Install with:
 
----
-
-## Supported Platforms
-
-- Ubuntu (all versions)
-- Kali Linux (all versions)
-- EL (all versions)
-
----
+  ```bash
+  python3 -m pip install --upgrade \
+    ansible-core \
+    molecule \
+    molecule-docker \
+    "molecule-plugins[docker]"
+  ```
 
 ## Role Variables
 
-Here's a table of role variables and their default values:
+| Variable                    | Default Value | Description                    |
+| --------------------------- | ------------- | ------------------------------ |
+| logging_directories         | [See Below]   | Directories for logging        |
+| logging_log_rotation_config | [See Below]   | Configuration for log rotation |
 
-<!--- vars table -->
-| Variable | Default Value | Description |
-| --- | --- | --- |
-| `logging_directories` | `None` |  |
-| `- path` | `/var/log/ansible` |  |
-| `owner` | `root` |  |
-| `group` | `root` |  |
-| `mode` | `0755` |  |
-| `logging_log_rotation_defaults` | `None` |  |
-| `path` | `/var/log/ansible/*.log` |  |
-| `options` | `None` |  |
-| `rotate` | `4` |  |
-| `frequency` | `weekly` |  |
-| `compress` | `True` |  |
-| `missingok` | `True` |  |
-| `notifempty` | `True` |  |
-| `create` | `True` |  |
-| `dateext` | `True` |  |
+### Default Configuration for `logging_directories`
 
-<!--- end vars table -->
+The `logging_directories` variable is a list of dictionaries, each containing:
 
-Default values for these variables can be found in `defaults/main.yml`.
+- `path`: Path of the logging directory, default is `"/var/log/ansible"`
+- `owner`: Owner of the directory, default is `"root"`
+- `group`: Group of the directory, default is `"root"`
+- `mode`: File mode, default is `"0755"`
 
----
+### Default Configuration for `logging_log_rotation_config`
 
-## Example Playbook
+Default settings for log rotation:
 
-Here's an example of how to use this role:
-
-```yaml
-- hosts: all
-  roles:
-    - role: logging_setup
-      logging_directories:
-        - "/var/log/myapp"
-      logrotate_interval: "daily"
-      logrotate_keep: 7
-```
+- `path`: Log file path, default is `"/var/log/ansible/*.log"`
+- `rotate`: Number of rotations, default is `4`
+- `frequency`: Rotation frequency, default is `"weekly"`
+- `compress`: Compress old versions, default is `true`
+- `missingok`: Ignore missing log files, default is `true`
+- `notifempty`: Don't rotate if empty, default is `true`
+- `create`: Create new log file, default is `true`
+- `dateext`: Use date extension, default is `true`
+- `owner`: Owner of the log files, default is `"root"`
+- `group`: Group of the log files, default is `"root"`
 
 ---
 
-## Testing with Molecule
+## Local Development
 
-This role uses Molecule for testing:
+To develop locally, run the following from the repository root:
 
 ```bash
-molecule test
+ansible-galaxy install -r requirements.yml
+PATH_TO_ROLE="${PWD}"
+ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.logging"
 ```
 
-This will execute a full test suite, which includes linting with yamllint and
-ansible-lint, as well as running the actual Ansible playbook to apply the role.
+## Testing
 
-Refer to the `./molecule/default/` directory for test scenarios and
-configuration settings.
+For local testing:
 
----
+- Use [act](https://github.com/nektos/act) for local GitHub Actions testing.
 
-For more information on the role's capabilities and additional configurations,
-inspect the `meta/main.yml`, `tasks/`, and `vars/` directories within the role
-structure.
+- Run Molecule tests:
+
+  ```bash
+  ACTION="molecule"
+  if [[ $(uname) == "Darwin" ]]; then
+    act -j $ACTION --container-architecture linux/amd64
+  fi
+  ```
+
+To test changes made to this role locally:
+
+```bash
+molecule create
+molecule converge
+molecule idempotence
+molecule destroy
+```
+
+## Role Tasks
+
+The role includes the following main tasks:
+
+1. Ensure logging directories exist.
+2. Set up log rotation.
+
+## Platforms
+
+This role is tested on the following platforms:
+
+- Ubuntu
+- Kali
+- EL (Enterprise Linux)
+
+## Dependencies
+
+No dependencies.
+
+## Author Information
+
+This role was created by Jayson Grace and is maintained as part of
+the CowDogMoo project.

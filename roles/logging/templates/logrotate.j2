@@ -1,12 +1,12 @@
 ---
-{{ item.path }} {
-    rotate {{ item.options.rotate }}
-    {{ item.options.frequency }}
-    {% if item.options.compress %}compress{% endif %}
-    {% if item.options.missingok %}missingok{% endif %}
-    {% if item.options.notifempty %}notifempty{% endif %}
-    {% if item.options.create %}
-    create 0644 {{ item.options.owner | default('root') }} {{ item.options.group | default('root') }}
+{{ log_rotation_config.path }} {
+    rotate {{ log_rotation_config.rotate }}
+    {{ log_rotation_config.frequency }}
+    {% if log_rotation_config.compress %}compress{% endif %}
+    {% if log_rotation_config.missingok %}missingok{% endif %}
+    {% if log_rotation_config.notifempty %}notifempty{% endif %}
+    {% if log_rotation_config.create %}
+    create 0644 {{ log_rotation_config.owner }} {{ log_rotation_config.group }}
     {% endif %}
-    {% if item.options.dateext %}dateext{% endif %}
+    {% if log_rotation_config.dateext %}dateext{% endif %}
 }
