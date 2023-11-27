@@ -158,19 +158,19 @@ func CreateRelease() error {
 	return err
 }
 
-// GeneratePackageDocs creates documentation for the various packages
+// GenerateMagePackageDocs creates documentation for the various packages
 // in the project.
 //
 // Example usage:
 //
 // ```go
-// mage generatepackagedocs
+// mage generatemagepackagedocs
 // ```
 //
 // **Returns:**
 //
 // error: An error if any issue occurs during documentation generation.
-func GeneratePackageDocs() error {
+func GenerateMagePackageDocs() error {
 	fs := afero.NewOsFs()
 
 	repoRoot, err := git.RepoRoot()
