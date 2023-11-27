@@ -1,30 +1,18 @@
-- name: "Install and configure {{ package.name }} for {{ username }}"
+---
+- name: "Install asdf plugin for {{ package.name }}"
+  ansible.builtin.shell:
+    cmd: "export ASDF_DIR=/home/{{ username }}/.asdf && . /home/{{ username }}/.asdf/asdf.sh && asdf plugin add {{ package.name }}"
   become: true
   become_user: "{{ username }}"
-  block:
-    - name: "Install asdf plugin for {{ package.name }}"
-      ansible.builtin.shell:
-        cmd: >-
-          export ASDF_DIR="/home/{{ username }}/.asdf" && 
-          . $ASDF_DIR/asdf.sh && 
-          asdf plugin add {{ package.name }}
 
-    - name: "Install {{ package.name }} version {{ package.version }}"
-      become: true
-      become_user: "{{ username }}"
-      ansible.builtin.shell:
-        cmd: >-
-          export ASDF_DIR="/home/{{ username }}/.asdf" && 
-          . $ASDF_DIR/asdf.sh && 
-          asdf install {{ package.name }} {{ package.version }}
+- name: "Install {{ package.name }} version {{ package.version }}"
+  ansible.builtin.shell:
+    cmd: "export ASDF_DIR=/home/{{ username }}/.asdf && . /home/{{ username }}/.asdf/asdf.sh && asdf install {{ package.name }} {{ package.version }}"
+  become: true
+  become_user: "{{ username }}"
 
-    - name: "Set {{ package.name }} version {{ package.version }} {{ package.scope }}"
-      become: true
-      become_user: "{{ username }}"
-      ansible.builtin.shell:
-        cmd: >-
-          . /home/{{ username }}/.asdf/asdf.sh && 
-          asdf local {{ package.name }} {{ package.version }}
-        executable: /bin/bash
-        chdir: /home/{{ username }}
-
+- name: "Set {{ package.name }} version {{ package.version }} {{ package.scope }}"
+  ansible.builtin.shell:
+    cmd: "export ASDF_DIR=/home/{{ username }}/.asdf && . /home/{{ username }}/.asdf/asdf.sh && asdf {{ package.scope }} {{ package.name }} {{ package.version }}"
+  become: true
+  become_user: "{{ username }}"
