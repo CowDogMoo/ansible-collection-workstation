@@ -122,7 +122,7 @@ func runCmds(cmds []string) error {
 func GenChangeLog() error {
 	cmds := []string{
 		"antsibull-changelog lint",
-		"antsibull-changelog release",
+		"antsibull-changelog release --version $NEXT_VERSION",
 	}
 
 	fmt.Println(color.YellowString("Generating changelog"))

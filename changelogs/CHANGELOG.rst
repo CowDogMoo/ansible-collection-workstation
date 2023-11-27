@@ -1,3 +1,37 @@
+===================================
+cowdogmoo.workstation Release Notes
+===================================
+
+1.3.0
+======
+
+Release Summary
+---------------
+
+Refactored `attack-box` playbook and introduced molecule testing framework.
+
+Added
+-----
+
+- User setup and zsh setup roles in `attack-box.yml`.
+- Molecule testing configurations for `attack-box` playbook.
+- Enhanced asdf role with user-specific setup scripts.
+- Logging configuration enhancements in the logging role.
+- Package management improvements for different distributions.
+
+Changed
+-------
+
+- Changed hosts from localhost to all in `attack-box.yml`.
+- Updated asdf role to remove OS-specific tasks and focus on user-based configuration.
+- Simplified package management role with unified tasks for Debian and RedHat.
+
+Removed
+-------
+
+- Removed Windows support in asdf role's documentation.
+- Deprecated vnc_zsh role and associated files in favor of streamlined setup.
+
 1.2.0
 ======
 

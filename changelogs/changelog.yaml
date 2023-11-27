@@ -101,3 +101,5 @@ releases:
     fragments:
       - workshop-collection.yaml
     release_date: "2023-10-31"
+  1.3.0:
+    release_date: "2023-11-27"
