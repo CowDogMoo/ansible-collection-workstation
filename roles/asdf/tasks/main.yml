@@ -4,16 +4,9 @@
     asdf_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
 
-# - name: Export ASDF environment variables for each user
-#   ansible.builtin.command: "echo 'export ASDF_PATH=\"{{ asdf_dir }}\"' >> /home/{{ item.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-#   loop: "{{ asdf_users }}"
-#   # ansible.builtin.lineinfile:
-#   #   path: "/home/{{ item.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-#   #   line: "{{ item.line }}"
-#   #   state: present
-#   loop_control:
-#     loop_var: item
-#   when: item.item.username != 'root' and item.file != '.tool-versions'
+- name: Debug asdf_users variable
+  ansible.builtin.debug:
+    var: asdf_users
 
 - name: Clone asdf for each user
   ansible.builtin.git:
@@ -28,24 +21,19 @@
     - asdf_users is defined
     - item.username != 'root'
 
-- name: Adjust permissions of ASDF directory
-  ansible.builtin.file:
-    path: "/home/{{ item.username }}/.asdf"
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
-    recurse: true
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when:
-    - asdf_users is defined
-    - item.username != 'root'
+- name: Debug asdf_users variable
+  ansible.builtin.debug:
+    var: asdf_users
 
-# - name: Check and download necessary files for each user
-#   ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
-#   loop: "{{ asdf_users }}"
-#   loop_control:
-#     loop_var: asdf_user
+- name: Export ASDF environment variables for each user
+  ansible.builtin.lineinfile:
+    path: "/home/{{ item.0.username }}/{{ (item.0.shell == '/usr/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: "{{ item.1 }}"
+    create: yes
+  loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
+  loop_control:
+    label: "{{ item.0.username }}"
+    loop_var: item
 
 - name: Deploy .tool-versions file
   ansible.builtin.template:
@@ -61,16 +49,6 @@
     - asdf_users is defined
     - item.username != 'root'
 
-# - name: Ensure .tool-versions file is present for each user
-#   ansible.builtin.get_url:
-#     url: "{{ script.url }}"
-#     dest: "{{ script.path }}"
-#     mode: "0644"
-#   loop: "{{ asdf_user.asdf_setup_scripts }}"
-#   loop_control:
-#     loop_var: script
-#   when: script.name == '.tool-versions'
-
 - name: Ensure correct permissions for .tool-versions
   ansible.builtin.file:
     path: "/home/{{ item.username }}/.tool-versions"
@@ -84,11 +62,49 @@
     - asdf_users is defined
     - item.username != 'root'
 
+- name: Set permissions for each user's ASDF directory
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.asdf"
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    recurse: true
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when:
+    - asdf_users is defined
+    - item.username != 'root'
+
+- name: Check if .asdf directory exists for each user
+  ansible.builtin.stat:
+    path: "/home/{{ item.username }}/.asdf"
+  register: asdf_dir_check
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+
+- name: Update shell profiles for each user
+  ansible.builtin.lineinfile:
+    path: "/home/{{ user_line.0.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: "{{ user_line.1 }}"
+    state: present
+  loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
+  loop_control:
+    loop_var: user_line
+  when: user_line.0.username != 'root'
+    
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
-    cmd: >-
+    cmd: |
+      {% for package in asdf_packages %}
+      source "{{ item.shell_profile_lines[2] }}" &&
+      if ! asdf plugin list | grep -q {{ package.name }}; then
+        asdf plugin add {{ package.name }};
+      fi;
+      {% endfor %}
       echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
   register: asdf_info
+  changed_when: false
   become: true
   become_user: "{{ item.username }}"
   loop: "{{ asdf_users }}"
@@ -108,12 +124,3 @@
   loop_control:
     loop_var: asdf_user
 
-- name: Update shell profiles for each user
-  ansible.builtin.lineinfile:
-    path: "/home/{{ user_line.0.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: "{{ user_line.1 }}"
-    state: present
-  loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
-  loop_control:
-    loop_var: user_line
-  when: user_line.0.username != 'root'

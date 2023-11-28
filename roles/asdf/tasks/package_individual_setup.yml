@@ -1,30 +1,133 @@
-- name: "Install and configure {{ package.name }} for {{ username }}"
+---
+# - name: Export ASDF environment variables for each user
+#   ansible.builtin.lineinfile:
+#     path: "/home/{{ item.0.username }}/{{ (item.0.shell == '/usr/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+#     line: "{{ item.1 }}"
+#     create: true
+#   loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
+#   loop_control:
+#     label: "{{ item.0.username }}"
+#     loop_var: item
+#   become: true
+#   become_user: "{{ username }}"
+- name: "Gather asdf plugin list"
+  ansible.builtin.shell:
+    cmd: |
+      export ASDF_PATH="/home/{{ asdf_default_username }}/.asdf"
+      export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      . "$ASDF_PATH/asdf.sh"
+      asdf plugin list
+    executable: /usr/bin/zsh
+  register: global_plugin_list
+  become: true
+  become_user: "{{ asdf_default_username }}"
+
+- name: "Check if asdf plugin {{ package.name }} is already installed"
+  ansible.builtin.shell:
+    cmd: |
+      export ASDF_PATH="/home/{{ item.username }}/.asdf"
+      export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      . "$ASDF_PATH/asdf.sh"
+      asdf plugin list
+    executable: /usr/bin/zsh
+  register: plugin_list
   become: true
   become_user: "{{ username }}"
-  block:
-    - name: "Install asdf plugin for {{ package.name }}"
-      ansible.builtin.shell:
-        cmd: >-
-          export ASDF_DIR="/home/{{ username }}/.asdf" && 
-          . $ASDF_DIR/asdf.sh && 
-          asdf plugin add {{ package.name }}
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
 
-    - name: "Install {{ package.name }} version {{ package.version }}"
-      become: true
-      become_user: "{{ username }}"
-      ansible.builtin.shell:
-        cmd: >-
-          export ASDF_DIR="/home/{{ username }}/.asdf" && 
-          . $ASDF_DIR/asdf.sh && 
-          asdf install {{ package.name }} {{ package.version }}
+- name: "Install asdf plugin for {{ package.name }}"
+  ansible.builtin.shell:
+    cmd: |
+      export ASDF_PATH="/home/{{ item.username }}/.asdf"
+      export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      . "$ASDF_PATH/asdf.sh"
+      asdf plugin add {{ package.name }}
+    executable: /usr/bin/zsh
+  when: "'{{ package.name }}' not in global_plugin_list.stdout"
+  register: plugin_installation_result
+  changed_when: plugin_installation_result.rc == 0
+  become: true
+  become_user: "{{ item.username }}"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
 
-    - name: "Set {{ package.name }} version {{ package.version }} {{ package.scope }}"
-      become: true
-      become_user: "{{ username }}"
-      ansible.builtin.shell:
-        cmd: >-
-          . /home/{{ username }}/.asdf/asdf.sh && 
-          asdf local {{ package.name }} {{ package.version }}
-        executable: /bin/bash
-        chdir: /home/{{ username }}
+# - name: "Ensure asdf plugin for {{ package.name }} is installed"
+#   ansible.builtin.shell:
+#     cmd: |
+#       source /home/{{ asdf_default_username }}/.zshrc 
+#       if ! asdf plugin list | grep -q {{ package.name }}; then
+#         asdf plugin add {{ package.name }};
+#       fi;
+#     executable: /usr/bin/zsh
+#   register: plugin_installation_result
+#   changed_when: plugin_installation_result.rc == 0
+#   become: true
+#   become_user: "{{ username }}"
+
+- name: "Install {{ package.name }} version {{ package.version }}"
+  ansible.builtin.shell:
+    cmd: |
+      export ASDF_PATH="/home/{{ item.username }}/.asdf"
+      export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      . "$ASDF_PATH/asdf.sh"
+      asdf install {{ package.name }} {{ package.version }}
+    executable: /usr/bin/zsh
+  become: true
+  become_user: "{{ item.username }}"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: item
+  when: "'{{ package.name }}' not in global_plugin_list.stdout"
+  register: version_installation_result
+  changed_when: version_installation_result.rc == 0
+
+- name: "Ensure {{ package.name }} version {{ package.version }} is installed"
+  ansible.builtin.shell:
+    cmd: |
+      export ASDF_PATH="/home/{{ user.username }}/.asdf"
+      export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      . "$ASDF_PATH/asdf.sh"
+      if ! asdf list {{ package.name }} | grep -q {{ package.version }}; then
+        asdf install {{ package.name }} {{ package.version }};
+      fi;
+    executable: /usr/bin/zsh
+  become: true
+  become_user: "{{ user.username }}"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: user
+  when: package.name and package.version
+
+- name: "Set {{ package.name }} version {{ package.version }} {{ package.scope }}"
+  ansible.builtin.shell:
+    cmd: |
+      export ASDF_PATH="/home/{{ item.username }}/.asdf"
+      export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      . "$ASDF_PATH/asdf.sh"
+      asdf {{ package.scope }} {{ package.name }} {{ package.version }}
+    executable: /usr/bin/zsh
+  when: version_installation_result is defined and version_installation_result.rc is defined and version_installation_result.rc == 0
+  register: version_set
+  changed_when: version_set.rc == 0
+  become: true
+  become_user: "{{ username }}"
+
+- name: "Ensure {{ package.name }} version {{ package.version }} {{ package.scope }} is set"
+  ansible.builtin.shell:
+    cmd: |
+      export ASDF_PATH="/home/{{ item.username }}/.asdf"
+      export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      . "$ASDF_PATH/asdf.sh"
+      if ! asdf current {{ package.name }} | grep -q {{ package.version }}; then
+        asdf {{ package.scope }} {{ package.name }} {{ package.version }};
+      fi;
+    executable: /usr/bin/zsh
+  when: version_installation_result is defined and version_installation_result.rc is defined and version_installation_result.rc == 0
+  register: version_set
+  changed_when: version_set.rc == 0
+  become: true
+  become_user: "{{ username }}"
 
