@@ -1,24 +1,12 @@
 ---
-- name: "Install asdf plugins and set versions for each user"
+- name: Install libyaml from source
+  ansible.builtin.include_tasks: install_libyaml.yml
+  when: ansible_distribution == 'Rocky'
+
+- name: Install asdf plugins and set versions for each user
   ansible.builtin.include_tasks: package_individual_setup.yml
   loop: "{{ asdf_packages }}"
   loop_control:
     loop_var: package
   vars:
     username: "{{ asdf_user.username }}"
-
-- name: Install {{ package.name }} version {{ package.version }}
-  ansible.builtin.shell:
-    cmd: asdf install {{ package.name }} {{ package.version }}
-  become: true
-  become_user: "{{ asdf_user.username }}"
-  when: "package.version not in asdf_installed_versions[package.name]"
-
-- name: Set {{ package.name }} version {{ package.version }} {{ package.scope }}
-  ansible.builtin.shell:
-    cmd: asdf {{ package.scope }} {{ package.name }} {{ package.version }}
-  become: true
-  become_user: "{{ asdf_user.username }}"
-  loop: "{{ asdf_packages }}"
-  loop_control:
-    loop_var: package

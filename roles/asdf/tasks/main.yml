@@ -41,15 +41,6 @@
     - asdf_users is defined
     - item.username != 'root'
 
-- name: Check and download necessary files for each user
-  ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-  when:
-    - asdf_users is defined
-    - item.username != 'root'
-
 # - name: Check and download necessary files for each user
 #   ansible.builtin.include_tasks: "{{ role_path }}/tasks/check_and_download.yml"
 #   loop: "{{ asdf_users }}"
@@ -96,30 +87,6 @@
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
     cmd: >-
-      echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
-  register: asdf_info
-  become: true
-  become_user: "{{ item.username }}"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: item
-
-- name: Set ASDF installed plugins and versions facts
-  ansible.builtin.set_fact:
-    asdf_installed_plugins: "{{ asdf_installed_plugins | default({}) | combine({ item.item.username: item.stdout_lines | first | split() }) }}"
-  loop: "{{ asdf_info.results }}"
-  loop_control:
-    loop_var: item
-
-- name: Install and configure asdf packages for each user
-  ansible.builtin.include_tasks: package_setup.yml
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: asdf_user
-
-- name: Gather installed ASDF plugins and versions for each user
-  ansible.builtin.shell:
-    cmd: |
       echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
   register: asdf_info
   become: true

@@ -1,0 +1,82 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Check if asdf is cloned for each user
+      ansible.builtin.stat:
+        path: "/home/{{ user.username }}/.asdf"
+      register: asdf_clone_result
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+
+    - name: Assert that asdf is cloned for each user
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+      loop: "{{ asdf_clone_result.results }}"
+      loop_control:
+        loop_var: item
+
+    - name: Check if setup_asdf.sh exists and is executable for each user
+      ansible.builtin.stat:
+        path: "/tmp/setup_asdf.sh"
+      register: setup_asdf_stat
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+
+    - name: Assert that setup_asdf.sh exists and is executable for each user
+      ansible.builtin.assert:
+        that:
+          - user_result.stat.exists
+          - user_result.stat.executable
+      loop: "{{ setup_asdf_stat.results }}"
+      loop_control:
+        loop_var: user_result
+
+    - name: Verify ASDF is accessible for each user
+      ansible.builtin.command: "{{ '/home/' + user.username + '/.asdf/bin/asdf --version' }}"
+      register: asdf_check
+      failed_when: asdf_check.rc != 0
+      changed_when: false
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+
+    - name: Check sourcing of asdf.sh in shell profile for each user
+      ansible.builtin.lineinfile:
+        path: "/home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+        line: '. "/home/{{ user.username }}/.asdf/asdf.sh"'
+        state: present
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+
+    - name: Check contents of shell profile for each user
+      ansible.builtin.command:
+        cmd: "cat /home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+      register: shell_profile_contents
+      changed_when: false
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+
+    - name: Confirm necessary files are present for each user
+      ansible.builtin.stat:
+        path: "/home/{{ user_item_check.0.username }}/{{ user_item_check.1.path }}"
+      loop: "{{ asdf_users | product(item_checks) | list }}"
+      loop_control:
+        loop_var: user_item_check
+      vars:
+        item_checks:
+          - name: .asdf directory
+            path: .asdf
+          - name: .tool-versions file
+            path: .tool-versions
