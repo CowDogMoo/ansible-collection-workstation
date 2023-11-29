@@ -4,10 +4,6 @@
     asdf_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
 
-- name: Debug asdf_users variable
-  ansible.builtin.debug:
-    var: asdf_users
-
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
@@ -20,20 +16,6 @@
   when:
     - asdf_users is defined
     - item.username != 'root'
-
-- name: Debug asdf_users variable
-  ansible.builtin.debug:
-    var: asdf_users
-
-- name: Export ASDF environment variables for each user
-  ansible.builtin.lineinfile:
-    path: "/home/{{ item.0.username }}/{{ (item.0.shell == '/usr/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: "{{ item.1 }}"
-    create: yes
-  loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
-  loop_control:
-    label: "{{ item.0.username }}"
-    loop_var: item
 
 - name: Deploy .tool-versions file
   ansible.builtin.template:
@@ -100,13 +82,6 @@
       PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
       export ASDF_PATH PATH
 
-      if [ -f "$ASDF_PATH/asdf.sh" ]; then
-        source "$ASDF_PATH/asdf.sh"
-      else
-        echo "ASDF script not found for user {{ item.username }}"
-        exit 1
-      fi
-
       {% for package in asdf_packages %}
       if ! asdf plugin list | grep -q {{ package.name }}; then
         asdf plugin add {{ package.name }};
@@ -124,13 +99,19 @@
   environment:
     SHELL: "/usr/bin/zsh"
 
-
 - name: Set ASDF installed plugins and versions facts
   ansible.builtin.set_fact:
     asdf_installed_plugins: "{{ asdf_installed_plugins | default({}) | combine({ item.item.username: item.stdout_lines | first | split() }) }}"
   loop: "{{ asdf_info.results }}"
   loop_control:
     loop_var: item
+
+- name: Copy setup_asdf_env.sh to a common location for all users
+  ansible.builtin.copy:
+    src: setup_asdf_env.sh
+    dest: /usr/local/bin/setup_asdf_env
+    mode: '0755'
+  become: true
 
 - name: Install and configure asdf packages for each user
   ansible.builtin.include_tasks: package_setup.yml
