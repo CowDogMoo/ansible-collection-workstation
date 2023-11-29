@@ -1,19 +1,24 @@
 ---
-- name: "Gather asdf plugin list"
+- name: "Install asdf plugin for {{ package.name }}"
   ansible.builtin.shell:
-    cmd: ". /usr/local/bin/setup_asdf_env '{{ asdf_default_username }}' && asdf plugin list"
-    executable: /usr/bin/zsh
-  register: global_plugin_list
-  changed_when: false
+    cmd: |
+      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+      if ! asdf plugin list | grep -q "{{ package.name }}"; then
+        asdf plugin add "{{ package.name }}"
+      fi
+    executable: "{{ user.shell }}"
   become: true
-  become_user: "{{ asdf_default_username }}"
+  become_user: "{{ user.username }}"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: user
 
 - name: "Check if {{ package.name }} version {{ package.version }} is installed"
   ansible.builtin.shell:
     cmd: |
       . /usr/local/bin/setup_asdf_env "{{ user.username }}"
       asdf list "{{ package.name }}" | grep -q "{{ package.version }}"
-    executable: /usr/bin/zsh
+    executable: "{{ user.shell }}"
   register: version_check
   failed_when: version_check.rc > 1
   changed_when: version_check.rc == 1
@@ -27,22 +32,22 @@
 - name: "Install asdf plugin for {{ package.name }}"
   ansible.builtin.shell:
     cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ item.username }}"
+      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
       asdf plugin add "{{ package.name }}"
-    executable: /usr/bin/zsh
+    executable: "{{ user.shell }}"
   when: "'{{ package.name }}' not in global_plugin_list.stdout"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_users }}"
   loop_control:
-    loop_var: item
+    loop_var: user
 
 - name: "Install {{ package.name }} version {{ package.version }}"
   ansible.builtin.shell:
     cmd: |
       . /usr/local/bin/setup_asdf_env "{{ user.username }}"
       asdf install "{{ package.name }}" "{{ package.version }}"
-    executable: /usr/bin/zsh
+    executable: "{{ user.shell }}"
   when: "'{{ package.name }}' not in global_plugin_list.stdout" 
   become: true
   become_user: "{{ user.username }}"
@@ -55,7 +60,7 @@
     cmd: |
       . /usr/local/bin/setup_asdf_env "{{ user.username }}"
       asdf "{{ package.scope }}" "{{ package.name }}" "{{ package.version }}"
-    executable: /usr/bin/zsh
+    executable: "{{ user.shell }}"
   when: version_check is defined and version_check.changed
   become: true
   become_user: "{{ user.username }}"

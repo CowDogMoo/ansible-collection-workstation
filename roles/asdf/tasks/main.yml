@@ -97,7 +97,7 @@
   loop_control:
     loop_var: item
   environment:
-    SHELL: "/usr/bin/zsh"
+    SHELL: "{{ item.shell }}"
 
 - name: Set ASDF installed plugins and versions facts
   ansible.builtin.set_fact:

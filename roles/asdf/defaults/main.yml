@@ -27,13 +27,6 @@ asdf_default_username: "{{ ansible_distribution | lower }}"
 asdf_users:
   - username: "{{ asdf_default_username }}"
     usergroup: "{{ asdf_default_username }}"
-    asdf_setup_scripts:
-      # - name: setup_asdf.sh
-      #   path: "/tmp/setup_asdf.sh"
-      #   url: "https://raw.githubusercontent.com/l50/dotfiles/main/files/setup_asdf.sh"
-      - name: .tool-versions
-        path: "/home/{{ asdf_default_username }}/.tool-versions"
-        url: "https://raw.githubusercontent.com/l50/dotfiles/main/.tool-versions"
     shell: "/usr/bin/zsh"
     shell_profile_lines:
       - "export ASDF_PATH=\"/home/{{ item.0.username }}/.asdf\""
