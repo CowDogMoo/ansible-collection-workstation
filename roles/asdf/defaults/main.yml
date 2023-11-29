@@ -1,25 +1,4 @@
 ---
-# Packages to configure with asdf
-asdf_packages:
-  - name: golang
-    version: "1.21.4"
-    scope: "global"
-  - name: python
-    version: "3.12.0"
-    scope: "local"
-  - name: ruby
-    version: "3.2.2"
-    scope: "local"
-  - name: kubectl
-    version: "1.28.2"
-    scope: "local"
-  - name: helm
-    version: "3.13.1"
-    scope: "local"
-  - name: packer
-    version: "1.9.4"
-    scope: "local"
-
 # Default username is the distribution name
 asdf_default_username: "{{ ansible_distribution | lower }}"
 
@@ -32,5 +11,24 @@ asdf_users:
       - "export ASDF_PATH=\"/home/{{ item.0.username }}/.asdf\""
       - "export PATH=\"$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH\""
       - ". \"$ASDF_PATH/asdf.sh\""
+    plugins:
+      - name: golang
+        version: "1.21.4"
+        scope: "global"
+      - name: python
+        version: "3.12.0"
+        scope: "local"
+      - name: ruby
+        version: "3.2.2"
+        scope: "local"
+      - name: kubectl
+        version: "1.28.2"
+        scope: "local"
+      - name: helm
+        version: "3.13.1"
+        scope: "local"
+      - name: packer
+        version: "1.9.4"
+        scope: "local" 
 
 

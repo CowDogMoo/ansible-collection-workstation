@@ -1,69 +1,41 @@
 ---
-- name: "Install asdf plugin for {{ package.name }}"
+- name: Install asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
-      if ! asdf plugin list | grep -q "{{ package.name }}"; then
-        asdf plugin add "{{ package.name }}"
+      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+      if ! asdf plugin list | grep -q "{{ user_plugin.1.name }}"; then
+        asdf plugin add "{{ user_plugin.1.name }}"
       fi
-    executable: "{{ user.shell }}"
+    executable: "{{ user_plugin.0.shell }}"
   become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_users }}"
+  become_user: "{{ user_plugin.0.username }}"
+  loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
   loop_control:
-    loop_var: user
+    loop_var: user_plugin
+  when: user_plugin.1.name is defined
 
-- name: "Check if {{ package.name }} version {{ package.version }} is installed"
+- name: Install specific version of asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
-      asdf list "{{ package.name }}" | grep -q "{{ package.version }}"
-    executable: "{{ user.shell }}"
-  register: version_check
-  failed_when: version_check.rc > 1
-  changed_when: version_check.rc == 1
+      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+      asdf install "{{ user_plugin.1.name }}" "{{ user_plugin.1.version }}"
+    executable: "{{ user_plugin.0.shell }}"
   become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_users }}"
+  become_user: "{{ user_plugin.0.username }}"
+  loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
   loop_control:
-    loop_var: user
-  when: package.name and package.version
+    loop_var: user_plugin
+  when: user_plugin.1.name is defined and user_plugin.1.version is defined
 
-- name: "Install asdf plugin for {{ package.name }}"
+- name: Set plugin version and scope for each user
   ansible.builtin.shell:
     cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
-      asdf plugin add "{{ package.name }}"
-    executable: "{{ user.shell }}"
-  when: "'{{ package.name }}' not in global_plugin_list.stdout"
+      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+      asdf "{{ user_plugin.1.scope }}" "{{ user_plugin.1.name }}" "{{ user_plugin.1.version }}"
+    executable: "{{ user_plugin.0.shell }}"
   become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_users }}"
+  become_user: "{{ user_plugin.0.username }}"
+  loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
   loop_control:
-    loop_var: user
-
-- name: "Install {{ package.name }} version {{ package.version }}"
-  ansible.builtin.shell:
-    cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
-      asdf install "{{ package.name }}" "{{ package.version }}"
-    executable: "{{ user.shell }}"
-  when: "'{{ package.name }}' not in global_plugin_list.stdout" 
-  become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: user
-
-- name: "Set {{ package.name }} version {{ package.version }} {{ package.scope }}"
-  ansible.builtin.shell:
-    cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
-      asdf "{{ package.scope }}" "{{ package.name }}" "{{ package.version }}"
-    executable: "{{ user.shell }}"
-  when: version_check is defined and version_check.changed
-  become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: user
+    loop_var: user_plugin
+  when: user_plugin.1.name is defined and user_plugin.1.version is defined and user_plugin.1.scope is defined
