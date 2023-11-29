@@ -1,6 +1,7 @@
 # Ansible Role: ASDF
 
-This role installs and configures the `asdf` version manager on Unix-like systems.
+This Ansible role manages the installation and configuration of `asdf`, a tool
+to manage multiple runtime versions of languages, frameworks, and databases.
 
 ---
 
@@ -19,23 +20,23 @@ This role installs and configures the `asdf` version manager on Unix-like system
 
 ## Role Variables
 
-| Variable              | Default Value                         | Description                                |
-| --------------------- | ------------------------------------- | ------------------------------------------ |
-| asdf_git_repo         | "https://github.com/asdf-vm/asdf.git" | Git repository URL of asdf                 |
-| asdf_os_family        | "{{ ansible_os_family \| lower }}"    | OS family variable for OS-specific tasks   |
-| asdf_packages         | [golang, python, ruby]                | Languages to configure with asdf           |
-| asdf_default_username | "{{ ansible_distribution \| lower }}" | Default username                           |
-| asdf_users            | Configurable                          | Users to setup with asdf and their scripts |
+| Variable              | Default Value                         | Description                            |
+| --------------------- | ------------------------------------- | -------------------------------------- |
+| asdf_git_repo         | "https://github.com/asdf-vm/asdf.git" | Git URL for asdf repository            |
+| asdf_os_family        | "{{ ansible_os_family \| lower }}"    | OS family for loading specific tasks   |
+| asdf_default_username | "{{ ansible_distribution \| lower }}" | Default username based on distribution |
+| asdf_users            | Configurable                          | List of users for asdf setup           |
 
 ---
 
 ## Local Development
 
-To develop locally, link this role to your Ansible roles directory:
+To develop locally, run the following from the repository root:
 
 ```bash
 ansible-galaxy install -r requirements.yml
-ln -s "${PWD}" "${HOME}/.ansible/roles/cowdogmoo.asdf"
+PATH_TO_ROLE="${PWD}"
+ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.asdf"
 ```
 
 ## Testing
@@ -47,20 +48,31 @@ For local testing:
 - Run Molecule tests:
 
   ```bash
-  molecule create
-  molecule converge
-  molecule idempotence
-  molecule destroy
+  ACTION="molecule"
+  if [[ $(uname) == "Darwin" ]]; then
+    act -j $ACTION --container-architecture linux/amd64
+  fi
   ```
+
+To test changes made to this role locally:
+
+```bash
+molecule create
+molecule converge
+molecule idempotence
+molecule destroy
+```
 
 ## Role Tasks
 
-The role includes the following main tasks:
+The role includes tasks for:
 
-1. Clone `asdf` for each user.
-2. Check and download necessary files.
-3. Execute setup scripts for each user.
-4. Update shell profiles for users.
+- Checking and installing libyaml.
+- Setting up asdf environment for each user.
+- Cloning and updating asdf repository.
+- Deploying and managing tool versions.
+- Updating shell profiles with asdf setup.
+- Installing and configuring asdf packages.
 
 ## Platforms
 
