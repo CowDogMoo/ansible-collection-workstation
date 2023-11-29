@@ -96,12 +96,23 @@
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
     cmd: |
+      ASDF_PATH="/home/{{ item.username }}/.asdf"
+      PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"
+      export ASDF_PATH PATH
+
+      if [ -f "$ASDF_PATH/asdf.sh" ]; then
+        source "$ASDF_PATH/asdf.sh"
+      else
+        echo "ASDF script not found for user {{ item.username }}"
+        exit 1
+      fi
+
       {% for package in asdf_packages %}
-      source "{{ item.shell_profile_lines[2] }}" &&
       if ! asdf plugin list | grep -q {{ package.name }}; then
         asdf plugin add {{ package.name }};
       fi;
       {% endfor %}
+      
       echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
   register: asdf_info
   changed_when: false
@@ -110,6 +121,9 @@
   loop: "{{ asdf_users }}"
   loop_control:
     loop_var: item
+  environment:
+    SHELL: "/usr/bin/zsh"
+
 
 - name: Set ASDF installed plugins and versions facts
   ansible.builtin.set_fact:
