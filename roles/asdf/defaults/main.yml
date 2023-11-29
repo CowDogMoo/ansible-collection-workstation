@@ -8,7 +8,7 @@ asdf_users:
     usergroup: "{{ asdf_default_username }}"
     shell: "/usr/bin/zsh"
     shell_profile_lines:
-      - "export ASDF_PATH=\"/home/{{ item.0.username }}/.asdf\""
+      - "export ASDF_PATH=\"/home/{{ asdf_default_username }}/.asdf\""
       - "export PATH=\"$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH\""
       - ". \"$ASDF_PATH/asdf.sh\""
     plugins:
@@ -30,5 +30,3 @@ asdf_users:
       - name: packer
         version: "1.9.4"
         scope: "local" 
-
-

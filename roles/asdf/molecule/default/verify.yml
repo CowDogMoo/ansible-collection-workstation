@@ -26,23 +26,17 @@
 
     - name: Check if setup_asdf.sh exists and is executable for each user
       ansible.builtin.stat:
-        path: "/tmp/setup_asdf.sh"
+        path: "/usr/local/bin/setup_asdf_env"
       register: setup_asdf_stat
-      loop: "{{ asdf_users }}"
-      loop_control:
-        loop_var: user
 
-    - name: Assert that setup_asdf.sh exists and is executable for each user
+    - name: Assert that setup_asdf.sh exists and is executable
       ansible.builtin.assert:
         that:
-          - user_result.stat.exists
-          - user_result.stat.executable
-      loop: "{{ setup_asdf_stat.results }}"
-      loop_control:
-        loop_var: user_result
+          - setup_asdf_stat.stat.exists
+          - setup_asdf_stat.stat.mode | regex_search('0755')
 
     - name: Verify ASDF is accessible for each user
-      ansible.builtin.command: "{{ '/home/' + user.username + '/.asdf/bin/asdf --version' }}"
+      ansible.builtin.command: "/home/{{ user.username }}/.asdf/bin/asdf --version"
       register: asdf_check
       failed_when: asdf_check.rc != 0
       changed_when: false
@@ -51,32 +45,38 @@
         loop_var: user
 
     - name: Check sourcing of asdf.sh in shell profile for each user
-      ansible.builtin.lineinfile:
-        path: "/home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-        line: '. "/home/{{ user.username }}/.asdf/asdf.sh"'
-        state: present
-      loop: "{{ asdf_users }}"
-      loop_control:
-        loop_var: user
-
-    - name: Check contents of shell profile for each user
       ansible.builtin.command:
-        cmd: "cat /home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-      register: shell_profile_contents
-      changed_when: false
+        cmd: "grep -q '. \"/home/{{ user.username }}/.asdf/asdf.sh\"' /home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
       loop: "{{ asdf_users }}"
       loop_control:
         loop_var: user
 
-    - name: Confirm necessary files are present for each user
-      ansible.builtin.stat:
-        path: "/home/{{ user_item_check.0.username }}/{{ user_item_check.1.path }}"
-      loop: "{{ asdf_users | product(item_checks) | list }}"
+    - name: Check contents of .tool-versions for each user
+      ansible.builtin.command:
+        cmd: "grep '{{ plugin.name }} {{ plugin.version }}' /home/{{ user.username }}/.tool-versions"
+      loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
       loop_control:
-        loop_var: user_item_check
-      vars:
-        item_checks:
-          - name: .asdf directory
-            path: .asdf
-          - name: .tool-versions file
-            path: .tool-versions
+        loop_var: user_plugin
+      when: user_plugin.1.name is defined and user_plugin.1.version is defined
+
+    - name: Verify installed plugins for each user
+      ansible.builtin.shell:
+        cmd: |
+          . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+          asdf plugin list | grep -q "{{ plugin.name }}"
+        executable: "{{ user.shell }}"
+      loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
+      loop_control:
+        loop_var: user_plugin
+      when: user_plugin.1.name is defined
+
+    - name: Verify specific version of plugins for each user
+      ansible.builtin.shell:
+        cmd: |
+          . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+          asdf list "{{ user_plugin.1.name }}" | grep -q "{{ user_plugin.1.version }}"
+        executable: "{{ user_plugin.0.shell }}"
+      loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
+      loop_control:
+        loop_var: user_plugin
+      when: user_plugin.1.name is defined and user_plugin.1.version is defined
