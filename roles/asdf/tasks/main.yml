@@ -75,20 +75,18 @@
   when: user_line.0.username != 'root'
 
 - name: Gather installed ASDF plugins and versions for each user
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+  ansible.builtin.shell: set -o pipefail
+    . /usr/local/bin/setup_asdf_env "{{ user.username }}"
 
-      {% for plugin in user.plugins %}
-      if ! asdf plugin list | grep -q {{ plugin.name }}; then
-        asdf plugin add {{ plugin.name }};
-      fi;
-      {% endfor %}
+    {% for plugin in user.plugins %}
+    if ! asdf plugin list | grep -q {{ plugin.name }}; then
+    asdf plugin add {{ plugin.name }};
+    fi;
+    {% endfor %}
 
-      echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
-    args:
-      executable: "{{ user.shell }}"
+    echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
+  args:
+    executable: "{{ user.shell }}"
   register: asdf_info
   changed_when: false
   become: true
