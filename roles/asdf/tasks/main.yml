@@ -87,6 +87,8 @@
       {% endfor %}
 
       echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
+    args:
+      executable: "{{ user.shell }}"
   register: asdf_info
   changed_when: false
   become: true
