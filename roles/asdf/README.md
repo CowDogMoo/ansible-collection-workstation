@@ -1,7 +1,7 @@
-# Ansible Role: ASDF
+# Ansible Role: asdf
 
-This Ansible role manages the installation and configuration of `asdf`, a tool
-to manage multiple runtime versions of languages, frameworks, and databases.
+This role installs and configures asdf, a version manager for multiple
+programming languages.
 
 ---
 
@@ -20,12 +20,22 @@ to manage multiple runtime versions of languages, frameworks, and databases.
 
 ## Role Variables
 
-| Variable              | Default Value                         | Description                            |
-| --------------------- | ------------------------------------- | -------------------------------------- |
-| asdf_git_repo         | "https://github.com/asdf-vm/asdf.git" | Git URL for asdf repository            |
-| asdf_os_family        | "{{ ansible_os_family \| lower }}"    | OS family for loading specific tasks   |
-| asdf_default_username | "{{ ansible_distribution \| lower }}" | Default username based on distribution |
-| asdf_users            | Configurable                          | List of users for asdf setup           |
+| Variable              | Default Value                         | Description                                |
+| --------------------- | ------------------------------------- | ------------------------------------------ |
+| asdf_git_repo         | "https://github.com/asdf-vm/asdf.git" | Git repository URL for asdf                |
+| asdf_os_family        | "{{ ansible_os_family \| lower }}"    | OS family for loading OS-specific tasks    |
+| asdf_default_username | "{{ ansible_distribution \| lower }}" | Default username for setup                 |
+| asdf_users            | Configurable                          | Users to setup with asdf and their plugins |
+
+### Configuration for `asdf_users`
+
+`asdf_users` is a list of dictionaries, each with:
+
+- `username`: User's name
+- `usergroup`: User's group
+- `shell`: User's shell (default is "/usr/bin/zsh")
+- `shell_profile_lines`: Shell profile settings
+- `plugins`: List of asdf plugins to install (name, version, scope)
 
 ---
 
@@ -65,21 +75,23 @@ molecule destroy
 
 ## Role Tasks
 
-The role includes tasks for:
+Key tasks in this role:
 
-- Checking and installing libyaml.
-- Setting up asdf environment for each user.
-- Cloning and updating asdf repository.
-- Deploying and managing tool versions.
-- Updating shell profiles with asdf setup.
-- Installing and configuring asdf packages.
+1. Set default username for Kali systems.
+2. Clone asdf for each user.
+3. Deploy `.tool-versions` file and set correct permissions.
+4. Set permissions for each user's ASDF directory.
+5. Update shell profiles for each user.
+6. Gather installed ASDF plugins and versions for each user.
+7. Copy `setup_asdf_env.sh` to a common location for all users.
+8. Install and configure asdf packages for each user.
 
 ## Platforms
 
 This role is tested on the following platforms:
 
 - Ubuntu
-- macOS
+- Kali
 - EL (Enterprise Linux)
 
 ## Dependencies
