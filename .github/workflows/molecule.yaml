@@ -22,8 +22,8 @@ jobs:
             path: "roles/vnc_setup"
           - name: "Role Test - logging"
             path: "roles/logging"
-          # - name: "Playbook Test - attack_box.yml"
-          #   path: "playbooks/attack_box.yml"
+          - name: "Playbooks Testing"
+            path: "playbooks"
     steps:
       - name: Set up git repository
         uses: actions/checkout@v3.6.0
