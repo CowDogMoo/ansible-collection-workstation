@@ -17,6 +17,7 @@
 - name: Install asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
+      set -o pipefail
       . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
       if ! asdf plugin list | grep -q "{{ user_plugin.1.name }}"; then
         asdf plugin add "{{ user_plugin.1.name }}"
@@ -33,6 +34,7 @@
 - name: Install specific version of asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
+      set -o pipefail
       . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
       if ! asdf list "{{ user_plugin.1.name }}" | grep -q "{{ user_plugin.1.version }}"; then
         asdf install "{{ user_plugin.1.name }}" "{{ user_plugin.1.version }}"

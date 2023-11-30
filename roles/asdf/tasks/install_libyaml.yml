@@ -8,6 +8,7 @@
   ansible.builtin.get_url:
     url: https://pyyaml.org/download/libyaml/yaml-0.2.5.tar.gz
     dest: /tmp/yaml-0.2.5.tar.gz
+    mode: "0644"
   when: libyaml_installed.rc != 0
 
 - name: Extract libyaml tarball

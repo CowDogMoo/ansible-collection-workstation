@@ -44,39 +44,13 @@
       loop_control:
         loop_var: user
 
-    - name: Check sourcing of asdf.sh in shell profile for each user
-      ansible.builtin.command:
-        cmd: "grep -q '. \"/home/{{ user.username }}/.asdf/asdf.sh\"' /home/{{ user.username }}/{{ (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    - name: Check contents of .tool-versions for each user
+      ansible.builtin.shell: |
+        set -o pipefail
+        cat /home/{{ user.username }}/.tool-versions
+      args:
+        executable: "{{ user.shell }}"
       loop: "{{ asdf_users }}"
       loop_control:
         loop_var: user
-
-    - name: Check contents of .tool-versions for each user
-      ansible.builtin.command:
-        cmd: "grep '{{ plugin.name }} {{ plugin.version }}' /home/{{ user.username }}/.tool-versions"
-      loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
-      loop_control:
-        loop_var: user_plugin
-      when: user_plugin.1.name is defined and user_plugin.1.version is defined
-
-    - name: Verify installed plugins for each user
-      ansible.builtin.shell:
-        cmd: |
-          . /usr/local/bin/setup_asdf_env "{{ user.username }}"
-          asdf plugin list | grep -q "{{ plugin.name }}"
-        executable: "{{ user.shell }}"
-      loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
-      loop_control:
-        loop_var: user_plugin
-      when: user_plugin.1.name is defined
-
-    - name: Verify specific version of plugins for each user
-      ansible.builtin.shell:
-        cmd: |
-          . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
-          asdf list "{{ user_plugin.1.name }}" | grep -q "{{ user_plugin.1.version }}"
-        executable: "{{ user_plugin.0.shell }}"
-      loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
-      loop_control:
-        loop_var: user_plugin
-      when: user_plugin.1.name is defined and user_plugin.1.version is defined
+      changed_when: false

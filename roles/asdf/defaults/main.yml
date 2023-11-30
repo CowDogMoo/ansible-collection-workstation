@@ -8,9 +8,9 @@ asdf_users:
     usergroup: "{{ asdf_default_username }}"
     shell: "/usr/bin/zsh"
     shell_profile_lines:
-      - "export ASDF_PATH=\"/home/{{ asdf_default_username }}/.asdf\""
-      - "export PATH=\"$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH\""
-      - ". \"$ASDF_PATH/asdf.sh\""
+      - 'export ASDF_PATH="/home/{{ asdf_default_username }}/.asdf"'
+      - 'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"'
+      - '. "$ASDF_PATH/asdf.sh"'
     plugins:
       - name: golang
         version: "1.21.4"
@@ -29,4 +29,4 @@ asdf_users:
         scope: "local"
       - name: packer
         version: "1.9.4"
-        scope: "local" 
+        scope: "local"
