@@ -17,16 +17,16 @@ asdf_users:
         scope: "global"
       - name: python
         version: "3.12.0"
-        scope: "local"
+        scope: "global"
       - name: ruby
         version: "3.2.2"
-        scope: "local"
+        scope: "global"
       - name: kubectl
         version: "1.28.2"
-        scope: "local"
+        scope: "global"
       - name: helm
         version: "3.13.1"
-        scope: "local"
+        scope: "global"
       - name: packer
         version: "1.9.4"
-        scope: "local"
+        scope: "global"
