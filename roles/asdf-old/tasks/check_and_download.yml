@@ -1,9 +1,0 @@
----
-- name: Iterate over scripts for each user
-  ansible.builtin.include_tasks: script_check_and_download.yml
-  loop: "{{ asdf_user.asdf_setup_scripts }}"
-  loop_control:
-    loop_var: script_item
-  vars:
-    script_path: "{{ script_item.path }}"
-    script_url: "{{ script_item.url }}"
