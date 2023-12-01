@@ -1,3 +1,6 @@
-{% for package in asdf_packages %}
-{{ package.name }} {{ package.version }}
+{% for user in asdf_users %}
+# User: {{ user.username }}
+{% for plugin in user.plugins %}
+{{ plugin.name }} {{ plugin.version }}
+{% endfor %}
 {% endfor %}

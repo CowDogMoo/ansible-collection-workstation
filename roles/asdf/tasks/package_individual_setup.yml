@@ -1,30 +1,49 @@
-- name: "Install and configure {{ package.name }} for {{ username }}"
+---
+- name: Get all plugins for each user
+  ansible.builtin.shell:
+    cmd: |
+      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+      asdf plugin list
+    executable: "{{ user.shell }}"
+  register: asdf_plugins
+  changed_when: false
   become: true
-  become_user: "{{ username }}"
-  block:
-    - name: "Install asdf plugin for {{ package.name }}"
-      ansible.builtin.shell:
-        cmd: >-
-          export ASDF_DIR="/home/{{ username }}/.asdf" && 
-          . $ASDF_DIR/asdf.sh && 
-          asdf plugin add {{ package.name }}
+  become_user: "{{ user.username }}"
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: user
+  when: user.username != 'root'
 
-    - name: "Install {{ package.name }} version {{ package.version }}"
-      become: true
-      become_user: "{{ username }}"
-      ansible.builtin.shell:
-        cmd: >-
-          export ASDF_DIR="/home/{{ username }}/.asdf" && 
-          . $ASDF_DIR/asdf.sh && 
-          asdf install {{ package.name }} {{ package.version }}
+- name: Install asdf plugins for each user
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+      if ! asdf plugin list | grep -q "{{ user_plugin.1.name }}"; then
+        asdf plugin add "{{ user_plugin.1.name }}"
+      fi
+    executable: "{{ user_plugin.0.shell }}"
+  become: true
+  become_user: "{{ user_plugin.0.username }}"
+  loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
+  loop_control:
+    loop_var: user_plugin
+  when: user_plugin.1.name is defined
+  changed_when: false
 
-    - name: "Set {{ package.name }} version {{ package.version }} {{ package.scope }}"
-      become: true
-      become_user: "{{ username }}"
-      ansible.builtin.shell:
-        cmd: >-
-          . /home/{{ username }}/.asdf/asdf.sh && 
-          asdf local {{ package.name }} {{ package.version }}
-        executable: /bin/bash
-        chdir: /home/{{ username }}
-
+- name: Install specific version of asdf plugins for each user
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+      if ! asdf list "{{ user_plugin.1.name }}" | grep -q "{{ user_plugin.1.version }}"; then
+        asdf install "{{ user_plugin.1.name }}" "{{ user_plugin.1.version }}"
+      fi
+    executable: "{{ user_plugin.0.shell }}"
+  become: true
+  become_user: "{{ user_plugin.0.username }}"
+  loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
+  loop_control:
+    loop_var: user_plugin
+  when: user_plugin.1.name is defined and user_plugin.1.version is defined
+  changed_when: false

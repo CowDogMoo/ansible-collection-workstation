@@ -1,10 +1,14 @@
+---
 name: Molecule Test
 on:
   pull_request:
   push:
 
+env:
+  COLLECTION_PATH: $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
+
 jobs:
-  molecule:
+  role_test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -23,7 +27,34 @@ jobs:
           - name: "Role Test - logging"
             path: "roles/logging"
     steps:
-      - name: Set up git repository
+      - name: Checkout code
+        uses: actions/checkout@v3.6.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install ansible molecule docker
+          python3 -m pip install molecule-docker
+
+      - name: Install galaxy dependencies
+        run: ansible-galaxy install -v -r requirements.yml
+
+      - name: ${{ matrix.name }}
+        run: molecule test
+        working-directory: ${{ matrix.path }}
+        env:
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
+
+  playbook_test:
+    runs-on: ubuntu-latest
+    needs: role_test
+    steps:
+      - name: Checkout code
         uses: actions/checkout@v3.6.0
 
       - name: Set up Python
@@ -40,11 +71,12 @@ jobs:
         run: |
           ansible-galaxy install -v -r requirements.yml
           ansible-galaxy collection install -v -r requirements.yml
+          mkdir -p ~/.ansible/collections/ansible_collections/cowdogmoo
+          ln -s $PWD ~/.ansible/collections/ansible_collections/cowdogmoo/workstation
 
-      - name: ${{ matrix.name }}
+      - name: Playbooks Tests
         run: molecule test
-        working-directory: ${{ matrix.path }}
+        working-directory: playbooks
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
-          MOLECULE_DISTRO: geerlingguy/docker-ubuntu2204-ansible

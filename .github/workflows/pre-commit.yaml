@@ -51,4 +51,4 @@ jobs:
         run: mage installDeps
 
       - name: Run pre-commit
-        run: mage runPreCommit
+        run: pre-commit run -a
