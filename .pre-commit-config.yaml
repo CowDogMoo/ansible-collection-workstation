@@ -46,11 +46,11 @@ repos:
     rev: v6.22.1
     hooks:
       - id: ansible-lint
-        entry: ansible-lint -v --force-color -c .hooks/linters/ansible-lint.yaml --exclude .github
+        entry: ansible-lint -v --force-color -c .hooks/linters/ansible-lint.yaml
         language: python
         # do not pass files to ansible-lint, see:
         # https://github.com/ansible-community/ansible-lint/issues/611
-        pass_filenames: false
+        # pass_filenames: false
         always_run: true
         # https://github.com/pre-commit/pre-commit/issues/1526
         # if you want to use only the base ansible version for linting,
