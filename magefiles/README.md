@@ -60,19 +60,19 @@ error: An error if any issue occurs while trying to generate the changelog.
 
 ---
 
-### GeneratePackageDocs()
+### GenerateMagePackageDocs()
 
 ```go
-GeneratePackageDocs() error
+GenerateMagePackageDocs() error
 ```
 
-GeneratePackageDocs creates documentation for the various packages
+GenerateMagePackageDocs creates documentation for the various packages
 in the project.
 
 Example usage:
 
 ```go
-mage generatepackagedocs
+mage generatemagepackagedocs
 ```
 
 **Returns:**
