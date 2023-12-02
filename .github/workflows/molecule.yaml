@@ -52,7 +52,6 @@ jobs:
 
   playbook_test:
     runs-on: ubuntu-latest
-    needs: role_test
     steps:
       - name: Checkout code
         uses: actions/checkout@v3.6.0
