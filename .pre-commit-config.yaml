@@ -46,8 +46,7 @@ repos:
     rev: v6.22.1
     hooks:
       - id: ansible-lint
-        entry: ansible-lint -v --force-color -c .hooks/linters/ansible-lint.yaml
-        files: \.(yaml|yml)$
+        entry: ansible-lint -v --force-color -c .hooks/linters/ansible-lint.yaml --exclude .github
         language: python
         # do not pass files to ansible-lint, see:
         # https://github.com/ansible-community/ansible-lint/issues/611
@@ -58,12 +57,3 @@ repos:
         # replace 'community' extra with 'core' or just mention the exact
         # version of Ansible you want to install as a dependency.
         additional_dependencies: [".[community]"]
-
-  # - repo: local
-  #   hooks:
-  #     - id: generate-ansible-docs
-  #       name: Generate Documentation
-  #       entry: python3 .hooks/generate_docs.py
-  #       language: system
-  #       files: ^roles/.+/defaults/main\.yml$|^roles/.+/vars/main\.yml$
-  #       pass_filenames: false
