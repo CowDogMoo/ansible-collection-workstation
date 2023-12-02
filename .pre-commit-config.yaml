@@ -23,6 +23,7 @@ repos:
     hooks:
       - id: prettier
         files: \.(json|md|yaml|yml)$
+        exclude: ^changelogs/
 
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0

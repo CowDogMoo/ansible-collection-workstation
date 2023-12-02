@@ -1,44 +1,46 @@
-===================================
-cowdogmoo.workstation Release Notes
-===================================
+============================================================
+CowDogMoo Workstation Ansible Collection 1.3.0 Release Notes
+============================================================
 
-1.3.0
+v1.3.0
 ======
 
 Release Summary
 ---------------
 
-Refactored `attack-box` playbook and introduced molecule testing framework.
+Extended `asdf` role functionality and improved project configurations.
+
 
 Added
 -----
 
-- User setup and zsh setup roles in `attack-box.yml`.
-- Molecule testing configurations for `attack-box` playbook.
 - Enhanced asdf role with user-specific setup scripts.
 - Logging configuration enhancements in the logging role.
+- Molecule testing configurations for `attack-box` playbook.
 - Package management improvements for different distributions.
+- User setup and zsh setup roles in `attack-box.yml`.
 
 Changed
 -------
 
 - Changed hosts from localhost to all in `attack-box.yml`.
-- Updated asdf role to remove OS-specific tasks and focus on user-based configuration.
 - Simplified package management role with unified tasks for Debian and RedHat.
+- Updated asdf role to remove OS-specific tasks and focus on user-based configuration.
 
 Removed
 -------
 
-- Removed Windows support in asdf role's documentation.
 - Deprecated vnc_zsh role and associated files in favor of streamlined setup.
+- Removed Windows support in asdf role's documentation.
 
-1.2.0
+v1.2.0
 ======
 
 Release Summary
 ---------------
 
 Refactored `asdf` and created new `vnc_zsh` role enhancing functionality.
+
 
 Added
 -----
@@ -60,13 +62,14 @@ Removed
 
 - Windows support, redundant block in `asdf` role's `README.md` and `tasks/main.yml`.
 
-1.1.0
+v1.1.0
 ======
 
 Release Summary
 ---------------
 
 Extended `asdf` role functionality and improved project configurations.
+
 
 Added
 -----
@@ -99,13 +102,14 @@ Removed
 
 - Removed the separate ShellCheck repository in `.pre-commit-config.yaml` and consolidated ShellCheck hook under `jumanjihouse/pre-commit-hooks`.
 
-1.0.0
+v1.0.0
 ======
 
 Release Summary
 ---------------
 
 Added a new `asdf` role
+
 
 Added
 -----
