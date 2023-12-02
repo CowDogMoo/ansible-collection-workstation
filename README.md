@@ -48,11 +48,7 @@ management and service setup.
 
 ### Logging
 
-Provides logging directories and log rotation configurations for other roles.
-
-### Sliver
-
-Installs the Sliver framework, a post-exploitation tool used in cybersecurity assessments.
+Creates logging directories and log rotation configurations for a provided path.
 
 ## Usage
 

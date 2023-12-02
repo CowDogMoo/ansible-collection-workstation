@@ -1,6 +1,7 @@
 # Ansible Role: Logging
 
-This role provides logging directories and log rotation for other roles.
+This role creates logging directories and configures
+log rotation for a provided path.
 
 ---
 
