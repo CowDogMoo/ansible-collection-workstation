@@ -1,0 +1,14 @@
+---
+added:
+  - Enhanced asdf role with user-specific setup scripts.
+  - Logging configuration enhancements in the logging role.
+  - Molecule testing configurations for `attack-box` playbook.
+  - Package management improvements for different distributions.
+  - User setup and zsh setup roles in `attack-box.yml`.
+changed:
+  - Changed hosts from localhost to all in `attack-box.yml`.
+  - Simplified package management role with unified tasks for Debian and RedHat.
+  - Updated asdf role to remove OS-specific tasks and focus on user-based configuration.
+removed:
+  - Deprecated vnc_zsh role and associated files in favor of streamlined setup.
+  - Removed Windows support in asdf role's documentation.
