@@ -81,7 +81,7 @@ jobs:
 
       - name: ${{ matrix.name }}
         run: molecule test
-        working-directory: ${{ matrix.path }}/molecule/default
+        working-directory: ${{ matrix.path }}
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
