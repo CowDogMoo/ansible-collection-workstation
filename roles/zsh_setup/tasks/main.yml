@@ -7,12 +7,12 @@
 
 - name: Download oh-my-zsh install script for all zsh_setup_users
   ansible.builtin.get_url:
-    url: "{{ zsh_setup_omz_install_script_url }}"
-    dest: "{{ (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') }}/{{ item.username }}/zsh-installer.sh"
+    url: "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
+    dest: "{{ (item.username == 'root') | ternary('/root', (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') + '/' + item.username) }}/zsh-installer.sh"
     mode: "0755"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
-  when: "not oh_my_zsh_installed.results[item | int].stat.exists and ansible_system != 'Darwin'"
+  when: "not oh_my_zsh_installed.results[item | int].stat.exists"
   with_items: "{{ zsh_setup_users }}"
   changed_when: false
 
@@ -34,7 +34,7 @@
 
 - name: Ensure zsh-installer.sh is executable for all zsh_setup_users
   ansible.builtin.file:
-    path: "{{ (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') }}/{{ item.username }}/zsh-installer.sh"
+    path: "{{ (item.username == 'root') | ternary('/root', (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') + '/' + item.username) }}/zsh-installer.sh"
     mode: "0755"
   become: true
   become_user: "{{ item.username }}"
@@ -66,7 +66,7 @@
 - name: Create per-user $HOME/.zshrc files
   ansible.builtin.template:
     src: zshrc.j2
-    dest: "{{ (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') }}/{{ item.username }}/.zshrc"
+    dest: "{{ (item.username == 'root') | ternary('/root', (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') + '/' + item.username) }}/.zshrc"
     mode: "0755"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
