@@ -1,3 +1,4 @@
+---
 - name: Check if libyaml is installed
   ansible.builtin.command: ldconfig -p | grep libyaml
   register: libyaml_installed

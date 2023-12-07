@@ -4,10 +4,14 @@
     asdf_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
 
+- name: Set home directory path
+  ansible.builtin.set_fact:
+    home_path: "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}"
+
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
-    dest: "/home/{{ user.username }}/.asdf"
+    dest: "{{ home_path }}/{{ user.username }}/.asdf"
     clone: true
     update: false
   loop: "{{ asdf_users }}"
@@ -20,7 +24,7 @@
 - name: Deploy .tool-versions file
   ansible.builtin.template:
     src: tool-versions.j2
-    dest: "/home/{{ user.username }}/.tool-versions"
+    dest: "{{ home_path }}/{{ user.username }}/.tool-versions"
     owner: "{{ user.username }}"
     group: "{{ user.usergroup | default(user.username) }}"
     mode: "0644"
@@ -33,7 +37,7 @@
 
 - name: Ensure correct permissions for .tool-versions
   ansible.builtin.file:
-    path: "/home/{{ item.username }}/.tool-versions"
+    path: "{{ home_path }}/{{ item.username }}/.tool-versions"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
@@ -45,7 +49,7 @@
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:
-    path: "/home/{{ user.username }}/.asdf"
+    path: "{{ home_path }}/{{ user.username }}/.asdf"
     owner: "{{ user.username }}"
     group: "{{ user.usergroup | default(user.username) }}"
     recurse: true
@@ -58,16 +62,18 @@
 
 - name: Check if .asdf directory exists for each user
   ansible.builtin.stat:
-    path: "/home/{{ user.username }}/.asdf"
+    path: "{{ home_path }}/{{ user.username }}/.asdf"
   register: asdf_dir_check
   loop: "{{ asdf_users }}"
   loop_control:
     loop_var: user
 
-- name: Update shell profiles for each user
+- name: Update shell profiles to source setup_asdf_env.sh
   ansible.builtin.lineinfile:
-    path: "/home/{{ user_line.0.username }}/{{ (ansible_user_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: "{{ user_line.1 }}"
+    path: "{{ home_path }}/{{ user_line.0.username }}/{{ (user_line.0.shell | default('/bin/bash') == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    line: "source /usr/local/bin/setup_asdf_env.sh"
+    insertafter: EOF
+    create: false
     state: present
   loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
   loop_control:
@@ -75,17 +81,16 @@
   when: user_line.0.username != 'root'
 
 - name: Gather installed ASDF plugins and versions for each user
-  ansible.builtin.shell: set -o pipefail
-    . /usr/local/bin/setup_asdf_env "{{ user.username }}"
-
-    {% for plugin in user.plugins %}
-    if ! asdf plugin list | grep -q {{ plugin.name }}; then
-    asdf plugin add {{ plugin.name }};
-    fi;
-    {% endfor %}
-
-    echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
-  args:
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+      {% for plugin in user.plugins %}
+      if ! asdf plugin list | grep -q {{ plugin.name }}; then
+        asdf plugin add {{ plugin.name }};
+      fi;
+      {% endfor %}
+      echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
     executable: "{{ user.shell }}"
   register: asdf_info
   changed_when: false
@@ -98,12 +103,12 @@
 - name: Copy setup_asdf_env.sh to a common location for all users
   ansible.builtin.copy:
     src: setup_asdf_env.sh
-    dest: /usr/local/bin/setup_asdf_env
+    dest: /usr/local/bin/setup_asdf_env.sh
     mode: "0755"
-  become: true
 
 - name: Install and configure asdf packages for each user
   ansible.builtin.include_tasks: package_setup.yml
   loop: "{{ asdf_users }}"
   loop_control:
     loop_var: asdf_user
+  when: asdf_user.username != 'root'

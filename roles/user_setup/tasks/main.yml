@@ -1,4 +1,20 @@
 ---
+- name: Set default username for macOS systems
+  ansible.builtin.set_fact:
+    user_setup_default_username: "{{ ansible_env.USER }}"
+  when: ansible_os_family == 'Darwin'
+
+- name: Determine default group for macOS systems
+  ansible.builtin.command: id -gn
+  register: macos_default_group
+  when: ansible_os_family == 'Darwin'
+  changed_when: false
+
+- name: Set default group for macOS systems
+  ansible.builtin.set_fact:
+    user_setup_default_group: "{{ macos_default_group.stdout }}"
+  when: ansible_os_family == 'Darwin'
+
 - name: Gather the list of unique shells to install
   ansible.builtin.set_fact:
     unique_shells: "{{ user_setup_default_users | map(attribute='shell') | unique | map('regex_replace', '^/bin/(.*)$', '\\1') | list }}"
@@ -33,13 +49,14 @@
   when: item.usergroup is defined and item.usergroup != ''
   tags: group-setup
 
-- name: Create users
+- name: Create users (modified for macOS)
   become: true
   ansible.builtin.user:
     name: "{{ item.username }}"
-    group: "{{ item.usergroup }}"
+    group: "{{ item.username == user_setup_default_username | ternary(user_setup_default_group, item.usergroup) }}"
     shell: "{{ item.shell }}"
   loop: "{{ user_setup_default_users }}"
+  when: item.username == user_setup_default_username
   tags: user-setup
 
 - name: Provide sudoers access for relevant users in sudoers.d
