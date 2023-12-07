@@ -49,11 +49,11 @@
   when: item.usergroup is defined and item.usergroup != ''
   tags: group-setup
 
-- name: Create users (modified for macOS)
+- name: Create users
   become: true
   ansible.builtin.user:
     name: "{{ item.username }}"
-    group: "{{ item.username == user_setup_default_username | ternary(user_setup_default_group, item.usergroup) }}"
+    group: "{{ (item.username == user_setup_default_username) | ternary(user_setup_default_group, item.usergroup) }}"
     shell: "{{ item.shell }}"
   loop: "{{ user_setup_default_users }}"
   when: item.username == user_setup_default_username

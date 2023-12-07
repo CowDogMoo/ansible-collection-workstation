@@ -1,7 +1,8 @@
 ---
 user_setup_default_username: "{{ ansible_distribution | lower }}"
+user_setup_default_group: "{{ ansible_distribution | lower }}"
 user_setup_default_users:
   - username: "{{ user_setup_default_username }}"
-    usergroup: "{{ user_setup_default_username }}"
+    usergroup: "{{ user_setup_default_group }}"
     sudo: true
     shell: /bin/zsh
