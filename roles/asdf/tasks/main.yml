@@ -68,23 +68,18 @@
   loop_control:
     loop_var: user
 
-- name: Update shell profiles to source setup_asdf_env
-  ansible.builtin.lineinfile:
-    path: "{{ home_path }}/{{ user_line.0.username }}/{{ (user_line.0.shell | default('/bin/bash') == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: "source /usr/local/bin/setup_asdf_env"
-    insertafter: EOF
-    create: false
-    state: present
-  loop: "{{ asdf_users | subelements('shell_profile_lines') }}"
-  loop_control:
-    loop_var: user_line
-  when: user_line.0.username != 'root'
+- name: Include task to update shell profiles for each user
+  ansible.builtin.include_tasks: update_shell_profiles.yml
+  vars:
+    user: "{{ item }}"
+  loop: "{{ asdf_users }}"
+  when: item.username != 'root'
 
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+      . /usr/local/bin/setup_asdf_env "{{ user.username }}" "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}"
       {% for plugin in user.plugins %}
       if ! asdf plugin list | grep -q {{ plugin.name }}; then
         asdf plugin add {{ plugin.name }};

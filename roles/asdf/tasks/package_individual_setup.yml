@@ -2,7 +2,8 @@
 - name: Get all plugins for each user
   ansible.builtin.shell:
     cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+      set -o pipefail
+      . /usr/local/bin/setup_asdf_env "{{ user.username }}" "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}/{{ user.username }}"
       asdf plugin list
     executable: "{{ user.shell }}"
   register: asdf_plugins
@@ -18,7 +19,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}" "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}/{{ user_plugin.0.username }}"
       if ! asdf plugin list | grep -q "{{ user_plugin.1.name }}"; then
         asdf plugin add "{{ user_plugin.1.name }}"
       fi
@@ -35,7 +36,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
+      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}" "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}/{{ user_plugin.0.username }}"
       if ! asdf list "{{ user_plugin.1.name }}" | grep -q "{{ user_plugin.1.version }}"; then
         asdf install "{{ user_plugin.1.name }}" "{{ user_plugin.1.version }}"
       fi
