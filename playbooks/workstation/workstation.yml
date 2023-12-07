@@ -1,0 +1,6 @@
+---
+- name: Workstation
+  hosts: all
+  roles:
+    - role: cowdogmoo.workstation.zsh_setup
+    - role: cowdogmoo.workstation.asdf
