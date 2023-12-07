@@ -68,10 +68,10 @@
   loop_control:
     loop_var: user
 
-- name: Update shell profiles to source setup_asdf_env.sh
+- name: Update shell profiles to source setup_asdf_env
   ansible.builtin.lineinfile:
     path: "{{ home_path }}/{{ user_line.0.username }}/{{ (user_line.0.shell | default('/bin/bash') == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-    line: "source /usr/local/bin/setup_asdf_env.sh"
+    line: "source /usr/local/bin/setup_asdf_env"
     insertafter: EOF
     create: false
     state: present
@@ -103,7 +103,7 @@
 - name: Copy setup_asdf_env.sh to a common location for all users
   ansible.builtin.copy:
     src: setup_asdf_env.sh
-    dest: /usr/local/bin/setup_asdf_env.sh
+    dest: /usr/local/bin/setup_asdf_env
     mode: "0755"
 
 - name: Install and configure asdf packages for each user
