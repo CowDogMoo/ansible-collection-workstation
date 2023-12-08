@@ -6,12 +6,12 @@
 
 - name: Set home directory path
   ansible.builtin.set_fact:
-    home_path: "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}"
+    asdf_home_path: "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}"
 
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
-    dest: "{{ home_path }}/{{ user.username }}/.asdf"
+    dest: "{{ asdf_home_path }}/{{ user.username }}/.asdf"
     clone: true
     update: false
   loop: "{{ asdf_users }}"
@@ -24,7 +24,7 @@
 - name: Deploy .tool-versions file
   ansible.builtin.template:
     src: tool-versions.j2
-    dest: "{{ home_path }}/{{ user.username }}/.tool-versions"
+    dest: "{{ asdf_home_path }}/{{ user.username }}/.tool-versions"
     owner: "{{ user.username }}"
     group: "{{ user.usergroup | default(user.username) }}"
     mode: "0644"
@@ -37,7 +37,7 @@
 
 - name: Ensure correct permissions for .tool-versions
   ansible.builtin.file:
-    path: "{{ home_path }}/{{ item.username }}/.tool-versions"
+    path: "{{ asdf_home_path }}/{{ item.username }}/.tool-versions"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
@@ -49,7 +49,7 @@
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:
-    path: "{{ home_path }}/{{ user.username }}/.asdf"
+    path: "{{ asdf_home_path }}/{{ user.username }}/.asdf"
     owner: "{{ user.username }}"
     group: "{{ user.usergroup | default(user.username) }}"
     recurse: true
@@ -62,7 +62,7 @@
 
 - name: Check if .asdf directory exists for each user
   ansible.builtin.stat:
-    path: "{{ home_path }}/{{ user.username }}/.asdf"
+    path: "{{ asdf_home_path }}/{{ user.username }}/.asdf"
   register: asdf_dir_check
   loop: "{{ asdf_users }}"
   loop_control:
@@ -79,7 +79,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}" "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}"
+      . /usr/local/bin/setup_asdf_env "{{ asdf_home_path }}/{{ user.username }}"
       {% for plugin in user.plugins %}
       if ! asdf plugin list | grep -q {{ plugin.name }}; then
         asdf plugin add {{ plugin.name }};

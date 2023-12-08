@@ -3,5 +3,8 @@
   hosts: all
   gather_facts: true
 
+  roles:
+    - role: cowdogmoo.workstation.user_setup
+
 - name: Import playbook for testing
   ansible.builtin.import_playbook: ../../workstation.yml
