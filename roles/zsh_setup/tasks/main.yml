@@ -63,11 +63,18 @@
   with_items: "{{ zsh_setup_users }}"
   changed_when: false
 
-- name: Create per-user $HOME/.zshrc files
+- name: Create per-user $HOME/.zshrc files if they do not exist
+  ansible.builtin.stat:
+    path: "{{ (item.username == 'root') | ternary('/root', (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') + '/' + item.username) }}/.zshrc"
+  register: zshrc_exists
+  loop: "{{ zsh_setup_users }}"
+
+- name: Copy .zshrc template to user's home directory if it does not exist
   ansible.builtin.template:
     src: zshrc.j2
-    dest: "{{ (item.username == 'root') | ternary('/root', (ansible_system == 'Darwin' and item.username != 'root') | ternary('/Users', '/home') + '/' + item.username) }}/.zshrc"
+    dest: "{{ (item.0.username == 'root') | ternary('/root', (ansible_system == 'Darwin' and item.0.username != 'root') | ternary('/Users', '/home') + '/' + item.0.username) }}/.zshrc"
     mode: "0755"
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
-  loop: "{{ zsh_setup_users }}"
+    owner: "{{ item.0.username }}"
+    group: "{{ item.0.usergroup | default(item.0.username) }}"
+  loop: "{{ zshrc_exists.results | zip(zsh_setup_users) }}"
+  when: not item.0.stat.exists

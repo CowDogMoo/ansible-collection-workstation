@@ -51,7 +51,7 @@
           ansible.builtin.assert:
             that:
               - "zshrc_test.results[item | int].stat.exists"
-              - "zshrc_test.results[item | int].stat.mode == '0755'"
+              - "zshrc_test.results[item | int].stat.mode == '0644'"
             msg: "$HOME/.zshrc file check failed for {{ item.username }}"
           with_items: "{{ zsh_setup_users }}"
 
