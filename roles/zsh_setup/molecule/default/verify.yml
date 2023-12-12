@@ -10,8 +10,8 @@
     - name: Define zsh_setup_users
       ansible.builtin.set_fact:
         zsh_setup_users:
-          - username: "{{ ansible_env.USER if ansible_distribution == 'mac' else zsh_setup_default_username }}"
-            usergroup: "{{ 'staff' if ansible_distribution == 'mac' else zsh_setup_default_group }}"
+          - username: "{{ ansible_env.USER if ansible_distribution == 'MacOSX' else zsh_setup_default_username }}"
+            usergroup: "{{ 'staff' if ansible_distribution == 'MacOSX' else zsh_setup_default_group }}"
 
     - name: Include get_enriched_users tasks
       ansible.builtin.include_tasks: "../../tasks/get_enriched_users.yml"

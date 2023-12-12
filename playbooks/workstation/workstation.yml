@@ -27,7 +27,7 @@
         asdf_users:
           - username: "{{ ansible_user_id }}"
             usergroup: "{{ primary_group_name.stdout }}"
-            shell: "{{ '/bin/zsh' if ansible_distribution == 'mac' else '/usr/bin/zsh' }}"
+            shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
             plugins:
               - name: golang
                 version: "1.21.4"
