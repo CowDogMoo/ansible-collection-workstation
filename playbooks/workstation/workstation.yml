@@ -1,25 +1,33 @@
 ---
 - name: Workstation
   hosts: all
-  pre_tasks:
+
+  roles:
+    - role: cowdogmoo.workstation.user_setup
+    - role: cowdogmoo.workstation.package_management
+
+  tasks:
     - name: Get primary group name of the user
       ansible.builtin.command: id -gn "{{ ansible_user_id }}"
       changed_when: false
       register: primary_group_name
-  roles:
-    - role: cowdogmoo.workstation.user_setup
-    - role: cowdogmoo.workstation.package_management
-    - role: cowdogmoo.workstation.zsh_setup
+
+    - name: Setup ZSH Configuration
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.zsh_setup
       vars:
         zsh_setup_users:
           - username: "{{ ansible_user_id }}"
             usergroup: "{{ primary_group_name.stdout }}"
-    - role: cowdogmoo.workstation.asdf
+
+    - name: Setup ASDF Configuration
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.asdf
       vars:
         asdf_users:
-          - username: "{{ ansible_env.USER if ansible_distribution == 'mac' else asdf_default_username }}"
-            usergroup: "{{ 'staff' if ansible_distribution == 'mac' else asdf_default_group }}"
-            shell: "/bin/zsh"
+          - username: "{{ ansible_user_id }}"
+            usergroup: "{{ primary_group_name.stdout }}"
+            shell: "{{ '/bin/zsh' if ansible_distribution == 'mac' else '/usr/bin/zsh' }}"
             plugins:
               - name: golang
                 version: "1.21.4"
