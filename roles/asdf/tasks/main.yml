@@ -87,7 +87,11 @@
     dest: /usr/local/bin/setup_asdf_env
     mode: "0755"
 
-- name: Install and configure asdf packages for each user
-  ansible.builtin.include_tasks: package_setup.yml
+- name: Install libyaml from source
+  ansible.builtin.include_tasks: install_libyaml.yml
+  when: ansible_distribution == 'Rocky'
+
+- name: Install asdf plugins and set versions for each user
+  ansible.builtin.include_tasks: package_individual_setup.yml
   loop: "{{ enriched_setup_users }}"
   when: item.username != 'root'

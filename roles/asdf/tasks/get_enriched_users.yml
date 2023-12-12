@@ -1,13 +1,22 @@
 ---
 - name: Get home directory for each user
-  ansible.builtin.shell: "eval echo ~{{ item.username }}" # noqa command-instead-of-shell
+  ansible.builtin.shell: 'python -c ''import pwd; print(pwd.getpwnam("{{ item.username }}").pw_dir)'''
   loop: "{{ asdf_users }}"
   register: home_dirs
-  become: true
-  become_user: "{{ item.username }}"
   changed_when: false
 
-- name: Update home_path and shell for each user in asdf_users
+- name: Update home_path, shell, and plugins for each user in asdf_users
   ansible.builtin.set_fact:
-    enriched_setup_users: "{{ (enriched_setup_users | default([])) | rejectattr('username', 'equalto', item.0.username) | list + [item.0 | combine({'home_path': item.1.stdout, 'shell': item.0.shell})] }}"
+    enriched_setup_users: >-
+      {{ (enriched_setup_users | default([])) | rejectattr('username', 'equalto', item.0.username) | list +
+      [item.0 | combine({
+        'home_path': item.1.stdout,
+        'shell': (item.0.shell | default('/bin/bash')),
+        'plugins': item.0.plugins,
+        'shell_profile_lines': [
+          'export ASDF_PATH="' + item.1.stdout + '/.asdf"',
+          'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"',
+          '. "$ASDF_PATH/asdf.sh"'
+        ]
+      })] }}
   loop: "{{ asdf_users | zip(home_dirs.results) }}"
