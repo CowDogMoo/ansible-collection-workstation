@@ -6,46 +6,10 @@
       ansible.builtin.command: id -gn "{{ ansible_user_id }}"
       changed_when: false
       register: primary_group_name
-
-    - name: Determine path for zsh
-      ansible.builtin.command: "which zsh"
-      changed_when: false
-      register: zsh_path
-
-    # - name: Set asdf_users
-    #   ansible.builtin.set_fact:
-    #     asdf_users:
-    #       - username: "{{ ansible_user_id }}"
-    #         usergroup: "{{ primary_group_name.stdout }}"
-    #         shell: "{{ zsh_path.stdout }}"
-    #         shell_profile_lines:
-    #           - 'export ASDF_PATH="{{ home_path }}/{{ ansible_user_id }}/.asdf"'
-    #           - 'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"'
-    #           - '. "$ASDF_PATH/asdf.sh"'
-    #         plugins:
-    #           - name: golang
-    #             version: "1.21.4"
-    #             scope: "global"
-    #           - name: python
-    #             version: "3.12.0"
-    #             scope: "global"
-    #           - name: ruby
-    #             version: "3.2.2"
-    #             scope: "global"
-    #           - name: kubectl
-    #             version: "1.28.2"
-    #             scope: "global"
-    #           - name: helm
-    #             version: "3.13.1"
-    #             scope: "global"
-    #           - name: packer
-    #             version: "1.9.4"
-    #             scope: "global"
-
   roles:
-    # - role: 'roles/package_management'
     # - role: cowdogmoo.workstation.user_setup
     - role: "roles/user_setup"
+    - role: "roles/package_management"
     # - role: cowdogmoo.workstation.package_management
     # - role: cowdogmoo.workstation.zsh_setup
     - role: "roles/zsh_setup"
@@ -54,5 +18,28 @@
           - username: "{{ ansible_user_id }}"
             usergroup: "{{ primary_group_name.stdout }}"
     # - role: cowdogmoo.workstation.asdf
-    #   vars:
-    #     asdf_users: "{{ asdf_users }}"
+    - role: "roles/asdf"
+      vars:
+        asdf_users:
+          - username: "{{ ansible_env.USER if ansible_distribution == 'mac' else asdf_default_username }}"
+            usergroup: "{{ 'staff' if ansible_distribution == 'mac' else asdf_default_group }}"
+            shell: "/bin/zsh"
+            plugins:
+              - name: golang
+                version: "1.21.4"
+                scope: "global"
+              - name: python
+                version: "3.12.0"
+                scope: "global"
+              - name: ruby
+                version: "3.2.2"
+                scope: "global"
+              - name: kubectl
+                version: "1.28.2"
+                scope: "global"
+              - name: helm
+                version: "3.13.1"
+                scope: "global"
+              - name: packer
+                version: "1.9.4"
+                scope: "global"
