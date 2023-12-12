@@ -1,0 +1,13 @@
+---
+- name: Get home directory for each user
+  ansible.builtin.shell: "eval echo ~{{ item.username }}" # noqa command-instead-of-shell
+  loop: "{{ asdf_users }}"
+  register: home_dirs
+  become: true
+  become_user: "{{ item.username }}"
+  changed_when: false
+
+- name: Update home_path and shell for each user in asdf_users
+  ansible.builtin.set_fact:
+    enriched_setup_users: "{{ (enriched_setup_users | default([])) | rejectattr('username', 'equalto', item.0.username) | list + [item.0 | combine({'home_path': item.1.stdout, 'shell': item.0.shell})] }}"
+  loop: "{{ asdf_users | zip(home_dirs.results) }}"

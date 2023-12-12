@@ -5,7 +5,7 @@ asdf_default_username: "{{ ansible_distribution | lower }}"
 # Default home path is /home for Linux and /Users for macOS
 asdf_home_path: "{{ (ansible_os_family == 'Darwin') | ternary('/Users', '/home') }}"
 
-# Users to setup with asdf, each with their specific setup scripts
+# Users to setup with asdf
 asdf_users:
   - username: "{{ asdf_default_username }}"
     usergroup: "{{ asdf_default_username }}"

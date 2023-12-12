@@ -1,11 +1,11 @@
 ---
 - name: Update shell profile for user
   ansible.builtin.lineinfile:
-    path: "{{ asdf_home_path }}/{{ (user.shell | default('/bin/bash') == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    path: "{{ user.home_path }}/{{ (user.shell | default('/bin/bash') == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
     line: "{{ line }}"
     insertafter: EOF
     create: true
     mode: "0644"
-  loop: "{{ user.shell_profile_lines }}"
-  loop_control:
-    loop_var: line
+  loop: "{{ line }}"
+  when:
+    - user.username != 'root'

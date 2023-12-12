@@ -5,6 +5,3 @@
 
 - name: Install asdf plugins and set versions for each user
   ansible.builtin.include_tasks: package_individual_setup.yml
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: asdf_setup_user
