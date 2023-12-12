@@ -1,10 +1,16 @@
 ---
 - name: Gather the list of unique shells to install
+  become: true
   ansible.builtin.set_fact:
+    # Gather the list of unique shells to install.
+    # 1. Extract 'shell' attribute from each user.
+    # 2. Filter out duplicate shell entries.
+    # 3. Strip the '/bin/' prefix from each shell name.
+    # 4. Convert the result into a list.
     unique_shells: "{{ user_setup_default_users | map(attribute='shell') | unique | map('regex_replace', '^/bin/(.*)$', '\\1') | list }}"
   tags: always
 
-- name: Install base packages
+- name: Install base packages for all users
   become: true
   ansible.builtin.package:
     name: "{{ user_setup_install_packages }}"
@@ -12,6 +18,7 @@
     update_cache: true
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   tags: packages
+  when: ansible_os_family != 'Darwin'
 
 - name: Install user-specific shells
   become: true
@@ -19,9 +26,11 @@
     name: "{{ item }}"
     state: present
   loop: "{{ unique_shells }}"
-  when: item != '' and item != 'bash'
-  environment:
-    DEBIAN_FRONTEND: "{{ 'noninteractive' if ansible_distribution == 'Debian' else '' }}"
+  when:
+    - item != ''
+    - item != 'bash'
+    - ansible_os_family != 'Darwin'
+  environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   tags: shells
 
 - name: Ensure groups exist for users
@@ -30,7 +39,7 @@
     name: "{{ item.usergroup }}"
     state: present
   loop: "{{ user_setup_default_users }}"
-  when: item.usergroup is defined and item.usergroup != ''
+  when: item.usergroup is defined and item.usergroup != '' and ansible_os_family != 'Darwin'
   tags: group-setup
 
 - name: Create users
@@ -41,6 +50,7 @@
     shell: "{{ item.shell }}"
   loop: "{{ user_setup_default_users }}"
   tags: user-setup
+  when: ansible_os_family != 'Darwin'
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
@@ -49,6 +59,6 @@
     content: "{{ item.username }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
     validate: "visudo -cf %s"
     mode: "0440"
-  when: item.sudo
+  when: item.sudo and ansible_os_family != 'Darwin'
   loop: "{{ user_setup_default_users }}"
   tags: sudo-setup

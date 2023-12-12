@@ -1,6 +1,7 @@
 # Ansible Role: User Setup
 
-This role sets up user accounts with optional sudo privileges for Unix-like systems.
+This role sets up user accounts with optional sudo privileges for Unix-like
+systems.
 
 ---
 
@@ -17,69 +18,56 @@ This role sets up user accounts with optional sudo privileges for Unix-like syst
     "molecule-plugins[docker]"
   ```
 
+---
+
 ## Role Variables
 
-| Variable                    | Default Value                       | Description                                                                                  |
-| --------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
-| user_setup_install_packages | ["bash", "sudo"]                    | Base packages to install                                                                     |
-| user_setup_default_username | {{ ansible_distribution \| lower }} | Default username based on the Ansible distribution                                           |
-| user_setup_default_users    | Configurable                        | List of users with attributes: username, usergroup, sudo, shell (defaults provided in below) |
+| Variable                    | Default Value                | Description                  |
+| --------------------------- | ---------------------------- | ---------------------------- |
+| user_setup_install_packages | bash, sudo                   | Base packages for users.     |
+| user_setup_default_users    | Defined in defaults/main.yml | Default user configurations. |
 
 ### Default Configuration for `user_setup_default_users`
 
-The `user_setup_default_users` variable is a list of dictionaries, each containing:
+- `username`: Default username based on OS distribution.
+- `usergroup`: Default group based on OS distribution.
+- `sudo`: Whether the user has sudo privileges.
+- `shell`: Default shell for the user.
 
-- `username`: Default is `{{ user_setup_default_username }}`
-- `usergroup`: Group of the user, default is `{{ user_setup_default_username }}`
-- `sudo`: Whether the user has sudo access, default is `true`
-- `shell`: Default shell for the user, default is `/bin/zsh`
+Example `user_setup_default_users` configuration:
+
+```yaml
+- username: "{{ ansible_env.USER if ansible_distribution == 'MacOSX' else
+  user_setup_default_username }}"
+  usergroup: "{{ 'staff' if ansible_distribution == 'MacOSX' else
+  user_setup_default_group }}"
+  sudo: true
+  shell: /bin/zsh
+```
 
 ---
 
-## Local Development
-
-To develop locally, run the following from the repository root:
-
-```bash
-ansible-galaxy install -r requirements.yml
-PATH_TO_ROLE="${PWD}"
-ln -s "${PATH_TO_ROLE}" "${HOME}/.ansible/roles/cowdogmoo.user_setup"
-```
-
 ## Testing
 
-For local testing:
-
-- Install [act](https://github.com/nektos/act) for running GitHub Actions locally.
-
-- Run:
-
-  ```bash
-  ACTION="molecule"
-  if [[ $(uname) == "Darwin" ]]; then
-    act -j $ACTION --container-architecture linux/amd64
-  fi
-  ```
-
-To test changes made to this role locally:
+To test the role, use Molecule:
 
 ```bash
-molecule create
 molecule converge
 molecule idempotence
+molecule verify
 molecule destroy
 ```
 
 ## Role Tasks
 
-The role includes the following main tasks:
+Key tasks in this role:
 
-1. Gather the list of unique shells to install.
-2. Install base packages.
-3. Install user-specific shells.
-4. Ensure groups exist for users.
-5. Create users.
-6. Provide sudoers access for relevant users.
+- Gather list of unique shells to install.
+- Install base packages for all users.
+- Install user-specific shells.
+- Ensure groups exist for users.
+- Create users with specific attributes.
+- Provide sudoers access for relevant users.
 
 ## Platforms
 

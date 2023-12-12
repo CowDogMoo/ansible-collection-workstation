@@ -1,7 +1,7 @@
 ---
 - name: Include common variables
   ansible.builtin.include_vars: "main.yml"
-  tags: always
+  when: ansible_os_family in ['Debian', 'RedHat']
 
 - name: Install distribution-specific packages
   become: true
@@ -9,7 +9,8 @@
     name: "{{ package_management_install_packages }}"
     state: present
     update_cache: true
-  when: ansible_os_family in ['Debian', 'RedHat']
+  when:
+    - ansible_os_family in ['Debian', 'RedHat']
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   tags: distro-packages
 
@@ -19,6 +20,7 @@
     name: "{{ package_management_common_install_packages }}"
     state: present
     update_cache: true
+  when: ansible_os_family in ['Debian', 'RedHat']
   tags: common-packages
 
 # Red Hat specific tasks

@@ -34,7 +34,7 @@
     - name: Assert user creation
       ansible.builtin.assert:
         that:
-          - "'{{ item.username }}' in (user_check.results | map(attribute='stdout') | list)"
+          - item.username in (user_check.results | map(attribute='stdout') | list)
       loop: "{{ user_setup_default_users }}"
       loop_control:
         label: "{{ item.username }}"

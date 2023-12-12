@@ -1,6 +1,5 @@
 ---
 roles:
-  - name: l50.sliver
   - name: cowdogmoo.firefox
 
 collections:

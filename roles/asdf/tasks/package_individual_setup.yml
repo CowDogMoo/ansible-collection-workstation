@@ -2,48 +2,47 @@
 - name: Get all plugins for each user
   ansible.builtin.shell:
     cmd: |
-      . /usr/local/bin/setup_asdf_env "{{ user.username }}"
+      set -o pipefail
+      . /usr/local/bin/setup_asdf_env "{{ item.home_path }}"
       asdf plugin list
-    executable: "{{ user.shell }}"
+    executable: "{{ item.shell }}"
   register: asdf_plugins
   changed_when: false
   become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_users }}"
-  loop_control:
-    loop_var: user
-  when: user.username != 'root'
+  become_user: "{{ item.username }}"
 
 - name: Install asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
-      if ! asdf plugin list | grep -q "{{ user_plugin.1.name }}"; then
-        asdf plugin add "{{ user_plugin.1.name }}"
+      . /usr/local/bin/setup_asdf_env "{{ item.home_path }}"
+      {% for plugin in item.plugins %}
+      if ! asdf plugin list | grep -q "{{ plugin.name }}"; then
+        asdf plugin add "{{ plugin.name }}"
       fi
-    executable: "{{ user_plugin.0.shell }}"
+      {% endfor %}
+    executable: "{{ item.shell }}"
   become: true
-  become_user: "{{ user_plugin.0.username }}"
-  loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
-  loop_control:
-    loop_var: user_plugin
-  when: user_plugin.1.name is defined
+  become_user: "{{ item.username }}"
   changed_when: false
 
 - name: Install specific version of asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ user_plugin.0.username }}"
-      if ! asdf list "{{ user_plugin.1.name }}" | grep -q "{{ user_plugin.1.version }}"; then
-        asdf install "{{ user_plugin.1.name }}" "{{ user_plugin.1.version }}"
+      . /usr/local/bin/setup_asdf_env "{{ item.home_path }}"
+      {% for plugin in item.plugins %}
+      asdf install "{{ plugin.name }}" "{{ plugin.version }}"
+      if [ "{{ plugin.scope }}" = "global" ]; then
+        asdf global "{{ plugin.name }}" "{{ plugin.version }}"
+      elif [ "{{ plugin.scope }}" = "local" ]; then
+        asdf local "{{ plugin.name }}" "{{ plugin.version }}"
+      else
+        echo "Invalid scope: {{ plugin.scope }}"
+        exit 1
       fi
-    executable: "{{ user_plugin.0.shell }}"
+      {% endfor %}
+    executable: "{{ item.shell }}"
   become: true
-  become_user: "{{ user_plugin.0.username }}"
-  loop: "{{ query('subelements', asdf_users, 'plugins', {'skip_missing': true}) }}"
-  loop_control:
-    loop_var: user_plugin
-  when: user_plugin.1.name is defined and user_plugin.1.version is defined
+  become_user: "{{ item.username }}"
   changed_when: false

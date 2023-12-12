@@ -52,6 +52,13 @@ jobs:
 
   playbook_test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: "Playbook Test - attack-box"
+            path: "playbooks/attack-box"
+          - name: "Playbook Test - workstation"
+            path: "playbooks/workstation"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3.6.0
@@ -73,9 +80,9 @@ jobs:
           mkdir -p ~/.ansible/collections/ansible_collections/cowdogmoo
           ln -s $PWD ~/.ansible/collections/ansible_collections/cowdogmoo/workstation
 
-      - name: Playbooks Tests
+      - name: ${{ matrix.name }}
         run: molecule test
-        working-directory: playbooks
+        working-directory: ${{ matrix.path }}
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
