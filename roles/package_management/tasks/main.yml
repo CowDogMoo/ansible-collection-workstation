@@ -1,7 +1,7 @@
 ---
 - name: Include common variables
   ansible.builtin.include_vars: "main.yml"
-  when: ansible_system != 'Darwin'
+  when: ansible_os_family in ['Debian', 'RedHat']
 
 - name: Install distribution-specific packages
   become: true
@@ -11,7 +11,6 @@
     update_cache: true
   when:
     - ansible_os_family in ['Debian', 'RedHat']
-    - ansible_system != 'Darwin'
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   tags: distro-packages
 
@@ -21,7 +20,7 @@
     name: "{{ package_management_common_install_packages }}"
     state: present
     update_cache: true
-  when: ansible_system != 'Darwin'
+  when: ansible_os_family in ['Debian', 'RedHat']
   tags: common-packages
 
 # Red Hat specific tasks

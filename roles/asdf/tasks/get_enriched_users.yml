@@ -1,6 +1,6 @@
 ---
 - name: Get home directory for each user
-  ansible.builtin.shell: 'python -c ''import pwd; print(pwd.getpwnam("{{ item.username }}").pw_dir)'''
+  ansible.builtin.shell: 'python3 -c ''import pwd; print(pwd.getpwnam("{{ item.username }}").pw_dir)'''
   loop: "{{ asdf_users }}"
   register: home_dirs
   changed_when: false
