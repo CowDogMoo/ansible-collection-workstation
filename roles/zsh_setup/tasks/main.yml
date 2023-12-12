@@ -22,7 +22,7 @@
   changed_when: false
 
 - name: Install oh-my-zsh for all zsh_setup_users
-  ansible.builtin.shell: echo 'y' | {{ item.home_path }}/omz-installer.sh --unattended --keep-zshrc
+  ansible.builtin.shell: "echo 'y' | {{ item.home_path }}/omz-installer.sh --unattended --keep-zshrc" # noqa risky-shell-pipe
   args:
     creates: "{{ item.home_path }}/.oh-my-zsh"
   become: true
