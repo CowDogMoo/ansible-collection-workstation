@@ -7,18 +7,14 @@
       changed_when: false
       register: primary_group_name
   roles:
-    # - role: cowdogmoo.workstation.user_setup
-    - role: "roles/user_setup"
-    - role: "roles/package_management"
-    # - role: cowdogmoo.workstation.package_management
-    # - role: cowdogmoo.workstation.zsh_setup
-    - role: "roles/zsh_setup"
+    - role: cowdogmoo.workstation.user_setup
+    - role: cowdogmoo.workstation.package_management
+    - role: cowdogmoo.workstation.zsh_setup
       vars:
         zsh_setup_users:
           - username: "{{ ansible_user_id }}"
             usergroup: "{{ primary_group_name.stdout }}"
-    # - role: cowdogmoo.workstation.asdf
-    - role: "roles/asdf"
+    - role: cowdogmoo.workstation.asdf
       vars:
         asdf_users:
           - username: "{{ ansible_env.USER if ansible_distribution == 'mac' else asdf_default_username }}"
