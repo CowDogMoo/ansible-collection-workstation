@@ -1,0 +1,8 @@
+---
+home_path: >-
+  {{
+    '/Users' if ansible_os_family == 'Darwin' and ansible_user_id != 'root'
+    else '/var/root' if ansible_os_family == 'Darwin' and ansible_user_id == 'root'
+    else '/root' if ansible_user_id == 'root'
+    else '/home'
+  }}

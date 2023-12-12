@@ -3,7 +3,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ asdf_home_path }}/{{ user.username }}"
+      . /usr/local/bin/setup_asdf_env "{{ asdf_home_path }}"
       asdf plugin list
     executable: "{{ user.shell }}"
   register: asdf_plugins
@@ -19,7 +19,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ asdf_home_path }}/{{ user_plugin.0.username }}"
+      . /usr/local/bin/setup_asdf_env "{{ asdf_home_path }}"
       if ! asdf plugin list | grep -q "{{ user_plugin.1.name }}"; then
         asdf plugin add "{{ user_plugin.1.name }}"
       fi
@@ -38,7 +38,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      user_home_path="{{ asdf_home_path }}/{{ user.0.username }}"
+      user_home_path="{{ asdf_home_path }}"
       echo "Running setup_asdf_env.sh with user home path: $user_home_path"
       . /usr/local/bin/setup_asdf_env "$user_home_path"
       if ! asdf list "{{ user.1.name }}" | grep -q "{{ user.1.version }}"; then

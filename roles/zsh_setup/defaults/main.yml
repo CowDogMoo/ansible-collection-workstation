@@ -9,5 +9,3 @@ zsh_setup_default_username: "{{ ansible_distribution | lower }}"
 zsh_setup_users:
   - username: "{{ zsh_setup_default_username }}"
     usergroup: "{{ zsh_setup_default_username }}"
-  - username: "root"
-    usergroup: "root"

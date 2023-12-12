@@ -1,14 +1,14 @@
 ---
 - name: Check if .oh-my-zsh exists for all zsh_setup_users
   ansible.builtin.stat:
-    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/.oh-my-zsh"
+    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/.oh-my-zsh"
   register: oh_my_zsh_installed
   loop: "{{ zsh_setup_users }}"
 
 - name: Download oh-my-zsh install script for all zsh_setup_users
   ansible.builtin.get_url:
-    url: "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
-    dest: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
+    url: "{{ zsh_setup_omz_install_script_url }}"
+    dest: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
     mode: "0755"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
@@ -16,9 +16,9 @@
   when: "not oh_my_zsh_installed.results | json_query('[*].stat.exists') | select('equalto', false) | list | length > 0"
 
 - name: Install oh-my-zsh for all zsh_setup_users
-  ansible.builtin.command: "echo 'y' | ZSH={{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/.oh-my-zsh bash {{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
+  ansible.builtin.command: "echo 'y' | ZSH={{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/.oh-my-zsh bash {{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
   args:
-    creates: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/.oh-my-zsh"
+    creates: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/.oh-my-zsh"
   become: true
   become_user: "{{ item.username }}"
   loop: "{{ zsh_setup_users }}"
@@ -27,13 +27,13 @@
 
 - name: Check if zsh-installer.sh exists for all zsh_setup_users
   ansible.builtin.stat:
-    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
+    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
   loop: "{{ zsh_setup_users }}"
   register: zsh_installer_exists
 
 - name: Ensure zsh-installer.sh is executable for all zsh_setup_users
   ansible.builtin.file:
-    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.item.username == 'root' else ('/root' if item.item.username == 'root' else '/home'))) }}/{{ item.item.username }}/zsh-installer.sh"
+    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.item.username == 'root' else ('/' if item.item.username == 'root' else '/home'))) }}/{{ item.item.username }}/zsh-installer.sh"
     mode: "0755"
     owner: "{{ item.item.username }}"
     group: "{{ item.item.usergroup | default(item.item.username) }}"
@@ -42,7 +42,7 @@
 
 - name: Execute zsh-installer.sh for all zsh_setup_users
   ansible.builtin.shell:
-    cmd: "bash {{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
+    cmd: "bash {{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
   args:
     executable: "/bin/bash"
   become: true
@@ -53,7 +53,7 @@
 
 - name: Remove zsh-installer.sh for all zsh_setup_users
   ansible.builtin.file:
-    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var/root' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/root' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
+    path: "{{ ('/Users' if ansible_os_family == 'Darwin' and item.username != 'root' else ('/var' if ansible_os_family == 'Darwin' and item.username == 'root' else ('/' if item.username == 'root' else '/home'))) }}/{{ item.username }}/zsh-installer.sh"
     state: absent
   loop: "{{ zsh_setup_users }}"
 
