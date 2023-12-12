@@ -1,20 +1,4 @@
 ---
-- name: Set default username for macOS systems
-  ansible.builtin.set_fact:
-    user_setup_default_username: "{{ ansible_env.USER }}"
-  when: ansible_os_family == 'Darwin'
-
-- name: Determine default group for macOS systems
-  ansible.builtin.command: id -gn
-  register: macos_default_group
-  when: ansible_os_family == 'Darwin'
-  changed_when: false
-
-- name: Set default group for macOS systems
-  ansible.builtin.set_fact:
-    user_setup_default_group: "{{ macos_default_group.stdout }}"
-  when: ansible_os_family == 'Darwin'
-
 - name: Gather the list of unique shells to install
   become: true
   ansible.builtin.set_fact:
@@ -24,7 +8,6 @@
     # 3. Strip the '/bin/' prefix from each shell name.
     # 4. Convert the result into a list.
     unique_shells: "{{ user_setup_default_users | map(attribute='shell') | unique | map('regex_replace', '^/bin/(.*)$', '\\1') | list }}"
-
   tags: always
 
 - name: Install base packages for all users
