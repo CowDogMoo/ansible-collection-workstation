@@ -3,9 +3,9 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Include default variables
+    - name: Include variables
       ansible.builtin.include_vars:
-        file: "../../defaults/main.yml"
+        file: "../../vars/main.yml"
 
     - name: Define zsh_setup_users
       ansible.builtin.set_fact:

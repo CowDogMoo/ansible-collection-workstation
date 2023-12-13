@@ -1,12 +1,14 @@
 ---
-# Oh My ZSH install script URL
-zsh_setup_omz_install_script_url: "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
 # ZSH theme
 zsh_setup_theme: "af-magic"
-# Default username value, derived from the ansible_distribution variable
-zsh_setup_default_username: "{{ ansible_distribution | lower }}"
-zsh_setup_default_group: "{{ ansible_distribution | lower }}"
+
 # List of users to configure zsh for
 zsh_setup_users:
   - username: "{{ ansible_env.USER if ansible_distribution == 'mac' else zsh_setup_default_username }}"
     usergroup: "{{ 'staff' if ansible_distribution == 'mac' else zsh_setup_default_group }}"
+    plugins:
+      - asdf
+      - docker
+      - git
+      - helm
+      - kubectl

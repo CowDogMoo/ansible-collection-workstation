@@ -1,0 +1,7 @@
+---
+# Default username value, derived from the ansible_distribution variable
+zsh_setup_default_username: "{{ ansible_distribution | lower }}"
+zsh_setup_default_group: "{{ ansible_distribution | lower }}"
+
+# Oh My ZSH install script URL
+zsh_setup_omz_install_script_url: "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
