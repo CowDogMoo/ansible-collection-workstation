@@ -15,6 +15,8 @@
     - name: Setup ZSH Configuration
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.zsh_setup
+        # For local debugging
+        # name: roles/zsh_setup
       vars:
         zsh_setup_users:
           - username: "{{ ansible_user_id }}"
@@ -23,6 +25,8 @@
     - name: Setup ASDF Configuration
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.asdf
+        # For local debugging
+        # name: roles/asdf
       vars:
         asdf_users:
           - username: "{{ ansible_user_id }}"
