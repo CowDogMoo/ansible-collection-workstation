@@ -1,10 +1,8 @@
 ---
 - name: Get home directory for each user
   ansible.builtin.shell: 'python3 -c ''import pwd; print(pwd.getpwnam("{{ item.username }}").pw_dir)'''
-  loop: "{{ zsh_setup_enriched_users }}"
   register: home_dirs
-  become: true
-  become_user: "{{ item.username }}"
+  loop: "{{ zsh_setup_users }}"
   changed_when: false
 
 - name: Update home_path for all users
@@ -13,4 +11,4 @@
       {{ (zsh_setup_enriched_users | default([])) | rejectattr('username', 'equalto', item.0.username) | list + [item.0 | combine({
         'home_path': item.1.stdout,
         })] }}
-  loop: "{{ zsh_setup_enriched_users | zip(home_dirs.results) }}"
+  loop: "{{ zsh_setup_users | zip(home_dirs.results) }}"

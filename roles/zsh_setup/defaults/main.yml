@@ -3,9 +3,9 @@
 zsh_setup_theme: "af-magic"
 
 # List of users to configure zsh for
-zsh_setup_enriched_users:
-  - username: "{{ ansible_env.USER if ansible_distribution == 'mac' else zsh_setup_default_username }}"
-    usergroup: "{{ 'staff' if ansible_distribution == 'mac' else zsh_setup_default_group }}"
+zsh_setup_users:
+  - username: "{{ zsh_setup_default_username }}"
+    usergroup: "{{ zsh_setup_default_group }}"
     plugins:
       - asdf
       - docker
