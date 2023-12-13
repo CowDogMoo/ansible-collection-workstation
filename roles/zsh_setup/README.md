@@ -27,9 +27,9 @@ Unix-like systems.
 | zsh_setup_omz_install_script_url | "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | oh-my-zsh install script |
 | zsh_setup_theme                  | "af-magic"                                                              | Default theme for zsh    |
 | zsh_setup_default_username       | {{ ansible_distribution \| lower }}                                     | Default username         |
-| zsh_setup_users                  | Configurable                                                            | Users for zsh setup      |
+| zsh_setup_enriched_users         | Configurable                                                            | Users for zsh setup      |
 
-### Default Configuration for `zsh_setup_users`
+### Default Configuration for `zsh_setup_enriched_users`
 
 - `username`: Specified user or default `{{ zsh_setup_default_username }}`
 - `usergroup`: User's group, default is `{{ zsh_setup_default_username }}`

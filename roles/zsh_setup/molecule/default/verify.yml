@@ -7,46 +7,46 @@
       ansible.builtin.include_vars:
         file: "../../vars/main.yml"
 
-    - name: Define zsh_setup_users
+    - name: Define zsh_setup_enriched_users
       ansible.builtin.set_fact:
-        zsh_setup_users:
+        zsh_setup_enriched_users:
           - username: "{{ ansible_env.USER if ansible_distribution == 'MacOSX' else zsh_setup_default_username }}"
             usergroup: "{{ 'staff' if ansible_distribution == 'MacOSX' else zsh_setup_default_group }}"
 
-    - name: Include get_enriched_users tasks
-      ansible.builtin.include_tasks: "../../tasks/get_enriched_users.yml"
+    - name: Include zsh_setup_get_enriched_users.yml tasks
+      ansible.builtin.include_tasks: "../../tasks/zsh_setup_get_enriched_users.yml"
 
-    - name: Confirm .oh-my-zsh is installed for all zsh_setup_users
+    - name: Confirm .oh-my-zsh is installed for all zsh_setup_enriched_users
       ansible.builtin.stat:
         path: "{{ item.home_path }}/.oh-my-zsh"
       register: oh_my_zsh_test
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
 
     - name: Assert .oh-my-zsh installation
       ansible.builtin.assert:
         that:
           - "oh_my_zsh_test.results[item | int].stat.exists"
         msg: ".oh-my-zsh installation check failed for {{ item.username }}"
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
 
-    - name: Confirm omz-installer.sh is removed for all zsh_setup_users
+    - name: Confirm omz-installer.sh is removed for all zsh_setup_enriched_users
       ansible.builtin.stat:
         path: "{{ item.home_path }}/omz-installer.sh"
       register: zsh_installer_test
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
 
     - name: Assert omz-installer.sh removal
       ansible.builtin.assert:
         that:
           - "not zsh_installer_test.results[item | int].stat.exists"
         msg: "zsh-installer.sh removal check failed for {{ item.username }}"
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
 
-    - name: Confirm per-user $HOME/.zshrc files exist for all zsh_setup_users
+    - name: Confirm per-user $HOME/.zshrc files exist for all zsh_setup_enriched_users
       ansible.builtin.stat:
         path: "{{ item.home_path }}/.zshrc"
       register: zshrc_test
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
 
     - name: Assert per-user $HOME/.zshrc files
       ansible.builtin.assert:
@@ -54,13 +54,13 @@
           - "zshrc_test.results[item | int].stat.exists"
           - "zshrc_test.results[item | int].stat.mode == '0644'"
         msg: "$HOME/.zshrc file check failed for {{ item.username }}"
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
 
-    - name: Confirm per-user $HOME/.oh-my-zsh directories exist for all zsh_setup_users
+    - name: Confirm per-user $HOME/.oh-my-zsh directories exist for all zsh_setup_enriched_users
       ansible.builtin.stat:
         path: "{{ item.home_path }}/.oh-my-zsh"
       register: oh_my_zsh_test
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
 
     - name: Assert per-user $HOME/.oh-my-zsh directories
       ansible.builtin.assert:
@@ -68,4 +68,4 @@
           - "oh_my_zsh_test.results[item | int].stat.exists"
           - "oh_my_zsh_test.results[item | int].stat.mode == '0755'"
         msg: "$HOME/.oh-my-zsh directory check failed for {{ item.username }}"
-      loop: "{{ enriched_setup_users }}"
+      loop: "{{ zsh_setup_enriched_users }}"
