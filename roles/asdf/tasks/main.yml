@@ -4,8 +4,8 @@
     asdf_default_username: "kali"
   when: ansible_distribution_release == "kali-rolling"
 
-- name: Include get_enriched_users tasks
-  ansible.builtin.include_tasks: get_enriched_users.yml
+- name: Include asdf_get_enriched_users tasks
+  ansible.builtin.include_tasks: asdf_get_enriched_users.yml
 
 - name: Clone asdf for each user
   ansible.builtin.git:
@@ -13,7 +13,7 @@
     dest: "{{ item.home_path }}/.asdf"
     clone: true
     update: false
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
   when:
     - item.username != 'root'
 
@@ -24,7 +24,7 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
   when:
     - item.username != 'root'
 
@@ -34,7 +34,7 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
   when:
     - item.username != 'root'
 
@@ -44,7 +44,7 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     recurse: true
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
   when:
     - item.username != 'root'
 
@@ -52,11 +52,11 @@
   ansible.builtin.stat:
     path: "{{ item.home_path }}/.asdf"
   register: asdf_dir_check
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
 
 - name: Include task to update shell profiles for each user
   ansible.builtin.include_tasks: update_shell_profiles.yml
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
   loop_control:
     loop_var: user
   vars:
@@ -67,7 +67,9 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ item.home_path }}"
+      if [ -f "{{ item.home_path }}/.asdf/asdf.sh" ]; then
+        . "{{ item.home_path }}/.asdf/asdf.sh"
+      fi
       {% for plugin in item.plugins %}
       if ! asdf plugin list | grep -q {{ plugin.name }}; then
         asdf plugin add {{ plugin.name }};
@@ -79,7 +81,7 @@
   changed_when: false
   become: true
   become_user: "{{ item.username }}"
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
 
 - name: Copy setup_asdf_env.sh to a common location for all users
   ansible.builtin.copy:
@@ -93,5 +95,5 @@
 
 - name: Install asdf plugins and set versions for each user
   ansible.builtin.include_tasks: package_individual_setup.yml
-  loop: "{{ enriched_setup_users }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
   when: item.username != 'root'
