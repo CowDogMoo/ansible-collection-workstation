@@ -10,10 +10,10 @@ asdf_users:
     shell: "/usr/bin/zsh"
     plugins:
       - name: golang
-        version: "1.21.4"
+        version: "1.21.5"
         scope: "global"
       - name: python
-        version: "3.12.0"
+        version: "3.12.1"
         scope: "global"
       - name: ruby
         version: "3.2.2"
