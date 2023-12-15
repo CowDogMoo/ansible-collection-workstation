@@ -8,7 +8,9 @@ zsh_setup_users:
     usergroup: "{{ zsh_setup_default_group }}"
     plugins:
       - asdf
+      - aws
       - docker
       - git
       - helm
       - kubectl
+      - zsh-completions
