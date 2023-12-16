@@ -18,12 +18,11 @@ repos:
       - id: yamllint
         entry: yamllint --strict -c .hooks/linters/yamllint.yaml
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
     hooks:
-      - id: prettier
-        files: \.(json|md|yaml|yml)$
-        exclude: ^changelogs/
+      - id: codespell
+        entry: codespell -q 3 -f -S ".git,.github,README.md,magefiles/go.*"
 
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
@@ -35,12 +34,6 @@ repos:
       - id: shfmt
       # Configuration in .mdlrc and .hooks/linters/mdstyle.rb
       - id: markdownlint
-
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
-    hooks:
-      - id: codespell
-        entry: codespell -q 3 -f -S ".git,.github,README.md,magefiles/go.*"
 
   - repo: https://github.com/ansible/ansible-lint
     rev: v6.22.1
@@ -57,3 +50,11 @@ repos:
         # replace 'community' extra with 'core' or just mention the exact
         # version of Ansible you want to install as a dependency.
         additional_dependencies: [".[community]"]
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Run prettier
+        entry: .hooks/prettier-hook.sh
+        language: script
+        types: [json, yaml]
