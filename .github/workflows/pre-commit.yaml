@@ -1,24 +1,27 @@
 ---
 name: Pre-Commit
 on:
-  pull_request:
   push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
   # Run once a week (see https://crontab.guru)
   schedule:
     - cron: "0 0 * * 0"
-
+  workflow_dispatch:
 jobs:
   pre-commit:
     name: Update pre-commit hooks and run pre-commit
     runs-on: ubuntu-latest
     steps:
       - name: Set up git repository
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
         with:
-          python-version: "3.x"
+          python-version: "3.12.0"
 
       - name: Install dependencies
         run: python3 -m pip install ansible \
@@ -28,14 +31,17 @@ jobs:
           pre-commit
 
       - name: Set up Go
-        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
         with:
-          go-version: "1.21.0"
+          go-version: "1.21.5"
 
       - name: Install go module dependencies
         run: |
           go install mvdan.cc/sh/v3/cmd/shfmt@latest
           go install github.com/magefile/mage@latest
+
+      - name: Install pre-commit
+        run: python3 -m pip install pre-commit
 
       - name: Run go mod tidy - necessary to avoid errors with dependabot PRs
         run: pushd magefiles; go mod tidy; popd
@@ -45,10 +51,11 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           git add magefiles/go.mod magefiles/go.sum
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update go.mod and go.sum"
+          git diff --quiet && git diff --staged --quiet || \
+            git commit -m "Update go.mod and go.sum"
 
       - name: Install pre-commit dependencies
         run: mage installDeps
 
       - name: Run pre-commit
-        run: pre-commit run -a
+        run: mage runPreCommit

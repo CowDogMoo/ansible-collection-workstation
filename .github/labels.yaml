@@ -44,6 +44,10 @@
   color: "ff6600"
   description: >-
     Changes made to Ansible roles
+- name: area/ansible-playbook
+  color: "ffa500"
+  description: >-
+    Changes made to Ansible playbooks
 # Renovate
 - name: renovate/container
   color: "ffc300"
