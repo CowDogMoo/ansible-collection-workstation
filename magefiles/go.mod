@@ -7,23 +7,23 @@ toolchain go1.21.2
 require (
 	github.com/bitfield/script v0.22.0
 	github.com/fatih/color v1.16.0
-	github.com/l50/goutils/v2 v2.1.6
+	github.com/l50/goutils/v2 v2.1.9
 	github.com/spf13/afero v1.11.0
 )
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
-	github.com/cloudflare/circl v1.3.3 // indirect
+	github.com/cloudflare/circl v1.3.6 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-git/go-git/v5 v5.11.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/itchyny/gojq v0.12.13 // indirect
+	github.com/itchyny/gojq v0.12.14 // indirect
 	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
-	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
+	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
