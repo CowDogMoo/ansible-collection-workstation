@@ -57,7 +57,7 @@ func RunMoleculeTests() error {
 	}
 
 	// Configure logger
-	logger, err := logging.ConfigureLogger(slog.LevelInfo, filepath.Join(logsDir, "molecule_tests.log"))
+	logger, err := logging.ConfigureLogger(slog.LevelInfo, filepath.Join(logsDir, "molecule_tests.log"), logging.ColorOutput)
 	if err != nil {
 		return fmt.Errorf("failed to configure logger: %v", err)
 	}
