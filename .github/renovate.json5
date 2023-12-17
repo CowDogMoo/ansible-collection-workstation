@@ -9,7 +9,7 @@
     ":enablePreCommit",
     ":automergeDigest",
     ":automergeBranch",
-    "helpers:pinGitHubActionDigests",
+    "helpers:pinGitHubActionDigests"
   ],
   platform: "github",
   onboarding: false,
@@ -19,49 +19,37 @@
   rebaseWhen: "conflicted",
   commitBodyTable: true,
   "pre-commit": {
-    enabled: true,
+    enabled: true
   },
   packageRules: [
     {
       matchManagers: ["gomod"],
       matchPackagePatterns: ["*"],
-      enabled: true,
+      enabled: true
     },
     {
       description: "Auto merge GitHub Actions",
       matchManagers: ["github-actions"],
       automerge: true,
-      automergeType: "pr",
-    },
-    // Custom rule for Ansible collection
-    {
-      description: "Ansible Galaxy Collection Dependencies",
-      matchManagers: ["regex"],
-      matchPackagePatterns: ["^ansible-galaxy$"],
-      enabled: true,
-      // Example versioning rule
-      allowedVersions: "/^2\\.\\d+\\.\\d+$/",
-    },
+      automergeType: "pr"
+    }
   ],
   customManagers: [
     {
       customType: "regex",
       fileMatch: [".sh$"],
       matchStrings: [
-        "go install (?<depName>[^@]+?)@(?<currentValue>[0-9.-a-zA-Z]+)",
+        "go install (?<depName>[^@]+?)@(?<currentValue>[0-9.-a-zA-Z]+)"
       ],
-      datasourceTemplate: "go",
+      datasourceTemplate: "go"
     },
-    // Custom manager for Ansible dependencies
     {
-      customType: "ansible-galaxy",
-      fileMatch: ["^requirements\\.yml$", "^galaxy\\.yml$"],
-      // Define a regex pattern to extract dependencies and versions
+      customType: "regex",
+      fileMatch: ["(^|/)requirements\\.ya?ml$", "(^|/)galaxy\\.ya?ml$"],
       matchStrings: [
-        // Adjust this regex pattern based on the structure of your Ansible files
-        "role: (?<depName>[^\\s]+)\\nversion: (?<currentValue>[^\\s]+)",
+        "name: (?<depName>[^\\s]+)\\n\\s+src: (?<lookupName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)"
       ],
-      datasourceTemplate: "gitTags", // or another appropriate datasource
-    },
-  ],
+      datasourceTemplate: "git-tags"
+    }
+  ]
 }
