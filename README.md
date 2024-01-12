@@ -10,6 +10,10 @@ workstation environment, covering various aspects, including user setup,
 package management, ZSH configuration, VNC setup, ASDF version manager, and
 various cybersecurity tools.
 
+## Architecture Diagram
+
+<img src=".github/images/architecture.png" alt="Architecture" width="800">
+
 ## Requirements
 
 - Ansible 2.15 or higher
