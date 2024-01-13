@@ -1,0 +1,28 @@
+---
+galaxy_info:
+  role_name: run_zero_explorer
+  namespace: cowdogmoo
+  author: Jayson Grace
+  description: "Install the runZero explorer"
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: Kali
+      versions:
+        - all
+    - name: EL # This is used for Red Hat Enterprise Linux and derivatives
+      versions:
+        - all
+    - name: Windows
+      versions:
+        - all
+  galaxy_tags:
+    - runzero
+    - assetmanagement

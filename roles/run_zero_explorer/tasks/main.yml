@@ -1,0 +1,39 @@
+---
+- name: "Set runzero-explorer download URL"
+  set_fact:
+    runzero_explorer_url: >-
+      {{
+        'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-linux-arm64.bin'
+        if ansible_os_family in ['Debian', 'RedHat']
+        else 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-darwin-arm64.bin'
+        if ansible_os_family == 'Darwin'
+        else 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-windows-amd64.exe'
+      }}
+  tags: runzero-explorer
+
+- name: "Download runzero-explorer"
+  ansible.builtin.get_url:
+    url: "{{ runzero_explorer_url }}"
+    dest: "~/runzero-explorer.bin"
+    mode: 'u+x'
+  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
+  tags: runzero-explorer
+
+- name: "Download runzero-explorer for Windows"
+  ansible.builtin.get_url:
+    url: "{{ runzero_explorer_url }}"
+    dest: C:\runzero-explorer.exe
+  when: ansible_os_family == 'Windows'
+  tags: runzero-explorer
+
+- name: "Execute runzero-explorer (Non-Windows)"
+  ansible.builtin.command:
+    cmd: "sudo ~/runzero-explorer.bin"
+  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
+  tags: runzero-explorer
+
+- name: "Execute runzero-explorer (Windows)"
+  ansible.windows.win_command:
+    cmd: "C:\runzero-explorer.exe"
+  when: ansible_os_family == 'Windows'
+  tags: runzero-explorer

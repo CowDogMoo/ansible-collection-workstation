@@ -1,0 +1,33 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    # Verify runzero-explorer download
+    - name: Check runzero-explorer binary exists (Non-Windows)
+      ansible.builtin.stat:
+        path: "~/runzero-explorer.bin"
+      register: runzero_explorer_stat
+      when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
+      changed_when: false
+
+    - name: Assert runzero-explorer binary exists (Non-Windows)
+      ansible.builtin.assert:
+        that: runzero_explorer_stat.stat.exists
+        fail_msg: "runzero-explorer binary does not exist"
+        success_msg: "runzero-explorer binary exists"
+      when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
+
+    - name: Check runzero-explorer binary exists (Windows)
+      ansible.builtin.stat:
+        path: C:\runzero-explorer.exe
+      register: runzero_explorer_stat_windows
+      when: ansible_os_family == 'Windows'
+      changed_when: false
+
+    - name: Assert runzero-explorer binary exists (Windows)
+      ansible.builtin.assert:
+        that: runzero_explorer_stat_windows.stat.exists
+        fail_msg: "runzero-explorer executable does not exist"
+        success_msg: "runzero-explorer executable exists"
+      when: ansible_os_family == 'Windows'
