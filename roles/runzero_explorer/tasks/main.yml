@@ -25,6 +25,7 @@
     url: "{{ runzero_explorer_url }}"
     dest: "{{ runzero_explorer_dest }}"
     mode: "{{ runzero_explorer_mode | default(omit) }}"
+    creates: "{{ runzero_explorer_dest }}"
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin', 'Windows']
   tags: runzero-explorer
 
