@@ -7,6 +7,7 @@
         if ansible_os_family in ['Debian', 'RedHat']
         else 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-darwin-arm64.bin'
       }}
+    # The default destination is the home directory of the user running ansible.
     runzero_explorer_dest: "{{ ansible_env.HOME }}/runzero-explorer.bin"
     runzero_explorer_mode: 'u+x'
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
