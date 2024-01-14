@@ -1,6 +1,6 @@
 ---
 galaxy_info:
-  role_name: run_zero_explorer
+  role_name: runzero_explorer
   namespace: cowdogmoo
   author: Jayson Grace
   description: "Install the runZero explorer"
