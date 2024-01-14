@@ -9,4 +9,4 @@
       when: ansible_distribution in ['Ubuntu', 'RedHat', 'Rocky']
 
 - name: Import playbook for testing
-  ansible.builtin.import_playbook: ../../runzero-explorer.yml
+  ansible.builtin.import_playbook: ../../runzero_explorer.yml
