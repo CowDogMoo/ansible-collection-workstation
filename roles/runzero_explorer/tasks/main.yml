@@ -9,7 +9,7 @@
       }}
     # The default destination is the home directory of the user running ansible.
     runzero_explorer_dest: "{{ ansible_env.HOME }}/runzero-explorer.bin"
-    runzero_explorer_mode: 'u+x'
+    runzero_explorer_mode: '0755'
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
   tags: runzero-explorer
 
@@ -20,13 +20,17 @@
   when: ansible_os_family == 'Windows'
   tags: runzero-explorer
 
+- name: "Check if runzero-explorer already exists"
+  ansible.builtin.stat:
+    path: "{{ runzero_explorer_dest }}"
+  register: runzero_explorer_file
+
 - name: "Download runzero-explorer"
   ansible.builtin.get_url:
     url: "{{ runzero_explorer_url }}"
     dest: "{{ runzero_explorer_dest }}"
     mode: "{{ runzero_explorer_mode | default(omit) }}"
-    creates: "{{ runzero_explorer_dest }}"
-  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin', 'Windows']
+  when: not runzero_explorer_file.stat.exists
   tags: runzero-explorer
 
 - name: "Execute runzero-explorer (Non-Windows)"
