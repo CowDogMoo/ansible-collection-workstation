@@ -7,6 +7,6 @@ authors:
   - Jayson Grace <techvomit.net>
 description: Install and configure utilities and applications that I employ regularly.
 license_file: "LICENSE"
-tags: [asdf, linux, logrotate, tools, vnc, zsh]
+tags: [asdf, linux, logrotate, tools, runzero, vnc, zsh]
 repository: https://github.com/CowDogMoo/ansible-collection-workstation
 issues: https://github.com/CowDogMoo/ansible-collection-workstation/issues
