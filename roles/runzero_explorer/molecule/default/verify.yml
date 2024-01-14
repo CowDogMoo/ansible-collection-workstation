@@ -6,7 +6,7 @@
     # Verify runzero-explorer download
     - name: Check runzero-explorer binary exists (Non-Windows)
       ansible.builtin.stat:
-        path: "~/runzero-explorer.bin"
+        path: "{{ ansible_env.HOME }}/runzero-explorer.bin"
       register: runzero_explorer_stat
       when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
       changed_when: false
@@ -20,7 +20,7 @@
 
     - name: Check runzero-explorer binary exists (Windows)
       ansible.builtin.stat:
-        path: C:\runzero-explorer.exe
+        path: "C:\\runzero-explorer.exe"
       register: runzero_explorer_stat_windows
       when: ansible_os_family == 'Windows'
       changed_when: false
