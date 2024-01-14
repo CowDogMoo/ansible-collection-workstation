@@ -1,0 +1,12 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  pre_tasks:
+    - name: Set ansible_user_id based on OS
+      ansible.builtin.set_fact:
+        ansible_user_id: "{{ 'ubuntu' if ansible_distribution == 'Ubuntu' else 'rocky' }}"
+      when: ansible_distribution in ['Ubuntu', 'RedHat', 'Rocky']
+
+- name: Import playbook for testing
+  ansible.builtin.import_playbook: ../../runzero-explorer.yml
