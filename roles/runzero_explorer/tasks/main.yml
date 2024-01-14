@@ -7,7 +7,7 @@
         if ansible_os_family in ['Debian', 'RedHat']
         else 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-darwin-arm64.bin'
       }}
-    runzero_explorer_dest: "~/runzero-explorer.bin"
+    runzero_explorer_dest: "{{ ansible_env.HOME }}/runzero-explorer.bin"
     runzero_explorer_mode: 'u+x'
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
   tags: runzero-explorer
@@ -28,10 +28,11 @@
   tags: runzero-explorer
 
 - name: "Execute runzero-explorer (Non-Windows)"
+  become: true
   ansible.builtin.command:
-    cmd: "sudo ~/runzero-explorer.bin"
+    cmd: "{{ runzero_explorer_dest }}"
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
-  changed_when: False
+  changed_when: false
   tags: runzero-explorer
 
 - name: "Execute runzero-explorer (Windows)"
