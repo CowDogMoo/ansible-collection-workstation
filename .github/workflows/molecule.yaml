@@ -26,6 +26,8 @@ jobs:
             path: "roles/vnc_setup"
           - name: "Role Test - logging"
             path: "roles/logging"
+          - name: "Role Test - runzero_explorer"
+            path: "roles/runzero_explorer"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3.6.0
@@ -59,6 +61,8 @@ jobs:
             path: "playbooks/attack-box"
           - name: "Playbook Test - workstation"
             path: "playbooks/workstation"
+          - name: "Playbook Test - runzero-explorer"
+            path: "playbooks/runzero-explorer"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3.6.0

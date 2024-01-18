@@ -2,5 +2,6 @@
 - name: RunZero Explorer
   hosts: all
   roles:
+    - role: cowdogmoo.workstation.package_management
     - role: cowdogmoo.workstation.runzero_explorer
       tags: runzero-explorer
