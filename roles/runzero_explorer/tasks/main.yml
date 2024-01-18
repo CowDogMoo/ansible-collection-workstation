@@ -19,7 +19,6 @@
     runzero_explorer_url: 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-windows-amd64.exe'
     runzero_explorer_dest: "C:\\runzero-explorer.exe"
   when: ansible_os_family == 'Windows'
-  tags: runzero-explorer
 
 - name: Set default value for runzero_explorer_dest
   ansible.builtin.set_fact:
@@ -35,9 +34,8 @@
   ansible.builtin.get_url:
     url: "{{ runzero_explorer_url }}"
     dest: "{{ runzero_explorer_dest }}"
-    mode: "{{ runzero_explorer_mode | default(omit) }}"
+    mode: '0755'
   when: not runzero_explorer_file.stat.exists
-  tags: runzero-explorer
 
 - name: Execute runzero-explorer (Non-Windows)
   become: true
@@ -45,10 +43,8 @@
     cmd: "{{ runzero_explorer_dest }}"
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
   changed_when: false
-  tags: runzero-explorer
 
 - name: Execute runzero-explorer (Windows)
   ansible.windows.win_command:
     cmd: "C:\\runzero-explorer.exe"
   when: ansible_os_family == 'Windows'
-  tags: runzero-explorer
