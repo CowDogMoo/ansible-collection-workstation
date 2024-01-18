@@ -1,19 +1,19 @@
 ---
-- name: "Set runzero-explorer download URL for Unix-like systems"
+- name: Set runzero-explorer download URL for Unix-like systems
   ansible.builtin.set_fact:
     runzero_explorer_url: >-
       {{
-        'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-linux-arm64.bin'
+        'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-linux-{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}.bin'
         if ansible_os_family in ['Debian', 'RedHat']
-        else 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-darwin-arm64.bin'
-      }}
+          else 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-darwin-{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}.bin'
+        }}
     # The default destination is the home directory of the user running ansible.
     runzero_explorer_dest: "{{ ansible_env.HOME }}/runzero-explorer.bin"
     runzero_explorer_mode: '0755'
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
   tags: runzero-explorer
 
-- name: "Set runzero-explorer download URL for Windows"
+- name: Set runzero-explorer download URL for Windows
   ansible.builtin.set_fact:
     runzero_explorer_url: 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-windows-amd64.exe'
     runzero_explorer_dest: "C:\\runzero-explorer.exe"
@@ -25,7 +25,7 @@
     path: "{{ runzero_explorer_dest }}"
   register: runzero_explorer_file
 
-- name: "Download runzero-explorer"
+- name: Download runzero-explorer
   ansible.builtin.get_url:
     url: "{{ runzero_explorer_url }}"
     dest: "{{ runzero_explorer_dest }}"
@@ -33,7 +33,7 @@
   when: not runzero_explorer_file.stat.exists
   tags: runzero-explorer
 
-- name: "Execute runzero-explorer (Non-Windows)"
+- name: Execute runzero-explorer (Non-Windows)
   become: true
   ansible.builtin.command:
     cmd: "{{ runzero_explorer_dest }}"
@@ -41,7 +41,7 @@
   changed_when: false
   tags: runzero-explorer
 
-- name: "Execute runzero-explorer (Windows)"
+- name: Execute runzero-explorer (Windows)
   ansible.windows.win_command:
     cmd: "C:\\runzero-explorer.exe"
   when: ansible_os_family == 'Windows'
