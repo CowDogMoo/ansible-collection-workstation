@@ -12,7 +12,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/l50/goutils/v2/git"
-	"github.com/l50/goutils/v2/logging"
+	log "github.com/l50/goutils/v2/logging"
 	"github.com/l50/goutils/v2/sys"
 	"github.com/spf13/afero"
 )
@@ -57,10 +57,21 @@ func RunMoleculeTests() error {
 	}
 
 	// Configure logger
-	logger, err := logging.ConfigureLogger(slog.LevelInfo, filepath.Join(logsDir, "molecule_tests.log"), logging.ColorOutput)
+	logCfg := log.LogConfig{
+		Fs:         afero.NewOsFs(),
+		LogPath:    filepath.Join(logsDir, "molecule_tests.log"),
+		Level:      slog.LevelInfo,
+		OutputType: log.ColorOutput,
+		LogToDisk:  true,
+	}
+
+	Logger, err := log.InitLogging(&logCfg)
 	if err != nil {
 		return fmt.Errorf("failed to configure logger: %v", err)
 	}
+
+	// Set the global logger
+	log.GlobalLogger = Logger
 
 	errCh := make(chan error, len(roles))
 
@@ -70,12 +81,12 @@ func RunMoleculeTests() error {
 		}
 
 		rolePath := filepath.Join(rolesDir, role.Name())
-		logger.Printf("Running molecule tests for the %s role\n", role.Name())
+		log.L().Printf("Running molecule tests for the %s role\n", role.Name())
 
 		cmd := exec.Command("molecule", "test")
 		cmd.Dir = rolePath // Set the working directory for the command
 
-		logger.Printf("Executing command: %v in directory: %s\n", cmd.Args, cmd.Dir)
+		log.L().Printf("Executing command: %v in directory: %s\n", cmd.Args, cmd.Dir)
 
 		output, err := cmd.CombinedOutput()
 		if err != nil {
@@ -93,13 +104,13 @@ func RunMoleculeTests() error {
 
 	// Summarize the test results
 	if len(errors) > 0 {
-		logger.Printf("Molecule tests failed for %d role(s).", len(errors))
+		log.L().Printf("Molecule tests failed for %d role(s).", len(errors))
 		for _, err := range errors {
-			logger.Error(err)
+			log.L().Error(err)
 		}
 		return fmt.Errorf("encountered errors: %v", errors)
 	} else {
-		logger.Printf("Molecule tests passed for %d/%d role(s).", len(roles), len(roles))
+		log.L().Printf("Molecule tests passed for %d/%d role(s).", len(roles), len(roles))
 	}
 
 	return nil
