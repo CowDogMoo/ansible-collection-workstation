@@ -19,7 +19,7 @@ on:
     # Run every week on sunday and wednesday at 00:00 UTC
     - cron: "0 0 * * 0,3"
   push:
-    branches: ["main"]
+    branches: ["main", "renovate-fix"]
     paths:
       - .github/renovate.json5
       - .github/renovate/**.json5
@@ -74,7 +74,7 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
-        
+
       - name: Renovate
         uses: renovatebot/github-action@b93d7e432be4d7ad29452a9a058aa130220e8819 # v39.2.2
         with:
