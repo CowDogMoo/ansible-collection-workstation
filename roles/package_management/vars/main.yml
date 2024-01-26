@@ -32,7 +32,7 @@ package_management_install_packages: "{{ (ansible_os_family == 'Debian') | terna
 package_management_debian_specific_packages:
   - build-essential
   - curl
-  - fonts-powerline
+  # - fonts-powerline
   - inetutils-ping
   - libdb-dev
   - libffi-dev
