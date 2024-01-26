@@ -2,7 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "packageRules": [
     {
-      "description": "Auto merge GitHub Actions",
+      "description": "Auto merge GitHub Actions for ansible-galaxy",
+      "matchDatasources": ["galaxy"],
+      "automerge": true,
+      "automergeType": "branch",
+      "matchUpdateTypes": ["digest"]
+    },
+    {
+      "description": "Auto merge GitHub Actions for gomod",
       "matchDatasources": ["gomod"],
       "automerge": true,
       "automergeType": "branch",
@@ -16,16 +23,5 @@
       "automergeType": "branch",
       "matchUpdateTypes": ["minor", "patch"]
     },
-    {
-      "description": "Auto-merge for Ansible Collection Dependencies",
-      "matchManagers": ["regex"],
-      "matchDatasources": ["gitTags"], // or another appropriate datasource
-      "automerge": true,
-      "automergeType": "branch",
-      // Define regex patterns to match Ansible Collection dependencies
-      "matchPackagePatterns": ["^ansible-galaxy$"],
-      // You may need to adjust the allowedVersions based on your requirement
-      "allowedVersions": "/^2\\.\\d+\\.\\d+$/"
-    }
   ]
 }
