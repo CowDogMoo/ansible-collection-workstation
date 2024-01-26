@@ -43,7 +43,7 @@ Example `asdf_users` configuration:
   shell: "/usr/bin/zsh"
   plugins:
     - name: golang
-      version: "1.21.4"
+      version: "1.21.5"
       scope: "global"
     # ... other plugins ...
 ```

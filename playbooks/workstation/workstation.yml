@@ -34,7 +34,7 @@
             shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
             plugins:
               - name: golang
-                version: "1.21.4"
+                version: "1.21.5"
                 scope: "global"
               - name: python
                 version: "3.12.0"
