@@ -30,7 +30,7 @@ jobs:
             path: "roles/runzero_explorer"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3.6.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -65,7 +65,7 @@ jobs:
             path: "playbooks/runzero-explorer"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3.6.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Set up Python
         uses: actions/setup-python@v4
