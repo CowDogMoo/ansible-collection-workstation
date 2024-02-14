@@ -34,13 +34,13 @@
             shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
             plugins:
               - name: golang
-                version: "1.21.5"
+                version: "1.21.7"
                 scope: "global"
               - name: python
-                version: "3.12.0"
+                version: "3.12.2"
                 scope: "global"
               - name: ruby
-                version: "3.2.2"
+                version: "3.3.0"
                 scope: "global"
               - name: kubectl
                 version: "1.28.2"
