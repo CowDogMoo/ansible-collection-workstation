@@ -1,0 +1,41 @@
+---
+# - name: Copy common configuration files
+#   ansible.builtin.copy:
+#     src: "{{ item }}"
+#     dest: "{{ project_path }}"
+#     mode: "0755"
+#   with_fileglob:
+#     - "../files/common/*"
+
+- name: Create .gitignore file from template
+  ansible.builtin.template:
+    src: gitignore.j2
+    dest: "{{ project_path }}/.gitignore"
+    mode: "0755"
+
+# - name: Copy Terraform configuration files
+#   ansible.builtin.copy:
+#     src: "{{ item }}"
+#     dest: "{{ project_path }}"
+#     mode: "0755"
+#   with_fileglob:
+#     - "../files/terraform/*"
+#   when: project_type == 'terraform'
+
+# - name: Copy Ansible configuration files
+#   ansible.builtin.copy:
+#     src: "{{ item }}"
+#     dest: "{{ project_path }}"
+#     mode: "0755"
+#   with_fileglob:
+#     - "../files/ansible/*"
+#   when: project_type == 'ansible'
+
+# - name: Copy Go configuration files
+#   ansible.builtin.copy:
+#     src: "{{ item }}"
+#     dest: "{{ project_path }}"
+#     mode: "0755"
+#   with_fileglob:
+#     - "../files/go/*"
+#   when: project_type == 'go'

@@ -1,0 +1,18 @@
+---
+# Default configurations for Terraform, Go, and Bash projects
+terraform_config_files:
+  - .pre-commit-config.yaml
+  - .github/workflows/terraform.yml
+
+go_config_files:
+  - .pre-commit-config.yaml
+  - .github/workflows/go.yml
+
+bash_config_files:
+  - .pre-commit-config.yaml
+  - .github/workflows/bash.yml
+
+# Common configuration files
+common_config_files:
+  - .editorconfig
+  - .gitignore
