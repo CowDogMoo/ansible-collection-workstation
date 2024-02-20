@@ -1,4 +1,4 @@
-cat# Custom attributes files created by macOS
+# Custom attributes files created by macOS
 .DS_Store
 
 # Used for testing actions locally with act
@@ -11,5 +11,4 @@ cat# Custom attributes files created by macOS
 *.log
 roles.collections
 library/__pycache__
-logs
 changelogs/.plugin-cache.yaml

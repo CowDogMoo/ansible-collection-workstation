@@ -5,6 +5,18 @@
   roles:
     - role: cowdogmoo.workstation.user_setup
     - role: cowdogmoo.workstation.package_management
+    - role: common_configs
+      vars:
+        project_type: ansible
+        project_path: ~/.ansible/Workspace/ansible-sliver
+    - role: common_configs
+      vars:
+        project_type: terraform
+        project_path: ~/cowdogmoo/tf-modules/terraform-cowdogmoo
+    - role: common_configs
+      vars:
+        project_type: go
+        project_path: ~/programs/go/src/github.com/l50/goutils
 
   tasks:
     - name: Get primary group name of the user

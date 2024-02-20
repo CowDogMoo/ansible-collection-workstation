@@ -8,7 +8,6 @@ switch_case_indent = true  # like -ci
 space_redirects    = true  # like -sr
 keep_padding       = true  # like -kp
 function_next_line = true  # like -fn
-
 {% if project_type == 'ansible' %}
 [*.yml]
 indent_style = space
@@ -18,7 +17,6 @@ indent_size = 2
 indent_style = space
 indent_size = 4
 {% endif %}
-
 {% if project_type == 'terraform' %}
 [*.tf]
 indent_style = space
@@ -28,7 +26,6 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 {% endif %}
-
 {% if project_type == 'go' %}
 [*.go]
 indent_style = tab

@@ -1,0 +1,116 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: detect-private-key
+        {% if project_type == 'golang' %}
+        exclude: sys/sysutils_test.go
+        {% endif %}
+      - id: check-shebang-scripts-are-executable
+
+  - repo: https://github.com/adrienverge/yamllint.git
+    #rev: {% if project_type == 'ansible' %}v1.33.0{% elif project_type == 'golang' %}v1.35.0{% endif %}
+    rev: v1.35.0
+    hooks:
+      - id: yamllint
+        entry: yamllint --strict -c .hooks/linters/yamllint.yaml
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        {% if project_type == 'ansible' %} 
+        entry: codespell -q 3 -f -S ".git,.github,*go.*"
+        {% if project_type == 'golang' %}
+        entry: codespell -q 3 -f -S ".git,.github,*go.*"
+        {% endif %}
+
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: script-must-have-extension
+        name: Ensure shell scripts end with .sh
+        types: [shell]
+        {% if project_type == 'golang' %}
+        exclude: .bats
+        {% endif %}
+      - id: shellcheck
+      - id: shfmt
+      # Configuration in .mdlrc and .hooks/linters/mdstyle.rb
+      - id: markdownlint
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Run prettier
+        entry: .hooks/prettier-hook.sh
+        language: script
+        types: [json, yaml]
+
+{% if project_type == 'ansible' %}
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v6.22.1
+    hooks:
+      - id: ansible-lint
+        entry: ansible-lint -v --force-color -c .hooks/linters/ansible-lint.yaml
+        language: python
+        always_run: true
+        additional_dependencies: [".[community]"]
+
+{% elif project_type == 'golang' %}
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+      - id: go-lint
+      - id: go-imports
+      - id: go-cyclo
+        args: [-over=15]
+      - id: golangci-lint
+      - id: go-critic
+      - id: go-build
+      - id: go-mod-tidy
+
+  - repo: local
+    hooks:
+      - id: go-no-replacement
+        name: Avoid committing a go module replacement
+        entry: .hooks/go-no-replacement.sh
+        language: script
+        files: go.mod
+
+      - id: go-unit-tests
+        name: Go unit tests
+        language: script
+        entry: .hooks/run-go-tests.sh modified
+        files: '\\.go$'
+        pass_filenames: true
+
+      - id: go-vet
+        name: Run go vet
+        language: script
+        entry: .hooks/go-vet.sh
+        files: '\\.go$'
+        always_run: true
+        pass_filenames: true
+        require_serial: true
+        log_file: /tmp/go-vet.log
+
+      - id: go-licenses
+        name: Run go-licenses
+        language: script
+        entry: .hooks/go-licenses.sh check_forbidden
+
+      - id: generate-docs
+        name: Update package docs
+        language: script
+        entry: .hooks/generate-docs.sh
+        require_serial: true
+{% endif %}

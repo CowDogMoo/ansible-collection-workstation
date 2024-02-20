@@ -1,4 +1,16 @@
 ---
+- name: Create .gitignore file from template
+  ansible.builtin.template:
+    src: common/gitignore.j2
+    dest: "{{ project_path }}/.gitignore"
+    mode: "0755"
+
+- name: Create .editorconfig file from template
+  ansible.builtin.template:
+    src: common/editorconfig.j2
+    dest: "{{ project_path }}/.editorconfig"
+    mode: "0755"
+
 # - name: Copy common configuration files
 #   ansible.builtin.copy:
 #     src: "{{ item }}"
@@ -6,12 +18,6 @@
 #     mode: "0755"
 #   with_fileglob:
 #     - "../files/common/*"
-
-- name: Create .gitignore file from template
-  ansible.builtin.template:
-    src: gitignore.j2
-    dest: "{{ project_path }}/.gitignore"
-    mode: "0755"
 
 # - name: Copy Terraform configuration files
 #   ansible.builtin.copy:
