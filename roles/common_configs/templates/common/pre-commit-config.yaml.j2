@@ -23,13 +23,15 @@ repos:
         entry: yamllint --strict -c .hooks/linters/yamllint.yaml
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
-    hooks:
-      - id: codespell
-        {% if project_type == 'ansible' %}
-        entry: codespell -q 3 -f -S ".git,.github,*go.*"
+  rev: v2.2.6
+  hooks:
+    - id: codespell
+      entry: >
+        codespell -q 3 -f
         {% if project_type == 'golang' %}
-        entry: codespell -q 3 -f -S ".git,.github,*go.*"
+        --skip="{{ codespell_skip_golang | join(',') }}"
+        {% else %}
+        -S "{{ codespell_skip_default | join(',') }}"
         {% endif %}
 
   - repo: https://github.com/jumanjihouse/pre-commit-hooks

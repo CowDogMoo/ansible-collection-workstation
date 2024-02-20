@@ -1,0 +1,28 @@
+---
+# Area
+area/docs:
+  - changed-files:
+      - any-glob-to-any-file: "*.md"
+
+area/go-mod-sum:
+  - changed-files:
+      - any-glob-to-any-file: "go.mod"
+      - any-glob-to-any-file: "go.sum"
+
+area/github:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**/*"
+
+area/pre-commit:
+  - changed-files:
+      - any-glob-to-any-file: ".pre-commit-config.yaml"
+      - any-glob-to-any-file: ".hooks/**/*"
+
+area/terraform:
+  - changed-files:
+      - any-glob-to-any-file: "*.tf"
+      - any-glob-to-any-file: "*.hcl"
+
+area/test:
+  - changed-files:
+      - any-glob-to-any-file: "test/*"

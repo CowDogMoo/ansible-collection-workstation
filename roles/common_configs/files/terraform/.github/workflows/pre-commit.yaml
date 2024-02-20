@@ -1,0 +1,57 @@
+---
+name: Pre-Commit
+on:
+  push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  # Run once a week (see https://crontab.guru)
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+env:
+  AWS_DEFAULT_REGION: us-east-1
+
+# Necessary for OIDC
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up git repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
+        with:
+          python-version: "3.x"
+
+      - name: Install python dependencies
+        run: python3 -m pip install checkov pre-commit
+
+      - name: Set up Go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+        with:
+          go-version: "1.21.5"
+
+      - name: Install go module dependencies
+        run: |
+          go install mvdan.cc/sh/v3/cmd/shfmt@latest
+          go install github.com/aquasecurity/tfsec/cmd/tfsec@latest
+
+      - name: Generate terraform-docs
+        uses: terraform-docs/gh-actions@f6d59f89a280fa0a3febf55ef68f146784b20ba0 # v1.0.0
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@19a52fbac37dacb22a09518e4ef6ee234f2d4987 # v4.0.0
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@a1502cd9e758c50496cc9ac5308c4843bcd56d36 # v3
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure

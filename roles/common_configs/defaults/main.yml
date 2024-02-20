@@ -16,3 +16,12 @@ bash_config_files:
 common_config_files:
   - .editorconfig
   - .gitignore
+
+codespell_skip_default:
+  - ".git"
+  - ".github"
+  - "README.md"
+
+codespell_skip_golang:
+  - "go.*"
+  - "magefiles/go.*"

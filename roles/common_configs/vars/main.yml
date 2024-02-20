@@ -1,0 +1,6 @@
+---
+# Default project type
+common_configs_project_type: terraform
+
+# Default path for the project
+common_configs_project_path: /path/to/your/project
