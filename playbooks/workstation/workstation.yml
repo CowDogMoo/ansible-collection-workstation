@@ -40,7 +40,7 @@
                 version: "3.12.2"
                 scope: "global"
               - name: ruby
-                version: "3.3.0"
+                version: "3.2.2"
                 scope: "global"
               - name: kubectl
                 version: "1.28.2"
