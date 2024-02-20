@@ -26,7 +26,7 @@ repos:
     rev: v2.2.6
     hooks:
       - id: codespell
-        {% if project_type == 'ansible' %} 
+        {% if project_type == 'ansible' %}
         entry: codespell -q 3 -f -S ".git,.github,*go.*"
         {% if project_type == 'golang' %}
         entry: codespell -q 3 -f -S ".git,.github,*go.*"
