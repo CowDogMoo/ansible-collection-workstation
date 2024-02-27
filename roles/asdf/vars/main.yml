@@ -4,3 +4,6 @@ asdf_git_repo: "https://github.com/asdf-vm/asdf.git"
 
 # OS family variable used for loading OS-specific tasks
 asdf_os_family: "{{ ansible_os_family | lower }}"
+
+# Path to the asdf install script
+asdf_install_script_path: /tmp/setup_asdf_env

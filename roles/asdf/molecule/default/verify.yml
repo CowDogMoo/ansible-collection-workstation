@@ -26,7 +26,7 @@
 
     - name: Check if setup_asdf.sh exists and is executable for each user
       ansible.builtin.stat:
-        path: "/usr/local/bin/setup_asdf_env"
+        path: "{{ asdf_install_script_path }}"
       register: setup_asdf_stat
 
     - name: Assert that setup_asdf.sh exists and is executable

@@ -86,7 +86,7 @@
 - name: Copy setup_asdf_env.sh to a common location for all users
   ansible.builtin.copy:
     src: setup_asdf_env.sh
-    dest: /usr/local/bin/setup_asdf_env
+    dest: "{{ asdf_install_script_path }}"
     mode: "0755"
 
 - name: Install libyaml from source

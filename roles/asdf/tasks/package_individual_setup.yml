@@ -3,7 +3,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ item.home_path }}"
+      . {{ asdf_install_script_path }} "{{ item.home_path }}"
       asdf plugin list
     executable: "{{ item.shell }}"
   register: asdf_plugins
@@ -15,7 +15,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ item.home_path }}"
+      . "{{ asdf_install_script_path }}" "{{ item.home_path }}"
       {% for plugin in item.plugins %}
       if ! asdf plugin list | grep -q "{{ plugin.name }}"; then
         asdf plugin add "{{ plugin.name }}"
@@ -30,7 +30,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . /usr/local/bin/setup_asdf_env "{{ item.home_path }}"
+      . "{{ asdf_install_script_path }}" "{{ item.home_path }}"
       {% for plugin in item.plugins %}
       asdf install "{{ plugin.name }}" "{{ plugin.version }}"
       if [ "{{ plugin.scope }}" = "global" ]; then
