@@ -7,6 +7,10 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
+    - name: Include main variables
+      ansible.builtin.include_vars:
+        file: "../../vars/main.yml"
+
     - name: Check if asdf is cloned for each user
       ansible.builtin.stat:
         path: "/home/{{ user.username }}/.asdf"
