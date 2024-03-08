@@ -1,0 +1,9 @@
+---
+# Default map of architectures to support for deploying the RunZero Explorer
+runzero_explorer_arch_map:
+  aarch64: arm64
+  x86_64: amd64
+runzero_explorer_url_base: "https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524"
+# Problem: the DT7.... needs to be in onepasswordENV AGENT_URL=https://console.runzero.com/download/explorer/DT[uniqueToken]/[versionID]/runzero-agent-linux-amd64.bin
+runzero_explorer_windows_dest: "C:\\runzero-explorer.exe"
+runzero_explorer_log_debug: "false"

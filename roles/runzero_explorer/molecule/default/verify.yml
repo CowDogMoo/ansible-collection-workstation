@@ -2,11 +2,12 @@
 - name: Verify
   hosts: all
   gather_facts: true
+  vars_files:
+    - ../../defaults/main.yml
   tasks:
-    # Verify runzero-explorer download
     - name: Check runzero-explorer binary exists (Non-Windows)
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/runzero-explorer.bin"
+        path: "{{ runzero_explorer_default_dest }}"
       register: runzero_explorer_stat
       when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
       changed_when: false
@@ -20,7 +21,7 @@
 
     - name: Check runzero-explorer binary exists (Windows)
       ansible.builtin.stat:
-        path: "C:\\runzero-explorer.exe"
+        path: "{{ runzero_explorer_windows_dest }}"
       register: runzero_explorer_stat_windows
       when: ansible_os_family == 'Windows'
       changed_when: false

@@ -1,0 +1,20 @@
+---
+- name: Set runzero-explorer download URL for Windows
+  ansible.builtin.set_fact:
+    runzero_explorer_url: "{{ runzero_explorer_url_base }}/runzero-explorer-windows-amd64.exe"
+    runzero_explorer_dest: "{{ runzero_explorer_windows_dest }}"
+
+- name: Check if runzero-explorer already exists
+  ansible.builtin.stat:
+    path: "{{ runzero_explorer_dest }}"
+  register: runzero_explorer_file
+
+- name: Download runzero-explorer
+  ansible.windows.win_get_url:
+    url: "{{ runzero_explorer_url }}"
+    dest: "{{ runzero_explorer_dest }}"
+  when: not runzero_explorer_file.stat.exists
+
+- name: Execute runzero-explorer
+  ansible.windows.win_command:
+    cmd: "{{ runzero_explorer_dest }}"
