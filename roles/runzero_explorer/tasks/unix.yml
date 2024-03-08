@@ -41,7 +41,6 @@
   when: runzero_agent_files.matched > 0 and not runzero_explorer_file.stat.exists
   changed_when: true
 
-
 - name: Execute runzero-explorer
   become: true
   ansible.builtin.command:
