@@ -10,9 +10,13 @@
   when: runzero_explorer_dest is not defined and ansible_os_family != 'Windows'
 
 - name: Include tasks for Unix-like systems
-  ansible.builtin.include_tasks: unix.yaml
+  ansible.builtin.include_tasks: unix.yml
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
 
 - name: Include tasks for Windows
-  ansible.builtin.include_tasks: windows.yaml
+  ansible.builtin.include_tasks: windows.yml
   when: ansible_os_family == 'Windows'
+
+- name: Include systemctl tasks
+  ansible.builtin.include_tasks: systemctl.yml
+  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin'] and runzero_explorer_systemd_enabled | bool

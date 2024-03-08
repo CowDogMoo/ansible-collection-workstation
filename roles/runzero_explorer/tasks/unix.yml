@@ -28,11 +28,19 @@
     mode: '0755'
   when: not runzero_explorer_file.stat.exists
 
+- name: Find runzero-agent files
+  ansible.builtin.find:
+    paths: "{{ runzero_explorer_dest }}"
+    patterns: "runzero-agent-*"
+  register: runzero_agent_files
+
 - name: Rename runzero-explorer to default destination
-  ansible.builtin.shell:
-    cmd: "mv /opt/runzero/bin/runzero-agent-* {{ runzero_explorer_default_dest }}"
-  when: not runzero_explorer_file.stat.exists and runzero_explorer_file.stat.islnk is not defined
+  ansible.builtin.command:
+    cmd: "mv {{ item.path }} {{ runzero_explorer_default_dest }}"
+  loop: "{{ runzero_agent_files.files }}"
+  when: runzero_agent_files.matched > 0 and not runzero_explorer_file.stat.exists
   changed_when: true
+
 
 - name: Execute runzero-explorer
   become: true

@@ -7,3 +7,4 @@ runzero_explorer_url_base: "https://console.runzero.com/download/explorer/DT7B89
 # Problem: the DT7.... needs to be in onepasswordENV AGENT_URL=https://console.runzero.com/download/explorer/DT[uniqueToken]/[versionID]/runzero-agent-linux-amd64.bin
 runzero_explorer_windows_dest: "C:\\runzero-explorer.exe"
 runzero_explorer_log_debug: "false"
+runzero_explorer_systemd_enabled: "false"
