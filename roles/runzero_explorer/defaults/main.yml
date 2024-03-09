@@ -1,14 +1,4 @@
 ---
 runzero_explorer_log_debug: "false"
-# Default map of architectures to support for deploying the RunZero Explorer
-runzero_explorer_arch_map:
-  aarch64: arm64
-  x86_64: amd64
-# Default map of operating systems to support for deploying the RunZero Explorer
-runzero_explorer_os_map:
-  Darwin: darwin
-  Debian: linux
-  RedHat: linux
-  Windows: windows
 runzero_explorer_systemd_enabled: "false"
 runzero_explorer_version_id: "1a430dd4"

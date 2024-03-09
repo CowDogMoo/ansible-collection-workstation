@@ -1,7 +1,13 @@
 ---
+- name: Set architecture mapping for runzero-explorer
+  ansible.builtin.set_fact:
+    runzero_explorer_arch_map:
+      x86_64: amd64
+      aarch64: arm64
+
 - name: Determine runzero-explorer binary architecture
   ansible.builtin.set_fact:
-    runzero_explorer_arch: "{{ runzero_explorer_arch_map[ansible_architecture] | default('amd64') }}"
+    runzero_explorer_arch: "{{ runzero_explorer_arch_map[ansible_architecture] }}"
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin', 'Windows']
 
 - name: Set the unique token
