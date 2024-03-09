@@ -4,10 +4,25 @@
     runzero_explorer_arch: "{{ runzero_explorer_arch_map[ansible_architecture] | default('amd64') }}"
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin', 'Windows']
 
-- name: Set default value for runzero_explorer_dest
+- name: Set the unique token
   ansible.builtin.set_fact:
-    runzero_explorer_dest: "{{ runzero_explorer_default_dest }}"
-  when: runzero_explorer_dest is not defined and ansible_os_family != 'Windows'
+    runzero_explorer_unique_token: "{{ lookup('env', 'RUNZERO_DOWNLOAD_TOKEN') }}"
+  when: runzero_explorer_unique_token is not defined
+
+- name: Create the directory for the runzero-explorer binary
+  ansible.builtin.file:
+    path: "{{ runzero_explorer_path | dirname }}"
+    state: directory
+    mode: '0755'
+  become: true
+  when: ansible_os_family != 'Windows'
+
+- name: Create the directory for the runzero-explorer binary (Windows)
+  ansible.windows.win_file:
+    path: "{{ runzero_explorer_windows_path | dirname }}"
+    state: directory
+  become: true
+  when: ansible_os_family == 'Windows'
 
 - name: Include tasks for Unix-like systems
   ansible.builtin.include_tasks: unix.yml

@@ -19,6 +19,11 @@ on Debian, Red Hat, and Windows-based systems.
     "molecule-plugins[docker]"
   ```
 
+- You must have a runZero account to download runZero Explorer.
+
+- Through the runZero console, you must create a download key and set it as
+  the `RUNZERO_DOWNLOAD_TOKEN` environment variable before running this role.
+
 ---
 
 ## Role Variables

@@ -1,48 +1,60 @@
 ---
 - name: Set runzero-explorer download URL for Unix-like systems
   ansible.builtin.set_fact:
-    runzero_explorer_url: "{{ runzero_explorer_url_base }}/runzero-explorer-linux-{{ runzero_explorer_arch }}.bin"
+    runzero_explorer_url: "{{ runzero_explorer_url }}/{{ runzero_explorer_unique_token }}/{{ runzero_explorer_version_id }}/runzero-explorer-linux-{{ runzero_explorer_arch }}.bin"
   when: ansible_os_family in ['Debian', 'RedHat']
 
 - name: Set runzero-explorer download URL for Darwin systems
   ansible.builtin.set_fact:
-    runzero_explorer_url: "{{ runzero_explorer_url_base }}/runzero-explorer-darwin-{{ runzero_explorer_arch }}.bin"
+    runzero_explorer_url: "{{ runzero_explorer_url }}/{{ runzero_explorer_unique_token }}/{{ runzero_explorer_version_id }}/runzero-explorer-darwin-{{ runzero_explorer_arch }}.bin"
   when: ansible_os_family == 'Darwin'
 
 - name: Create runZero Explorer directory
   ansible.builtin.file:
-    path: "{{ runzero_explorer_default_dest | dirname }}"
+    path: "{{ runzero_explorer_path | dirname }}"
     state: directory
     mode: '0755'
   become: true
 
 - name: Check if runzero-explorer already exists
   ansible.builtin.stat:
-    path: "{{ runzero_explorer_default_dest }}"
-  register: runzero_explorer_file
+    path: "{{ runzero_explorer_path }}"
+  register: runzero_explorer_stat
 
 - name: Download runzero-explorer
   ansible.builtin.get_url:
     url: "{{ runzero_explorer_url }}"
-    dest: "{{ runzero_explorer_default_dest }}"
+    dest: "{{ runzero_explorer_path }}"
     mode: '0755'
-  when: not runzero_explorer_file.stat.exists
+  when:
+    - runzero_explorer_unique_token is defined
+    - not runzero_explorer_stat.stat.exists
 
 - name: Find runzero-agent files
   ansible.builtin.find:
-    paths: "{{ runzero_explorer_dest }}"
+    paths: "{{ runzero_explorer_path | dirname }}"
     patterns: "runzero-agent-*"
+    get_checksum: yes
   register: runzero_agent_files
 
-- name: Rename runzero-explorer to default destination
+- name: Get hash of existing runzero-explorer file
+  ansible.builtin.stat:
+    path: "{{ runzero_explorer_path }}"
+    get_checksum: yes
+  register: runzero_explorer_checksum
+  when: runzero_explorer_stat.stat.exists
+
+- name: Rename the most recent runzero-agent file to the default destination
   ansible.builtin.command:
-    cmd: "mv {{ item.path }} {{ runzero_explorer_default_dest }}"
-  loop: "{{ runzero_agent_files.files }}"
-  when: runzero_agent_files.matched > 0 and not runzero_explorer_file.stat.exists
+    cmd: "mv {{ (runzero_agent_files.files | sort(attribute='mtime') | last).path }} {{ runzero_explorer_path }}"
+  when:
+    - runzero_agent_files.matched > 0
+    - runzero_explorer_stat.stat.exists
+    - "(runzero_agent_files.files | sort(attribute='mtime') | last).checksum != runzero_explorer_checksum.stat.checksum"
   changed_when: true
 
 - name: Execute runzero-explorer
   become: true
   ansible.builtin.command:
-    cmd: "{{ runzero_explorer_default_dest }}"
+    cmd: "{{ runzero_explorer_path }}"
   changed_when: false
