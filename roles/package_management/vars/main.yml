@@ -28,9 +28,14 @@ package_management_common_install_packages:
 # Conditional assignment based on OS family
 package_management_install_packages: "{{ (ansible_os_family == 'Debian') | ternary(package_management_debian_specific_packages, package_management_redhat_specific_packages) }}"
 
+# Kali-specific packages
+package_management_kali_specific_packages:
+  - chromium
+
 # Debian-specific packages
 package_management_debian_specific_packages:
   - build-essential
+  - chromium-browser
   - curl
   # - fonts-powerline
   - inetutils-ping
@@ -54,6 +59,7 @@ package_management_debian_specific_packages:
 # RedHat-specific packages
 package_management_redhat_specific_packages:
   - bzip2-devel
+  - chromium
   - epel-release
   - gcc
   - gcc-c++
