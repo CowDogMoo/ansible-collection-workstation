@@ -34,8 +34,8 @@
   ansible.builtin.include_tasks: unix.yml
   when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
 
-- name: Include systemctl tasks
-  ansible.builtin.include_tasks: systemctl.yml
+- name: Include systemd tasks
+  ansible.builtin.include_tasks: systemd.yml
   when: ansible_os_family in ['Debian', 'RedHat'] and runzero_explorer_systemd_enabled | bool
 
 - name: Include tasks for Windows
