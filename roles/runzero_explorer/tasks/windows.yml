@@ -1,0 +1,45 @@
+---
+- name: Set runzero-explorer download URL for Windows
+  ansible.builtin.set_fact:
+    runzero_explorer_url: "{{ runzero_explorer_url }}/{{ runzero_explorer_unique_token }}/{{ runzero_explorer_version_id }}/runzero-explorer-windows-amd64.exe"
+  when: ansible_os_family == 'Windows'
+
+- name: Check if runzero-explorer already exists
+  ansible.windows.win_stat:
+    path: "{{ runzero_explorer_path }}"
+  register: runzero_explorer_stat
+
+- name: Download runzero-explorer
+  ansible.windows.win_get_url:
+    url: "{{ runzero_explorer_url }}"
+    dest: "{{ runzero_explorer_path }}"
+  when:
+    - runzero_explorer_unique_token is defined
+    - not runzero_explorer_stat.stat.exists
+
+- name: Find runzero-agent files (if applicable)
+  ansible.windows.win_find:
+    paths: "{{ runzero_explorer_path | dirname }}"
+    patterns: "runzero-agent-*"
+    get_checksum: yes
+  register: runzero_agent_files
+
+- name: Get hash of existing runzero-explorer file (if applicable)
+  ansible.windows.win_stat:
+    path: "{{ runzero_explorer_path }}"
+    get_checksum: yes
+  register: runzero_explorer_checksum
+  when: runzero_explorer_stat.stat.exists
+
+- name: Rename the most recent runzero-agent file to the default destination (if applicable)
+  ansible.windows.win_command:
+    cmd: "Rename-Item -Path '{{ (runzero_agent_files.files | sort(attribute='mtime') | last).path }}' -NewName '{{ runzero_explorer_path | basename }}'"
+  when:
+    - runzero_agent_files.matched > 0
+    - runzero_explorer_stat.stat.exists
+    - "(runzero_agent_files.files | sort(attribute='mtime') | last).checksum != runzero_explorer_checksum.stat.checksum"
+  changed_when: true
+
+- name: Execute runzero-explorer
+  ansible.windows.win_command:
+    cmd: "{{ runzero_explorer_path }}"

@@ -13,7 +13,7 @@ driver:
   name: docker
 
 platforms:
-  - name: ubuntu-workstation
+  - name: ubuntu-runzero-explorer
     image: geerlingguy/docker-ubuntu2204-ansible:latest
     command: "" # necessary for systemd
     volumes:
@@ -21,7 +21,7 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  - name: redhat-workstation
+  - name: redhat-runzero-explorer
     image: "geerlingguy/docker-rockylinux9-ansible:latest"
     command: "" # necessary for systemd
     volumes:

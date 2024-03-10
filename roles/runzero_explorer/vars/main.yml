@@ -1,0 +1,14 @@
+---
+runzero_explorer_nix_path: "/opt/runzero/bin/runzero-explorer.bin"
+runzero_explorer_windows_path: "C:\\runzero-explorer.exe"
+runzero_explorer_url: "https://console.runzero.com/download/explorer"
+runzero_explorer_common_install_packages: []
+runzero_explorer_kali_packages:
+  - chromium
+runzero_explorer_debian_packages:
+  - chromium-browser
+  - curl
+  - wireless-tools
+runzero_explorer_el_packages:
+  - chromium
+  - iw

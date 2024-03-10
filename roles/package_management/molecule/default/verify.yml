@@ -31,7 +31,7 @@
         state: present
       register: distro_package_status
       with_items: "{{ package_management_install_packages }}"
-      when: ansible_os_family in ['Debian', 'RedHat']
+      when: ansible_os_family in ['Debian', 'RedHat'] and ansible_distribution != 'Kali'
       failed_when: distro_package_status is failed
       changed_when: false
 

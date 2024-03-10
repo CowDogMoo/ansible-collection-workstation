@@ -4,4 +4,5 @@ roles:
 
 collections:
   - name: community.general
+  - name: community.docker
   - name: ansible.windows

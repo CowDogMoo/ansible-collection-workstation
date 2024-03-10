@@ -1,0 +1,26 @@
+---
+- name: Create runZero Explorer systemd service file
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/runzero-explorer.service
+    content: |
+      [Unit]
+      Description=runZero Explorer Service
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart={{ runzero_explorer_path }} manual
+      User=root
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+  become: true
+
+- name: Enable and start runZero Explorer service
+  ansible.builtin.systemd:
+    name: runzero-explorer
+    enabled: yes
+    state: started
+  become: true

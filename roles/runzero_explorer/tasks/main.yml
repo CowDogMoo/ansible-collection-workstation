@@ -1,50 +1,43 @@
 ---
+- name: Set runzero_explorer_path
+  ansible.builtin.set_fact:
+    runzero_explorer_path: "{{ runzero_explorer_nix_path if ansible_os_family in ['Debian', 'RedHat', 'Darwin'] else runzero_explorer_windows_path }}"
+
+- name: Set architecture mapping for runzero-explorer
+  ansible.builtin.set_fact:
+    runzero_explorer_arch_map:
+      x86_64: amd64
+      aarch64: arm64
+
 - name: Determine runzero-explorer binary architecture
   ansible.builtin.set_fact:
-    runzero_explorer_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
-  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
+    runzero_explorer_arch: "{{ runzero_explorer_arch_map[ansible_architecture] }}"
+  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin', 'Windows']
 
-- name: Set runzero-explorer download URL for Unix-like systems
+- name: Check if RUNZERO_DOWNLOAD_TOKEN is set
+  ansible.builtin.fail:
+    msg: "The RUNZERO_DOWNLOAD_TOKEN environment variable must be set."
+  when: lookup('env', 'RUNZERO_DOWNLOAD_TOKEN') is not defined or lookup('env', 'RUNZERO_DOWNLOAD_TOKEN') == ""
+
+- name: Set the unique token
   ansible.builtin.set_fact:
-    runzero_explorer_url: "https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-linux-{{ runzero_explorer_arch }}.bin"
-  when: ansible_os_family in ['Debian', 'RedHat']
+    runzero_explorer_unique_token: "{{ lookup('env', 'RUNZERO_DOWNLOAD_TOKEN') }}"
 
-- name: Set runzero-explorer download URL for Darwin systems
-  ansible.builtin.set_fact:
-    runzero_explorer_url: "https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-darwin-{{ runzero_explorer_arch }}.bin"
-  when: ansible_os_family == 'Darwin'
-
-- name: Set runzero-explorer download URL for Windows
-  ansible.builtin.set_fact:
-    runzero_explorer_url: 'https://console.runzero.com/download/explorer/DT7B893BC4CF04C4520A8B78FAA663/be504524/runzero-explorer-windows-amd64.exe'
-    runzero_explorer_dest: "C:\\runzero-explorer.exe"
-  when: ansible_os_family == 'Windows'
-
-- name: Set default value for runzero_explorer_dest
-  ansible.builtin.set_fact:
-    runzero_explorer_dest: "{{ ansible_env.HOME }}/runzero-explorer.bin"
-  when: runzero_explorer_dest is not defined
-
-- name: "Check if runzero-explorer already exists"
-  ansible.builtin.stat:
-    path: "{{ runzero_explorer_dest }}"
-  register: runzero_explorer_file
-
-- name: Download runzero-explorer
-  ansible.builtin.get_url:
-    url: "{{ runzero_explorer_url }}"
-    dest: "{{ runzero_explorer_dest }}"
+- name: Create the directory for the runzero-explorer binary
+  ansible.builtin.file:
+    path: "{{ runzero_explorer_path | dirname }}"
+    state: directory
     mode: '0755'
-  when: not runzero_explorer_file.stat.exists
-
-- name: Execute runzero-explorer (Non-Windows)
   become: true
-  ansible.builtin.command:
-    cmd: "{{ runzero_explorer_dest }}"
-  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
-  changed_when: false
 
-- name: Execute runzero-explorer (Windows)
-  ansible.windows.win_command:
-    cmd: "C:\\runzero-explorer.exe"
+- name: Include tasks for Unix-like systems
+  ansible.builtin.include_tasks: unix.yml
+  when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
+
+- name: Include systemd tasks
+  ansible.builtin.include_tasks: systemd.yml
+  when: ansible_os_family in ['Debian', 'RedHat'] and runzero_explorer_systemd_enabled | bool
+
+- name: Include tasks for Windows
+  ansible.builtin.include_tasks: windows.yml
   when: ansible_os_family == 'Windows'
