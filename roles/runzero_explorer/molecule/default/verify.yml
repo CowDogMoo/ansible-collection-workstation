@@ -8,7 +8,7 @@
   tasks:
     - name: Set runzero_explorer_path for Non-Windows
       ansible.builtin.set_fact:
-        runzero_explorer_path: "{{ runzero_explorer_path }}"
+        runzero_explorer_path: "{{ runzero_explorer_nix_path }}"
       when: ansible_os_family in ['Debian', 'RedHat', 'Darwin']
 
     - name: Set runzero_explorer_path for Windows

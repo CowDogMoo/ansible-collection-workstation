@@ -1,5 +1,5 @@
 ---
-runzero_explorer_path: "/opt/runzero/bin/runzero-explorer.bin"
+runzero_explorer_nix_path: "/opt/runzero/bin/runzero-explorer.bin"
 runzero_explorer_windows_path: "C:\\runzero-explorer.exe"
 runzero_explorer_url: "https://console.runzero.com/download/explorer"
 runzero_explorer_common_install_packages: []

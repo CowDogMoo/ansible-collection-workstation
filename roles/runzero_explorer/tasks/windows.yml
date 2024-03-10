@@ -2,7 +2,7 @@
 - name: Set runzero-explorer download URL for Windows
   ansible.builtin.set_fact:
     runzero_explorer_url: "{{ runzero_explorer_url }}/{{ runzero_explorer_unique_token }}/{{ runzero_explorer_version_id }}/runzero-explorer-windows-amd64.exe"
-    runzero_explorer_path: "{{ runzero_explorer_windows_path }}"
+  when: ansible_os_family == 'Windows'
 
 - name: Check if runzero-explorer already exists
   ansible.windows.win_stat:
