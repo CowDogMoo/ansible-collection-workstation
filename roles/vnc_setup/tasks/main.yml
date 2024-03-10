@@ -97,16 +97,6 @@
     dest: "/run/docker-entrypoint.sh"
     mode: 0755
 
-- name: Check if systemd is present
-  ansible.builtin.command: systemctl --version
-  ignore_errors: true
-  register: systemd_check
-  changed_when: false
-
-- name: Set fact for systemd presence
-  ansible.builtin.set_fact:
-    is_systemd_present: "{{ systemd_check.rc == 0 }}"
-
-- name: Configure systemd auto-start service
-  ansible.builtin.import_tasks: systemd.yml
-  when: vnc_setup_systemd|bool and is_systemd_present
+- name: Include systemd tasks
+  ansible.builtin.include_tasks: systemd.yml
+  when: ansible_os_family in ['Debian', 'RedHat'] and vnc_setup_systemd_enabled | bool
