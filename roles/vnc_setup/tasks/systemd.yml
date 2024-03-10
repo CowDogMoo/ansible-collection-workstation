@@ -1,18 +1,4 @@
 ---
-- name: Check if systemd is present
-  ansible.builtin.command: systemctl --version
-  ignore_errors: true
-  register: systemd_check
-  changed_when: false
-
-- name: Set fact for systemd presence
-  ansible.builtin.set_fact:
-    is_systemd_present: "{{ systemd_check.rc == 0 }}"
-
-- name: Configure systemd auto-start service
-  ansible.builtin.import_tasks: systemd.yml
-  when: vnc_setup_systemd|bool and is_systemd_present
-
 - name: Get uids of {{ vnc_setup_users }}
   ansible.builtin.command: id -u {{ item.username }}
   loop: "{{ vnc_setup_users }}"

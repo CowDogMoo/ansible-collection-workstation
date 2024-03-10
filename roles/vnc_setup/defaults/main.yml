@@ -14,9 +14,6 @@ vnc_setup_users:
 # Default username value, derived from the ansible_distribution variable
 vnc_setup_default_username: "{{ ansible_distribution | lower }}"
 
-# Enable systemd for VNC
-vnc_setup_systemd_enabled: "false"
-
 # Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
 vnc_setup_vncpwd_clone_path: /tmp/vncpwd
 
