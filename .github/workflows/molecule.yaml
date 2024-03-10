@@ -6,6 +6,7 @@ on:
 
 env:
   COLLECTION_PATH: $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
+  RUNZERO_DOWNLOAD_TOKEN: ${{ secrets.RUNZERO_DOWNLOAD_TOKEN }}
 
 jobs:
   role_test:

@@ -30,14 +30,32 @@ package_management_install_packages: "{{ (ansible_os_family == 'Debian') | terna
 
 # Kali-specific packages
 package_management_kali_specific_packages:
+  - build-essential
   - chromium
+  - curl
+  - inetutils-ping
+  - libdb-dev
+  - libffi-dev
+  - libgdbm-dev
+  - libgdbm6
+  - libncurses5-dev
+  - libreadline6-dev
+  - libssl-dev
+  - libyaml-dev
+  - locales
+  - software-properties-common
+  - tigervnc-standalone-server
+  - tigervnc-tools
+  - xfce4-goodies
+  - xfce4
+  - zlib1g-dev
+  - zsh-autosuggestions
 
 # Debian-specific packages
 package_management_debian_specific_packages:
   - build-essential
   - chromium-browser
   - curl
-  # - fonts-powerline
   - inetutils-ping
   - libdb-dev
   - libffi-dev
