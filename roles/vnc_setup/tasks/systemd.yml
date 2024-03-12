@@ -83,7 +83,6 @@
   ansible.builtin.copy:
     dest: /etc/profile.d/xdg_runtime_dir.sh
     content: |
-      #!/bin/sh
       export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     mode: "0755"
 
