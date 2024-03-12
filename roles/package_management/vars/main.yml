@@ -1,4 +1,6 @@
 ---
+package_management_chromium_package: "{{ 'chromium-browser' if ansible_distribution == 'Debian' or (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')) else 'chromium' }}"
+
 # Common packages to be installed on all systems
 package_management_common_install_packages:
   - autoconf
@@ -28,33 +30,10 @@ package_management_common_install_packages:
 # Conditional assignment based on OS family
 package_management_install_packages: "{{ (ansible_os_family == 'Debian') | ternary(package_management_debian_specific_packages, package_management_redhat_specific_packages) }}"
 
-# Kali-specific packages
-package_management_kali_specific_packages:
-  - build-essential
-  - chromium
-  - curl
-  - inetutils-ping
-  - libdb-dev
-  - libffi-dev
-  - libgdbm-dev
-  - libgdbm6
-  - libncurses5-dev
-  - libreadline6-dev
-  - libssl-dev
-  - libyaml-dev
-  - locales
-  - software-properties-common
-  - tigervnc-standalone-server
-  - tigervnc-tools
-  - xfce4-goodies
-  - xfce4
-  - zlib1g-dev
-  - zsh-autosuggestions
-
 # Debian-specific packages
 package_management_debian_specific_packages:
   - build-essential
-  - chromium-browser
+  - "{{ package_management_chromium_package }}"
   - curl
   - inetutils-ping
   - libdb-dev

@@ -3,23 +3,14 @@
   ansible.builtin.include_vars: "main.yml"
   when: ansible_os_family in ['Debian', 'RedHat']
 
-- name: Install Kali-specific packages
-  become: true
-  ansible.builtin.package:
-    name: "{{ package_management_kali_specific_packages }}"
-    state: present
-    update_cache: true
-  when: ansible_distribution == 'Kali'
-  tags: kali-packages
-
-- name: Install distribution-specific packages (Excluding Kali)
+- name: Install distribution-specific packages
   become: true
   ansible.builtin.package:
     name: "{{ package_management_install_packages }}"
     state: present
     update_cache: true
   when:
-    - ansible_os_family in ['Debian', 'RedHat'] and ansible_distribution != 'Kali'
+    - ansible_os_family in ['Debian', 'RedHat']
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   tags: distro-packages
 
