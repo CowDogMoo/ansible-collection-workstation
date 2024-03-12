@@ -21,6 +21,7 @@
     state: present
     update_cache: true
   when: ansible_os_family in ['Debian', 'RedHat']
+  environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   tags: common-packages
 
 # Red Hat specific tasks
