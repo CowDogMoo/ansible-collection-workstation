@@ -1,14 +1,15 @@
 ---
-runzero_explorer_nix_path: "/opt/runzero/bin/runzero-explorer.bin"
-runzero_explorer_windows_path: "C:\\runzero-explorer.exe"
-runzero_explorer_url: "https://console.runzero.com/download/explorer"
+# Conditional assignment for Chromium package based on distribution
+runzero_explorer_chromium_package: "{{ 'chromium-browser' if ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=') else 'chromium' }}"
+
 runzero_explorer_common_install_packages: []
-runzero_explorer_kali_packages:
-  - chromium
 runzero_explorer_debian_packages:
-  - chromium-browser
+  - "{{ runzero_explorer_chromium_package }}"
   - curl
   - wireless-tools
 runzero_explorer_el_packages:
-  - chromium
+  - "{{ runzero_explorer_chromium_package }}"
   - iw
+runzero_explorer_nix_path: "/opt/runzero/bin/runzero-explorer.bin"
+runzero_explorer_windows_path: "C:\\runzero-explorer.exe"
+runzero_explorer_url: "https://console.runzero.com/download/explorer"

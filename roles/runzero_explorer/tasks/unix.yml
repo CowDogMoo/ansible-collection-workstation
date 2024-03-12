@@ -37,7 +37,6 @@
     package_management_common_install_packages: "{{ runzero_explorer_common_install_packages }}"
     package_management_debian_specific_packages: "{{ runzero_explorer_debian_packages }}"
     package_management_redhat_specific_packages: "{{ runzero_explorer_el_packages }}"
-    package_management_kali_specific_packages: "{{ runzero_explorer_kali_packages }}"
 
 - name: Create runZero Explorer directory
   become: true
