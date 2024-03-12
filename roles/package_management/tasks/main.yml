@@ -20,6 +20,9 @@
   become: true
   when: ansible_os_family == 'Debian'
   changed_when: false
+  args:
+    executable: /bin/bash
+
 
 - name: Ensure tzdata is installed
   ansible.builtin.apt:
