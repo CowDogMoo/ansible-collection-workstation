@@ -3,6 +3,32 @@
   ansible.builtin.include_vars: "main.yml"
   when: ansible_os_family in ['Debian', 'RedHat']
 
+- name: Set DEBIAN_FRONTEND to noninteractive
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    line: 'DEBIAN_FRONTEND=noninteractive'
+    create: true
+    mode: '0644'
+  become: true
+  when: ansible_os_family == 'Debian'
+
+- name: Preconfigure tzdata selections
+  ansible.builtin.shell: |
+    set -o pipefail
+    echo "tzdata tzdata/Areas select Etc" | debconf-set-selections
+    echo "tzdata tzdata/Zones/Etc select UTC" | debconf-set-selections
+  become: true
+  when: ansible_os_family == 'Debian'
+  changed_when: false
+
+- name: Ensure tzdata is installed
+  ansible.builtin.apt:
+    update_cache: true
+    name: tzdata
+    state: present
+  become: true
+  when: ansible_os_family == 'Debian'
+
 - name: Install distribution-specific packages
   become: true
   ansible.builtin.package:
