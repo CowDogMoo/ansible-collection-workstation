@@ -1,6 +1,4 @@
 ---
-package_management_chromium_package: "{{ 'chromium-browser' if ansible_distribution == 'Debian' or (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')) else 'chromium' }}"
-
 # Common packages to be installed on all systems
 package_management_common_install_packages:
   - autoconf
@@ -26,6 +24,9 @@ package_management_common_install_packages:
   - vim
   - wget
   - zsh
+
+# Conditional assignment for Chromium package based on distribution
+package_management_chromium_package: "{{ 'chromium-browser' if ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=') else 'chromium' }}"
 
 # Conditional assignment based on OS family
 package_management_install_packages: "{{ (ansible_os_family == 'Debian') | ternary(package_management_debian_specific_packages, package_management_redhat_specific_packages) }}"
