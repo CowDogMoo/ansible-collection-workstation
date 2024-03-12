@@ -20,6 +20,7 @@ package_management_common_install_packages:
   - terminator
   - tmux
   - tree
+  - tzdata
   - unzip
   - vim
   - wget

@@ -12,26 +12,6 @@
   become: true
   when: ansible_os_family == 'Debian'
 
-- name: Preconfigure tzdata selections
-  ansible.builtin.shell: |
-    set -o pipefail
-    echo "tzdata tzdata/Areas select Etc" | debconf-set-selections
-    echo "tzdata tzdata/Zones/Etc select UTC" | debconf-set-selections
-  become: true
-  when: ansible_os_family == 'Debian'
-  changed_when: false
-  args:
-    executable: /bin/bash
-
-
-- name: Ensure tzdata is installed
-  ansible.builtin.apt:
-    update_cache: true
-    name: tzdata
-    state: present
-  become: true
-  when: ansible_os_family == 'Debian'
-
 - name: Install distribution-specific packages
   become: true
   ansible.builtin.package:
