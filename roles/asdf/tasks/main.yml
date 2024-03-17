@@ -38,6 +38,12 @@
   when:
     - item.username != 'root'
 
+- name: Check if .asdf directory exists for each user
+  ansible.builtin.stat:
+    path: "{{ item.home_path }}/.asdf"
+  register: asdf_dir_check
+  loop: "{{ enriched_asdf_enriched_users }}"
+
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:
     path: "{{ item.home_path }}/.asdf"
@@ -47,12 +53,6 @@
   loop: "{{ enriched_asdf_enriched_users }}"
   when:
     - item.username != 'root'
-
-- name: Check if .asdf directory exists for each user
-  ansible.builtin.stat:
-    path: "{{ item.home_path }}/.asdf"
-  register: asdf_dir_check
-  loop: "{{ enriched_asdf_enriched_users }}"
 
 - name: Include task to update shell profiles for each user
   ansible.builtin.include_tasks: update_shell_profiles.yml

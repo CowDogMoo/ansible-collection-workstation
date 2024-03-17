@@ -17,7 +17,8 @@
     group: "{{ item.usergroup }}"
   become: true
   become_user: "{{ item.username }}"
-  when: "not oh_my_zsh_installed.results[item | int].stat.exists"
+  when:
+    - "not oh_my_zsh_installed.results[item | int].stat.exists"
   loop: "{{ zsh_setup_enriched_users }}"
   changed_when: false
 

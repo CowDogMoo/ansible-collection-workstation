@@ -25,5 +25,5 @@
           'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"',
           '. "$ASDF_PATH/asdf.sh"',
           'source $HOME/.asdf/asdf.sh'
-        ]})] }}
+        ]})] | selectattr('home_path', 'ne', '') | list }}
   loop: "{{ asdf_users | zip(home_dirs.results) }}"

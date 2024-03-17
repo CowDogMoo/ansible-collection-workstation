@@ -14,5 +14,5 @@
     zsh_setup_enriched_users: >-
       {{ (zsh_setup_enriched_users | default([])) | rejectattr('username', 'equalto', item.0.username) | list + [item.0 | combine({
         'home_path': item.1.stdout,
-        })] }}
+        })] | selectattr('home_path', 'ne', '') | list }}
   loop: "{{ zsh_setup_users | zip(home_dirs.results) }}"
