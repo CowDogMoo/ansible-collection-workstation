@@ -3,6 +3,8 @@
   ansible.builtin.shell: >
     set -o pipefail
     getent passwd {{ item.username }} | cut -d: -f6
+  args:
+    executable: "{{ item.shell }}"
   register: home_dirs
   loop: "{{ asdf_users }}"
   changed_when: false
