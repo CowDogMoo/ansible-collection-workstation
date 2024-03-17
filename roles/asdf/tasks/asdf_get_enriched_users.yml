@@ -1,11 +1,8 @@
 ---
 - name: Get home directory for each user
-  ansible.builtin.shell: |
-    if id "{{ item.username }}" &>/dev/null; then
-      python3 -c 'import pwd; print(pwd.getpwnam("{{ item.username }}").pw_dir)'
-    else
-      echo "User {{ item.username }} does not exist"
-    fi
+  ansible.builtin.shell: >
+    set -o pipefail
+    getent passwd {{ item.username }} | cut -d: -f6
   register: home_dirs
   loop: "{{ asdf_users }}"
   changed_when: false
@@ -21,5 +18,10 @@
           'export ASDF_PATH="' + item.1.stdout + '/.asdf"',
           'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"',
           '. "$ASDF_PATH/asdf.sh"'
+        ] if item.0.shell == '/bin/bash' else [
+          'export ASDF_PATH="' + item.1.stdout + '/.asdf"',
+          'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"',
+          '. "$ASDF_PATH/asdf.sh"',
+          'source $HOME/.asdf/asdf.sh'
         ]})] }}
   loop: "{{ asdf_users | zip(home_dirs.results) }}"
