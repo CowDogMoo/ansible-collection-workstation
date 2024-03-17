@@ -2,7 +2,7 @@
 - name: Set default username for Kali systems
   ansible.builtin.set_fact:
     asdf_default_username: "kali"
-  when: ansible_distribution_release == "kali-rolling"
+  when: ansible_distribution_release == "kali-rolling" and asdf_default_username is not defined
 
 - name: Include asdf_get_enriched_users tasks
   ansible.builtin.include_tasks: asdf_get_enriched_users.yml
