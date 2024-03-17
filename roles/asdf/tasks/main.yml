@@ -38,11 +38,16 @@
   when:
     - item.username != 'root'
 
-- name: Check if .asdf directory exists for each user
-  ansible.builtin.stat:
+- name: Ensure .asdf directory exists for each user
+  ansible.builtin.file:
     path: "{{ item.home_path }}/.asdf"
-  register: asdf_dir_check
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: "0755"
   loop: "{{ enriched_asdf_enriched_users }}"
+  when:
+    - item.username != 'root'
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:

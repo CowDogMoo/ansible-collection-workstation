@@ -8,11 +8,13 @@
   register: home_dirs
   loop: "{{ asdf_users }}"
   changed_when: false
+  failed_when: home_dirs.rc != 0 and home_dirs.stdout == ""
 
 - name: Update home_path, shell, and plugins for each user in asdf_users
   ansible.builtin.set_fact:
     enriched_asdf_enriched_users: >-
-      {{ (enriched_asdf_enriched_users | default([])) | rejectattr('username', 'equalto', item.0.username) | list +
+      {{ (enriched_asdf_enriched_users | default([])) |
+      rejectattr('username', 'equalto', item.0.username) | list +
       [item.0 | combine({
         'home_path': item.1.stdout,
         'shell': (item.0.shell | default('/bin/bash')),
@@ -20,10 +22,6 @@
           'export ASDF_PATH="' + item.1.stdout + '/.asdf"',
           'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"',
           '. "$ASDF_PATH/asdf.sh"'
-        ] if item.0.shell == '/bin/bash' else [
-          'export ASDF_PATH="' + item.1.stdout + '/.asdf"',
-          'export PATH="$ASDF_PATH/bin:$ASDF_PATH/shims:$PATH"',
-          '. "$ASDF_PATH/asdf.sh"',
-          'source $HOME/.asdf/asdf.sh'
-        ]})] | selectattr('home_path', 'ne', '') | list }}
+        ] + (['source $HOME/.asdf/asdf.sh'] if item.0.shell != '/bin/bash' else [])})] |
+      selectattr('home_path', 'ne', '') | list }}
   loop: "{{ asdf_users | zip(home_dirs.results) }}"
