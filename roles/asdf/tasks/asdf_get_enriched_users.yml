@@ -1,7 +1,13 @@
+---
 - name: Get home directory for each user
-  ansible.builtin.shell: 'python3 -c ''import pwd; print(pwd.getpwnam("{{ item.username }}").pw_dir)'''
-  loop: "{{ asdf_users }}"
+  ansible.builtin.shell: |
+    if id "{{ item.username }}" &>/dev/null; then
+      python3 -c 'import pwd; print(pwd.getpwnam("{{ item.username }}").pw_dir)'
+    else
+      echo "User {{ item.username }} does not exist"
+    fi
   register: home_dirs
+  loop: "{{ asdf_users }}"
   changed_when: false
 
 - name: Update home_path, shell, and plugins for each user in asdf_users
