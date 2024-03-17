@@ -3,8 +3,6 @@
   ansible.builtin.shell: >
     set -o pipefail
     getent passwd {{ item.username }} | cut -d: -f6
-  args:
-    executable: /bin/bash
   register: home_dirs
   loop: "{{ zsh_setup_users }}"
   changed_when: false
@@ -12,7 +10,9 @@
 - name: Update home_path for all users
   ansible.builtin.set_fact:
     zsh_setup_enriched_users: >-
-      {{ (zsh_setup_enriched_users | default([])) | rejectattr('username', 'equalto', item.0.username) | list + [item.0 | combine({
-        'home_path': item.1.stdout,
-        })] | selectattr('home_path', 'ne', '') | list }}
-  loop: "{{ zsh_setup_users | zip(home_dirs.results) }}"
+      {{ (zsh_setup_enriched_users | default([])) | rejectattr('username', 'equalto', item.item.username) | list + [item.item | combine({
+        'home_path': item.stdout,
+        })] | selectattr('home_path', 'defined') | list }}
+  loop: "{{ home_dirs.results }}"
+  loop_control:
+    label: "{{ item.item.username }}"

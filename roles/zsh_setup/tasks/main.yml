@@ -18,7 +18,8 @@
   become: true
   become_user: "{{ item.username }}"
   when:
-    - "not oh_my_zsh_installed.results[item | int].stat.exists"
+    - item.home_path is defined
+    - item.home_path | length > 0
   loop: "{{ zsh_setup_enriched_users }}"
   changed_when: false
 
@@ -32,13 +33,21 @@
   loop: "{{ zsh_setup_enriched_users }}"
   changed_when: false
 
+- name: Check if omz-installer.sh exists for each user
+  ansible.builtin.stat:
+    path: "{{ item.home_path }}/omz-installer.sh"
+  register: omz_installer_exists
+  loop: "{{ zsh_setup_enriched_users }}"
+
 - name: Remove omz-installer.sh for all zsh_setup_enriched_users
   ansible.builtin.file:
     path: "{{ item.home_path }}/omz-installer.sh"
     state: absent
   become: true
   become_user: "{{ item.username }}"
+  when: omz_installer_exists.results[item | int].stat.exists
   loop: "{{ zsh_setup_enriched_users }}"
+  changed_when: false
 
 - name: Check if .zshrc exists for all zsh_setup_enriched_users
   ansible.builtin.stat:
