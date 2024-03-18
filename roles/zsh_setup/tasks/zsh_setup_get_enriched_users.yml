@@ -1,18 +1,26 @@
----
-- name: Get home directory for each user
-  ansible.builtin.shell: >
-    set -o pipefail
-    getent passwd {{ item.username }} | cut -d: -f6
-  register: home_dirs
+- name: Ensure users exist and have home directories
+  become: true
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    group: "{{ item.usergroup }}"
+    shell: "{{ item.shell }}"
+    create_home: true
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
+  register: user_info
   loop: "{{ zsh_setup_users }}"
-  changed_when: false
+  loop_control:
+    label: "{{ item.username }}"
+  tags: user-setup
+  when: ansible_os_family != 'Darwin'
 
 - name: Update home_path for all users
   ansible.builtin.set_fact:
     zsh_setup_enriched_users: >-
-      {{ (zsh_setup_enriched_users | default([])) | rejectattr('username', 'equalto', item.item.username) | list + [item.item | combine({
-        'home_path': item.stdout,
+      {{ (zsh_setup_enriched_users | default([])) |
+      rejectattr('username', 'equalto', item.item.username) | list +
+      [item.item | combine({
+        'home_path': item.home,
         })] | selectattr('home_path', 'defined') | list }}
-  loop: "{{ home_dirs.results }}"
+  loop: "{{ user_info.results }}"
   loop_control:
     label: "{{ item.item.username }}"

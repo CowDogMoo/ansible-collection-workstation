@@ -75,12 +75,16 @@
       if [ -f "{{ item.home_path }}/.asdf/asdf.sh" ]; then
         . "{{ item.home_path }}/.asdf/asdf.sh"
       fi
+      {% if item.plugins is defined %}
       {% for plugin in item.plugins %}
       if ! asdf plugin list | grep -q {{ plugin.name }}; then
         asdf plugin add {{ plugin.name }};
       fi;
       {% endfor %}
       echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
+      {% else %}
+      echo "plugins:,versions:"
+      {% endif %}
     executable: "{{ item.shell }}"
   register: asdf_info
   changed_when: false

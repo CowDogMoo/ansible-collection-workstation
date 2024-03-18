@@ -12,6 +12,7 @@
         zsh_setup_users:
           - username: "{{ ansible_env.USER if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"
             usergroup: "{{ 'staff' if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"
+            shell: "/bin/zsh"
 
     - name: Include zsh_setup_get_enriched_users tasks
       ansible.builtin.include_tasks: ../../tasks/zsh_setup_get_enriched_users.yml

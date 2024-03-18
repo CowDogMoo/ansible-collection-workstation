@@ -48,9 +48,23 @@
     name: "{{ item.username }}"
     group: "{{ item.usergroup }}"
     shell: "{{ item.shell }}"
+    create_home: true
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
   loop: "{{ user_setup_default_users }}"
   tags: user-setup
   when: ansible_os_family != 'Darwin'
+
+- name: Ensure users exist and have home directories
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    group: "{{ item.usergroup }}"
+    shell: "{{ item.shell }}"
+    create_home: true
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
+  register: user_info
+  loop: "{{ user_setup_default_users }}"
+  loop_control:
+    label: "{{ item.username }}"
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true

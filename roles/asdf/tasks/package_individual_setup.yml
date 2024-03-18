@@ -1,37 +1,45 @@
----
 - name: Get all plugins for each user
   ansible.builtin.shell:
     cmd: |
-      set -o pipefail
-      . {{ asdf_install_script_path }} "{{ item.home_path }}"
+      . {{ asdf_install_script_path }} "{{ asdf_user.home_path }}"
       asdf plugin list
-    executable: "{{ item.shell }}"
+    executable: "{{ asdf_user.shell }}"
   register: asdf_plugins
+  loop: "{{ enriched_asdf_enriched_users }}"
+  loop_control:
+    loop_var: asdf_user
+    label: "{{ asdf_user.username }}"
   changed_when: false
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ asdf_user.username }}"
 
 - name: Install asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . "{{ asdf_install_script_path }}" "{{ item.home_path }}"
-      {% for plugin in item.plugins %}
-      if ! asdf plugin list | grep -q "{{ plugin.name }}"; then
-        asdf plugin add "{{ plugin.name }}"
-      fi
+      . "{{ asdf_install_script_path }}" "{{ asdf_user.home_path }}"
+      {% if asdf_user.plugins is defined %}
+      {% for plugin in asdf_user.plugins %}
+      plugins=$(asdf plugin list)
+      grep -q "{{ plugin.name }}" <<< "$plugins" || asdf plugin add "{{ plugin.name }}"
       {% endfor %}
-    executable: "{{ item.shell }}"
+      {% endif %}
+    executable: "{{ asdf_user.shell }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
+  loop_control:
+    loop_var: asdf_user
+    label: "{{ asdf_user.username }}"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ asdf_user.username }}"
   changed_when: false
 
 - name: Install specific version of asdf plugins for each user
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . "{{ asdf_install_script_path }}" "{{ item.home_path }}"
-      {% for plugin in item.plugins %}
+      . "{{ asdf_install_script_path }}" "{{ asdf_user.home_path }}"
+      {% if asdf_user.plugins is defined %}
+      {% for plugin in asdf_user.plugins %}
       asdf install "{{ plugin.name }}" "{{ plugin.version }}"
       if [ "{{ plugin.scope }}" = "global" ]; then
         asdf global "{{ plugin.name }}" "{{ plugin.version }}"
@@ -42,7 +50,12 @@
         exit 1
       fi
       {% endfor %}
-    executable: "{{ item.shell }}"
+      {% endif %}
+    executable: "{{ asdf_user.shell }}"
+  loop: "{{ enriched_asdf_enriched_users }}"
+  loop_control:
+    loop_var: asdf_user
+    label: "{{ asdf_user.username }}"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ asdf_user.username }}"
   changed_when: false
