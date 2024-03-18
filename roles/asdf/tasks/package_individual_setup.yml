@@ -5,7 +5,7 @@
       asdf plugin list
     executable: "{{ asdf_user.shell }}"
   register: asdf_plugins
-  loop: "{{ enriched_asdf_enriched_users }}"
+  loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: asdf_user
     label: "{{ asdf_user.username }}"
@@ -25,7 +25,7 @@
       {% endfor %}
       {% endif %}
     executable: "{{ asdf_user.shell }}"
-  loop: "{{ enriched_asdf_enriched_users }}"
+  loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: asdf_user
     label: "{{ asdf_user.username }}"
@@ -52,7 +52,7 @@
       {% endfor %}
       {% endif %}
     executable: "{{ asdf_user.shell }}"
-  loop: "{{ enriched_asdf_enriched_users }}"
+  loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: asdf_user
     label: "{{ asdf_user.username }}"

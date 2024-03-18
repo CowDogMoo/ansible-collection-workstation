@@ -7,11 +7,3 @@ zsh_setup_users:
   - username: "{{ zsh_setup_default_username }}"
     usergroup: "{{ zsh_setup_default_group }}"
     shell: "/bin/zsh"
-    plugins:
-      - asdf
-      - aws
-      - docker
-      - git
-      - helm
-      - kubectl
-      - zsh-completions

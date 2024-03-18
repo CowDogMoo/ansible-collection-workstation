@@ -6,12 +6,17 @@
     - name: Include variables
       ansible.builtin.include_vars:
         file: "../../vars/main.yml"
+
     - name: Include default variables
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
     - name: Include zsh_setup_get_enriched_users tasks
       ansible.builtin.include_tasks: ../../tasks/zsh_setup_get_enriched_users.yml
+
+    - name: Ensure zsh_setup_enriched_users is a list
+      ansible.builtin.set_fact:
+        zsh_setup_enriched_users: "{{ zsh_setup_enriched_users | default([]) }}"
 
     - name: Confirm per-user $HOME/.oh-my-zsh directories exist for all users
       ansible.builtin.stat:
@@ -24,7 +29,7 @@
         that:
           - "oh_my_zsh_test.results[item | int].stat.exists"
           - "oh_my_zsh_test.results[item | int].stat.mode == '0755'"
-        msg: "$HOME/.oh-my-zsh directory check failed for {{ item.name }}"
+        msg: "$HOME/.oh-my-zsh directory check failed for {{ item.username }}"
       loop: "{{ zsh_setup_enriched_users }}"
 
     - name: Confirm omz-installer.sh is removed for all zsh_setup_enriched_users
@@ -37,7 +42,7 @@
       ansible.builtin.assert:
         that:
           - "not zsh_installer_test.results[item | int].stat.exists"
-        msg: "zsh-installer.sh removal check failed for {{ item.name }}"
+        msg: "zsh-installer.sh removal check failed for {{ item.username }}"
       loop: "{{ zsh_setup_enriched_users }}"
 
     - name: Confirm per-user $HOME/.zshrc files exist for all users
@@ -51,5 +56,5 @@
         that:
           - "zshrc_test.results[item | int].stat.exists"
           - "zshrc_test.results[item | int].stat.mode == '0644'"
-        msg: "$HOME/.zshrc file check failed for {{ item.name }}"
+        msg: "$HOME/.zshrc file check failed for {{ item.username }}"
       loop: "{{ zsh_setup_enriched_users }}"

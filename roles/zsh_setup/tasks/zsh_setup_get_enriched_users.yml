@@ -1,10 +1,28 @@
 ---
+- name: Gather available local users
+  ansible.builtin.getent:
+    database: passwd
+  register: getent_passwd
+
 - name: Update home for all users
   ansible.builtin.set_fact:
     zsh_setup_enriched_users: >-
       {{ (zsh_setup_enriched_users | default([])) |
       rejectattr('username', 'equalto', item.username) | list +
       [item | combine({
-        'home': item.home,
+        'home': ansible_facts.getent_passwd[item.username][4] if item.username in ansible_facts.getent_passwd else item.home,
+        'shell': item.shell,
+        'usergroup': item.usergroup,
+        'username': item.username
         })] | selectattr('home', 'defined') | list }}
   loop: "{{ zsh_setup_users }}"
+
+- name: Ensure user home directory exists
+  ansible.builtin.file:
+    path: "{{ item.home }}"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: "0755"
+  loop: "{{ zsh_setup_enriched_users }}"
+  when: item.username != 'root'
