@@ -1,8 +1,8 @@
 ---
 - name: Update home for all users
   ansible.builtin.set_fact:
-    enriched_asdf_enriched_users: >-
-      {{ (enriched_asdf_enriched_users | default([])) |
+    enriched_asdf_users: >-
+      {{ (enriched_asdf_users | default([])) |
       rejectattr('username', 'equalto', item.username) | list +
       [item.item | combine({
         'home': item.home,
