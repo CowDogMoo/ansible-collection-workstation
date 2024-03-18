@@ -21,6 +21,7 @@
         zsh_setup_users:
           - username: "{{ ansible_user_id }}"
             usergroup: "{{ primary_group_name.stdout }}"
+            shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
 
     - name: Setup ASDF Configuration
       ansible.builtin.include_role:

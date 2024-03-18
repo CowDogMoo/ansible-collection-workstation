@@ -1,6 +1,5 @@
 ---
 - name: Ensure users exist and have home directories
-  become: true
   ansible.builtin.user:
     name: "{{ item.username }}"
     group: "{{ item.usergroup }}"
@@ -12,20 +11,17 @@
   loop_control:
     label: "{{ item.username }}"
   tags: user-setup
-  when: ansible_os_family != 'Darwin'
 
-- name: Update home_path for all users
+- name: Update home for all users
   ansible.builtin.set_fact:
     enriched_asdf_enriched_users: >-
       {{ (enriched_asdf_enriched_users | default([])) |
-      rejectattr('username', 'equalto', item.item.username) | list +
+      rejectattr('username', 'equalto', item.username) | list +
       [item.item | combine({
-        'home_path': item.home,
+        'home': item.home,
         'shell_profile_lines': [
           "export ASDF_DIR=$HOME/.asdf",
           "source $ASDF_DIR/asdf.sh"
         ]
-        })] | selectattr('home_path', 'defined') | list }}
+        })] | selectattr('home', 'defined') | list }}
   loop: "{{ user_info.results }}"
-  loop_control:
-    label: "{{ item.item.username }}"

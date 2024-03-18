@@ -1,7 +1,7 @@
 - name: Get all plugins for each user
   ansible.builtin.shell:
     cmd: |
-      . {{ asdf_install_script_path }} "{{ asdf_user.home_path }}"
+      . {{ asdf_install_script_path }} "{{ asdf_user.home }}"
       asdf plugin list
     executable: "{{ asdf_user.shell }}"
   register: asdf_plugins
@@ -17,7 +17,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . "{{ asdf_install_script_path }}" "{{ asdf_user.home_path }}"
+      . "{{ asdf_install_script_path }}" "{{ asdf_user.home }}"
       {% if asdf_user.plugins is defined %}
       {% for plugin in asdf_user.plugins %}
       plugins=$(asdf plugin list)
@@ -37,7 +37,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . "{{ asdf_install_script_path }}" "{{ asdf_user.home_path }}"
+      . "{{ asdf_install_script_path }}" "{{ asdf_user.home }}"
       {% if asdf_user.plugins is defined %}
       {% for plugin in asdf_user.plugins %}
       asdf install "{{ plugin.name }}" "{{ plugin.version }}"

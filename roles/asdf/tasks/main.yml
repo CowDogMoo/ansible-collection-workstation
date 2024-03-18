@@ -1,4 +1,3 @@
----
 - name: Set default username for Kali systems
   ansible.builtin.set_fact:
     asdf_default_username: "kali"
@@ -7,12 +6,40 @@
 - name: Include asdf_get_enriched_users tasks
   ansible.builtin.include_tasks: asdf_get_enriched_users.yml
 
+- name: Debug enriched_asdf_enriched_users
+  ansible.builtin.debug:
+    var: enriched_asdf_enriched_users
+
+- name: Ensure user home directory exists
+  ansible.builtin.file:
+    path: "{{ item.home }}"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: "0755"
+  loop: "{{ enriched_asdf_enriched_users }}"
+  when: item.username != 'root'
+
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
-    dest: "{{ item.home_path }}/.asdf"
+    dest: "{{ item.home }}/.asdf"
     clone: true
     update: false
+  loop: "{{ enriched_asdf_enriched_users }}"
+  when:
+    - item.username != 'root'
+    - item.home is defined
+  become: true
+  become_user: "{{ item.username }}"
+
+- name: Ensure asdf is cloned for each user
+  ansible.builtin.file:
+    path: "{{ item.home }}/.asdf"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.usergroup | default(item.username) }}"
+    mode: "0755"
   loop: "{{ enriched_asdf_enriched_users }}"
   when:
     - item.username != 'root'
@@ -20,7 +47,7 @@
 - name: Deploy .tool-versions file
   ansible.builtin.template:
     src: tool-versions.j2
-    dest: "{{ item.home_path }}/.tool-versions"
+    dest: "{{ item.home }}/.tool-versions"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
@@ -30,7 +57,7 @@
 
 - name: Ensure correct permissions for .tool-versions
   ansible.builtin.file:
-    path: "{{ item.home_path }}/.tool-versions"
+    path: "{{ item.home }}/.tool-versions"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
@@ -40,7 +67,7 @@
 
 - name: Ensure .asdf directory exists for each user
   ansible.builtin.file:
-    path: "{{ item.home_path }}/.asdf"
+    path: "{{ item.home }}/.asdf"
     state: directory
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
@@ -51,7 +78,7 @@
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:
-    path: "{{ item.home_path }}/.asdf"
+    path: "{{ item.home }}/.asdf"
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     recurse: true
@@ -72,8 +99,8 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      if [ -f "{{ item.home_path }}/.asdf/asdf.sh" ]; then
-        . "{{ item.home_path }}/.asdf/asdf.sh"
+      if [ -f "{{ item.home }}/.asdf/asdf.sh" ]; then
+        . "{{ item.home }}/.asdf/asdf.sh"
       fi
       {% if item.plugins is defined %}
       {% for plugin in item.plugins %}

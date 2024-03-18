@@ -13,7 +13,7 @@ driver:
   name: docker
 
 platforms:
-  - name: ubuntu_zsh
+  - name: ubuntu-zsh
     image: "geerlingguy/docker-ubuntu2204-ansible:latest"
     # Setting the command to this is necessary for systemd containers
     command: ""
@@ -22,7 +22,7 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  - name: kali_zsh
+  - name: kali-zsh
     image: cisagov/docker-kali-ansible:latest
     # Setting the command to this is necessary for systemd containers
     command: ""
@@ -32,7 +32,7 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  - name: redhat_zsh
+  - name: redhat-zsh
     image: "geerlingguy/docker-rockylinux9-ansible:latest"
     # Setting the command to this is necessary for systemd containers
     command: ""
