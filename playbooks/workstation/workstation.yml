@@ -1,33 +1,46 @@
 ---
 - name: Workstation
   hosts: all
-
   roles:
     - role: cowdogmoo.workstation.user_setup
+      # For debugging
+      # - role: ../../roles/user_setup
     - role: cowdogmoo.workstation.package_management
-
   tasks:
     - name: Get primary group name of the user
       ansible.builtin.command: id -gn "{{ ansible_user_id }}"
       changed_when: false
       register: primary_group_name
 
+    - name: Check if user exists
+      ansible.builtin.command: id "{{ ansible_user_id }}"
+      register: user_exists
+      changed_when: false
+      failed_when: user_exists.rc not in [0, 1]
+
+    - name: Check if user home directory exists
+      ansible.builtin.stat:
+        path: "{{ '/Users' if ansible_distribution == 'MacOSX' else '/home' }}/{{ ansible_user_id }}"
+      register: home_dir_exists
+      changed_when: false
+
     - name: Setup ZSH Configuration
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.zsh_setup
-        # For local debugging
-        # name: roles/zsh_setup
+        # For debugging
+        # name: ../../roles/zsh_setup
       vars:
         zsh_setup_users:
           - username: "{{ ansible_user_id }}"
             usergroup: "{{ primary_group_name.stdout }}"
             shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
+      when: user_exists.rc == 0 and home_dir_exists.stat.exists
 
     - name: Setup ASDF Configuration
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.asdf
-        # For local debugging
-        # name: roles/asdf
+        # For debugging
+        # name: ../../roles/asdf
       vars:
         asdf_users:
           - username: "{{ ansible_user_id }}"
@@ -52,3 +65,4 @@
               - name: packer
                 version: "1.9.4"
                 scope: "global"
+      when: user_exists.rc == 0 and home_dir_exists.stat.exists

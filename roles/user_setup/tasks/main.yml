@@ -1,4 +1,9 @@
 ---
+- name: Gather available local users
+  ansible.builtin.getent:
+    database: passwd
+  register: getent_passwd
+
 - name: Gather the list of unique shells to install
   become: true
   ansible.builtin.set_fact:
@@ -8,7 +13,6 @@
     # 3. Strip the '/bin/' prefix from each shell name.
     # 4. Convert the result into a list.
     unique_shells: "{{ user_setup_default_users | map(attribute='shell') | unique | map('regex_replace', '^/bin/(.*)$', '\\1') | list }}"
-  tags: always
 
 - name: Install base packages for all users
   become: true
@@ -17,7 +21,6 @@
     state: present
     update_cache: true
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
-  tags: packages
   when: ansible_os_family != 'Darwin'
 
 - name: Install user-specific shells
@@ -31,7 +34,6 @@
     - item != 'bash'
     - ansible_os_family != 'Darwin'
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
-  tags: shells
 
 - name: Ensure groups exist for users
   become: true
@@ -39,8 +41,7 @@
     name: "{{ item.usergroup }}"
     state: present
   loop: "{{ user_setup_default_users }}"
-  when: item.usergroup is defined and item.usergroup != '' and ansible_os_family != 'Darwin'
-  tags: group-setup
+  when: item.usergroup is defined and ansible_os_family != 'Darwin'
 
 - name: Create users
   become: true
@@ -48,11 +49,10 @@
     name: "{{ item.username }}"
     group: "{{ item.usergroup }}"
     shell: "{{ item.shell }}"
-    create_home: true
     home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
+    state: present
   loop: "{{ user_setup_default_users }}"
-  tags: user-setup
-  when: ansible_os_family != 'Darwin'
+  when: item.username not in getent_passwd.keys() and item.username != 'root'
 
 - name: Ensure users exist and have home directories
   ansible.builtin.user:
@@ -60,11 +60,11 @@
     group: "{{ item.usergroup }}"
     shell: "{{ item.shell }}"
     create_home: true
+    move_home: false
     home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
   register: user_info
   loop: "{{ user_setup_default_users }}"
-  loop_control:
-    label: "{{ item.username }}"
+  when: item.username not in getent_passwd.keys()
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
@@ -75,4 +75,3 @@
     mode: "0440"
   when: item.sudo and ansible_os_family != 'Darwin'
   loop: "{{ user_setup_default_users }}"
-  tags: sudo-setup

@@ -1,17 +1,4 @@
 ---
-- name: Ensure users exist and have home directories
-  ansible.builtin.user:
-    name: "{{ item.username }}"
-    group: "{{ item.usergroup }}"
-    shell: "{{ item.shell }}"
-    create_home: true
-    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
-  register: user_info
-  loop: "{{ user_setup_default_users }}"
-  loop_control:
-    label: "{{ item.username }}"
-  tags: user-setup
-
 - name: Update home for all users
   ansible.builtin.set_fact:
     enriched_asdf_enriched_users: >-
@@ -24,4 +11,4 @@
           "source $ASDF_DIR/asdf.sh"
         ]
         })] | selectattr('home', 'defined') | list }}
-  loop: "{{ user_info.results }}"
+  loop: "{{ asdf_users }}"
