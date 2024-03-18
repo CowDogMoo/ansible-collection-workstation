@@ -52,7 +52,7 @@
     home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
     state: present
   loop: "{{ user_setup_default_users }}"
-  when: item.username not in getent_passwd.keys() and item.username != 'root'
+  when: item.username not in ansible_facts.getent_passwd and item.username != 'root'
 
 - name: Ensure users exist and have home directories
   ansible.builtin.user:
@@ -64,7 +64,7 @@
     home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
   register: user_info
   loop: "{{ user_setup_default_users }}"
-  when: item.username not in getent_passwd.keys()
+  when: item.username not in ansible_facts.getent_passwd
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
