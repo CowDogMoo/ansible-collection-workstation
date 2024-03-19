@@ -1,9 +1,57 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.4.0 Release Notes
+CowDogMoo Workstation Ansible Collection 1.5.0 Release Notes
 ============================================================
 
 .. contents:: Topics
 
+v1.5.0
+======
+
+Added
+-----
+
+- Added `getent` task to `asdf` and `zsh_setup` roles for fetching local user info
+- Added docstring for new plugin; minor QOL updates
+- Added macOS compatibility with custom `getent_passwd` plugin
+- Debugging for enriched_asdf_enriched_users in asdf main task
+- Shell specification for MacOSX in workstation playbook
+- Task to ensure asdf directory is cloned for each user in asdf role
+- Task to ensure user home directory exists before cloning asdf
+- Updated `asdf` and `zsh_setup` roles to dynamically resolve user home directories
+
+Changed
+-------
+
+- Adjusted `zsh_setup_get_enriched_users.yml` to align with changes in user creation and home directory setup
+- Adjusted file and directory paths in asdf tasks to use `item.home`
+- Adjusted loops in `asdf` role's `package_individual_setup.yml` for consistency
+- Cleaned up unused variables in `zsh_setup` defaults and molecule verification
+- Defined `zsh_setup_users` in zsh_setup main task for clarity
+- Fixed issues with handling undefined `plugins` attribute in the `asdf` role
+- Fixed naming scheme of enriched asdf users
+- Included default variables in zsh_setup molecule verification
+- Modified `asdf_get_enriched_users.yml`, `main.yml` in `user_setup`, and `zsh_setup_get_enriched_users.yml` to conditionally use `getent_passwd` module on macOS systems
+- Modified `zsh_setup` role to ensure `shell` attribute is defined for users and to use Ansible's user module for creating users and home directories
+- Modified main tasks in `asdf` and `zsh_setup` roles to use updated user variables
+- Refactored `asdf_get_enriched_users.yml` and `zsh_setup_get_enriched_users.yml`
+- Refactored `asdf_get_enriched_users.yml` to use Ansible's user module for creating users and home directories, eliminating the need for `getent`
+- Refactored workstation playbook and roles for idempotency and user existence checks
+- Removed redundant `set_fact` task in `zsh_setup` main.yml
+- Renamed platform names in zsh_setup molecule configuration
+- Resolved undefined variable errors related to the `shell` attribute in the `zsh_setup` role
+- Simplified variable names and usage in asdf role
+- Updated `getent` tasks to exclude macOS systems, ensuring compatibility
+- Updated `main.yml` and `package_individual_setup.yml` in the asdf role to handle undefined `plugins` attribute more gracefully
+- Updated asdf clone task to use `item.home` and added `become` statements
+- Updated file and directory paths in zsh_setup verification tasks
+- Updated paths and variable usage in zsh_setup tasks
+- Updated shell profile update task in asdf role
+- Updated user_setup to use ansible_facts for getent_passwd
+
+Removed
+-------
+
+- Removed redundant user creation tasks in `asdf` and `zsh_setup` roles that were causing idempotency issues in playbooks
 
 v1.4.0
 ======
@@ -43,7 +91,6 @@ Release Summary
 
 Extended `asdf` role functionality and improved project configurations.
 
-
 Added
 -----
 
@@ -74,7 +121,6 @@ Release Summary
 
 Refactored `asdf` and created new `vnc_zsh` role enhancing functionality.
 
-
 Added
 -----
 
@@ -102,7 +148,6 @@ Release Summary
 ---------------
 
 Extended `asdf` role functionality and improved project configurations.
-
 
 Added
 -----
@@ -142,7 +187,6 @@ Release Summary
 ---------------
 
 Added a new `asdf` role
-
 
 Added
 -----
