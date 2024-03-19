@@ -1,5 +1,4 @@
 {% for user in asdf_users %}
-# User: {{ user.username }}
 {% for plugin in user.plugins %}
 {{ plugin.name }} {{ plugin.version }}
 {% endfor %}

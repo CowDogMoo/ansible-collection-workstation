@@ -37,6 +37,7 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
+    force: false # Don't update the file if the contents are the same - for idempotency
   loop: "{{ asdf_enriched_users }}"
   when:
     - item.username != 'root'
