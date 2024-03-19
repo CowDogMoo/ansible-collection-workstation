@@ -3,6 +3,12 @@
   ansible.builtin.getent:
     database: passwd
   register: getent_passwd
+  when: ansible_os_family != 'Darwin'
+
+- name: Gather available local users on macOS
+  cowdogmoo.workstation.getent_passwd:
+  register: getent_passwd
+  when: ansible_os_family == 'Darwin'
 
 - name: Gather the list of unique shells to install
   become: true
