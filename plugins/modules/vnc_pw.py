@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 from ansible.module_utils.basic import AnsibleModule
 import os
@@ -18,6 +18,8 @@ options:
       - List of users to manage VNC passwords for.
     type: list
     required: True
+author:
+  - Jayson Grace (@l50)
 '''
 
 def file_exists(file):

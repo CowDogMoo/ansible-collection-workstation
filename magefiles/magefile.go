@@ -113,19 +113,26 @@ func runCmds(cmds []string) error {
 // Example usage:
 //
 // ```bash
-// mage genchangelog
+// NEXT_VERSION=1.0.0 mage genchangelog
 // ```
 //
 // **Returns:**
 //
 // error: An error if any issue occurs while trying to generate the changelog.
 func GenChangeLog() error {
+	// Ensure the 'NEXT_VERSION' environment variable is set
+	version, ok := os.LookupEnv("NEXT_VERSION")
+	if !ok {
+		return fmt.Errorf("'NEXT_VERSION' environment variable not set. \n" +
+			"Example: NEXT_VERSION=1.0.0 mage genchangelog")
+	}
+
 	cmds := []string{
 		"antsibull-changelog lint",
 		"antsibull-changelog release --version $NEXT_VERSION",
 	}
 
-	fmt.Println(color.YellowString("Generating changelog"))
+	fmt.Println(color.YellowString("Generating changelog for release %s\n", version))
 	return runCmds(cmds)
 }
 
