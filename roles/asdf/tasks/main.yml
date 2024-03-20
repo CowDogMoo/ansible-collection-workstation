@@ -11,11 +11,10 @@
     repo: "{{ asdf_git_repo }}"
     dest: "{{ item.home }}/.asdf"
     clone: true
-    update: false
+    update: true # Fetch updates if the repository already exists
   loop: "{{ asdf_enriched_users }}"
   when:
     - item.username != 'root'
-    - item.home is defined
   become: true
   become_user: "{{ item.username }}"
 

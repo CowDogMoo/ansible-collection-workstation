@@ -23,7 +23,9 @@
         ]
         })] | selectattr('home', 'defined') | list }}
   loop: "{{ asdf_users }}"
-  when: item.username in ansible_facts.getent_passwd
+  when:
+    - item.username in ansible_facts.getent_passwd
+    - item.username != 'root'
 
 - name: Ensure user home directory exists
   ansible.builtin.file:
@@ -31,6 +33,8 @@
     state: directory
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
-    mode: "0755"
+    mode: '0755'
   loop: "{{ asdf_enriched_users }}"
-  when: item.username != 'root'
+  when:
+    - item.username in ansible_facts.getent_passwd
+    - item.username != 'root'
