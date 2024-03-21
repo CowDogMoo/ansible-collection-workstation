@@ -75,15 +75,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install ansible molecule docker
-          python3 -m pip install molecule-docker
+          python3 -m pip install --upgrade \
+          ansible-core \
+          docker \
+          molecule \
+          molecule-docker \
+          "molecule-plugins[docker]"
 
       - name: Install galaxy dependencies
         run: |
           ansible-galaxy install -v -r requirements.yml
           ansible-galaxy collection install -v -r requirements.yml
-          mkdir -p ~/.ansible/collections/ansible_collections/cowdogmoo
-          ln -s $PWD ~/.ansible/collections/ansible_collections/cowdogmoo/workstation
+          mkdir -p $HOME/.ansible/collections/ansible_collections/cowdogmoo
+          ln -s $PWD $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
 
       - name: ${{ matrix.name }}
         run: molecule test
