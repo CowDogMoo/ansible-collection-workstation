@@ -45,10 +45,11 @@
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
     force: false
-  changed_when: false
+  changed_when: "'molecule-notest' not in ansible_skip_tags"
   loop: "{{ asdf_enriched_users }}"
   when:
     - not tool_versions_file.stat.exists | default(false)
+    - item.plugins is defined
     - item.username != 'root'
 
 - name: Ensure correct permissions for .tool-versions
