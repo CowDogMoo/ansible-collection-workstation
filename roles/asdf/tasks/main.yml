@@ -45,15 +45,11 @@
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
     force: false
-  changed_when:
-    - "'molecule-idempotence-notest' not in ansible_skip_tags"
   loop: "{{ asdf_enriched_users }}"
   when:
     - not tool_versions_file.stat.exists | default(false)
     - item.plugins is defined
     - item.username != 'root'
-  tags:
-    - molecule-idempotence-notest
 
 - name: Ensure correct permissions for .tool-versions
   ansible.builtin.file:
@@ -89,11 +85,10 @@
 - name: Include task to update shell profiles for each user
   ansible.builtin.include_tasks: update_shell_profiles.yml
   loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
   vars:
-    line: "{{ user.shell_profile_lines }}"
-  when: user.username != 'root'
+    line: "{{ item.shell_profile_lines }}"
+  when:
+    - item.username != 'root'
 
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
