@@ -47,14 +47,6 @@
         "name: (?<depName>[^\\s]+)\\n\\s+src: (?<lookupName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)"
       ],
       datasourceTemplate: "git-tags"
-    },
-    {
-      customType: "regex",
-      fileMatch: ["roles/asdf/defaults/main.yml"],
-      matchStrings: [
-        "name: (?<depName>[^\\s]+)\\n\\s+version: \"(?<currentValue>[^\\s]+)\"",
-      ],
-      datasourceTemplate: "docker"
-    },
+    }
   ]
 }
