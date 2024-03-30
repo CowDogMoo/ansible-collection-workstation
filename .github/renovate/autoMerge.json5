@@ -23,5 +23,13 @@
       "automergeType": "branch",
       "matchUpdateTypes": ["minor", "patch"]
     },
+    {
+      "description": "Auto merge minor and patch updates for ASDF plugins",
+      "matchDatasources": ["docker"],
+      "matchPackagePatterns": ["golang", "python", "ruby", "helm", "kubectl", "packer"],
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
   ]
 }
