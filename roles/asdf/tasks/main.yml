@@ -30,16 +30,17 @@
     - item.username != 'root'
 
 - name: Deploy .tool-versions file
-  ansible.builtin.template:
-    src: tool-versions.j2
+  ansible.builtin.copy:
     dest: "{{ item.home }}/.tool-versions"
+    content: |
+      {% for plugin in item.plugins %}
+      {{ plugin.name }} {{ plugin.version }}
+      {% endfor %}
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
-    force: false
   loop: "{{ asdf_enriched_users }}"
   when:
-    - not tool_versions_file.stat.exists | default(false)
     - item.plugins is defined
     - item.username != 'root'
 
