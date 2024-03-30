@@ -10,19 +10,19 @@ asdf_users:
     shell: "/usr/bin/zsh"
     plugins:
       - name: golang
-        version: "1.22.0"
+        version: "1.22.1"
         scope: "global"
       - name: python
         version: "3.12.2"
         scope: "global"
       - name: ruby
-        version: "3.2.2"
-        scope: "global"
-      - name: kubectl
-        version: "1.28.2"
+        version: "3.3.0"
         scope: "global"
       - name: helm
-        version: "3.13.1"
+        version: "3.14.3"
+        scope: "global"
+      - name: kubectl
+        version: "1.29.3"
         scope: "global"
       - name: packer
         version: "1.9.4"
