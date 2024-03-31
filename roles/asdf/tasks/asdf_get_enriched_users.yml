@@ -10,6 +10,10 @@
   register: getent_passwd
   when: ansible_os_family == 'Darwin'
 
+- name: Initialize asdf_enriched_users
+  ansible.builtin.set_fact:
+    asdf_enriched_users: []
+
 - name: Update home for all users
   ansible.builtin.set_fact:
     asdf_enriched_users: >-
