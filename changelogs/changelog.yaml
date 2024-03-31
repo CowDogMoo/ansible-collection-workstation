@@ -186,3 +186,28 @@ releases:
       - Removed redundant user creation tasks in `asdf` and `zsh_setup` roles that
         were causing idempotency issues in playbooks
     release_date: '2024-03-18'
+  1.6.0:
+    changes:
+      added:
+      - Added `molecule-plugins[docker]` to the dependencies in the Molecule GitHub
+        Actions workflow.
+      - Added condition to exclude `root` user in `asdf_get_enriched_users.yml`.
+      - Added content-based `.tool-versions` file deployment in `main.yml`.
+      - Added initialization of `asdf_enriched_users` in `asdf_get_enriched_users.yml`.
+      - Added update functionality to the ASDF clone task in `main.yml`.
+      changed:
+      - Changed the symlink creation path in the Molecule GitHub Actions workflow
+        to use `$HOME`.
+      - Modified the `asdf_get_enriched_users.yml` task to ensure user home directory
+        exists.
+      - Refactored the installation of dependencies in the Molecule GitHub Actions
+        workflow.
+      - Removed the template for `.tool-versions` file.
+      - Simplified the deployment of `.tool-versions` file in `main.yml`.
+      - Updated GitHub Actions setup-python step to a new version.
+      - Updated Renovate Bot GitHub Action to a new version.
+      - Updated plugin versions in `asdf` role defaults.
+      - Updated the ASDF clone task to fetch updates if the repository already exists.
+      release_summary: Enhancements in GitHub Actions workflows, updates to the `asdf`
+        role, and general improvements.
+    release_date: '2024-03-31'
