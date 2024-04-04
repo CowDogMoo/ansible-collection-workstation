@@ -3,13 +3,14 @@
   hosts: all
   vars:
     asdf_global_install: true
-    asdf_global_plugins:
-      - name: golang
-        version: "1.22.1"
-        scope: "global"
-      - name: kubectl
-        version: "1.29.3"
-        scope: "global"
+    asdf_users:
+      - username: "{{ asdf_default_username }}"
+        usergroup: "{{ asdf_default_group }}"
+        shell: "/usr/bin/zsh"
+        plugins:
+          - name: golang
+            version: "1.22.1"
+            scope: "global"
   tasks:
     - name: Include default variables
       ansible.builtin.include_vars:

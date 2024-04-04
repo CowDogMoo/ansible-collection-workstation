@@ -36,10 +36,6 @@
   become: true
   when: asdf_global_install | default(false)
 
-- name: Install asdf plugins globally
-  ansible.builtin.include_tasks: package_individual_setup.yml
-  when: asdf_global_install | default(false)
-
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
@@ -162,7 +158,7 @@
 
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
-  when: ansible_distribution == 'Rocky' and not asdf_global_install | default(false)
+  when: ansible_distribution == 'Rocky'
 
 - name: Install asdf plugins globally
   ansible.builtin.include_tasks: package_individual_setup.yml

@@ -4,11 +4,13 @@
     cmd: |
       set -o pipefail
       . /etc/profile.d/asdf.sh
-      {% for plugin in asdf_global_plugins %}
-      plugins=$(asdf plugin list)
-      grep -q "{{ plugin.name }}" <<< "$plugins" || asdf plugin add "{{ plugin.name }}"
-      asdf install "{{ plugin.name }}" "{{ plugin.version }}"
-      asdf global "{{ plugin.name }}" "{{ plugin.version }}"
+      {% for user in asdf_users %}
+        {% for plugin in user.plugins %}
+          plugins=$(asdf plugin list)
+          grep -q "{{ plugin.name }}" <<< "$plugins" || asdf plugin add "{{ plugin.name }}"
+          asdf install "{{ plugin.name }}" "{{ plugin.version }}"
+          asdf global "{{ plugin.name }}" "{{ plugin.version }}"
+        {% endfor %}
       {% endfor %}
     executable: /bin/bash
   become: true
