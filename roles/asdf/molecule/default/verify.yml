@@ -24,13 +24,13 @@
           - asdf_global_dir.stat.isdir
       when: asdf_global_install | default(false)
 
-    - name: Check if asdf.sh script exists and is executable
+    - name: Check if asdf.sh script exists and is executable globally
       ansible.builtin.stat:
         path: "/etc/profile.d/asdf.sh"
       register: asdf_script_stat
       when: asdf_global_install | default(false)
 
-    - name: Assert that asdf.sh script exists and is executable
+    - name: Assert that asdf.sh script exists and is executable globally
       ansible.builtin.assert:
         that:
           - asdf_script_stat.stat.exists
@@ -62,3 +62,57 @@
           - "'kubectl' in asdf_plugins_versions.stdout"
           - "'1.29.3' in asdf_plugins_versions.stdout"
       when: asdf_global_install | default(false)
+
+    - name: Check if asdf is cloned for each user
+      ansible.builtin.stat:
+        path: "/home/{{ user.username }}/.asdf"
+      register: asdf_clone_result
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+      when: not asdf_global_install | default(false)
+
+    - name: Assert that asdf is cloned for each user
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+      loop: "{{ asdf_clone_result.results }}"
+      loop_control:
+        loop_var: item
+      when: not asdf_global_install | default(false)
+
+    - name: Check if setup_asdf.sh exists and is executable for each user
+      ansible.builtin.stat:
+        path: "{{ asdf_install_script_path }}"
+      register: setup_asdf_stat
+      when: not asdf_global_install | default(false)
+
+    - name: Assert that setup_asdf.sh exists and is executable
+      ansible.builtin.assert:
+        that:
+          - setup_asdf_stat.stat.exists
+          - setup_asdf_stat.stat.mode | regex_search('0755')
+      when: not asdf_global_install | default(false)
+
+    - name: Verify ASDF is accessible for each user
+      ansible.builtin.command: "/home/{{ user.username }}/.asdf/bin/asdf --version"
+      register: asdf_check
+      failed_when: asdf_check.rc != 0
+      changed_when: false
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+      when: not asdf_global_install | default(false)
+
+    - name: Check contents of .tool-versions for each user
+      ansible.builtin.shell: |
+        set -o pipefail
+        cat /home/{{ user.username }}/.tool-versions
+      args:
+        executable: "{{ user.shell }}"
+      loop: "{{ asdf_users }}"
+      loop_control:
+        loop_var: user
+      changed_when: false
+      when: not asdf_global_install | default(false)
