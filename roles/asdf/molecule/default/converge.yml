@@ -33,6 +33,3 @@
         - cowdogmoo.workstation.package_management
         - cowdogmoo.workstation.zsh_setup
         - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
-      vars:
-        asdf_global_install: true
-      when: asdf_global_install

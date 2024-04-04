@@ -5,5 +5,6 @@ asdf_git_repo: "https://github.com/asdf-vm/asdf.git"
 # OS family variable used for loading OS-specific tasks
 asdf_os_family: "{{ ansible_os_family | lower }}"
 
-# Path to the asdf install script
-asdf_install_script_path: /tmp/setup_asdf_env
+# Default username and group are set based on the operating system
+asdf_default_username: "{{ ansible_env.USER if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"
+asdf_default_group: "{{ 'staff' if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"
