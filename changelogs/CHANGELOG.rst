@@ -1,8 +1,31 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.6.0 Release Notes
+CowDogMoo Workstation Ansible Collection 1.7.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v1.7.0
+======
+
+Added
+-----
+
+- Global ASDF installation directory creation
+- Global installation of asdf
+- Global installation support in Molecule tests for asdf role
+- Install asdf globally or per user
+- Path to the asdf install script
+- asdf.sh script for global ASDF installation
+
+Changed
+-------
+
+- Modified asdf vars to include default username and group
+- Refactored asdf role to support global installation
+- Updated default username and group based on the operating system in asdf role
+- Updated gojq dependency in magefiles
+- Updated main tasks in asdf role for global installation
+- Updated package_individual_setup.yml in asdf role for global installation
 
 v1.6.0
 ======

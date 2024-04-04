@@ -211,3 +211,20 @@ releases:
       release_summary: Enhancements in GitHub Actions workflows, updates to the `asdf`
         role, and general improvements.
     release_date: '2024-03-31'
+  1.7.0:
+    changes:
+      added:
+      - Global ASDF installation directory creation
+      - Global installation of asdf
+      - Global installation support in Molecule tests for asdf role
+      - Install asdf globally or per user
+      - Path to the asdf install script
+      - asdf.sh script for global ASDF installation
+      changed:
+      - Modified asdf vars to include default username and group
+      - Refactored asdf role to support global installation
+      - Updated default username and group based on the operating system in asdf role
+      - Updated gojq dependency in magefiles
+      - Updated main tasks in asdf role for global installation
+      - Updated package_individual_setup.yml in asdf role for global installation
+    release_date: '2024-04-04'
