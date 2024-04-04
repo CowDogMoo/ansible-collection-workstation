@@ -160,13 +160,5 @@
   ansible.builtin.include_tasks: install_libyaml.yml
   when: ansible_distribution == 'Rocky'
 
-- name: Install asdf plugins globally
-  ansible.builtin.include_tasks: package_individual_setup.yml
-  when: asdf_global_install | default(false)
-
 - name: Install asdf plugins and set versions for each user
   ansible.builtin.include_tasks: package_individual_setup.yml
-  loop: "{{ asdf_enriched_users }}"
-  when:
-    - not asdf_global_install | default(false)
-    - item.username != 'root'
