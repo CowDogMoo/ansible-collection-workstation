@@ -1,4 +1,5 @@
 ---
+asdf_global_install: false
 # Default username and group are set based on the operating system
 asdf_default_username: "{{ ansible_env.USER if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"
 asdf_default_group: "{{ 'staff' if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"

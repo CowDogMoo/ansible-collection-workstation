@@ -1,3 +1,4 @@
+---
 - name: Set default username for Kali systems
   ansible.builtin.set_fact:
     asdf_default_username: "kali"
@@ -5,18 +6,52 @@
 
 - name: Include asdf_get_enriched_users tasks
   ansible.builtin.include_tasks: asdf_get_enriched_users.yml
+  when: not asdf_global_install | default(false)
+
+- name: Create global ASDF installation directory
+  ansible.builtin.file:
+    path: "/opt/asdf"
+    state: directory
+    mode: "0755"
+  become: true
+  when: asdf_global_install | default(false)
+
+- name: Clone ASDF for global installation
+  ansible.builtin.git:
+    repo: "{{ asdf_git_repo }}"
+    dest: "/opt/asdf"
+    clone: true
+    update: true
+  become: true
+  when: asdf_global_install | default(false)
+
+- name: Create asdf.sh script for global ASDF installation
+  ansible.builtin.copy:
+    dest: "/etc/profile.d/asdf.sh"
+    content: |
+      export ASDF_DATA_DIR=/opt/asdf
+      . /opt/asdf/asdf.sh
+      . /opt/asdf/completions/asdf.bash
+    mode: "0644"
+  become: true
+  when: asdf_global_install | default(false)
+
+- name: Install asdf plugins globally
+  ansible.builtin.include_tasks: package_individual_setup.yml
+  when: asdf_global_install | default(false)
 
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
     dest: "{{ item.home }}/.asdf"
     clone: true
-    update: true # Fetch updates if the repository already exists
+    update: true
   loop: "{{ asdf_enriched_users }}"
-  when:
-    - item.username != 'root'
   become: true
   become_user: "{{ item.username }}"
+  when:
+    - not asdf_global_install | default(false)
+    - item.username != 'root'
 
 - name: Ensure asdf is cloned for each user
   ansible.builtin.file:
@@ -27,6 +62,7 @@
     mode: "0755"
   loop: "{{ asdf_enriched_users }}"
   when:
+    - not asdf_global_install | default(false)
     - item.username != 'root'
 
 - name: Deploy .tool-versions file
@@ -41,6 +77,7 @@
     mode: "0644"
   loop: "{{ asdf_enriched_users }}"
   when:
+    - not asdf_global_install | default(false)
     - item.plugins is defined
     - item.username != 'root'
 
@@ -51,7 +88,9 @@
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
   loop: "{{ asdf_enriched_users }}"
-  when: item.username != 'root'
+  when:
+    - not asdf_global_install | default(false)
+    - item.username != 'root'
 
 - name: Ensure .asdf directory exists for each user
   ansible.builtin.file:
@@ -61,7 +100,9 @@
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0755"
   loop: "{{ asdf_enriched_users }}"
-  when: item.username != 'root'
+  when:
+    - not asdf_global_install | default(false)
+    - item.username != 'root'
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:
@@ -71,6 +112,7 @@
     recurse: true
   loop: "{{ asdf_enriched_users }}"
   when:
+    - not asdf_global_install | default(false)
     - item.username != 'root'
 
 - name: Include task to update shell profiles for each user
@@ -80,7 +122,9 @@
     loop_var: user
   vars:
     line: "{{ user.shell_profile_lines }}"
-  when: user.username != 'root'
+  when:
+    - not asdf_global_install | default(false)
+    - user.username != 'root'
 
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
@@ -105,18 +149,28 @@
   become: true
   become_user: "{{ item.username }}"
   loop: "{{ asdf_enriched_users }}"
+  when:
+    - not asdf_global_install | default(false)
+    - item.username != 'root'
 
 - name: Copy setup_asdf_env.sh to a common location for all users
   ansible.builtin.copy:
     src: setup_asdf_env.sh
     dest: "{{ asdf_install_script_path }}"
     mode: "0755"
+  when: not asdf_global_install | default(false)
 
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
-  when: ansible_distribution == 'Rocky'
+  when: ansible_distribution == 'Rocky' and not asdf_global_install | default(false)
+
+- name: Install asdf plugins globally
+  ansible.builtin.include_tasks: package_individual_setup.yml
+  when: asdf_global_install | default(false)
 
 - name: Install asdf plugins and set versions for each user
   ansible.builtin.include_tasks: package_individual_setup.yml
   loop: "{{ asdf_enriched_users }}"
-  when: item.username != 'root'
+  when:
+    - not asdf_global_install | default(false)
+    - item.username != 'root'

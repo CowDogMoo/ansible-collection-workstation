@@ -1,12 +1,37 @@
 ---
 - name: Converge
   hosts: all
+  vars:
+    asdf_global_install: true
+    asdf_global_plugins:
+      - name: golang
+        version: "1.22.1"
+        scope: "global"
+      - name: kubectl
+        version: "1.29.3"
+        scope: "global"
   tasks:
     - name: Include default variables
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
-  roles:
-    - role: cowdogmoo.workstation.user_setup
-    - role: cowdogmoo.workstation.package_management
-    - role: cowdogmoo.workstation.zsh_setup
-    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+
+    - name: Run roles for individual user installation
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+      loop:
+        - cowdogmoo.workstation.user_setup
+        - cowdogmoo.workstation.package_management
+        - cowdogmoo.workstation.zsh_setup
+        - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+      when: not asdf_global_install
+
+    - name: Run roles for global installation
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+      loop:
+        - cowdogmoo.workstation.package_management
+        - cowdogmoo.workstation.zsh_setup
+        - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+      vars:
+        asdf_global_install: true
+      when: asdf_global_install
