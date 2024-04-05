@@ -13,7 +13,6 @@
         {% endfor %}
       {% endfor %}
     executable: /bin/bash
-  become: true
   changed_when: false
   when: asdf_global_install | default(false)
 
@@ -47,4 +46,3 @@
   changed_when: false
   when:
     - not asdf_global_install | default(false)
-    - asdf_user.username != 'root'

@@ -47,7 +47,6 @@
   become_user: "{{ item.username }}"
   when:
     - not asdf_global_install | default(false)
-    - item.username != 'root'
 
 - name: Ensure asdf is cloned for each user
   ansible.builtin.file:
@@ -59,7 +58,6 @@
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install | default(false)
-    - item.username != 'root'
 
 - name: Deploy .tool-versions file
   ansible.builtin.copy:
@@ -75,7 +73,6 @@
   when:
     - not asdf_global_install | default(false)
     - item.plugins is defined
-    - item.username != 'root'
 
 - name: Ensure correct permissions for .tool-versions
   ansible.builtin.file:
@@ -86,7 +83,6 @@
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install | default(false)
-    - item.username != 'root'
 
 - name: Ensure .asdf directory exists for each user
   ansible.builtin.file:
@@ -98,7 +94,6 @@
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install | default(false)
-    - item.username != 'root'
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:
@@ -109,7 +104,6 @@
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install | default(false)
-    - item.username != 'root'
 
 - name: Include task to update shell profiles for each user
   ansible.builtin.include_tasks: update_shell_profiles.yml
@@ -120,7 +114,6 @@
     line: "{{ user.shell_profile_lines }}"
   when:
     - not asdf_global_install | default(false)
-    - user.username != 'root'
 
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
@@ -147,7 +140,6 @@
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install | default(false)
-    - item.username != 'root'
 
 - name: Copy setup_asdf_env.sh to a common location for all users
   ansible.builtin.copy:
