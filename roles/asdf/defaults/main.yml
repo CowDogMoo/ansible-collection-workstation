@@ -12,7 +12,7 @@ asdf_users:
     shell: "/usr/bin/zsh"
     plugins:
       - name: golang
-        version: "1.22.1"
+        version: "1.22.2"
         scope: "global"
       - name: python
         version: "3.12.2"
