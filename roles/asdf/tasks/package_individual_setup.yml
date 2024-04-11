@@ -1,5 +1,46 @@
 ---
+- name: Gather shell for the current user
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ ansible_user_id }}"
+  register: getent_user_shell_non_macos
+  when:
+    - ansible_os_family != 'Darwin'
+    - asdf_global_install
+
+- name: Set the current user's shell for non-macOS
+  ansible.builtin.set_fact:
+    user_shell: "{{ getent_user_shell_non_macos.ansible_facts.getent_passwd[ansible_user_id][6] if (getent_user_shell_non_macos.ansible_facts.getent_passwd[ansible_user_id] | length >= 7) else '/bin/sh' }}"
+  when:
+    - ansible_os_family != 'Darwin'
+    - asdf_global_install
+
+- name: Gather shell for the current user on macOS
+  cowdogmoo.workstation.getent_passwd:
+  register: getent_user_shell_macos
+  when:
+    - ansible_os_family == 'Darwin'
+    - asdf_global_install
+
+- name: Set the current user's shell for macOS
+  ansible.builtin.set_fact:
+    user_shell: "{{ getent_user_shell_macos.getent_passwd[ansible_user_id][5] }}"
+  when:
+    - ansible_os_family == 'Darwin'
+    - asdf_global_install
+
+- name: Debug getent_user_shell
+  ansible.builtin.debug:
+    var: getent_user_shell
+
+- name: Find Bash executable
+  ansible.builtin.command:
+    cmd: "which bash"
+  register: bash_path
+  changed_when: false
+
 - name: Install asdf plugins globally
+  become: true
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
@@ -12,9 +53,9 @@
           asdf global "{{ plugin.name }}" "{{ plugin.version }}"
         {% endfor %}
       {% endfor %}
-    executable: /bin/bash
+    executable: "{{ bash_path.stdout }}"
   changed_when: false
-  when: asdf_global_install | default(false)
+  when: asdf_global_install
 
 - name: Install asdf plugins for each user
   ansible.builtin.shell:
@@ -44,5 +85,4 @@
   become: true
   become_user: "{{ asdf_user.username }}"
   changed_when: false
-  when:
-    - not asdf_global_install | default(false)
+  when: not asdf_global_install
