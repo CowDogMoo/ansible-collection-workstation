@@ -32,12 +32,14 @@
 - name: Debug getent_user_shell
   ansible.builtin.debug:
     var: getent_user_shell
+  when: asdf_global_install
 
 - name: Find Bash executable
   ansible.builtin.command:
     cmd: "which bash"
   register: bash_path
   changed_when: false
+  when: asdf_global_install
 
 - name: Install asdf plugins globally
   become: true
