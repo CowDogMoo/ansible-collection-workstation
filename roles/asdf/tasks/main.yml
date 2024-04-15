@@ -42,9 +42,9 @@
     dest: "{{ item.home }}/.asdf"
     clone: true
     update: true
-  loop: "{{ asdf_enriched_users }}"
   become: true
   become_user: "{{ item.username }}"
+  loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install
 
@@ -55,6 +55,8 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0755"
+  become: true
+  become_user: "{{ item.username }}"
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install
@@ -69,6 +71,8 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
+  become: true
+  become_user: "{{ item.username }}"
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install
@@ -80,6 +84,8 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0644"
+  become: true
+  become_user: "{{ item.username }}"
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install
@@ -91,6 +97,8 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     mode: "0755"
+  become: true
+  become_user: "{{ item.username }}"
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install
@@ -101,6 +109,8 @@
     owner: "{{ item.username }}"
     group: "{{ item.usergroup | default(item.username) }}"
     recurse: true
+  become: true
+  become_user: "{{ item.username }}"
   loop: "{{ asdf_enriched_users }}"
   when:
     - not asdf_global_install

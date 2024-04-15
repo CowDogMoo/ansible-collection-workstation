@@ -29,9 +29,10 @@
   loop: "{{ asdf_users }}"
   when:
     - item.username in ansible_facts.getent_passwd
-    - item.username != 'root'
 
 - name: Ensure user home directory exists
+  become: true
+  become_user: "{{ item.username }}"
   ansible.builtin.file:
     path: "{{ item.home }}"
     state: directory
@@ -41,4 +42,3 @@
   loop: "{{ asdf_enriched_users }}"
   when:
     - item.username in ansible_facts.getent_passwd
-    - item.username != 'root'
