@@ -13,7 +13,7 @@ asdf_global_install: false
 asdf_users:
   - username: "{{ asdf_default_username }}"
     usergroup: "{{ asdf_default_group }}"
-    shell: "/usr/bin/zsh"
+    shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
     plugins:
       - name: golang
         version: "1.22.2"

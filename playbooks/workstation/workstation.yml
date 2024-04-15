@@ -7,7 +7,7 @@
       # - role: ../../roles/user_setup
     - role: cowdogmoo.workstation.package_management
   tasks:
-    - name: Get primary group name of the user
+    - name: Get primary group name of the current user
       ansible.builtin.command: id -gn "{{ ansible_user_id }}"
       changed_when: false
       register: primary_group_name
@@ -41,28 +41,4 @@
         name: cowdogmoo.workstation.asdf
         # For debugging
         # name: ../../roles/asdf
-      vars:
-        asdf_users:
-          - username: "{{ ansible_user_id }}"
-            usergroup: "{{ primary_group_name.stdout }}"
-            shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
-            plugins:
-              - name: golang
-                version: "1.22.0"
-                scope: "global"
-              - name: python
-                version: "3.12.2"
-                scope: "global"
-              - name: ruby
-                version: "3.2.2"
-                scope: "global"
-              - name: kubectl
-                version: "1.28.2"
-                scope: "global"
-              - name: helm
-                version: "3.13.1"
-                scope: "global"
-              - name: packer
-                version: "1.9.4"
-                scope: "global"
       when: user_exists.rc == 0 and home_dir_exists.stat.exists
