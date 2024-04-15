@@ -19,13 +19,13 @@ asdf_users:
         version: "1.22.2"
         scope: "global"
       - name: python
-        version: "3.12.2"
+        version: "3.12.3"
         scope: "global"
       - name: ruby
         version: "3.3.0"
         scope: "global"
       - name: helm
-        version: "3.14.3"
+        version: "3.14.4"
         scope: "global"
       - name: kubectl
         version: "1.29.3"
