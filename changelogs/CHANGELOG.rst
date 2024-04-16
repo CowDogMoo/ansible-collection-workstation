@@ -1,8 +1,32 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.7.0 Release Notes
+CowDogMoo Workstation Ansible Collection 1.8.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v1.8.0
+======
+
+Release Summary
+---------------
+
+Enhanced ASDF role configurability and maintenance, updated dependencies, and streamlined role tasks for better performance and reliability.
+
+Added
+-----
+
+- Added shell environment setup tasks and improved user-specific ASDF configuration.
+- Enhanced ASDF role with adjustments to shell configuration and global installation paths.
+- Introduced handling for different user shell paths based on operating system.
+- Updated GitHub Actions Renovate and pre-commit hooks to new versions.
+
+Changed
+-------
+
+- Modified main.yml to streamline ASDF role processes, ensuring cleaner management of user and global installations.
+- Refactored tasks to improve idempotency and user-specific configurations.
+- Standardized handling of user directories and permissions across all tasks.
+- Updated dependencies in go.mod and go.sum to newer versions.
 
 v1.7.0
 ======

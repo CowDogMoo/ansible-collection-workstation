@@ -228,3 +228,20 @@ releases:
       - Updated main tasks in asdf role for global installation
       - Updated package_individual_setup.yml in asdf role for global installation
     release_date: '2024-04-04'
+  1.8.0:
+    changes:
+      added:
+      - Added shell environment setup tasks and improved user-specific ASDF configuration.
+      - Enhanced ASDF role with adjustments to shell configuration and global installation
+        paths.
+      - Introduced handling for different user shell paths based on operating system.
+      - Updated GitHub Actions Renovate and pre-commit hooks to new versions.
+      changed:
+      - Modified main.yml to streamline ASDF role processes, ensuring cleaner management
+        of user and global installations.
+      - Refactored tasks to improve idempotency and user-specific configurations.
+      - Standardized handling of user directories and permissions across all tasks.
+      - Updated dependencies in go.mod and go.sum to newer versions.
+      release_summary: Enhanced ASDF role configurability and maintenance, updated
+        dependencies, and streamlined role tasks for better performance and reliability.
+    release_date: '2024-04-15'
