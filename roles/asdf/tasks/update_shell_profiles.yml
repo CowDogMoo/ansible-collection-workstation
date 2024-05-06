@@ -1,7 +1,13 @@
 ---
+- name: Check if shell exists
+  ansible.builtin.command: "which {{ user.shell | default('/bin/bash') }}"
+  register: shell_path
+  ignore_errors: true
+  changed_when: false
+
 - name: Update shell profile for user
   ansible.builtin.lineinfile:
-    path: "{{ user.home }}/{{ (user.shell | default('/bin/bash') == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    path: "{{ user.home }}/{{ (shell_path.stdout == '') | ternary('.bashrc', (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc')) }}"
     line: "{{ item }}"
     insertafter: EOF
     create: true
@@ -9,3 +15,4 @@
   become: true
   become_user: "{{ user.username }}"
   loop: "{{ line }}"
+  when: shell_path.stdout != ""
