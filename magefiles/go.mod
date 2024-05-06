@@ -1,6 +1,6 @@
 module magefile
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/bitfield/script v0.22.0
