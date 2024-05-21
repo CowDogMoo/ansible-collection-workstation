@@ -40,8 +40,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install ansible molecule docker
-          python3 -m pip install molecule-docker
+          python3 -m pip install ansible molecule docker 'molecule-plugins[docker]' molecule-docker
 
       - name: Install galaxy dependencies
         run: ansible-galaxy install -v -r requirements.yml
