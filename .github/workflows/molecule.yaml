@@ -30,6 +30,9 @@ jobs:
           - name: "Role Test - runzero_explorer"
             path: "roles/runzero_explorer"
     steps:
+      - name: Delete huge unnecessary tools folder
+        run: rm -rf /opt/hostedtoolcache
+
       - name: Checkout code
         uses: actions/checkout@v3.6.0
 
@@ -40,7 +43,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install ansible molecule docker 'molecule-plugins[docker]' molecule-docker
+          python3 -m pip install --upgrade \
+          ansible-core \
+          docker \
+          molecule \
+          molecule-docker \
+          "molecule-plugins[docker]"
 
       - name: Install galaxy dependencies
         run: ansible-galaxy install -v -r requirements.yml
@@ -48,6 +56,7 @@ jobs:
       - name: ${{ matrix.name }}
         run: molecule test
         working-directory: ${{ matrix.path }}
+        # timeout-minutes: 40
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
@@ -64,6 +73,9 @@ jobs:
           - name: "Playbook Test - runzero-explorer"
             path: "playbooks/runzero-explorer"
     steps:
+      - name: Delete huge unnecessary tools folder
+        run: rm -rf /opt/hostedtoolcache
+
       - name: Checkout code
         uses: actions/checkout@v3.6.0
 
