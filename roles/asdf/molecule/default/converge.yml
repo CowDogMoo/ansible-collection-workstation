@@ -9,7 +9,7 @@
         shell: "/usr/bin/zsh"
         plugins:
           - name: golang
-            version: "1.22.1"
+            version: "1.22.4"
             scope: "global"
   tasks:
     - name: Include default variables
