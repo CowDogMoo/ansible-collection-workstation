@@ -7,14 +7,16 @@
 
 - name: Update shell profile for users
   ansible.builtin.blockinfile:
-    path: "{{ item.home }}/{{ (shell_path.stdout == '') | ternary('.bashrc', (item.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc')) }}"
+    path: "{{ enriched_user.home }}/{{ (shell_path.stdout == '') | ternary('.bashrc', (enriched_user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc')) }}"
     block: |
-      {% for line in item.shell_profile_lines %}
+      {% for line in enriched_user.shell_profile_lines %}
       {{ line }}
       {% endfor %}
     create: true
     mode: "0644"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ enriched_user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: enriched_user
   when: shell_path.stdout != ""
