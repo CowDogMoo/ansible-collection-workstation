@@ -32,52 +32,62 @@
 - name: Install user-specific shells
   become: true
   ansible.builtin.package:
-    name: "{{ item }}"
+    name: "{{ shell }}"
     state: present
   loop: "{{ unique_shells }}"
+  loop_control:
+    loop_var: shell
   when:
-    - item != ''
-    - item != 'bash'
+    - shell != ''
+    - shell != 'bash'
     - ansible_os_family != 'Darwin'
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
 
 - name: Ensure groups exist for users
   become: true
   ansible.builtin.group:
-    name: "{{ item.usergroup }}"
+    name: "{{ group.usergroup }}"
     state: present
   loop: "{{ user_setup_default_users }}"
-  when: item.usergroup is defined and ansible_os_family != 'Darwin'
+  loop_control:
+    loop_var: group
+  when: group.usergroup is defined and ansible_os_family != 'Darwin'
 
 - name: Create users
   become: true
   ansible.builtin.user:
-    name: "{{ item.username }}"
-    group: "{{ item.usergroup }}"
-    shell: "{{ item.shell }}"
-    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
+    name: "{{ user.username }}"
+    group: "{{ user.usergroup }}"
+    shell: "{{ user.shell }}"
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username }}"
     state: present
   loop: "{{ user_setup_default_users }}"
-  when: item.username not in ansible_facts.getent_passwd and item.username != 'root'
+  loop_control:
+    loop_var: user
+  when: user.username not in ansible_facts.getent_passwd and user.username != 'root'
 
 - name: Ensure users exist and have home directories
   ansible.builtin.user:
-    name: "{{ item.username }}"
-    group: "{{ item.usergroup }}"
-    shell: "{{ item.shell }}"
+    name: "{{ user.username }}"
+    group: "{{ user.usergroup }}"
+    shell: "{{ user.shell }}"
     create_home: true
     move_home: false
-    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ item.username }}"
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username }}"
   register: user_info
   loop: "{{ user_setup_default_users }}"
-  when: item.username not in ansible_facts.getent_passwd
+  loop_control:
+    loop_var: user
+  when: user.username not in ansible_facts.getent_passwd
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
   ansible.builtin.copy:
-    dest: "/etc/sudoers.d/{{ item.username }}"
-    content: "{{ item.username }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/{{ user.username }}"
+    content: "{{ user.username }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
     validate: "visudo -cf %s"
     mode: "0440"
-  when: item.sudo and ansible_os_family != 'Darwin'
+  when: user.sudo and ansible_os_family != 'Darwin'
   loop: "{{ user_setup_default_users }}"
+  loop_control:
+    loop_var: user
