@@ -39,89 +39,101 @@
 - name: Clone asdf for each user
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
-    dest: "{{ item.home }}/.asdf"
+    dest: "{{ user.home }}/.asdf"
     clone: true
     update: true
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
     - not asdf_global_install
 
 - name: Ensure asdf is cloned for each user
   ansible.builtin.file:
-    path: "{{ item.home }}/.asdf"
+    path: "{{ user.home }}/.asdf"
     state: directory
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
     mode: "0755"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
     - not asdf_global_install
 
 - name: Deploy .tool-versions file
   ansible.builtin.copy:
-    dest: "{{ item.home }}/.tool-versions"
+    dest: "{{ user.home }}/.tool-versions"
     content: |
-      {% for plugin in item.plugins %}
+      {% for plugin in user.plugins %}
       {{ plugin.name }} {{ plugin.version }}
       {% endfor %}
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
     mode: "0644"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
     - not asdf_global_install
-    - item.plugins is defined
+    - user.plugins is defined
 
 - name: Ensure correct permissions for .tool-versions
   ansible.builtin.file:
-    path: "{{ item.home }}/.tool-versions"
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+    path: "{{ user.home }}/.tool-versions"
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
     mode: "0644"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
     - not asdf_global_install
 
 - name: Ensure .asdf directory exists for each user
   ansible.builtin.file:
-    path: "{{ item.home }}/.asdf"
+    path: "{{ user.home }}/.asdf"
     state: directory
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
     mode: "0755"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
     - not asdf_global_install
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.file:
-    path: "{{ item.home }}/.asdf"
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+    path: "{{ user.home }}/.asdf"
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
     recurse: true
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
     - not asdf_global_install
 
 - name: Include task to update shell profiles for each user
   ansible.builtin.include_tasks: update_shell_profiles.yml
+  vars:
+    line: "{{ user.shell_profile_lines }}"
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  vars:
-    line: "{{ user.shell_profile_lines }}"
   when:
     - not asdf_global_install
 
@@ -129,11 +141,11 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      if [ -f "{{ item.home }}/.asdf/asdf.sh" ]; then
-        . "{{ item.home }}/.asdf/asdf.sh"
+      if [ -f "{{ user.home }}/.asdf/asdf.sh" ]; then
+        . "{{ user.home }}/.asdf/asdf.sh"
       fi
-      {% if item.plugins is defined %}
-      {% for plugin in item.plugins %}
+      {% if user.plugins is defined %}
+      {% for plugin in user.plugins %}
       if ! asdf plugin list | grep -q {{ plugin.name }}; then
         asdf plugin add {{ plugin.name }};
       fi;
@@ -142,12 +154,14 @@
       {% else %}
       echo "plugins:,versions:"
       {% endif %}
-    executable: "{{ item.shell }}"
+    executable: "{{ user.shell }}"
   register: asdf_info
   changed_when: false
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
     - not asdf_global_install
 

@@ -17,28 +17,30 @@
 - name: Update home for all users
   ansible.builtin.set_fact:
     asdf_enriched_users: >-
-      {{ (asdf_enriched_users | default([])) |
-      rejectattr('username', 'equalto', item.username) | list +
-      [item | combine({
-        'home': ansible_facts.getent_passwd[item.username][4] if item.username in ansible_facts.getent_passwd else item.home,
-        'shell_profile_lines': [
-          "export ASDF_DIR=$HOME/.asdf",
-          "source $ASDF_DIR/asdf.sh"
-        ]
-        })] | selectattr('home', 'defined') | list }}
+      {{ (asdf_enriched_users | default([])) +
+         [user | combine({
+           'home': ansible_facts.getent_passwd[user.username][4] if user.username in ansible_facts.getent_passwd else user.home,
+           'shell_profile_lines': [
+             "export ASDF_DIR=$HOME/.asdf",
+             "source $ASDF_DIR/asdf.sh"
+           ]
+         })] | selectattr('home', 'defined') | list }}
   loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: user
   when:
-    - item.username in ansible_facts.getent_passwd
+    - user.username in ansible_facts.getent_passwd
 
 - name: Ensure user home directory exists
   become: true
-  become_user: "{{ item.username }}"
   ansible.builtin.file:
-    path: "{{ item.home }}"
+    path: "{{ user.home }}"
     state: directory
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
     mode: '0755'
   loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when:
-    - item.username in ansible_facts.getent_passwd
+    - user.username in ansible_facts.getent_passwd

@@ -14,21 +14,25 @@
   ansible.builtin.set_fact:
     zsh_setup_enriched_users: >-
       {{ (zsh_setup_enriched_users | default([])) |
-      rejectattr('username', 'equalto', item.username) | list +
-      [item | combine({
-        'home': ansible_facts.getent_passwd[item.username][4] if item.username in ansible_facts.getent_passwd else item.home,
-        'shell': item.shell,
-        'usergroup': item.usergroup,
-        'username': item.username
+      rejectattr('username', 'equalto', user.username) | list +
+      [user | combine({
+        'home': ansible_facts.getent_passwd[user.username][4] if user.username in ansible_facts.getent_passwd else user.home,
+        'shell': user.shell,
+        'usergroup': user.usergroup,
+        'username': user.username
         })] | selectattr('home', 'defined') | list }}
   loop: "{{ zsh_setup_users }}"
+  loop_control:
+    loop_var: user
 
 - name: Ensure user home directory exists
   ansible.builtin.file:
-    path: "{{ item.home }}"
+    path: "{{ user.home }}"
     state: directory
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
     mode: "0755"
   loop: "{{ zsh_setup_enriched_users }}"
-  when: item.username != 'root'
+  loop_control:
+    loop_var: user
+  when: user.username in ansible_facts.getent_passwd

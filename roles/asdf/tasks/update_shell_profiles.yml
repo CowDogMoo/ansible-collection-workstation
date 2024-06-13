@@ -5,14 +5,18 @@
   ignore_errors: true
   changed_when: false
 
-- name: Update shell profile for user
-  ansible.builtin.lineinfile:
+- name: Update shell profile for users
+  ansible.builtin.blockinfile:
     path: "{{ user.home }}/{{ (shell_path.stdout == '') | ternary('.bashrc', (user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc')) }}"
-    line: "{{ item }}"
-    insertafter: EOF
+    block: |
+      {% for line in user.shell_profile_lines %}
+      {{ line }}
+      {% endfor %}
     create: true
     mode: "0644"
   become: true
   become_user: "{{ user.username }}"
-  loop: "{{ line }}"
+  loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
   when: shell_path.stdout != ""

@@ -29,11 +29,6 @@
     - ansible_os_family == 'Darwin'
     - asdf_global_install
 
-- name: Debug getent_user_shell
-  ansible.builtin.debug:
-    var: getent_user_shell
-  when: asdf_global_install
-
 - name: Find Bash executable
   ansible.builtin.command:
     cmd: "which bash"
@@ -63,9 +58,9 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      . "{{ asdf_install_script_path }}" "{{ asdf_user.home }}"
-      {% if asdf_user.plugins is defined %}
-      {% for plugin in asdf_user.plugins %}
+      . "{{ asdf_install_script_path }}" "{{ user_item.home }}"
+      {% if user_item.plugins is defined %}
+      {% for plugin in user_item.plugins %}
       plugins=$(asdf plugin list)
       grep -q "{{ plugin.name }}" <<< "$plugins" || asdf plugin add "{{ plugin.name }}"
       asdf install "{{ plugin.name }}" "{{ plugin.version }}"
@@ -79,12 +74,11 @@
       fi
       {% endfor %}
       {% endif %}
-    executable: "{{ asdf_user.shell }}"
+    executable: "{{ user_item.shell }}"
   loop: "{{ asdf_enriched_users }}"
   loop_control:
-    loop_var: asdf_user
-    label: "{{ asdf_user.username }}"
+    loop_var: user_item
   become: true
-  become_user: "{{ asdf_user.username }}"
+  become_user: "{{ user_item.username }}"
   changed_when: false
   when: not asdf_global_install
