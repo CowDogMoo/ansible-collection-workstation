@@ -20,7 +20,8 @@
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
     dest: "/opt/asdf"
-    clone: true
+    depth: 1
+    force: true
     update: true
   become: true
   when: asdf_global_install
@@ -40,9 +41,9 @@
   ansible.builtin.git:
     repo: "{{ asdf_git_repo }}"
     dest: "{{ user.home }}/.asdf"
-    clone: true
+    depth: 1
+    force: true
     update: true
-    force: yes
   become: true
   become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
