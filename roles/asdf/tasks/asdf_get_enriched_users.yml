@@ -32,13 +32,13 @@
     - user.username in ansible_facts.getent_passwd
 
 - name: Ensure user home directory exists
-  become: true
-  ansible.builtin.file:
-    path: "{{ user.home }}"
-    state: directory
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: '0755'
+  ansible.builtin.include_tasks: ensure_directory_exists.yml
+  vars:
+    directories:
+      - path: "{{ user.home }}"
+        owner: "{{ user.username }}"
+        group: "{{ user.usergroup | default(user.username) }}"
+        mode: '0755'
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
