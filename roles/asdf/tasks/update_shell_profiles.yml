@@ -20,3 +20,17 @@
   loop_control:
     loop_var: enriched_user
   when: shell_path.stdout != ""
+
+- name: Ensure user home directory exists
+  ansible.builtin.include_tasks: ensure_directory_exists.yml
+  vars:
+    directories:
+      - path: "{{ enriched_user.home }}"
+        owner: "{{ enriched_user.username }}"
+        group: "{{ enriched_user.usergroup | default(enriched_user.username) }}"
+        mode: '0755'
+  loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: enriched_user
+  when:
+    - enriched_user.username in ansible_facts.getent_passwd

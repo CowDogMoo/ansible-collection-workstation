@@ -42,6 +42,7 @@
     dest: "{{ user.home }}/.asdf"
     clone: true
     update: true
+    force: yes
   become: true
   become_user: "{{ user.username }}"
   loop: "{{ asdf_enriched_users }}"
@@ -51,14 +52,13 @@
     - not asdf_global_install
 
 - name: Ensure asdf is cloned for each user
-  ansible.builtin.file:
-    path: "{{ user.home }}/.asdf"
-    state: directory
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: "0755"
-  become: true
-  become_user: "{{ user.username }}"
+  ansible.builtin.include_tasks: ensure_directory_exists.yml
+  vars:
+    directories:
+      - path: "{{ user.home }}/.asdf"
+        owner: "{{ user.username }}"
+        group: "{{ user.usergroup | default(user.username) }}"
+        mode: "0755"
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
@@ -99,14 +99,13 @@
     - not asdf_global_install
 
 - name: Ensure .asdf directory exists for each user
-  ansible.builtin.file:
-    path: "{{ user.home }}/.asdf"
-    state: directory
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: "0755"
-  become: true
-  become_user: "{{ user.username }}"
+  ansible.builtin.include_tasks: ensure_directory_exists.yml
+  vars:
+    directories:
+      - path: "{{ user.home }}/.asdf"
+        owner: "{{ user.username }}"
+        group: "{{ user.usergroup | default(user.username) }}"
+        mode: "0755"
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
@@ -114,13 +113,13 @@
     - not asdf_global_install
 
 - name: Set permissions for each user's ASDF directory
-  ansible.builtin.file:
-    path: "{{ user.home }}/.asdf"
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    recurse: true
-  become: true
-  become_user: "{{ user.username }}"
+  ansible.builtin.include_tasks: ensure_directory_exists.yml
+  vars:
+    directories:
+      - path: "{{ user.home }}/.asdf"
+        owner: "{{ user.username }}"
+        group: "{{ user.usergroup | default(user.username) }}"
+        recurse: true
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
