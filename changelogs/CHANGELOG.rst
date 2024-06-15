@@ -1,8 +1,45 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.8.0 Release Notes
+CowDogMoo Workstation Ansible Collection 1.9.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v1.9.0
+======
+
+Release Summary
+---------------
+
+Enhanced roles with new profiling plugins, improved task handling, updated dependencies, and better consistency across multiple roles.
+
+Added
+-----
+
+- Added Ansible environment variables in Molecule configurations.
+- Added `molecule-plugins[docker]` to install dependencies in GitHub Actions.
+- Added block tasks for downloading, extracting, and installing libyaml.
+- Added depth and force options to git clone tasks in asdf and Sliver roles.
+- Added tasks to delete unnecessary tools folder in Molecule workflows.
+- Included `ensure_directory_exists.yml` for directory creation tasks.
+- Introduced Ansible callback plugin `profile_tasks.py` for task profiling.
+- Introduced user and shell variable updates in multiple roles for consistency.
+
+Changed
+-------
+
+- Adjusted user setup tasks to improve clarity and consistency.
+- Improved shell profile updates for users in multiple roles.
+- Modified gmake command to utilize all available CPU cores in Sliver role.
+- Refactored asdf role tasks to use blocks for better readability.
+- Refactored package installation tasks in package_management role.
+- Updated Magefile dependencies in `go.mod` and `go.sum`.
+- Updated default versions for golang, python, ruby, helm, and kubectl plugins.
+- Updated dependencies in `.pre-commit-config.yaml` for various tools.
+
+Removed
+-------
+
+- Removed redundant debug task `getent_user_shell` from asdf role.
 
 v1.8.0
 ======

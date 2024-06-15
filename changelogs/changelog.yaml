@@ -245,3 +245,28 @@ releases:
       release_summary: Enhanced ASDF role configurability and maintenance, updated
         dependencies, and streamlined role tasks for better performance and reliability.
     release_date: '2024-04-15'
+  1.9.0:
+    changes:
+      added:
+      - Added Ansible environment variables in Molecule configurations.
+      - Added `molecule-plugins[docker]` to install dependencies in GitHub Actions.
+      - Added block tasks for downloading, extracting, and installing libyaml.
+      - Added depth and force options to git clone tasks in asdf and Sliver roles.
+      - Added tasks to delete unnecessary tools folder in Molecule workflows.
+      - Included `ensure_directory_exists.yml` for directory creation tasks.
+      - Introduced Ansible callback plugin `profile_tasks.py` for task profiling.
+      - Introduced user and shell variable updates in multiple roles for consistency.
+      changed:
+      - Adjusted user setup tasks to improve clarity and consistency.
+      - Improved shell profile updates for users in multiple roles.
+      - Modified gmake command to utilize all available CPU cores in Sliver role.
+      - Refactored asdf role tasks to use blocks for better readability.
+      - Refactored package installation tasks in package_management role.
+      - Updated Magefile dependencies in `go.mod` and `go.sum`.
+      - Updated default versions for golang, python, ruby, helm, and kubectl plugins.
+      - Updated dependencies in `.pre-commit-config.yaml` for various tools.
+      release_summary: 'Enhanced roles with new profiling plugins, improved task handling,
+        updated dependencies, and better consistency across multiple roles. '
+      removed:
+      - Removed redundant debug task `getent_user_shell` from asdf role.
+    release_date: '2024-06-14'
