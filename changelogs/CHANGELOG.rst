@@ -1,8 +1,21 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.9.0 Release Notes
+CowDogMoo Workstation Ansible Collection 1.9.1 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v1.9.1
+======
+
+Release Summary
+---------------
+
+Fixed breaking change for non-root users
+
+Changed
+-------
+
+- Fixed breaking change for non-root users
 
 v1.9.0
 ======
