@@ -1,6 +1,5 @@
 ---
 - name: Ensure directory exists
-  become: true
   ansible.builtin.file:
     path: "{{ dir.path }}"
     state: directory
