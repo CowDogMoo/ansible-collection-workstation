@@ -6,6 +6,7 @@
     owner: "{{ dir.owner }}"
     group: "{{ dir.group }}"
     mode: "{{ dir.mode | default('0755') }}"
+  become: true
   loop: "{{ directories }}"
   loop_control:
     loop_var: dir
