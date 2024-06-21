@@ -7,6 +7,7 @@ on:
 env:
   COLLECTION_PATH: $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
   RUNZERO_DOWNLOAD_TOKEN: ${{ secrets.RUNZERO_DOWNLOAD_TOKEN }}
+  PYTHON_VERSION: "3.12.4"
 
 jobs:
   role_test:
@@ -39,7 +40,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
         with:
-          python-version: "3.x"
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Ensure Python is available
+        run: sudo ln -s /opt/hostedtoolcache/Python/${{ env.PYTHON_VERSION }}/x64/bin/python3 /usr/bin/python3
 
       - name: Install dependencies
         run: |
@@ -82,7 +86,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
         with:
-          python-version: "3.x"
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Ensure Python is available
+        run: sudo ln -s /opt/hostedtoolcache/Python/${{ env.PYTHON_VERSION }}/x64/bin/python3 /usr/bin/python3
 
       - name: Install dependencies
         run: |
