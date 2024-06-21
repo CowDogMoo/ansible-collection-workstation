@@ -36,8 +36,10 @@ jobs:
       - name: Clone git repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-      - name: Install python3
-        run: sudo apt-get install python3
+      - name: Setup Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
+        with:
+          python-version: "3.x"
 
       - name: Install dependencies
         run: |
@@ -77,8 +79,10 @@ jobs:
       - name: Clone git repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-      - name: Install python3
-        run: sudo apt-get install python3
+      - name: Setup Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
+        with:
+          python-version: "3.x"
 
       - name: Install dependencies
         run: |
