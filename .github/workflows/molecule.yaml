@@ -36,6 +36,9 @@ jobs:
       - name: Clone git repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      - name: Install python3
+        run: sudo apt-get install python3
+
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade \
@@ -73,6 +76,9 @@ jobs:
 
       - name: Clone git repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Install python3
+        run: sudo apt-get install python3
 
       - name: Install dependencies
         run: |
