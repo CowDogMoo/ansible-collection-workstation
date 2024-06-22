@@ -1,7 +1,4 @@
 ---
-roles:
-  - name: cowdogmoo.firefox
-
 collections:
   - name: community.general
   - name: community.docker
