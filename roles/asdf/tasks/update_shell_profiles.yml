@@ -23,6 +23,9 @@
 
 - name: Ensure user home directory exists
   ansible.builtin.include_tasks: ensure_directory_exists.yml
+  args:
+    apply:
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   vars:
     directories:
       - path: "{{ enriched_user.home }}"

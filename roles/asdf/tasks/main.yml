@@ -54,6 +54,9 @@
 
 - name: Ensure asdf is cloned for each user
   ansible.builtin.include_tasks: ensure_directory_exists.yml
+  args:
+    apply:
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   vars:
     directories:
       - path: "{{ user.home }}/.asdf"
@@ -101,6 +104,9 @@
 
 - name: Ensure .asdf directory exists for each user
   ansible.builtin.include_tasks: ensure_directory_exists.yml
+  args:
+    apply:
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   vars:
     directories:
       - path: "{{ user.home }}/.asdf"
@@ -115,6 +121,9 @@
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.include_tasks: ensure_directory_exists.yml
+  args:
+    apply:
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   vars:
     directories:
       - path: "{{ user.home }}/.asdf"
