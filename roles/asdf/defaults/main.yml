@@ -22,13 +22,13 @@ asdf_users:
         version: "3.12.4"
         scope: "global"
       - name: ruby
-        version: "3.3.2"
+        version: "3.3.3"
         scope: "global"
       - name: helm
         version: "3.15.1"
         scope: "global"
       - name: kubectl
-        version: "1.30.1"
+        version: "1.30.2"
         scope: "global"
       - name: packer
         version: "1.9.4"
