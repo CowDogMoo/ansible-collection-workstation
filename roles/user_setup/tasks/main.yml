@@ -3,7 +3,7 @@
   ansible.builtin.getent:
     database: passwd
   register: getent_passwd
-  when: ansible_os_family != 'Darwin'
+  when: ansible_os_family != 'Darwin' and ansible_os_family != 'Windows'
 
 - name: Gather available local users on macOS
   cowdogmoo.workstation.getent_passwd:
@@ -19,6 +19,7 @@
     # 3. Strip the '/bin/' prefix from each shell name.
     # 4. Convert the result into a list.
     unique_shells: "{{ user_setup_default_users | map(attribute='shell') | unique | map('regex_replace', '^/bin/(.*)$', '\\1') | list }}"
+  when: ansible_os_family != 'Windows'
 
 - name: Install base packages for all users
   become: true
@@ -27,7 +28,7 @@
     state: present
     update_cache: true
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
-  when: ansible_os_family != 'Darwin'
+  when: ansible_os_family != 'Darwin' and ansible_os_family != 'Windows'
 
 - name: Install user-specific shells
   become: true
@@ -41,6 +42,7 @@
     - shell != ''
     - shell != 'bash'
     - ansible_os_family != 'Darwin'
+    - ansible_os_family != 'Windows'
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
 
 - name: Ensure groups exist for users
@@ -51,9 +53,9 @@
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: group
-  when: group.usergroup is defined and ansible_os_family != 'Darwin'
+  when: group.usergroup is defined and ansible_os_family != 'Darwin' and ansible_os_family != 'Windows'
 
-- name: Create users
+- name: Create users on non-Windows systems
   become: true
   ansible.builtin.user:
     name: "{{ user.username }}"
@@ -64,7 +66,10 @@
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: user
-  when: user.username not in ansible_facts.getent_passwd and user.username != 'root'
+  when:
+    - ansible_os_family != 'Windows'
+    - user.username not in ansible_facts.getent_passwd
+    - user.username != 'root'
 
 - name: Ensure users exist and have home directories
   ansible.builtin.user:
@@ -78,7 +83,9 @@
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: user
-  when: user.username not in ansible_facts.getent_passwd
+  when:
+    - ansible_os_family != 'Windows'
+    - user.username not in ansible_facts.getent_passwd
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
@@ -87,7 +94,18 @@
     content: "{{ user.username }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
     validate: "visudo -cf %s"
     mode: "0440"
-  when: user.sudo and ansible_os_family != 'Darwin'
+  when:
+    - ansible_os_family != 'Darwin'
+    - ansible_os_family != 'Windows'
+    - user.sudo
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: user
+
+- name: Create a new user on Windows
+  ansible.windows.win_user:
+    name: PaigeTurner
+    password: 'Password123!'  # Ensure this password complies with your password policy
+    state: present
+    password_expired: true
+  when: ansible_os_family == 'Windows'
