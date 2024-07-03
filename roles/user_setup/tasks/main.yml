@@ -28,7 +28,7 @@
     state: present
     update_cache: true
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
-  when: ansible_os_family != 'Darwin' and ansible_os_family != 'Windows'
+  when: ansible_os_family not in ['Darwin', 'Windows']
 
 - name: Install user-specific shells
   become: true
@@ -41,8 +41,7 @@
   when:
     - shell != ''
     - shell != 'bash'
-    - ansible_os_family != 'Darwin'
-    - ansible_os_family != 'Windows'
+    - ansible_os_family not in ['Darwin', 'Windows']
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
 
 - name: Ensure groups exist for users
@@ -53,7 +52,7 @@
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: group
-  when: group.usergroup is defined and ansible_os_family != 'Darwin' and ansible_os_family != 'Windows'
+  when: group.usergroup is defined and ansible_os_family not in ['Darwin', 'Windows']
 
 - name: Create users on non-Windows systems
   become: true
@@ -95,8 +94,7 @@
     validate: "visudo -cf %s"
     mode: "0440"
   when:
-    - ansible_os_family != 'Darwin'
-    - ansible_os_family != 'Windows'
+    - ansible_os_family not in ['Darwin', 'Windows']
     - user.sudo
   loop: "{{ user_setup_default_users }}"
   loop_control:
@@ -104,8 +102,21 @@
 
 - name: Create a new user on Windows
   ansible.windows.win_user:
-    name: PaigeTurner
-    password: 'Password123!'  # Ensure this password complies with your password policy
+    name: "{{ user.username }}"
+    password: "{{ user.password }}"
     state: present
     password_expired: true
+  loop: "{{ user_setup_default_users }}"
+  loop_control:
+    loop_var: user
   when: ansible_os_family == 'Windows'
+
+- name: Ensure groups exist for users on Windows
+  ansible.windows.win_group_membership:
+    name: "{{ group.usergroup }}"
+    members: "{{ user.username }}"
+    state: present
+  loop: "{{ user_setup_default_users }}"
+  loop_control:
+    loop_var: group
+  when: ansible_os_family == 'Windows' and group.usergroup is defined

@@ -5,4 +5,4 @@ user_setup_default_users:
   - username: "{{ ansible_env.USER if ansible_distribution == 'MacOSX' else user_setup_default_username }}"
     usergroup: "{{ 'staff' if ansible_distribution == 'MacOSX' else user_setup_default_group }}"
     sudo: true
-    shell: /bin/zsh
+    shell: "{{ 'powershell' if ansible_os_family == 'Windows' else '/bin/zsh' }}"
