@@ -31,5 +31,5 @@ asdf_users:
         version: "1.30.2"
         scope: "global"
       - name: packer
-        version: "1.9.4"
+        version: "1.11.1"
         scope: "global"
