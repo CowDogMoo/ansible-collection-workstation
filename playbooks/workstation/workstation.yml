@@ -1,17 +1,11 @@
 ---
 - name: Workstation
-  become: true
-  become_user: ubuntu
-  remote_user: ubuntu
   hosts: all
-  vars:
-    ansible_connection: community.aws_ssm
-    ansible_aws_ssm_bucket_name: l-bbh
-    ansible_aws_ssm_region: us-west-1
-    # When the S3 bucket isn't in the same region as the Instance
-    # Explicitly setting the addressing style to 'virtual' may be necessary
-    # https://repost.aws/knowledge-center/s3-http-307-response
-    ansible_aws_ssm_s3_addressing_style: virtual
+  roles:
+    - role: cowdogmoo.workstation.user_setup
+      # For debugging
+      # - role: ../../roles/user_setup
+    - role: cowdogmoo.workstation.package_management
   tasks:
     - name: Get primary group name of the current user
       ansible.builtin.command: id -gn "{{ ansible_user_id }}"
@@ -29,3 +23,22 @@
         path: "{{ '/Users' if ansible_distribution == 'MacOSX' else '/home' }}/{{ ansible_user_id }}"
       register: home_dir_exists
       changed_when: false
+
+    - name: Setup ZSH Configuration
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.zsh_setup
+        # For debugging
+        # name: ../../roles/zsh_setup
+      vars:
+        zsh_setup_users:
+          - username: "{{ ansible_user_id }}"
+            usergroup: "{{ primary_group_name.stdout }}"
+            shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
+      when: user_exists.rc == 0 and home_dir_exists.stat.exists
+
+    - name: Setup ASDF Configuration
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.asdf
+        # For debugging
+        # name: ../../roles/asdf
+      when: user_exists.rc == 0 and home_dir_exists.stat.exists
