@@ -100,7 +100,7 @@
   loop_control:
     loop_var: user
 
-- name: Create a new user on Windows
+- name: Create a new Windows user
   ansible.windows.win_user:
     name: "{{ user.username }}"
     password: "{{ user.password }}"
@@ -111,7 +111,7 @@
     loop_var: user
   when: ansible_os_family == 'Windows'
 
-- name: Ensure groups exist for users on Windows
+- name: Ensure specified user groups are in place for Windows
   ansible.windows.win_group_membership:
     name: "{{ group.usergroup }}"
     members: "{{ user.username }}"
