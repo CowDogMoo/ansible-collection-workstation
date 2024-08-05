@@ -1,28 +1,8 @@
 ---
+user_setup_default_username: "{{ ansible_distribution | lower }}"
+user_setup_default_group: "{{ ansible_distribution | lower }}"
 user_setup_default_users:
-  - username: >
-      {% if ansible_os_family == 'Windows' %}
-        Administrator
-      {% elif ansible_os_family == 'Darwin' %}
-        {{ ansible_env.USER }}
-      {% elif ansible_distribution == 'Ubuntu' %}
-        {{ (ansible_env.USER | default('ubuntu')).strip() }}
-      {% elif ansible_distribution == 'Rocky' %}
-        {{ (ansible_env.USER | default('rocky')).strip() }}
-      {% else %}
-        {{ (ansible_env.USER | default(ansible_distribution | lower)).strip() }}
-      {% endif %}
-    usergroup: >
-      {% if ansible_os_family == 'Windows' %}
-        Administrators
-      {% elif ansible_os_family == 'Darwin' %}
-        staff
-      {% elif ansible_distribution == 'Ubuntu' %}
-        {{ (ansible_env.USER | default('ubuntu')).strip() }}
-      {% elif ansible_distribution == 'Rocky' %}
-        {{ (ansible_env.USER | default('rocky')).strip() }}
-      {% else %}
-        {{ (ansible_env.USER | default(ansible_distribution | lower)).strip() }}
-      {% endif %}
+  - username: "{{ ansible_env.USER if ansible_os_family == 'Darwin' else 'Administrator' if ansible_os_family == 'Windows' else user_setup_default_username }}"
+    usergroup: "{{ 'staff' if ansible_os_family == 'Darwin' else 'Administrators' if ansible_os_family == 'Windows' else user_setup_default_group }}"
     sudo: true
-    shell: "{{ 'powershell' if ansible_os_family == 'Windows' else (ansible_env.SHELL | default('/bin/bash')).strip() }}"
+    shell: "{{ 'powershell' if ansible_os_family == 'Windows' else (ansible_env.SHELL | default('/bin/bash')).strip() | regex_replace('\\n', '') }}"
