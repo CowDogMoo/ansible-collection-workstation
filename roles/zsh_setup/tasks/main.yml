@@ -2,6 +2,37 @@
 - name: Include zsh_setup_get_enriched_users tasks
   ansible.builtin.include_tasks: zsh_setup_get_enriched_users.yml
 
+- name: Ensure groups exist for users
+  ansible.builtin.group:
+    name: "{{ user.usergroup }}"
+    state: present
+  loop: "{{ zsh_setup_enriched_users }}"
+  loop_control:
+    loop_var: user
+
+- name: Ensure user exists
+  ansible.builtin.user:
+    name: "{{ user.username }}"
+    group: "{{ user.usergroup }}"
+    shell: "{{ user.shell }}"
+    home: "{{ user.home }}"
+    state: present
+  loop: "{{ zsh_setup_enriched_users }}"
+  loop_control:
+    loop_var: user
+
+- name: Ensure user home directory exists
+  ansible.builtin.file:
+    path: "{{ user.home }}"
+    state: directory
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
+    mode: "0755"
+  loop: "{{ zsh_setup_enriched_users }}"
+  loop_control:
+    loop_var: user
+  when: user.home is defined
+
 - name: Check if .oh-my-zsh exists for each user
   ansible.builtin.stat:
     path: "{{ user.home }}/.oh-my-zsh"
@@ -18,7 +49,6 @@
     owner: "{{ user.username }}"
     group: "{{ user.usergroup }}"
   become: true
-  become_user: "{{ user.username }}"
   when:
     - user.home is defined
     - user.home | length > 0
