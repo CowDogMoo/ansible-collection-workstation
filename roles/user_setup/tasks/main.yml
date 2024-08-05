@@ -47,7 +47,7 @@
 - name: Ensure groups exist for users
   become: true
   ansible.builtin.group:
-    name: "{{ group.usergroup }}"
+    name: "{{ group.usergroup | trim }}"
     state: present
   loop: "{{ user_setup_default_users }}"
   loop_control:
@@ -57,40 +57,40 @@
 - name: Create users on non-Windows systems
   become: true
   ansible.builtin.user:
-    name: "{{ user.username }}"
-    group: "{{ user.usergroup }}"
+    name: "{{ user.username | trim }}"
+    group: "{{ user.usergroup | trim }}"
     shell: "{{ user.shell }}"
-    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username }}"
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username | trim }}"
     state: present
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username not in ansible_facts.getent_passwd
-    - user.username != 'root'
+    - user.username | trim not in ansible_facts.getent_passwd
+    - user.username | trim != 'root'
 
 - name: Ensure users exist and have home directories
   ansible.builtin.user:
-    name: "{{ user.username }}"
-    group: "{{ user.usergroup }}"
+    name: "{{ user.username | trim }}"
+    group: "{{ user.usergroup | trim }}"
     shell: "{{ user.shell }}"
     create_home: true
     move_home: false
-    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username }}"
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username | trim }}"
   register: user_info
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username not in ansible_facts.getent_passwd
+    - user.username | trim not in ansible_facts.getent_passwd
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
   ansible.builtin.copy:
-    dest: "/etc/sudoers.d/{{ user.username }}"
-    content: "{{ user.username }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/{{ user.username | trim }}"
+    content: "{{ user.username | trim }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
     validate: "visudo -cf %s"
     mode: "0440"
   when:
@@ -102,7 +102,7 @@
 
 - name: Create a new Windows user
   ansible.windows.win_user:
-    name: "{{ user.username }}"
+    name: "{{ user.username | trim }}"
     password: "{{ user.password }}"
     state: present
     password_expired: true
@@ -113,8 +113,8 @@
 
 - name: Ensure specified user groups are in place for Windows
   ansible.windows.win_group_membership:
-    name: "{{ group.usergroup }}"
-    members: "{{ user.username }}"
+    name: "{{ group.usergroup | trim }}"
+    members: "{{ user.username | trim }}"
     state: present
   loop: "{{ user_setup_default_users }}"
   loop_control:
