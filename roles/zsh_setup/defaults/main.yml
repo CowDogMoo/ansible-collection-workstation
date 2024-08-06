@@ -1,9 +1,13 @@
 ---
+# Default username and group are set based on the operating system
+zsh_setup_default_username: "{{ ansible_user | default(ansible_distribution | lower) }}"
+zsh_setup_default_group: "{{ ansible_user | default(ansible_distribution | lower) }}"
+
 # ZSH theme
 zsh_setup_theme: "af-magic"
 
 # List of users to configure zsh for
 zsh_setup_users:
-  - username: "{{ zsh_setup_default_username }}"
-    usergroup: "{{ zsh_setup_default_group }}"
-    shell: "/bin/zsh"
+  - username: "{{ ansible_env.USER if ansible_os_family == 'Darwin' else 'Administrator' if ansible_os_family == 'Windows' else zsh_setup_default_username }}"
+    usergroup: "{{ 'staff' if ansible_os_family == 'Darwin' else 'Administrators' if ansible_os_family == 'Windows' else zsh_setup_default_group }}"
+    shell: "{{ 'powershell' if ansible_os_family == 'Windows' else (ansible_env.SHELL | default('/bin/bash')).strip() | regex_replace('\\n', '') }}"

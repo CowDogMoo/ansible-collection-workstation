@@ -21,7 +21,7 @@
   loop_control:
     loop_var: user
 
-- name: Ensure user home directory exists
+- name: Ensure home directory exists for all zsh_setup_enriched_users
   ansible.builtin.file:
     path: "{{ user.home }}"
     state: directory
@@ -49,6 +49,7 @@
     owner: "{{ user.username }}"
     group: "{{ user.usergroup }}"
   become: true
+  become_user: "{{ user.username }}"
   when:
     - user.home is defined
     - user.home | length > 0

@@ -16,11 +16,11 @@
       {{ (zsh_setup_enriched_users | default([])) |
       rejectattr('username', 'equalto', user.username) | list +
       [user | combine({
-        'home': ansible_facts.getent_passwd[user.username].home | default('/home/' + user.username),
+        'home': (ansible_facts.getent_passwd[user.username].home | default('/Users/' + user.username)) if ansible_os_family == 'Darwin' else (ansible_facts.getent_passwd[user.username].home | default('/home/' + user.username)),
         'shell': user.shell,
         'usergroup': user.usergroup,
         'username': user.username
-        })] | selectattr('home', 'defined') | list }}
+      })] | selectattr('home', 'defined') | list }}
   loop: "{{ zsh_setup_users }}"
   loop_control:
     loop_var: user
