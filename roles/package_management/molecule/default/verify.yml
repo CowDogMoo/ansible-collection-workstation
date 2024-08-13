@@ -5,7 +5,7 @@
   tasks:
     - name: Include default variables
       ansible.builtin.include_vars:
-        file: "../../vars/main.yml"
+        file: "../../defaults/main.yml"
 
     - name: Check if common packages are installed
       ansible.builtin.package:
@@ -34,32 +34,3 @@
       when: ansible_os_family in ['Debian', 'RedHat'] and ansible_distribution != 'Kali'
       failed_when: distro_package_status is failed
       changed_when: false
-
-    - name: Check .xinitrc file exists (Red Hat)
-      ansible.builtin.stat:
-        path: "~/.xinitrc"
-      register: xinitrc_status
-      when: ansible_os_family == 'RedHat'
-
-    - name: Assert .xinitrc file content (Red Hat)
-      ansible.builtin.command:
-        cmd: grep -q 'exec /usr/bin/xfce4-session' ~/.xinitrc
-      when: ansible_os_family == 'RedHat' and xinitrc_status.stat.exists
-      failed_when: false
-      changed_when: false
-
-    - name: Check if graphical.target is the default (Red Hat)
-      ansible.builtin.command:
-        cmd: systemctl get-default
-      register: systemd_default_target
-      when: ansible_os_family == 'RedHat'
-      failed_when: false
-      changed_when: false
-      # noqa command-instead-of-module
-
-    - name: Assert graphical.target is the default (Red Hat)
-      ansible.builtin.assert:
-        that: "'graphical.target' in systemd_default_target.stdout"
-        fail_msg: "Graphical target is not set as default"
-        success_msg: "Graphical target is set as default"
-      when: ansible_os_family == 'RedHat'

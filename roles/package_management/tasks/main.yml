@@ -1,8 +1,4 @@
 ---
-- name: Include common variables
-  ansible.builtin.include_vars: "main.yml"
-  when: ansible_os_family in ['Debian', 'RedHat']
-
 - name: Set DEBIAN_FRONTEND to noninteractive
   ansible.builtin.lineinfile:
     path: /etc/environment
@@ -21,7 +17,3 @@
   when: ansible_os_family in ['Debian', 'RedHat']
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   tags: packages
-
-- name: Include Red Hat tasks
-  ansible.builtin.include_tasks: "redhat.yml"
-  when: ansible_os_family == 'RedHat'
