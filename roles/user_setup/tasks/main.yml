@@ -21,12 +21,10 @@
   when: ansible_os_family != 'Windows'
 
 - name: Install base packages for all users
-  become: true
-  ansible.builtin.package:
-    name: "{{ user_setup_install_packages }}"
-    state: present
-    update_cache: true
-  environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
+  ansible.builtin.include_role:
+    name: cowdogmoo.workstation.package_management
+  vars:
+    package_management_common_install_packages: "{{ user_setup_install_packages }}"
   when: ansible_os_family not in ['Darwin', 'Windows']
 
 - name: Install user-specific shells
