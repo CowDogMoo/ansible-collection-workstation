@@ -28,9 +28,9 @@
     create: true
     insertafter: EOF
     mode: "0644"
-  failed_when: not zshrc_check.stat.exists
-  # Do not fail just because the line was added
-  changed_when: false
+  register: zshrc_update
+  failed_when: zshrc_update is failed and not zshrc_check.stat.exists
+  changed_when: zshrc_update.changed
 
 - name: Create .vnc dirs
   become: true
