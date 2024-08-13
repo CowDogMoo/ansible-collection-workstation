@@ -6,8 +6,6 @@
       role: cowdogmoo.workstation.user_setup
       # For debugging
       # role: ../../roles/user_setup
-    - name: Install packages used by workstation
-      role: cowdogmoo.workstation.package_management
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup
       # For debugging
