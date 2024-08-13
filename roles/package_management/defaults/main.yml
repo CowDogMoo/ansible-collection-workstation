@@ -6,7 +6,6 @@ package_management_common_install_packages:
   - bison
   - ca-certificates
   - colordiff
-  - dbus-x11
   - file
   - gcc
   - git
@@ -44,10 +43,6 @@ package_management_debian_specific_packages:
   - libyaml-dev
   - locales
   - software-properties-common
-  - tigervnc-standalone-server
-  - tigervnc-tools
-  - xfce4-goodies
-  - xfce4
   - zlib1g-dev
 
 # RedHat-specific packages
@@ -62,8 +57,6 @@ package_management_redhat_specific_packages:
   - openssl-devel
   - readline-devel
   - sqlite-devel
-  - tigervnc
-  - tigervnc-server
   - zlib-devel
 
 package_management_install_packages: >
