@@ -2,6 +2,12 @@
 - name: Include zsh_setup_get_enriched_users tasks
   ansible.builtin.include_tasks: zsh_setup_get_enriched_users.yml
 
+- name: Install required packages for zsh
+  ansible.builtin.include_role:
+    name: cowdogmoo.workstation.package_management
+  vars:
+    package_management_common_install_packages: "{{ zsh_setup_common_install_packages }}"
+
 - name: Ensure groups exist for users
   ansible.builtin.group:
     name: "{{ user.usergroup }}"

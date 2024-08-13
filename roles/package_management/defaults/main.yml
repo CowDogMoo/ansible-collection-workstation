@@ -24,7 +24,6 @@ package_management_common_install_packages:
   - unzip
   - vim
   - wget
-  - zsh
 
 # Conditional assignment for Chromium package based on distribution
 package_management_chromium_package: "{{ 'chromium-browser' if ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=') else 'chromium' }}"
@@ -50,7 +49,6 @@ package_management_debian_specific_packages:
   - xfce4-goodies
   - xfce4
   - zlib1g-dev
-  - zsh-autosuggestions
 
 # RedHat-specific packages
 package_management_redhat_specific_packages:
