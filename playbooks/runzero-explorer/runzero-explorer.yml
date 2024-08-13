@@ -2,6 +2,9 @@
 - name: RunZero Explorer
   hosts: all
   roles:
-    - role: cowdogmoo.workstation.user_setup
-    - role: cowdogmoo.workstation.package_management
-    - role: cowdogmoo.workstation.runzero_explorer
+    - name: Setup users on workstation
+      role: cowdogmoo.workstation.user_setup
+    - name: Install packages used by workstation
+      role: cowdogmoo.workstation.package_management
+    - name: Setup and run RunZero Explorer
+      role: cowdogmoo.workstation.runzero_explorer

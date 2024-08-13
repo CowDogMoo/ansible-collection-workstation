@@ -1,7 +1,7 @@
 ---
 namespace: cowdogmoo
 name: workstation
-version: "1.7.0"
+version: "1.9.1"
 readme: README.md
 authors:
   - Jayson Grace <techvomit.net>

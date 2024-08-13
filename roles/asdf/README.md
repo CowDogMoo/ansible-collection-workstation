@@ -81,10 +81,6 @@ This role is tested on the following platforms:
 - Kali
 - EL (Enterprise Linux)
 
-## Dependencies
-
-- `cowdogmoo.workstation.package_management`
-
 ## Author Information
 
 This role was created by Jayson Grace and is maintained as part of

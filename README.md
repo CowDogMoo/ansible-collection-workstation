@@ -20,7 +20,7 @@ various cybersecurity tools.
 
 ## Installation
 
-Install the Workstation collection from Ansible Galaxy:
+Install latest version of the Workstation collection:
 
 ```bash
 ansible-galaxy collection install git+https://github.com/cowdogmoo/workstation.git,main

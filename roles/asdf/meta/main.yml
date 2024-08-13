@@ -19,5 +19,3 @@ galaxy_info:
         - all
   galaxy_tags:
     - asdf
-dependencies:
-  - role: cowdogmoo.workstation.package_management
