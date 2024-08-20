@@ -37,7 +37,21 @@
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user
-  when: user.home is defined
+  register: home_dir_creation
+  ignore_errors: true
+
+- name: Fallback to creating home directory in current user's home
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/{{ user.username }}"
+    state: directory
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
+    mode: "0755"
+  loop: "{{ home_dir_creation.results }}"
+  loop_control:
+    loop_var: user
+  when: user.home is defined and not user.changed
+  failed_when: false
 
 - name: Check if .oh-my-zsh exists for each user
   ansible.builtin.stat:
