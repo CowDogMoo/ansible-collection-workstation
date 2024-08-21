@@ -23,15 +23,24 @@
   loop_control:
     loop_var: user
 
+- name: Check if omz-installer.sh exists for each user
+  ansible.builtin.stat:
+    path: "{{ user.home }}/omz-installer.sh"
+  register: omz_installer_stat
+  loop: "{{ zsh_setup_enriched_users }}"
+  loop_control:
+    loop_var: user
+    index_var: loop_index
+
 - name: Download oh-my-zsh install script for all zsh_setup_enriched_users
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    dest: "{{ item.home }}/.oh-my-zsh_install.sh"
+    dest: "{{ user.home }}/omz-installer.sh"
     mode: '0755'
-  when: not oh_my_zsh_installed.results[loop_index].stat.exists
+  when: not oh_my_zsh_installed.results[loop_index].stat.exists and not omz_installer_stat.results[loop_index].stat.exists
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
-    loop_var: item
+    loop_var: user
     index_var: loop_index
 
 - name: Install oh-my-zsh for all zsh_setup_enriched_users
@@ -53,9 +62,11 @@
     state: absent
   become: true
   become_user: "{{ user.username }}"
+  when: omz_installer_stat.results[loop_index].stat.exists
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user
+    index_var: loop_index
 
 - name: Check if .zshrc exists for each user
   ansible.builtin.stat:
