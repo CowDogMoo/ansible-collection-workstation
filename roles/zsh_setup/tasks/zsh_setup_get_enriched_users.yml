@@ -25,13 +25,17 @@
   loop_control:
     loop_var: user
 
-- name: Ensure user home directory exists
-  ansible.builtin.file:
-    path: "{{ user.home }}"
-    state: directory
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: "0755"
+- name: Ensure user home directories exist
+  ansible.builtin.include_tasks: "../../asdf/tasks/ensure_directory_exists.yml"
+  args:
+    apply:
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  vars:
+    directories:
+      - path: "{{ user.home }}"
+        owner: "{{ user.username }}"
+        group: "{{ user.usergroup | default(user.username) }}"
+        mode: '0755'
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user

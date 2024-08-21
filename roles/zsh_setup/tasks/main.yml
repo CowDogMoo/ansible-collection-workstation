@@ -1,5 +1,5 @@
 ---
-- name: Include zsh_setup_get_enriched_users tasks
+- name: Include tasks to gather enriched users
   ansible.builtin.include_tasks: zsh_setup_get_enriched_users.yml
 
 - name: Install required packages for zsh
@@ -27,56 +27,41 @@
   loop_control:
     loop_var: user
 
-- name: Ensure home directory exists for all zsh_setup_enriched_users
-  ansible.builtin.file:
-    path: "{{ user.home }}"
-    state: directory
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: "0755"
+- name: Ensure user home directories exist
+  ansible.builtin.include_tasks: "../../asdf/tasks/ensure_directory_exists.yml"
+  args:
+    apply:
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  vars:
+    directories:
+      - path: "{{ user.home }}"
+        owner: "{{ user.username }}"
+        group: "{{ user.usergroup | default(user.username) }}"
+        mode: '0755'
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user
-  register: home_dir_creation
-  ignore_errors: true
+  when: user.username in ansible_facts.getent_passwd
 
-- name: Fallback to creating home directory in current user's home
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/{{ user.username }}"
-    state: directory
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: "0755"
-  loop: "{{ home_dir_creation.results }}"
-  loop_control:
-    loop_var: user
-  when: user.home is defined and not user.changed
-  failed_when: false
 
 - name: Check if .oh-my-zsh exists for each user
   ansible.builtin.stat:
     path: "{{ user.home }}/.oh-my-zsh"
   register: oh_my_zsh_installed
-  loop: "{{ zsh_setup_enriched_users | flatten }}"
+  loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user
 
 - name: Download oh-my-zsh install script for all zsh_setup_enriched_users
   ansible.builtin.get_url:
-    url: "{{ zsh_setup_omz_install_script_url }}"
-    dest: "{{ user.home }}/omz-installer.sh"
-    mode: "0755"
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup }}"
-  become: true
-  become_user: "{{ user.username }}"
-  when:
-    - user.home is defined
-    - user.home | length > 0
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: "{{ item.home }}/.oh-my-zsh_install.sh"
+    mode: '0755'
+  when: not oh_my_zsh_installed.results[loop_index].stat.exists
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
-    loop_var: user
-  changed_when: false
+    loop_var: item
+    index_var: loop_index
 
 - name: Install oh-my-zsh for all zsh_setup_enriched_users
   ansible.builtin.shell: |
@@ -87,16 +72,6 @@
     executable: /bin/zsh
   become: true
   become_user: "{{ user.username }}"
-  when: "not oh_my_zsh_installed.results[user | int].stat.exists"
-  loop: "{{ zsh_setup_enriched_users }}"
-  loop_control:
-    loop_var: user
-  changed_when: false
-
-- name: Check if omz-installer.sh exists for each user
-  ansible.builtin.stat:
-    path: "{{ user.home }}/omz-installer.sh"
-  register: omz_installer_exists
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user
@@ -107,13 +82,11 @@
     state: absent
   become: true
   become_user: "{{ user.username }}"
-  when: omz_installer_exists.results[user | int].stat.exists
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user
-  changed_when: false
 
-- name: Check if .zshrc exists for all zsh_setup_enriched_users
+- name: Check if .zshrc exists for each user
   ansible.builtin.stat:
     path: "{{ user.home }}/.zshrc"
   register: zshrc_exists
@@ -121,17 +94,15 @@
   loop_control:
     loop_var: user
 
-- name: Copy .zshrc template to user's home directory if it does not exist
+- name: Ensure .zshrc exists for all users
   ansible.builtin.template:
     src: zshrc.j2
-    mode: "0644"
     dest: "{{ user.home }}/.zshrc"
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-  loop: "{{ zsh_setup_enriched_users }}"
-  loop_control:
-    index_var: loop_index
-    loop_var: user
+    mode: "0644"
   become: true
   become_user: "{{ user.username }}"
+  loop: "{{ zsh_setup_enriched_users }}"
+  loop_control:
+    loop_var: user
+    index_var: loop_index
   when: not zshrc_exists.results[loop_index].stat.exists

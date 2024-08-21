@@ -18,6 +18,22 @@
       ansible.builtin.set_fact:
         zsh_setup_enriched_users: "{{ zsh_setup_enriched_users | default([]) }}"
 
+    # Confirm sudo configuration for Linux systems
+    - name: Check if sudo is passwordless for current user
+      ansible.builtin.command: "sudo -n true"
+      register: sudo_check
+      ignore_errors: true
+      changed_when: false
+      when: ansible_facts['os_family'] != 'Darwin'
+
+    - name: Assert sudo is passwordless (Linux only)
+      ansible.builtin.assert:
+        that:
+          - sudo_check.rc == 0
+        msg: "Passwordless sudo is not configured for the current user"
+      when: ansible_facts['os_family'] != 'Darwin'
+
+    # Confirm that .oh-my-zsh directories exist for all users
     - name: Confirm per-user $HOME/.oh-my-zsh directories exist for all users
       ansible.builtin.stat:
         path: "{{ item.home }}/.oh-my-zsh"
@@ -32,6 +48,7 @@
         msg: "$HOME/.oh-my-zsh directory check failed for {{ item.username }}"
       loop: "{{ zsh_setup_enriched_users }}"
 
+    # Confirm that omz-installer.sh is removed for all zsh_setup_enriched_users
     - name: Confirm omz-installer.sh is removed for all zsh_setup_enriched_users
       ansible.builtin.stat:
         path: "{{ item.home }}/omz-installer.sh"
@@ -45,6 +62,7 @@
         msg: "zsh-installer.sh removal check failed for {{ item.username }}"
       loop: "{{ zsh_setup_enriched_users }}"
 
+    # Confirm that .zshrc files exist for all users
     - name: Confirm per-user $HOME/.zshrc files exist for all users
       ansible.builtin.stat:
         path: "{{ item.home }}/.zshrc"
