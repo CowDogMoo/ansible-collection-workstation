@@ -6,3 +6,4 @@ library/__pycache__
 logs
 changelogs/.plugin-cache.yaml
 *.pyc
+.task/

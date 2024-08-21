@@ -2,8 +2,8 @@
 version: "3"
 
 includes:
-  pre-commit: .taskfiles/pre-commit.yaml
-  changelog: .taskfiles/changelog.yaml
+  pre-commit: "https://raw.githubusercontent.com/CowDogMoo/taskfile-templates/main/pre-commit/Taskfile.yaml"
+  changelog: .taskfiles/ansible_changelog.yaml
   molecule: .taskfiles/molecule.yaml
   ansible_lint: .taskfiles/ansible_lint.yaml
 
@@ -16,7 +16,7 @@ tasks:
       - task: molecule:run-molecule-tests
 
   act:
-    desc: "Run GitHub Actions workflow using act"
+    desc: "Run GitHub Actions molecule workflow using act"
     cmds:
       - |
         if [[ $(uname -s) == "Darwin" ]] && [[ $(uname -m) == "arm64" ]]; then
