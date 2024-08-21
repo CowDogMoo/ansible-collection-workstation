@@ -56,6 +56,15 @@
   loop_control:
     loop_var: user
 
+- name: Check if omz-installer.sh exists for each user
+  ansible.builtin.stat:
+    path: "{{ user.home }}/omz-installer.sh"
+  register: omz_installer_stat
+  loop: "{{ zsh_setup_enriched_users }}"
+  loop_control:
+    loop_var: user
+    index_var: loop_index
+
 - name: Remove omz-installer.sh for all zsh_setup_enriched_users
   ansible.builtin.file:
     path: "{{ user.home }}/omz-installer.sh"
@@ -63,6 +72,7 @@
   become: true
   become_user: "{{ user.username }}"
   when: omz_installer_stat.results[loop_index].stat.exists
+  changed_when: false
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
     loop_var: user
