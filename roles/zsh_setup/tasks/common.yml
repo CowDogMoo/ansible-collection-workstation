@@ -24,6 +24,8 @@
     url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
     dest: "{{ item.home }}/omz-installer.sh"
     mode: '0755'
+  become: true
+  become_user: "{{ item.username }}"
   when: not oh_my_zsh_installed.results[loop_index].stat.exists
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
@@ -39,6 +41,8 @@
   become: true
   become_user: "{{ item.username }}"
   loop: "{{ zsh_setup_enriched_users }}"
+  loop_control:
+    index_var: loop_index
 
 - name: Remove omz-installer.sh for all zsh_setup_enriched_users
   ansible.builtin.file:
@@ -66,4 +70,4 @@
   become: true
   become_user: "{{ item.0.username }}"
   loop: "{{ zsh_setup_enriched_users | zip(zshrc_exists.results) | list }}"
-  when: item.1.stat.exists == false
+  when: not item.1.stat.exists
