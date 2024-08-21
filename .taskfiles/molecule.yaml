@@ -1,0 +1,17 @@
+---
+version: "3"
+
+tasks:
+  run-molecule-tests:
+    desc: "Run Molecule tests for all roles"
+    cmds:
+      - |
+        mkdir -p logs
+        export ANSIBLE_CONFIG=$(pwd)/ansible.cfg
+        for role in roles/*; do
+          if [[ -d "$role" ]]; then
+            echo "Running molecule tests for role $role"
+            (cd "$role" && molecule test) | tee -a logs/molecule_tests.log || exit 1
+          fi
+        done
+    silent: true

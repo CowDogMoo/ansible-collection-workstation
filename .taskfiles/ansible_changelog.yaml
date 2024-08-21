@@ -1,0 +1,13 @@
+---
+version: "3"
+
+tasks:
+  lint:
+    desc: "Lint the changelog"
+    cmds:
+      - antsibull-changelog lint
+
+  release:
+    desc: "Generate the changelog release"
+    cmds:
+      - antsibull-changelog release --version $NEXT_VERSION
