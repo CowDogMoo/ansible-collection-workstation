@@ -3,8 +3,6 @@
 This role installs and configures `zsh` with `oh-my-zsh` for user accounts on
 Unix-like systems.
 
----
-
 ## Requirements
 
 - Ansible 2.14 or higher.
@@ -17,8 +15,6 @@ Unix-like systems.
     molecule-docker \
     "molecule-plugins[docker]"
   ```
-
----
 
 ## Role Variables
 
@@ -34,7 +30,15 @@ Unix-like systems.
 - `username`: Specified user or default `{{ zsh_setup_default_username }}`
 - `usergroup`: User's group, default is `{{ zsh_setup_default_username }}`
 
----
+## Role Tasks
+
+- Gather and enrich user data.
+- Ensure necessary packages for `zsh` are installed.
+- Ensure user groups and users exist.
+- Ensure user home directories exist.
+- Check if `.oh-my-zsh` exists for users.
+- Download and install oh-my-zsh for users.
+- Ensure `.zshrc` exists for each user.
 
 ## Testing
 
@@ -47,24 +51,14 @@ molecule verify
 molecule destroy
 ```
 
-## Role Tasks
-
-- Check if .oh-my-zsh exists for users.
-- Download oh-my-zsh install script.
-- Install oh-my-zsh for users.
-- Ensure zsh-installer.sh is executable.
-- Execute zsh-installer.sh for users.
-- Remove zsh-installer.sh after installation.
-- Create per-user $HOME/.zshrc files.
-
 ## Platforms
 
 This role is tested on the following platforms:
 
 - Ubuntu
 - macOS
-- Kali
-- EL (Enterprise Linux)
+- Kali Linux
+- Enterprise Linux (EL)
 
 ## Dependencies
 
@@ -72,5 +66,5 @@ This role is tested on the following platforms:
 
 ## Author Information
 
-This role was created by Jayson Grace and is maintained as part of
-the CowDogMoo project.
+This role was created by Jayson Grace and is maintained as part of the
+CowDogMoo project.
