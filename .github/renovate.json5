@@ -29,6 +29,26 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr"
+    },
+    {
+      "matchPackageNames": ["python"],
+      "datasources": ["github-tags"],
+      "packageNames": ["python/cpython"]
+    },
+    {
+      "matchPackageNames": ["golang"],
+      "datasources": ["github-tags"],
+      "packageNames": ["golang/go"]
+    },
+    {
+      "matchPackageNames": ["kubectl"],
+      "datasources": ["github-tags"],
+      "packageNames": ["kubernetes/kubectl"]
+    },
+    {
+      "matchPackageNames": ["packer"],
+      "datasources": ["github-tags"],
+      "packageNames": ["hashicorp/packer"]
     }
   ],
   "customManagers": [
@@ -38,8 +58,9 @@
       "matchStrings": [
         "name: (?<depName>[a-zA-Z]+)[\\s\\S]*?version: \"(?<currentValue>[0-9.]+)\""
       ],
-      "datasourceTemplate": "github-releases",
-      "currentValueTemplate": "{{currentValue}}"
+      "datasourceTemplate": "github-tags",
+      "lookupNameTemplate": "{{{depName}}}/{{{depName}}}",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ]
 }
