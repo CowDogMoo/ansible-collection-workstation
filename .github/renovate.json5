@@ -34,7 +34,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["defaults/main.yml"],
+      "fileMatch": ["roles/asdf/defaults/main.yml"],
       "matchStrings": [
         "name: (?<depName>[a-zA-Z]+)[\\s\\S]*?version: \"(?<currentValue>[0-9.]+)\""
       ],
