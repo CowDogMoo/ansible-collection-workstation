@@ -47,6 +47,14 @@
         "name: (?<depName>[^\\s]+)\\n\\s+src: (?<lookupName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)"
       ],
       datasourceTemplate: "git-tags"
+    },
+    {
+      customType: "regex",
+      fileMatch: ["defaults/main.yml"],
+      matchStrings: [
+        "version: \"(?<currentValue>[0-9.]+)\"\\s+name: (?<depName>[a-zA-Z]+)"
+      ],
+      datasourceTemplate: "github-releases"
     }
   ]
 }
