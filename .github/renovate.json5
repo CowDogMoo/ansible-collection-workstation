@@ -38,8 +38,9 @@
       "matchStrings": [
         "name: (?<depName>[a-zA-Z]+)[\\s\\S]*?version: \"(?<currentValue>[0-9.]+)\""
       ],
-      "datasourceTemplate": "github-releases",
-      "currentValueTemplate": "{{currentValue}}"
+      "datasourceTemplate": "github-tags",
+      "lookupNameTemplate": "{{{depName}}}/{{{depName}}}",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ]
 }
