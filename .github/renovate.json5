@@ -29,6 +29,26 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr"
+    },
+    {
+      "matchPackageNames": ["python"],
+      "datasources": ["github-tags"],
+      "packageNames": ["python/cpython"]
+    },
+    {
+      "matchPackageNames": ["golang"],
+      "datasources": ["github-tags"],
+      "packageNames": ["golang/go"]
+    },
+    {
+      "matchPackageNames": ["kubectl"],
+      "datasources": ["github-tags"],
+      "packageNames": ["kubernetes/kubectl"]
+    },
+    {
+      "matchPackageNames": ["packer"],
+      "datasources": ["github-tags"],
+      "packageNames": ["hashicorp/packer"]
     }
   ],
   "customManagers": [
