@@ -1,8 +1,54 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.9.1 Release Notes
+CowDogMoo Workstation Ansible Collection 1.9.2 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v1.9.2
+======
+
+Release Summary
+---------------
+
+Migrated from Mage to Taskfile, updated roles for cross-platform support, and improved Renovate config and GitHub Actions workflows.
+
+Added
+-----
+
+- Added PAT token generation to `meta-sync-labels.yaml` workflow in GitHub Actions.
+- Added new tasks in the `zsh_setup` role to ensure that necessary packages, directories, and configurations are in place for both Unix-like and Windows systems.
+- Added regex-based custom managers for golang, python, kubectl, and packer versions in `asdf` role defaults.
+- Included author metadata in `getent_passwd.py` and `vnc_pw.py` for clarity and attribution.
+- Introduced `.taskfiles` directory with tasks for changelog generation, linting, and running Molecule tests, providing Taskfile support.
+- Introduced new Python callback plugin `profile_tasks.py` in the `vnc_setup` role for task profiling, helping to monitor task execution time during Molecule testing.
+- Updated `molecule.yaml` and `pre-commit.yaml` workflows to use `task` instead of `mage`.
+
+Changed
+-------
+
+- Migrated functionality from `magefiles` to `Taskfile`, centralizing task management in a single configuration.
+- Modified Python module files to include author information.
+- Modified the `user_setup` and `zsh_setup` roles to support both Unix-like and Windows systems, including adjustments to user creation and group management tasks.
+- Refactored labels, replacing `area/magefiles` with `area/taskfiles` in labeler and labels configurations.
+- Renamed and relocated `package_management` variables from `vars/main.yml` to `defaults/main.yml` for better variable management.
+- Updated README to reflect the removal of Mage-related documentation and examples.
+- Updated Renovate configuration to use proper JSON5 format with quotes around keys.
+- Updated `actions/setup-go`, `actions/setup-python`, and `renovatebot/github-action` versions in GitHub Actions workflows.
+- Updated `roles/asdf/defaults/main.yml` with version bumps for Ruby (3.3.4), Helm (3.15.4), Kubectl (1.30.3), and Packer (1.11.1).
+- Updated installation instructions for Ansible Galaxy collection.
+- Updated tasks in `asdf`, `vnc_setup`, and `zsh_setup` roles to conditionally apply `become` logic based on the operating system family (`Darwin`, `Windows`, etc.).
+- Updated the `vnc_setup` role to check for systemd presence before configuring VNC services, improving compatibility across different Linux distributions.
+
+Removed
+-------
+
+- Deleted `attack-box` playbook and associated Molecule test files, deprecating the `attack-box` configuration.
+- Deprecated `magefiles` references and removed associated README.
+- Removed `CreateRelease`, `GenerateMagePackageDocs`, and `RunMoleculeTests` functions from `magefiles`, transitioning task execution to the new `Taskfile` setup.
+- Removed `magefiles` directory, `go.mod`, `go.sum`, and `magefile.go` in favor of `Taskfile` implementation.
+- Removed all references to Mage functions such as `InstallDeps`, `RunPreCommit`, `GenChangeLog`, and their associated documentation in README.
+- Removed dependencies on the `cowdogmoo.workstation.package_management` role from `asdf`, `vnc_setup`, and `zsh_setup` roles.
+- Removed redundant tasks and variables associated with XFCE and VNC setup from the `package_management` role, simplifying the package installation process.
 
 v1.9.1
 ======
