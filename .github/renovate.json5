@@ -29,38 +29,48 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr"
-    },
-    {
-      "matchPackageNames": ["python"],
-      "datasources": ["github-tags"],
-      "packageNames": ["python/cpython"]
-    },
-    {
-      "matchPackageNames": ["golang"],
-      "datasources": ["github-tags"],
-      "packageNames": ["golang/go"]
-    },
-    {
-      "matchPackageNames": ["kubectl"],
-      "datasources": ["github-tags"],
-      "packageNames": ["kubernetes/kubectl"]
-    },
-    {
-      "matchPackageNames": ["packer"],
-      "datasources": ["github-tags"],
-      "packageNames": ["hashicorp/packer"]
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["roles/asdf/defaults/main.yml"],
+      "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
-        "name: (?<depName>[a-zA-Z]+)[\\s\\S]*?version: \"(?<currentValue>[0-9.]+)\""
+        "name: (?<depName>golang)\\s+version: \"(?<currentValue>[0-9.]+)\""
       ],
       "datasourceTemplate": "github-tags",
-      "lookupNameTemplate": "{{{depName}}}/{{{depName}}}",
-      "extractVersionTemplate": "^v(?<version>.*)$"
+      "depNameTemplate": "golang/go",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
+      "matchStrings": [
+        "name: (?<depName>python)\\s+version: \"(?<currentValue>[0-9.]+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "python/cpython",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
+      "matchStrings": [
+        "name: (?<depName>kubectl)\\s+version: \"(?<currentValue>[0-9.]+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "kubernetes/kubernetes",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
+      "matchStrings": [
+        "name: (?<depName>packer)\\s+version: \"(?<currentValue>[0-9.]+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "hashicorp/packer",
+      "versioningTemplate": "semver"
     }
   ]
 }
