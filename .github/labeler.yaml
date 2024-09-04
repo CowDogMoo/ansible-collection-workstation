@@ -34,7 +34,7 @@ area/playbooks:
 
 area/taskfiles:
   - changed-files:
-      - any-glob-to-any-file: ".taskfiles/**/*"
+      - any-glob-to-any-file: "Taskfile.yaml"
 
 area/galaxy:
   - changed-files:
