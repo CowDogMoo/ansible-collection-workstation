@@ -19,7 +19,7 @@ asdf_users:
         version: "1.23.1"
         scope: "global"
       - name: python
-        version: "3.12.6"
+        version: "3.12.7"
         scope: "global"
       - name: ruby
         version: "3.3.5"
