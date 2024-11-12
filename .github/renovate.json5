@@ -1,14 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:recommended",
     "docker:enableMajor",
     ":disableRateLimiting",
     ":dependencyDashboard",
     ":semanticCommits",
     ":enablePreCommit",
     ":automergeDigest",
-    ":automergeBranch",
     "helpers:pinGitHubActionDigests"
   ],
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
@@ -23,7 +22,7 @@
       "description": "Auto merge Galaxy dependencies",
       "matchDatasources": ["galaxy"],
       "automerge": true,
-      "automergeType": "branch",
+      "automergeType": "pr",
       "matchUpdateTypes": ["digest"]
     },
     {
@@ -31,7 +30,7 @@
       "matchManagers": ["github-actions"],
       "matchDatasources": ["github-tags"],
       "automerge": true,
-      "automergeType": "branch",
+      "automergeType": "pr",
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
@@ -52,7 +51,7 @@
       "customType": "regex",
       "fileMatch": ["(^|/)requirements\\.ya?ml$", "(^|/)galaxy\\.ya?ml$"],
       "matchStrings": [
-        "name: (?<depName>[^\\s]+)\\n\\s+src: (?<lookupName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)"
+        "name: (?<depName>[^\\s]+)\\n\\s+src: (?<packageName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)"
       ],
       "datasourceTemplate": "git-tags"
     },
