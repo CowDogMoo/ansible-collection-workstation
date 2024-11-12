@@ -139,24 +139,31 @@ jobs:
             path: "playbooks/runzero-explorer"
     steps:
       - name: Delete huge unnecessary tools folder
-        run: rm -rf /opt/hostedtoolcache
+        run: |
+          echo "Initial disk space:"
+          df -h
+          rm -rf /opt/hostedtoolcache
+          echo "Disk space after cleanup:"
+          df -h
 
-      - name: Clone git repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Setup Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
         with:
-          python-version: "3.x"
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: '.hooks/requirements.txt'
+
+      - name: Cache Ansible collections
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+        with:
+          path: ~/.ansible/collections
+          key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
 
       - name: Install dependencies
-        run: |
-          python3 -m pip install --upgrade \
-          ansible-core \
-          docker \
-          molecule \
-          molecule-docker \
-          "molecule-plugins[docker]"
+        run: python3 -m pip install -r .hooks/requirements.txt
 
       - name: Install galaxy dependencies
         run: |
@@ -165,9 +172,39 @@ jobs:
           mkdir -p $HOME/.ansible/collections/ansible_collections/cowdogmoo
           ln -s $PWD $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
 
-      - name: ${{ matrix.name }}
-        run: molecule test
-        working-directory: ${{ matrix.path }}
-        env:
-          PY_COLORS: "1"
-          ANSIBLE_FORCE_COLOR: "1"
+          - name: Run molecule test for ${{ matrix.name }}
+          run: |
+            set -ex
+            molecule --version
+            molecule list
+
+            if ! ANSIBLE_VERBOSITY=2 molecule test; then
+              echo "Molecule test failed. Collecting debug information..."
+
+              echo "=== Playbook content ==="
+              cat molecule/default/converge.yml || true
+
+              echo "=== Docker Status ==="
+              docker ps -a
+
+              echo "=== Docker Container Logs ==="
+              docker ps -q | while read -r container; do
+                echo "=== Logs from container ${container} ==="
+                docker logs "${container}" 2>&1 || true
+              done
+
+              echo "=== Molecule Logs ==="
+              find . -type f -name '*.log' -print0 | while IFS= read -r -d '' log; do
+                echo "Contents of ${log}:"
+                cat "${log}"
+              done
+
+              echo "=== Directory Contents ==="
+              ls -R molecule/
+
+              echo "=== Molecule Config ==="
+              cat molecule/default/molecule.yml || true
+
+              exit 1
+            fi
+          working-directory: ${{ matrix.path }}
