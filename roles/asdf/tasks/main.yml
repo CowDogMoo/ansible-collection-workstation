@@ -178,7 +178,9 @@
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
     cmd: |
+      {% if shell_executable != '/bin/sh' %}
       set -o pipefail
+      {% endif %}
       export ASDF_DIR="{{ user.home }}/.asdf"
       if [ -f "${ASDF_DIR}/asdf.sh" ]; then
         . "${ASDF_DIR}/asdf.sh"

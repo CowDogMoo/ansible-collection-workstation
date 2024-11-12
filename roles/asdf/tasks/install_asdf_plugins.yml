@@ -8,11 +8,7 @@
 - name: Set shell executable
   ansible.builtin.set_fact:
     shell_executable: >-
-      {% if bash_check.rc == 0 and bash_check.stdout is defined %}
-      {{- bash_check.stdout | trim -}}
-      {% else %}
-      /bin/sh
-      {% endif %}
+      {% if bash_check.rc == 0 and bash_check.stdout is defined %}{{- bash_check.stdout | trim -}} {% else %} /bin/sh {% endif %}
 
 - name: Install asdf plugins globally
   become: true
