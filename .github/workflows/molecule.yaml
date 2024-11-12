@@ -101,72 +101,49 @@ jobs:
             echo "${json}"
           }
 
-          # Initialize empty arrays
+          # Initialize arrays
           roles=()
           playbooks=()
 
-          # Get event type from GitHub context
-          event_type="${{ github.event_name }}"
-          echo "Event type: $event_type"
+          # Safely get available roles
+          while IFS= read -r -d '' role_dir; do
+            available_roles+=("$(basename "$role_dir")")
+          done < <(find roles -maxdepth 1 -mindepth 1 -type d -print0)
+          echo "Available roles: ${available_roles[*]}"
 
-          # For scheduled/manual runs or pushes, test everything
-          if [[ "$event_type" == "schedule" || "$event_type" == "workflow_dispatch" || "$event_type" == "push" ]]; then
-            echo "Running full test suite due to event type: $event_type"
-            roles=(
-              '{"name":"Role Test - asdf","path":"roles/asdf"}'
-              '{"name":"Role Test - logging","path":"roles/logging"}'
-              '{"name":"Role Test - package_management","path":"roles/package_management"}'
-              '{"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"}'
-              '{"name":"Role Test - user_setup","path":"roles/user_setup"}'
-              '{"name":"Role Test - vnc_setup","path":"roles/vnc_setup"}'
-              '{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}'
-            )
-            playbooks=(
-              '{"name":"Playbook Test - workstation","path":"playbooks/workstation"}'
-              '{"name":"Playbook Test - runzero-explorer","path":"playbooks/runzero-explorer"}'
-            )
+          # Full test suite for non-PR events
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "push" ]]; then
+            for role in "${available_roles[@]}"; do
+              roles+=("{\"name\":\"Role Test - ${role}\",\"path\":\"roles/${role}\"}")
+            done
+
+            # Handle playbooks similarly
+            while IFS= read -r -d '' playbook_dir; do
+              playbook=$(basename "$playbook_dir")
+              playbooks+=("{\"name\":\"Playbook Test - ${playbook}\",\"path\":\"playbooks/${playbook}\"}")
+            done < <(find playbooks -maxdepth 1 -mindepth 1 -type d -print0)
           else
-            # For PRs, check labels and changed files
+            # PR handling
             echo "Processing PR with labels"
 
-            # Check if area/roles label is present
+            # If area/roles is present, test all roles
             if [[ "${{ contains(github.event.pull_request.labels.*.name, 'area/roles') }}" == "true" ]]; then
               echo "area/roles label found - testing all roles"
-              roles=(
-                '{"name":"Role Test - asdf","path":"roles/asdf"}'
-                '{"name":"Role Test - logging","path":"roles/logging"}'
-                '{"name":"Role Test - package_management","path":"roles/package_management"}'
-                '{"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"}'
-                '{"name":"Role Test - user_setup","path":"roles/user_setup"}'
-                '{"name":"Role Test - vnc_setup","path":"roles/vnc_setup"}'
-                '{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}'
-              )
+              for role in "${available_roles[@]}"; do
+                roles+=("{\"name\":\"Role Test - ${role}\",\"path\":\"roles/${role}\"}")
+              done
             else
-              # Check individual role labels
-              echo "Checking individual role labels"
-              [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/asdf') }}" == "true" ]] && roles+=('{"name":"Role Test - asdf","path":"roles/asdf"}')
-              [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/logging') }}" == "true" ]] && roles+=('{"name":"Role Test - logging","path":"roles/logging"}')
-              [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/package_management') }}" == "true" ]] && roles+=('{"name":"Role Test - package_management","path":"roles/package_management"}')
-              [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/runzero_explorer') }}" == "true" ]] && roles+=('{"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"}')
-              [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/user_setup') }}" == "true" ]] && roles+=('{"name":"Role Test - user_setup","path":"roles/user_setup"}')
-              [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/vnc_setup') }}" == "true" ]] && roles+=('{"name":"Role Test - vnc_setup","path":"roles/vnc_setup"}')
-              [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/zsh_setup') }}" == "true" ]] && roles+=('{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}')
+              # Get changed files
+              git fetch origin "${{ github.base_ref || 'main' }}"
+              changed_files="$(git diff --name-only "origin/${{ github.base_ref || 'main' }}"..HEAD)"
 
-              # Get changed files and check role directories
-              git fetch origin "${{ github.base_ref }}"
-              changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"..HEAD)"
-              echo "Changed files:"
-              echo "$changed_files"
-
-              if [[ -n "$changed_files" ]]; then
-                grep -q "^roles/asdf/" <<< "$changed_files" && roles+=('{"name":"Role Test - asdf","path":"roles/asdf"}')
-                grep -q "^roles/logging/" <<< "$changed_files" && roles+=('{"name":"Role Test - logging","path":"roles/logging"}')
-                grep -q "^roles/package_management/" <<< "$changed_files" && roles+=('{"name":"Role Test - package_management","path":"roles/package_management"}')
-                grep -q "^roles/runzero_explorer/" <<< "$changed_files" && roles+=('{"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"}')
-                grep -q "^roles/user_setup/" <<< "$changed_files" && roles+=('{"name":"Role Test - user_setup","path":"roles/user_setup"}')
-                grep -q "^roles/vnc_setup/" <<< "$changed_files" && roles+=('{"name":"Role Test - vnc_setup","path":"roles/vnc_setup"}')
-                grep -q "^roles/zsh_setup/" <<< "$changed_files" && roles+=('{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}')
-              fi
+              for role in "${available_roles[@]}"; do
+                # Check for role-specific label or changes
+                if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/${role}') }}" == "true" ]] || \
+                    grep -q "^roles/${role}/" <<< "$changed_files"; then
+                  roles+=("{\"name\":\"Role Test - ${role}\",\"path\":\"roles/${role}\"}")
+                fi
+              done
             fi
           fi
 
@@ -174,14 +151,12 @@ jobs:
           roles_json=$(create_json "${roles[@]}")
           playbooks_json=$(create_json "${playbooks[@]}")
 
-          # Set outputs
           {
             echo "roles-matrix=${roles_json}"
             echo "playbooks-matrix=${playbooks_json}"
           } >> "$GITHUB_OUTPUT"
 
-          # Debug output
-          echo "Event: $event_type"
+          echo "Event: ${{ github.event_name }}"
           echo "Roles matrix: ${roles_json}"
           echo "Playbooks matrix: ${playbooks_json}"
 
