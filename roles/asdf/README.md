@@ -1,6 +1,6 @@
 # Ansible Role: asdf
 
-This role installs and configures the asdf version manager for multiple
+This role installs and configures the `asdf` version manager for multiple
 programming languages on Unix-like systems.
 
 ---
