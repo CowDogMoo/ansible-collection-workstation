@@ -214,17 +214,9 @@
     loop_var: result
     label: "{{ result.user.username }}"
 
-# TODO: Remove if we prefer template to file
-# - name: Copy setup_asdf_env.sh to a common location for all users
-#   ansible.builtin.copy:
-#     src: setup_asdf_env.sh
-#     dest: "{{ asdf_install_script_path }}"
-#     mode: "0755"
-#   when: not asdf_global_install
-
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
   when: ansible_distribution == 'Rocky'
 
 - name: Install asdf plugins and set versions
-  ansible.builtin.include_tasks: package_individual_setup.yml
+  ansible.builtin.include_tasks: install_asdf_plugins.yml
