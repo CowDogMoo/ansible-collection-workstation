@@ -22,7 +22,10 @@ concurrency:
 
 env:
   ANSIBLE_FORCE_COLOR: "1"
-  COLLECTION_PATH: $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
+  COLLECTION_NAMESPACE: cowdogmoo
+  COLLECTION_NAME: workstation
+  COLLECTION_PATH: ansible_collections/cowdogmoo/workstation
+  REQUIREMENTS_FILE: .hooks/requirements.txt
   PY_COLORS: "1"
   PYTHON_VERSION: "3.12.6"
   RUNZERO_DOWNLOAD_TOKEN: ${{ secrets.RUNZERO_DOWNLOAD_TOKEN }}
@@ -64,14 +67,14 @@ jobs:
       - name: Checkout git repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          path: ansible_collections/cowdogmoo/workstation
+          path: ${{ env.COLLECTION_PATH }}
 
       - name: Set up Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-          cache-dependency-path: 'ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt'
+          cache-dependency-path: '${{ env.COLLECTION_PATH }}/${{ env.REQUIREMENTS_FILE }}'
 
       - name: Cache Ansible collections
         uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
@@ -82,17 +85,17 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          python3 -m pip install -r "ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt"
+          python3 -m pip install -r "${{ env.COLLECTION_PATH }}/${{ env.REQUIREMENTS_FILE }}"
 
       - name: Install galaxy dependencies
-        working-directory: ansible_collections/cowdogmoo/workstation
+        working-directory: ${{ env.COLLECTION_PATH }}
         shell: bash
         run: |
           ansible-galaxy collection install -r requirements.yml
           ansible-galaxy install -r requirements.yml
 
       - name: Run molecule test
-        working-directory: ansible_collections/cowdogmoo/workstation/${{ matrix.path }}
+        working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
         run: |
           set -ex
@@ -154,14 +157,14 @@ jobs:
       - name: Checkout git repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          path: ansible_collections/cowdogmoo/workstation
+          path: ${{ env.COLLECTION_PATH }}
 
       - name: Set up Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-          cache-dependency-path: 'ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt'
+          cache-dependency-path: '${{ env.COLLECTION_PATH }}/${{ env.REQUIREMENTS_FILE }}'
 
       - name: Cache Ansible collections
         uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
@@ -172,17 +175,17 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          python3 -m pip install -r "ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt"
+          python3 -m pip install -r "${{ env.COLLECTION_PATH }}/${{ env.REQUIREMENTS_FILE }}"
 
       - name: Install galaxy dependencies
-        working-directory: ansible_collections/cowdogmoo/workstation
+        working-directory: ${{ env.COLLECTION_PATH }}
         shell: bash
         run: |
           ansible-galaxy collection install -r requirements.yml
           ansible-galaxy install -r requirements.yml
 
       - name: Run molecule test
-        working-directory: ansible_collections/cowdogmoo/workstation/${{ matrix.path }}
+        working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
         run: |
           set -ex
