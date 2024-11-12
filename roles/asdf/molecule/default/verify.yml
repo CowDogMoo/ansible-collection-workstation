@@ -46,7 +46,9 @@
 
     - name: Check installed ASDF plugins and versions
       ansible.builtin.shell: |
+        {% if shell_executable != '/bin/sh' %}
         set -o pipefail
+        {% endif %}
         . /etc/profile.d/asdf.sh
         asdf plugin list
         asdf list
@@ -107,7 +109,9 @@
 
     - name: Check contents of .tool-versions for each user
       ansible.builtin.shell: |
+        {% if shell_executable != '/bin/sh' %}
         set -o pipefail
+        {% endif %}
         cat /home/{{ user.username }}/.tool-versions
       args:
         executable: "{{ user.shell }}"
