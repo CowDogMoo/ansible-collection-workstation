@@ -108,15 +108,29 @@
       when: not asdf_global_install | default(false)
 
     - name: Check contents of .tool-versions for each user
-      ansible.builtin.shell: |
-        {% if shell_executable != '/bin/sh' %}
-        set -o pipefail
-        {% endif %}
-        cat /home/{{ user.username }}/.tool-versions
-      args:
-        executable: "{{ user.shell }}"
+      ansible.builtin.command:
+        cmd: "cat /home/{{ user.username }}/.tool-versions"
+      register: tool_versions_content
       loop: "{{ asdf_users }}"
       loop_control:
         loop_var: user
       changed_when: false
+      when: not asdf_global_install | default(false)
+
+    - name: Set expected version facts
+      ansible.builtin.set_fact:
+        expected_golang_version: "{{ asdf_users[0].plugins[0].version }}"
+      when: not asdf_global_install | default(false)
+
+    - name: Assert .tool-versions content
+      ansible.builtin.assert:
+        that:
+          - "'golang' in item.stdout"
+          - "expected_golang_version in item.stdout"
+        fail_msg: "Expected version {{ expected_golang_version }} not found in .tool-versions"
+        success_msg: "Found expected golang version {{ expected_golang_version }}"
+      loop: "{{ tool_versions_content.results }}"
+      loop_control:
+        loop_var: item
+        label: "Checking .tool-versions content"
       when: not asdf_global_install | default(false)
