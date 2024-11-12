@@ -8,6 +8,32 @@
   ansible.builtin.include_tasks: asdf_get_enriched_users.yml
   when: not asdf_global_install
 
+- name: Check available shells
+  ansible.builtin.stat:
+    path: "{{ shell_path }}"
+  register: shell_check
+  with_items: "{{ asdf_shells }}"
+  loop_control:
+    loop_var: shell_path
+  changed_when: false
+  when: not asdf_global_install
+
+- name: Set available shell fact
+  ansible.builtin.set_fact:
+    available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
+  when: not asdf_global_install
+
+- name: Set user shell to available shell
+  ansible.builtin.set_fact:
+    asdf_enriched_users: >-
+      {{ asdf_enriched_users | map('combine', {
+        'shell': available_shell
+      }) | list }}
+  when:
+    - not asdf_global_install
+    - asdf_enriched_users is defined
+    - available_shell is defined
+
 - name: Create global ASDF installation directory
   ansible.builtin.file:
     path: "/opt/asdf"
@@ -49,8 +75,7 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  when:
-    - not asdf_global_install
+  when: not asdf_global_install
 
 - name: Ensure asdf is cloned for each user
   ansible.builtin.include_tasks: ensure_directory_exists.yml
@@ -66,8 +91,7 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  when:
-    - not asdf_global_install
+  when: not asdf_global_install
 
 - name: Deploy .tool-versions file
   ansible.builtin.copy:
@@ -99,8 +123,7 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  when:
-    - not asdf_global_install
+  when: not asdf_global_install
 
 - name: Ensure .asdf directory exists for each user
   ansible.builtin.include_tasks: ensure_directory_exists.yml
@@ -116,8 +139,7 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  when:
-    - not asdf_global_install
+  when: not asdf_global_install
 
 - name: Set permissions for each user's ASDF directory
   ansible.builtin.include_tasks: ensure_directory_exists.yml
@@ -133,8 +155,7 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  when:
-    - not asdf_global_install
+  when: not asdf_global_install
 
 - name: Include task to update shell profiles for each user
   ansible.builtin.include_tasks: update_shell_profiles.yml
@@ -143,23 +164,34 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  when:
-    - not asdf_global_install
+  when: not asdf_global_install
+
+- name: Template ASDF environment setup script
+  ansible.builtin.template:
+    src: setup_asdf_env.sh.j2
+    dest: "{{ asdf_install_script_path }}"
+    mode: "0755"
+  vars:
+    shell_to_use: "{{ available_shell | default('/bin/sh') }}"
+  when: not asdf_global_install
 
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
     cmd: |
+      {% if shell_executable != '/bin/sh' %}
       set -o pipefail
-      if [ -f "{{ user.home }}/.asdf/asdf.sh" ]; then
-        . "{{ user.home }}/.asdf/asdf.sh"
+      {% endif %}
+      export ASDF_DIR="{{ user.home }}/.asdf"
+      if [ -f "${ASDF_DIR}/asdf.sh" ]; then
+        . "${ASDF_DIR}/asdf.sh"
       fi
       {% if user.plugins is defined %}
       {% for plugin in user.plugins %}
-      if ! asdf plugin list | grep -q {{ plugin.name }}; then
+      if ! asdf plugin list 2>/dev/null | grep -q {{ plugin.name }}; then
         asdf plugin add {{ plugin.name }};
       fi;
       {% endfor %}
-      echo "plugins:$(asdf plugin list),versions:$(asdf list all | tr '\n' ',')"
+      echo "plugins:$(asdf plugin list 2>/dev/null),versions:$(asdf list all 2>/dev/null | tr '\n' ',')"
       {% else %}
       echo "plugins:,versions:"
       {% endif %}
@@ -171,14 +203,6 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  when:
-    - not asdf_global_install
-
-- name: Copy setup_asdf_env.sh to a common location for all users
-  ansible.builtin.copy:
-    src: setup_asdf_env.sh
-    dest: "{{ asdf_install_script_path }}"
-    mode: "0755"
   when: not asdf_global_install
 
 - name: Install libyaml from source
@@ -186,4 +210,4 @@
   when: ansible_distribution == 'Rocky'
 
 - name: Install asdf plugins and set versions
-  ansible.builtin.include_tasks: package_individual_setup.yml
+  ansible.builtin.include_tasks: install_asdf_plugins.yml

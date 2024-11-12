@@ -5,9 +5,18 @@
   ignore_errors: true
   changed_when: false
 
+- name: Set detected shell fact
+  ansible.builtin.set_fact:
+    detected_shell: "{{ shell_path.stdout if shell_path.stdout != '' else '/bin/bash' }}"
+
+- name: Update asdf_enriched_users with detected shell
+  ansible.builtin.set_fact:
+    asdf_enriched_users: >-
+      {{ asdf_enriched_users | map('combine', {'shell': detected_shell}) | list }}
+
 - name: Update shell profile for users
   ansible.builtin.blockinfile:
-    path: "{{ enriched_user.home }}/{{ (shell_path.stdout == '') | ternary('.bashrc', (enriched_user.shell == '/bin/zsh') | ternary('.zshrc', '.bashrc')) }}"
+    path: "{{ enriched_user.home }}/{{ (detected_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
     block: |
       {% for line in enriched_user.shell_profile_lines %}
       {{ line }}
@@ -19,7 +28,6 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: enriched_user
-  when: shell_path.stdout != ""
 
 - name: Ensure user home directory exists
   ansible.builtin.include_tasks: ensure_directory_exists.yml
