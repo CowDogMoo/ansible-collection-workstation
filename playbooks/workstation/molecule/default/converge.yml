@@ -2,6 +2,8 @@
 - name: Converge
   hosts: all
   gather_facts: true
+  collections:
+    - cowdogmoo.workstation
   pre_tasks:
     - name: Set ansible_user_id based on OS
       ansible.builtin.set_fact:
