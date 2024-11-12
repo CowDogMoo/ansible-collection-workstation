@@ -9,6 +9,13 @@ asdf_install_script_path: /tmp/setup_asdf_env
 # Install asdf globally or per user
 asdf_global_install: false
 
+# Define available shells in order of preference
+asdf_shells:
+  - "/usr/bin/zsh"
+  - "/bin/zsh"
+  - "/usr/bin/bash"
+  - "/bin/bash"
+
 # Users to setup with asdf
 asdf_users:
   - username: "{{ asdf_default_username }}"
