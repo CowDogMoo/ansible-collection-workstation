@@ -54,10 +54,6 @@ management and service setup.
 
 Creates logging directories and log rotation configurations for a provided path.
 
-### runZero Explorer
-
-Installs and configures [runZero Explorer](https://console.runzero.com/deploy/download/explorers).
-
 ## Usage
 
 Include the roles from this collection in your playbook. Here's an example:

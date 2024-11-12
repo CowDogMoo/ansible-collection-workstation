@@ -28,7 +28,6 @@ env:
   REQUIREMENTS_FILE: .hooks/requirements.txt
   PY_COLORS: "1"
   PYTHON_VERSION: "3.12.6"
-  RUNZERO_DOWNLOAD_TOKEN: ${{ secrets.RUNZERO_DOWNLOAD_TOKEN }}
 
 jobs:
   role_test:
@@ -135,8 +134,6 @@ jobs:
         include:
           - name: "Playbook Test - workstation"
             path: "playbooks/workstation"
-          - name: "Playbook Test - runzero-explorer"
-            path: "playbooks/runzero-explorer"
 
     steps:
       - name: Install Act dependencies

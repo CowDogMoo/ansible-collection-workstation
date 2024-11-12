@@ -66,11 +66,6 @@
   description: >-
     Changes made to package_management role
 
-- name: role/runzero_explorer
-  color: "33CC99" # Mint Green
-  description: >-
-    Changes made to runzero_explorer role
-
 - name: role/user_setup
   color: "FF9933" # Dark Orange
   description: >-
@@ -87,11 +82,6 @@
     Changes made to zsh_setup role
 
 # Individual Playbooks
-- name: playbook/runzero-explorer
-  color: "66FF99" # Seafoam Green
-  description: >-
-    Changes made to runzero-explorer playbook
-
 - name: playbook/workstation
   color: "FF66CC" # Bright Pink
   description: >-

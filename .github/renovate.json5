@@ -18,19 +18,42 @@
   "pre-commit": {
     "enabled": true
   },
+  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
+  "suppressNotifications": ["prIgnoreNotification"],
+  "rebaseWhen": "conflicted",
+  "commitBodyTable": true,
+  "pre-commit": {
+    "enabled": true
+  },
   "packageRules": [
     {
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": ["*"],
-      "enabled": true
+      "description": "Auto merge Galaxy dependencies",
+      "matchDatasources": ["galaxy"],
+      "automerge": true,
+      "automergeType": "branch",
+      "matchUpdateTypes": ["digest"]
     },
     {
-      "description": "Auto merge GitHub Actions",
+      "description": "Auto-merge GitHub Actions",
       "matchManagers": ["github-actions"],
+      "matchDatasources": ["github-tags"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "branch",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Group Ansible Galaxy dependencies",
+      "matchManagers": ["ansible-galaxy"],
+      "groupName": "ansible-dependencies"
     }
   ],
+  "ansible": {
+    "fileMatch": [
+      "^requirements\\.yml$",
+      "^roles/[^/]+/meta/main\\.yml$",
+      "^galaxy\\.yml$"
+    ]
+  },
   "customManagers": [
     {
       "customType": "regex",

@@ -58,10 +58,6 @@ role/package_management:
   - changed-files:
       - any-glob-to-any-file: "roles/package_management/**/*"
 
-role/runzero_explorer:
-  - changed-files:
-      - any-glob-to-any-file: "roles/runzero_explorer/**/*"
-
 role/user_setup:
   - changed-files:
       - any-glob-to-any-file: "roles/user_setup/**/*"
@@ -75,10 +71,6 @@ role/zsh_setup:
       - any-glob-to-any-file: "roles/zsh_setup/**/*"
 
 # Individual playbooks
-playbook/runzero-explorer:
-  - changed-files:
-      - any-glob-to-any-file: "playbooks/runzero-explorer/**/*"
-
 playbook/workstation:
   - changed-files:
       - any-glob-to-any-file: "playbooks/workstation/**/*"
