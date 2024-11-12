@@ -43,8 +43,3 @@ tasks:
       - echo "Generating changelog for release $NEXT_VERSION"
       - task: ansible:changelog-lint
       - task: ansible:changelog-release
-
-  create-release:
-    desc: "Create a release on GitHub"
-    cmds:
-      - task: github:create-release
