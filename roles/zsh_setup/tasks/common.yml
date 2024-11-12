@@ -33,10 +33,9 @@
 
 - name: Install oh-my-zsh for all zsh_setup_enriched_users
   ansible.builtin.shell: |
-    {% if shell_executable != '/bin/sh' %}
+    {% if ansible_facts.shell != '/bin/sh' %}
     set -o pipefail
     {% endif %}
-
     echo 'y' | {{ item.home }}/omz-installer.sh --unattended --keep-zshrc
   args:
     creates: "{{ item.home }}/.oh-my-zsh"
