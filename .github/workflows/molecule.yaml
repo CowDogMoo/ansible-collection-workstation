@@ -87,43 +87,42 @@ jobs:
           mkdir -p ~/.ansible/collections/ansible_collections/CowDogMoo
           ln -s "$PWD" ~/.ansible/collections/ansible_collections/CowDogMoo/workstation
 
-          - name: Run molecule test for ${{ matrix.name }}
-          run: |
-            set -ex
-            molecule --version
-            molecule list
+      - name: Run molecule test for ${{ matrix.name }}
+        run: |
+          set -ex
+          molecule --version
+          molecule list
 
-            if ! MOLECULE_DEBUG=1 molecule test; then
-              echo "Molecule test failed. Collecting debug information..."
+          if ! ANSIBLE_VERBOSITY=2 molecule test; then
+            echo "Molecule test failed. Collecting debug information..."
 
-              echo "Docker containers:"
-              docker ps -a
+            echo "=== Playbook content ==="
+            cat molecule/default/converge.yml || true
 
-              echo "=== Docker Container Logs ==="
-              docker ps -q | while read -r container; do
-                echo "=== Logs from container ${container} ==="
-                docker logs "${container}" 2>&1
-                echo "=== End logs for container ${container} ==="
-              done
+            echo "=== Docker Status ==="
+            docker ps -a
 
-              echo "=== Molecule Logs ==="
-              find . -name '*.log' -print0 | while IFS= read -r -d '' log; do
-                echo "Contents of ${log}:"
-                cat "${log}"
-                echo "=== End of ${log} ==="
-              done
+            echo "=== Docker Container Logs ==="
+            docker ps -q | while read -r container; do
+              echo "=== Logs from container ${container} ==="
+              docker logs "${container}" 2>&1 || true
+            done
 
-              echo "=== Directory structure ==="
-              ls -R molecule/
+            echo "=== Molecule Logs ==="
+            find . -type f -name '*.log' -print0 | while IFS= read -r -d '' log; do
+              echo "Contents of ${log}:"
+              cat "${log}"
+            done
 
-              if [ -f "molecule/default/molecule.yml" ]; then
-                echo "=== molecule.yml content ==="
-                cat "molecule/default/molecule.yml"
-              fi
+            echo "=== Directory Contents ==="
+            ls -R molecule/
 
-              exit 1
-            fi
-          working-directory: ${{ matrix.path }}
+            echo "=== Molecule Config ==="
+            cat molecule/default/molecule.yml || true
+
+            exit 1
+          fi
+        working-directory: ${{ matrix.path }}
 
   playbook_test:
     runs-on: ubuntu-latest
@@ -165,46 +164,39 @@ jobs:
       - name: Install dependencies
         run: python3 -m pip install -r .hooks/requirements.txt
 
-      - name: Install galaxy dependencies
+      - name: Run molecule test for ${{ matrix.name }}
         run: |
-          ansible-galaxy install -v -r requirements.yml
-          ansible-galaxy collection install -v -r requirements.yml
-          mkdir -p $HOME/.ansible/collections/ansible_collections/cowdogmoo
-          ln -s $PWD $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
+          set -ex
+          molecule --version
+          molecule list
 
-          - name: Run molecule test for ${{ matrix.name }}
-          run: |
-            set -ex
-            molecule --version
-            molecule list
+          if ! ANSIBLE_VERBOSITY=2 molecule test; then
+            echo "Molecule test failed. Collecting debug information..."
 
-            if ! ANSIBLE_VERBOSITY=2 molecule test; then
-              echo "Molecule test failed. Collecting debug information..."
+            echo "=== Playbook content ==="
+            cat molecule/default/converge.yml || true
 
-              echo "=== Playbook content ==="
-              cat molecule/default/converge.yml || true
+            echo "=== Docker Status ==="
+            docker ps -a
 
-              echo "=== Docker Status ==="
-              docker ps -a
+            echo "=== Docker Container Logs ==="
+            docker ps -q | while read -r container; do
+              echo "=== Logs from container ${container} ==="
+              docker logs "${container}" 2>&1 || true
+            done
 
-              echo "=== Docker Container Logs ==="
-              docker ps -q | while read -r container; do
-                echo "=== Logs from container ${container} ==="
-                docker logs "${container}" 2>&1 || true
-              done
+            echo "=== Molecule Logs ==="
+            find . -type f -name '*.log' -print0 | while IFS= read -r -d '' log; do
+              echo "Contents of ${log}:"
+              cat "${log}"
+            done
 
-              echo "=== Molecule Logs ==="
-              find . -type f -name '*.log' -print0 | while IFS= read -r -d '' log; do
-                echo "Contents of ${log}:"
-                cat "${log}"
-              done
+            echo "=== Directory Contents ==="
+            ls -R molecule/
 
-              echo "=== Directory Contents ==="
-              ls -R molecule/
+            echo "=== Molecule Config ==="
+            cat molecule/default/molecule.yml || true
 
-              echo "=== Molecule Config ==="
-              cat molecule/default/molecule.yml || true
-
-              exit 1
-            fi
-          working-directory: ${{ matrix.path }}
+            exit 1
+          fi
+        working-directory: ${{ matrix.path }}
