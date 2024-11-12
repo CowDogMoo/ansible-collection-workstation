@@ -31,15 +31,26 @@
   loop_control:
     index_var: loop_index
 
+- name: Check for bash
+  ansible.builtin.command: which bash
+  register: bash_check
+  changed_when: false
+  ignore_errors: true
+
+- name: Set shell executable
+  ansible.builtin.set_fact:
+    shell_executable: >-
+      {% if bash_check.rc == 0 and bash_check.stdout is defined %}{{- bash_check.stdout | trim -}}{% else %}/bin/sh{% endif %}
+
 - name: Install oh-my-zsh for all zsh_setup_enriched_users
   ansible.builtin.shell: |
-    {% if ansible_facts.shell != '/bin/sh' %}
+    {% if shell_executable != '/bin/sh' %}
     set -o pipefail
     {% endif %}
     echo 'y' | {{ item.home }}/omz-installer.sh --unattended --keep-zshrc
   args:
     creates: "{{ item.home }}/.oh-my-zsh"
-    executable: /bin/zsh
+    executable: "{{ shell_executable }}"
   become: true
   become_user: "{{ item.username }}"
   loop: "{{ zsh_setup_enriched_users }}"
