@@ -28,147 +28,22 @@ env:
   RUNZERO_DOWNLOAD_TOKEN: ${{ secrets.RUNZERO_DOWNLOAD_TOKEN }}
 
 jobs:
-  determine-tests:
-    runs-on: ubuntu-latest
-    outputs:
-      roles-matrix: ${{ steps.set-matrix.outputs.roles-matrix }}
-      playbooks-matrix: ${{ steps.set-matrix.outputs.playbooks-matrix }}
-      should-run: ${{ steps.check-changes.outputs.should-run }}
-    steps:
-      - name: Checkout git repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          fetch-depth: 0
-
-      - name: Check for relevant changes and labels
-        id: check-changes
-        shell: bash
-        run: |
-          should_run="false"
-
-          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "push" ]]; then
-            should_run="true"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # Check labels
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'area/roles') }}" == "true" || \
-                  "${{ contains(github.event.pull_request.labels.*.name, 'area/playbooks') }}" == "true" ]]; then
-              should_run="true"
-            fi
-
-            # Check individual role labels
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/asdf') }}" == "true" || \
-                  "${{ contains(github.event.pull_request.labels.*.name, 'role/user_setup') }}" == "true" || \
-                  "${{ contains(github.event.pull_request.labels.*.name, 'role/package_management') }}" == "true" || \
-                  "${{ contains(github.event.pull_request.labels.*.name, 'role/zsh_setup') }}" == "true" ]]; then
-              should_run="true"
-            fi
-
-            # Check individual playbook labels
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'playbook/workstation') }}" == "true" || \
-                  "${{ contains(github.event.pull_request.labels.*.name, 'playbook/runzero-explorer') }}" == "true" ]]; then
-              should_run="true"
-            fi
-
-            # Check changed files
-            git fetch origin "${{ github.base_ref }}"
-            changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"..HEAD)"
-
-            if echo "${changed_files}" | grep -qE "^(roles/|playbooks/|molecule/|requirements\.yml)"; then
-              should_run="true"
-            fi
-          fi
-
-          echo "should-run=${should_run}" >> "$GITHUB_OUTPUT"
-
-          # Debug output
-          echo "Event: ${{ github.event_name }}"
-          echo "Should run: ${should_run}"
-
-      - name: Determine affected components
-        id: set-matrix
-        if: steps.check-changes.outputs.should-run == 'true'
-        shell: bash
-        run: |
-          # Function to create compact JSON
-          create_json() {
-            local items=("$@")
-            local json
-            if [ ${#items[@]} -eq 0 ]; then
-              json='{"include":[]}'
-            else
-              json="$(printf '{"include":[%s]}' "$(IFS=,; echo "${items[*]}")")"
-            fi
-            echo "${json}"
-          }
-
-          # Initialize arrays
-          roles=()
-          playbooks=()
-
-          # Safely get available roles
-          while IFS= read -r -d '' role_dir; do
-            available_roles+=("$(basename "$role_dir")")
-          done < <(find roles -maxdepth 1 -mindepth 1 -type d -print0)
-          echo "Available roles: ${available_roles[*]}"
-
-          # Full test suite for non-PR events
-          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "push" ]]; then
-            for role in "${available_roles[@]}"; do
-              roles+=("{\"name\":\"Role Test - ${role}\",\"path\":\"roles/${role}\"}")
-            done
-
-            # Handle playbooks similarly
-            while IFS= read -r -d '' playbook_dir; do
-              playbook=$(basename "$playbook_dir")
-              playbooks+=("{\"name\":\"Playbook Test - ${playbook}\",\"path\":\"playbooks/${playbook}\"}")
-            done < <(find playbooks -maxdepth 1 -mindepth 1 -type d -print0)
-          else
-            # PR handling
-            echo "Processing PR with labels"
-
-            # If area/roles is present, test all roles
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'area/roles') }}" == "true" ]]; then
-              echo "area/roles label found - testing all roles"
-              for role in "${available_roles[@]}"; do
-                roles+=("{\"name\":\"Role Test - ${role}\",\"path\":\"roles/${role}\"}")
-              done
-            else
-              # Get changed files
-              git fetch origin "${{ github.base_ref || 'main' }}"
-              changed_files="$(git diff --name-only "origin/${{ github.base_ref || 'main' }}"..HEAD)"
-
-              for role in "${available_roles[@]}"; do
-                # Check for role-specific label or changes
-                if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/${role}') }}" == "true" ]] || \
-                    grep -q "^roles/${role}/" <<< "$changed_files"; then
-                  roles+=("{\"name\":\"Role Test - ${role}\",\"path\":\"roles/${role}\"}")
-                fi
-              done
-            fi
-          fi
-
-          # Create JSON outputs
-          roles_json=$(create_json "${roles[@]}")
-          playbooks_json=$(create_json "${playbooks[@]}")
-
-          {
-            echo "roles-matrix=${roles_json}"
-            echo "playbooks-matrix=${playbooks_json}"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "Event: ${{ github.event_name }}"
-          echo "Roles matrix: ${roles_json}"
-          echo "Playbooks matrix: ${playbooks_json}"
-
   role_test:
-    needs: determine-tests
-    if: needs.determine-tests.outputs.should-run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       max-parallel: 2
-      matrix: ${{ fromJson(needs.determine-tests.outputs.roles-matrix) }}
+      matrix:
+        include:
+          - name: "Role Test - asdf"
+            path: "roles/asdf"
+          - name: "Role Test - user_setup"
+            path: "roles/user_setup"
+          - name: "Role Test - package_management"
+            path: "roles/package_management"
+          - name: "Role Test - zsh_setup"
+            path: "roles/zsh_setup"
 
     steps:
       - name: Install Act dependencies
@@ -248,14 +123,17 @@ jobs:
           fi
 
   playbook_test:
-    needs: determine-tests
-    if: needs.determine-tests.outputs.should-run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       max-parallel: 2
-      matrix: ${{ fromJson(needs.determine-tests.outputs.playbooks-matrix) }}
+      matrix:
+        include:
+          - name: "Playbook Test - workstation"
+            path: "playbooks/workstation"
+          - name: "Playbook Test - runzero-explorer"
+            path: "playbooks/runzero-explorer"
 
     steps:
       - name: Install Act dependencies
