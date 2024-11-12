@@ -18,13 +18,6 @@
   "pre-commit": {
     "enabled": true
   },
-  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
-  "suppressNotifications": ["prIgnoreNotification"],
-  "rebaseWhen": "conflicted",
-  "commitBodyTable": true,
-  "pre-commit": {
-    "enabled": true
-  },
   "packageRules": [
     {
       "description": "Auto merge Galaxy dependencies",
@@ -55,6 +48,14 @@
     ]
   },
   "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["(^|/)requirements\\.ya?ml$", "(^|/)galaxy\\.ya?ml$"],
+      "matchStrings": [
+        "name: (?<depName>[^\\s]+)\\n\\s+src: (?<lookupName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)"
+      ],
+      "datasourceTemplate": "git-tags"
+    },
     {
       "customType": "regex",
       "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
