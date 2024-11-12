@@ -2,33 +2,151 @@
 name: Molecule Test
 on:
   pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
   push:
+    branches:
+      - main
+  schedule:
+    # Runs every Sunday at 4 AM (see https://crontab.guru)
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+
+# Cancel any in-progress job when a new workflow is triggered
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 env:
+  ANSIBLE_FORCE_COLOR: "1"
   COLLECTION_PATH: $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
+  PY_COLORS: "1"
+  PYTHON_VERSION: "3.12.6"
   RUNZERO_DOWNLOAD_TOKEN: ${{ secrets.RUNZERO_DOWNLOAD_TOKEN }}
 
 jobs:
-  role_test:
+  determine-tests:
     runs-on: ubuntu-latest
+    outputs:
+      roles-matrix: ${{ steps.set-matrix.outputs.roles-matrix }}
+      playbooks-matrix: ${{ steps.set-matrix.outputs.playbooks-matrix }}
+      should-run: ${{ steps.check-changes.outputs.should-run }}
+    steps:
+      - name: Checkout git repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+
+      - name: Check for relevant changes and labels
+        id: check-changes
+        shell: bash
+        run: |
+          should_run="false"
+
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
+            should_run="true"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Check labels
+            if [ "${{ contains(github.event.pull_request.labels.*.name, 'area/roles') }}" = "true" ] || \
+                [ "${{ contains(github.event.pull_request.labels.*.name, 'area/ansible-role') }}" = "true" ] || \
+                [ "${{ contains(github.event.pull_request.labels.*.name, 'area/ansible-playbook') }}" = "true" ]; then
+              should_run="true"
+            fi
+
+            # Check changed files
+            git fetch origin "${{ github.base_ref }}"
+            changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"..HEAD)"
+
+            if echo "${changed_files}" | grep -qE "^(roles/|playbooks/|molecule/|requirements\.yml)"; then
+              should_run="true"
+            fi
+          fi
+
+          echo "should-run=${should_run}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine affected components
+        id: set-matrix
+        if: steps.check-changes.outputs.should-run == 'true'
+        shell: bash
+        run: |
+          declare -a roles_to_test
+          declare -a playbooks_to_test
+
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
+            roles_to_test=(
+              '{"name": "Role Test - asdf", "path": "roles/asdf"}'
+              '{"name": "Role Test - user_setup", "path": "roles/user_setup"}'
+              '{"name": "Role Test - package_management", "path": "roles/package_management"}'
+              '{"name": "Role Test - zsh_setup", "path": "roles/zsh_setup"}'
+            )
+            playbooks_to_test=(
+              '{"name": "Playbook Test - workstation", "path": "playbooks/workstation"}'
+              '{"name": "Playbook Test - runzero-explorer", "path": "playbooks/runzero-explorer"}'
+            )
+          else
+            git fetch origin "${{ github.base_ref }}"
+            changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"..HEAD)"
+
+            # Check roles
+            if echo "${changed_files}" | grep -q "^roles/asdf/"; then
+              roles_to_test+=('{"name": "Role Test - asdf", "path": "roles/asdf"}')
+            fi
+            if echo "${changed_files}" | grep -q "^roles/user_setup/"; then
+              roles_to_test+=('{"name": "Role Test - user_setup", "path": "roles/user_setup"}')
+            fi
+            if echo "${changed_files}" | grep -q "^roles/package_management/"; then
+              roles_to_test+=('{"name": "Role Test - package_management", "path": "roles/package_management"}')
+            fi
+            if echo "${changed_files}" | grep -q "^roles/zsh_setup/"; then
+              roles_to_test+=('{"name": "Role Test - zsh_setup", "path": "roles/zsh_setup"}')
+            fi
+
+            # Check playbooks
+            if echo "${changed_files}" | grep -q "^playbooks/workstation/"; then
+              playbooks_to_test+=('{"name": "Playbook Test - workstation", "path": "playbooks/workstation"}')
+            fi
+            if echo "${changed_files}" | grep -q "^playbooks/runzero-explorer/"; then
+              playbooks_to_test+=('{"name": "Playbook Test - runzero-explorer", "path": "playbooks/runzero-explorer"}')
+            fi
+
+            # If requirements.yml changed, test everything
+            if echo "${changed_files}" | grep -q "^requirements.yml$"; then
+              roles_to_test=(
+                '{"name": "Role Test - asdf", "path": "roles/asdf"}'
+                '{"name": "Role Test - user_setup", "path": "roles/user_setup"}'
+                '{"name": "Role Test - package_management", "path": "roles/package_management"}'
+                '{"name": "Role Test - zsh_setup", "path": "roles/zsh_setup"}'
+              )
+              playbooks_to_test=(
+                '{"name": "Playbook Test - workstation", "path": "playbooks/workstation"}'
+                '{"name": "Playbook Test - runzero-explorer", "path": "playbooks/runzero-explorer"}'
+              )
+            fi
+          fi
+
+          # Convert arrays to JSON
+          roles_json=$(jq -nc --argjson data "$(printf '%s\n' "${roles_to_test[@]}" | jq -R . | jq -s .)" '$data')
+          playbooks_json=$(jq -nc --argjson data "$(printf '%s\n' "${playbooks_to_test[@]}" | jq -R . | jq -s .)" '$data')
+
+          {
+            echo "roles-matrix=${roles_json}"
+            echo "playbooks-matrix=${playbooks_json}"
+          } >> "$GITHUB_OUTPUT"
+
+  role_test:
+    needs: determine-tests
+    if: needs.determine-tests.outputs.should-run == 'true' && fromJSON(needs.determine-tests.outputs.roles-matrix)[0] != null
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
-        include:
-          - name: "Role Test - asdf"
-            path: "roles/asdf"
-          - name: "Role Test - user_setup"
-            path: "roles/user_setup"
-          - name: "Role Test - package_management"
-            path: "roles/package_management"
-          - name: "Role Test - zsh_setup"
-            path: "roles/zsh_setup"
-          - name: "Role Test - vnc_setup"
-            path: "roles/vnc_setup"
-          - name: "Role Test - logging"
-            path: "roles/logging"
-          - name: "Role Test - runzero_explorer"
-            path: "roles/runzero_explorer"
+        include: ${{ fromJSON(needs.determine-tests.outputs.roles-matrix) }}
+
     steps:
       - name: Install Act dependencies
         if: ${{ env.ACT }}
@@ -37,76 +155,159 @@ jobs:
 
       - name: Delete huge unnecessary tools folder
         if: env.ACT == ''
-        run: rm -rf /opt/hostedtoolcache
+        shell: bash
+        run: |
+          echo "Initial disk space:"
+          df -h
+          rm -rf /opt/hostedtoolcache
+          echo "Disk space after cleanup:"
+          df -h
 
-      - name: Clone git repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-      - name: Setup Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5
+      - name: Checkout git repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          python-version: "3.x"
+          path: ansible_collections/cowdogmoo/workstation
+
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: 'ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt'
+
+      - name: Cache Ansible collections
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+        with:
+          path: ~/.ansible/collections
+          key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
 
       - name: Install dependencies
+        shell: bash
         run: |
-          python3 -m pip install --upgrade \
-          ansible-core \
-          docker \
-          molecule \
-          molecule-docker \
-          "molecule-plugins[docker]"
+          python3 -m pip install -r "ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt"
 
       - name: Install galaxy dependencies
-        run: ansible-galaxy install -v -r requirements.yml
+        working-directory: ansible_collections/cowdogmoo/workstation
+        shell: bash
+        run: |
+          ansible-galaxy collection install -r requirements.yml
+          ansible-galaxy install -r requirements.yml
 
-      - name: ${{ matrix.name }}
-        run: molecule test
-        working-directory: ${{ matrix.path }}
-        # timeout-minutes: 40
-        env:
-          PY_COLORS: "1"
-          ANSIBLE_FORCE_COLOR: "1"
+      - name: Run molecule test
+        working-directory: ansible_collections/cowdogmoo/workstation/${{ matrix.path }}
+        shell: bash
+        run: |
+          set -ex
+          molecule --version
+          molecule list
+
+          if ! MOLECULE_DEBUG=1 molecule test; then
+            echo "Molecule test failed. Collecting debug information..."
+
+            echo "Docker containers:"
+            docker ps -a
+
+            echo "=== Docker Container Logs ==="
+            while read -r container; do
+              echo "=== Logs from container ${container} ==="
+              docker logs "${container}" 2>&1
+              echo "=== End logs for container ${container} ==="
+            done < <(docker ps -q)
+
+            echo "=== Molecule Logs ==="
+            while IFS= read -r -d '' log; do
+              echo "Contents of ${log}:"
+              cat "${log}"
+              echo "=== End of ${log} ==="
+            done < <(find . -name '*.log' -print0)
+
+            exit 1
+          fi
 
   playbook_test:
+    needs: determine-tests
+    if: needs.determine-tests.outputs.should-run == 'true' && fromJSON(needs.determine-tests.outputs.playbooks-matrix)[0] != null
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
+      fail-fast: false
+      max-parallel: 2
       matrix:
-        include:
-          - name: "Playbook Test - workstation"
-            path: "playbooks/workstation"
-          - name: "Playbook Test - runzero-explorer"
-            path: "playbooks/runzero-explorer"
+        include: ${{ fromJSON(needs.determine-tests.outputs.playbooks-matrix) }}
+
     steps:
+      - name: Install Act dependencies
+        if: ${{ env.ACT }}
+        run: |
+          apt-get update && apt-get install rsync sudo -y
+
       - name: Delete huge unnecessary tools folder
-        run: rm -rf /opt/hostedtoolcache
+        if: env.ACT == ''
+        shell: bash
+        run: |
+          echo "Initial disk space:"
+          df -h
+          rm -rf /opt/hostedtoolcache
+          echo "Disk space after cleanup:"
+          df -h
 
-      - name: Clone git repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-      - name: Setup Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5
+      - name: Checkout git repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          python-version: "3.x"
+          path: ansible_collections/cowdogmoo/workstation
+
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: 'ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt'
+
+      - name: Cache Ansible collections
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+        with:
+          path: ~/.ansible/collections
+          key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
 
       - name: Install dependencies
+        shell: bash
         run: |
-          python3 -m pip install --upgrade \
-          ansible-core \
-          docker \
-          molecule \
-          molecule-docker \
-          "molecule-plugins[docker]"
+          python3 -m pip install -r "ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt"
 
       - name: Install galaxy dependencies
+        working-directory: ansible_collections/cowdogmoo/workstation
+        shell: bash
         run: |
-          ansible-galaxy install -v -r requirements.yml
-          ansible-galaxy collection install -v -r requirements.yml
-          mkdir -p $HOME/.ansible/collections/ansible_collections/cowdogmoo
-          ln -s $PWD $HOME/.ansible/collections/ansible_collections/cowdogmoo/workstation
+          ansible-galaxy collection install -r requirements.yml
+          ansible-galaxy install -r requirements.yml
 
-      - name: ${{ matrix.name }}
-        run: molecule test
-        working-directory: ${{ matrix.path }}
-        env:
-          PY_COLORS: "1"
-          ANSIBLE_FORCE_COLOR: "1"
+      - name: Run molecule test
+        working-directory: ansible_collections/cowdogmoo/workstation/${{ matrix.path }}
+        shell: bash
+        run: |
+          set -ex
+          molecule --version
+          molecule list
+
+          if ! MOLECULE_DEBUG=1 molecule test; then
+            echo "Molecule test failed. Collecting debug information..."
+
+            echo "Docker containers:"
+            docker ps -a
+
+            echo "=== Docker Container Logs ==="
+            while read -r container; do
+              echo "=== Logs from container ${container} ==="
+              docker logs "${container}" 2>&1
+              echo "=== End logs for container ${container} ==="
+            done < <(docker ps -q)
+
+            echo "=== Molecule Logs ==="
+            while IFS= read -r -d '' log; do
+              echo "Contents of ${log}:"
+              cat "${log}"
+              echo "=== End of ${log} ==="
+            done < <(find . -name '*.log' -print0)
+
+            exit 1
+          fi
