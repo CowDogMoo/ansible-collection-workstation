@@ -165,7 +165,7 @@
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
     cmd: |
-      {% if shell_executable != '/bin/sh' %}
+      {% if user.shell != '/bin/sh' %}
       set -o pipefail
       {% endif %}
       export ASDF_DIR="{{ user.home }}/.asdf"
@@ -174,11 +174,15 @@
       fi
       {% if user.plugins is defined %}
       {% for plugin in user.plugins %}
-      if ! asdf plugin list 2>/dev/null | grep -q {{ plugin.name }}; then
-        asdf plugin add {{ plugin.name }};
+      if command -v asdf >/dev/null 2>&1; then
+        if ! asdf plugin list 2>/dev/null | grep -q {{ plugin.name }}; then
+          asdf plugin add {{ plugin.name }} || true;
+        fi;
       fi;
       {% endfor %}
-      echo "plugins:$(asdf plugin list 2>/dev/null),versions:$(asdf list all 2>/dev/null | tr '\n' ',')"
+      plugins=$(asdf plugin list 2>/dev/null || echo "")
+      versions=$(asdf list all 2>/dev/null | tr '\n' ',' || echo "")
+      echo "plugins:${plugins},versions:${versions}"
       {% else %}
       echo "plugins:,versions:"
       {% endif %}
@@ -190,6 +194,7 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
+  ignore_errors: true
   when: not asdf_global_install
 
 - name: Install libyaml from source
