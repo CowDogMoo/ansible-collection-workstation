@@ -1,8 +1,40 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.9.2 Release Notes
+CowDogMoo Workstation Ansible Collection 1.9.3 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v1.9.3
+======
+
+Release Summary
+---------------
+
+Enhanced task management with Taskfile, improved role organization, and streamlined testing workflows
+
+Added
+-----
+
+- Added `Taskfile.yaml` integration to replace Mage with centralized task management and modularized includes.
+- Added distinct area and role labeling in `.github/labeler.yaml` for improved categorization of changes.
+- Implemented new Python callback plugin `profile_tasks.py` in the `vnc_setup` role for task profiling during testing.
+- Introduced the `.hooks/requirements.txt` file to centralize and streamline dependencies for pre-commit hooks and Molecule tests.
+- Set concurrency in GitHub Actions workflows to prevent overlapping jobs and improve resource management.
+- Updated label colors in `.github/labels.yaml` for clearer visual distinctions and modified descriptions for clarity.
+
+Changed
+-------
+
+- Adjusted Renovate, GitHub Actions, and Molecule configurations for enhanced compatibility and version updates.
+- Merged redundant tasks and removed deprecated task files to reduce workflow complexity.
+- Refined Molecule workflow to improve testing and debug output management for failed Molecule runs.
+- Updated README and `roles/asdf` with additional details and consistency in ASDF plugin management tasks.
+
+Removed
+-------
+
+- Deprecated `setup_asdf_env.sh` script and transitioned to `setup_asdf_env.sh.j2` for templated environment setup.
+- Removed outdated `.taskfiles` for Ansible linting and Molecule testing in favor of new Taskfile modularization.
 
 v1.9.2
 ======
