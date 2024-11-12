@@ -112,19 +112,6 @@
     - not asdf_global_install
     - user.plugins is defined
 
-- name: Ensure correct permissions for .tool-versions
-  ansible.builtin.file:
-    path: "{{ user.home }}/.tool-versions"
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: "0644"
-  become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  when: not asdf_global_install
-
 - name: Ensure .asdf directory exists for each user
   ansible.builtin.include_tasks: ensure_directory_exists.yml
   args:
