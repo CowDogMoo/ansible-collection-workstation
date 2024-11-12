@@ -21,30 +21,42 @@
 
 - name: Download oh-my-zsh install script for all zsh_setup_enriched_users
   ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    dest: "{{ item.home }}/omz-installer.sh"
+    url: "{{ zsh_setup_omz_install_script_url }}"
+    dest: "{{ user_item.home }}/omz-installer.sh"
     mode: '0755'
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user_item.username }}"
   when: not oh_my_zsh_installed.results[loop_index].stat.exists
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
+    loop_var: user_item
     index_var: loop_index
+
+- name: Check for bash
+  ansible.builtin.command: which bash
+  register: bash_check
+  changed_when: false
+  ignore_errors: true
+
+- name: Set shell executable
+  ansible.builtin.set_fact:
+    shell_executable: >-
+      {% if bash_check.rc == 0 and bash_check.stdout is defined %}{{- bash_check.stdout | trim -}}{% else %}/bin/sh{% endif %}
 
 - name: Install oh-my-zsh for all zsh_setup_enriched_users
   ansible.builtin.shell: |
     {% if shell_executable != '/bin/sh' %}
     set -o pipefail
     {% endif %}
-
-    echo 'y' | {{ item.home }}/omz-installer.sh --unattended --keep-zshrc
+    echo 'y' | {{ user_item.home }}/omz-installer.sh --unattended --keep-zshrc
   args:
-    creates: "{{ item.home }}/.oh-my-zsh"
-    executable: /bin/zsh
+    creates: "{{ user_item.home }}/.oh-my-zsh"
+    executable: "{{ shell_executable }}"
   become: true
-  become_user: "{{ item.username }}"
+  become_user: "{{ user_item.username }}"
   loop: "{{ zsh_setup_enriched_users }}"
   loop_control:
+    loop_var: user_item
     index_var: loop_index
 
 - name: Remove omz-installer.sh for all zsh_setup_enriched_users
