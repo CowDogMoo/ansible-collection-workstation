@@ -178,6 +178,7 @@
 - name: Gather installed ASDF plugins and versions for each user
   ansible.builtin.shell:
     cmd: |
+      set -o pipefail
       export ASDF_DIR="{{ user.home }}/.asdf"
       if [ -f "${ASDF_DIR}/asdf.sh" ]; then
         . "${ASDF_DIR}/asdf.sh"
@@ -200,19 +201,7 @@
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
-  ignore_errors: true
   when: not asdf_global_install
-
-- name: Debug ASDF setup issues
-  ansible.builtin.debug:
-    msg: "ASDF setup failed for user {{ result.user.username }}. Please check shell and ASDF initialization."
-  when:
-    - result.rc is defined
-    - result.rc != 0
-  loop: "{{ asdf_info.results }}"
-  loop_control:
-    loop_var: result
-    label: "{{ result.user.username }}"
 
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
