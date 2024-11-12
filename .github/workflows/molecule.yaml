@@ -29,6 +29,13 @@ env:
   PY_COLORS: "1"
   PYTHON_VERSION: "3.12.6"
 
+# Permissions block for GitHub App
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   role_test:
     runs-on: ubuntu-latest
