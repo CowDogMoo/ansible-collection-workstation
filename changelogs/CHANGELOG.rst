@@ -1,8 +1,38 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.9.3 Release Notes
+CowDogMoo Workstation Ansible Collection 1.9.4 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v1.9.4
+======
+
+Release Summary
+---------------
+
+Streamlined workflows, removed deprecated runzero_explorer role, and enhanced Renovate configurations for more efficient dependency management.
+
+Added
+-----
+
+- Added Renovate configuration improvements, including auto-merging of Galaxy dependencies and enhanced grouping for Ansible Galaxy dependencies.
+- Added `permissions` block to GitHub Actions workflows for enhanced security and proper access control.
+- Introduced a new version of the GitHub Actions Molecule workflow for role testing, which now leverages environment variables to streamline dependency management and improve collection consistency.
+
+Changed
+-------
+
+- Enhanced the Molecule workflow by using more dynamic environment variables and removing references to deprecated playbooks such as `runzero-explorer`.
+- Improved GitHub Actions workflows (`pre-commit`, `release`, `renovate`) by updating action versions to the latest releases and adjusting dependency cache paths for more efficient workflow runs.
+- Updated Renovate's base configuration to extend from `config:recommended` instead of `config:base` to adhere to best practices.
+- Updated `Taskfile.yaml` to include Renovate tasks and improved the modular inclusion of other Taskfiles for consistency across different environments.
+- Updated the `.github/labeler.yaml` and `.github/labels.yaml` files by removing the deprecated `runzero_explorer` role and playbook configurations.
+
+Removed
+-------
+
+- Deleted the `autoMerge.json5` file under `.github/renovate/` as its contents were merged into a unified Renovate configuration file for better maintainability.
+- Removed the deprecated `runzero_explorer` role, all associated tasks, variables, playbooks, and Molecule configurations, simplifying the repository and reducing maintenance overhead.
 
 v1.9.3
 ======
