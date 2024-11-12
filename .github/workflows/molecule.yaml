@@ -15,6 +15,7 @@ on:
     - cron: "0 4 * * 0"
   workflow_dispatch:
 
+# Cancel any in-progress job when a new workflow is triggered
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -36,41 +37,45 @@ jobs:
     steps:
       - name: Checkout git repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
 
       - name: Check for relevant changes and labels
         id: check-changes
+        shell: bash
         run: |
           should_run="false"
 
-          if [[ "${{ github.event_name }}" == "schedule" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
             should_run="true"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
             # Check labels
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'area/roles') }}" == "true" ]] || \
-               [[ "${{ contains(github.event.pull_request.labels.*.name, 'area/ansible-role') }}" == "true" ]] || \
-               [[ "${{ contains(github.event.pull_request.labels.*.name, 'area/ansible-playbook') }}" == "true" ]]; then
+            if [ "${{ contains(github.event.pull_request.labels.*.name, 'area/roles') }}" = "true" ] || \
+                [ "${{ contains(github.event.pull_request.labels.*.name, 'area/ansible-role') }}" = "true" ] || \
+                [ "${{ contains(github.event.pull_request.labels.*.name, 'area/ansible-playbook') }}" = "true" ]; then
               should_run="true"
             fi
 
             # Check changed files
-            git fetch origin ${{ github.base_ref }}
-            changed_files=$(git diff --name-only origin/${{ github.base_ref }}..HEAD)
+            git fetch origin "${{ github.base_ref }}"
+            changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"..HEAD)"
 
-            if echo "$changed_files" | grep -qE "^(roles/|playbooks/|molecule/|requirements.yml)"; then
+            if echo "${changed_files}" | grep -qE "^(roles/|playbooks/|molecule/|requirements\.yml)"; then
               should_run="true"
             fi
           fi
 
-          echo "should-run=${should_run}" >> $GITHUB_OUTPUT
+          echo "should-run=${should_run}" >> "$GITHUB_OUTPUT"
 
       - name: Determine affected components
         id: set-matrix
         if: steps.check-changes.outputs.should-run == 'true'
+        shell: bash
         run: |
-          roles_to_test=()
-          playbooks_to_test=()
+          declare -a roles_to_test
+          declare -a playbooks_to_test
 
-          if [[ "${{ github.event_name }}" == "schedule" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
             roles_to_test=(
               '{"name": "Role Test - asdf", "path": "roles/asdf"}'
               '{"name": "Role Test - user_setup", "path": "roles/user_setup"}'
@@ -82,33 +87,33 @@ jobs:
               '{"name": "Playbook Test - runzero-explorer", "path": "playbooks/runzero-explorer"}'
             )
           else
-            git fetch origin ${{ github.base_ref }}
-            changed_files=$(git diff --name-only origin/${{ github.base_ref }}..HEAD)
+            git fetch origin "${{ github.base_ref }}"
+            changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"..HEAD)"
 
             # Check roles
-            if echo "$changed_files" | grep -q "^roles/asdf/"; then
+            if echo "${changed_files}" | grep -q "^roles/asdf/"; then
               roles_to_test+=('{"name": "Role Test - asdf", "path": "roles/asdf"}')
             fi
-            if echo "$changed_files" | grep -q "^roles/user_setup/"; then
+            if echo "${changed_files}" | grep -q "^roles/user_setup/"; then
               roles_to_test+=('{"name": "Role Test - user_setup", "path": "roles/user_setup"}')
             fi
-            if echo "$changed_files" | grep -q "^roles/package_management/"; then
+            if echo "${changed_files}" | grep -q "^roles/package_management/"; then
               roles_to_test+=('{"name": "Role Test - package_management", "path": "roles/package_management"}')
             fi
-            if echo "$changed_files" | grep -q "^roles/zsh_setup/"; then
+            if echo "${changed_files}" | grep -q "^roles/zsh_setup/"; then
               roles_to_test+=('{"name": "Role Test - zsh_setup", "path": "roles/zsh_setup"}')
             fi
 
             # Check playbooks
-            if echo "$changed_files" | grep -q "^playbooks/workstation/"; then
+            if echo "${changed_files}" | grep -q "^playbooks/workstation/"; then
               playbooks_to_test+=('{"name": "Playbook Test - workstation", "path": "playbooks/workstation"}')
             fi
-            if echo "$changed_files" | grep -q "^playbooks/runzero-explorer/"; then
+            if echo "${changed_files}" | grep -q "^playbooks/runzero-explorer/"; then
               playbooks_to_test+=('{"name": "Playbook Test - runzero-explorer", "path": "playbooks/runzero-explorer"}')
             fi
 
             # If requirements.yml changed, test everything
-            if echo "$changed_files" | grep -q "^requirements.yml$"; then
+            if echo "${changed_files}" | grep -q "^requirements.yml$"; then
               roles_to_test=(
                 '{"name": "Role Test - asdf", "path": "roles/asdf"}'
                 '{"name": "Role Test - user_setup", "path": "roles/user_setup"}'
@@ -122,11 +127,14 @@ jobs:
             fi
           fi
 
-          roles_json=$(printf "%s\n" "${roles_to_test[@]}" | jq -sc .)
-          playbooks_json=$(printf "%s\n" "${playbooks_to_test[@]}" | jq -sc .)
+          # Convert arrays to JSON
+          roles_json=$(jq -nc --argjson data "$(printf '%s\n' "${roles_to_test[@]}" | jq -R . | jq -s .)" '$data')
+          playbooks_json=$(jq -nc --argjson data "$(printf '%s\n' "${playbooks_to_test[@]}" | jq -R . | jq -s .)" '$data')
 
-          echo "roles-matrix=${roles_json}" >> $GITHUB_OUTPUT
-          echo "playbooks-matrix=${playbooks_json}" >> $GITHUB_OUTPUT
+          {
+            echo "roles-matrix=${roles_json}"
+            echo "playbooks-matrix=${playbooks_json}"
+          } >> "$GITHUB_OUTPUT"
 
   role_test:
     needs: determine-tests
@@ -147,6 +155,7 @@ jobs:
 
       - name: Delete huge unnecessary tools folder
         if: env.ACT == ''
+        shell: bash
         run: |
           echo "Initial disk space:"
           df -h
@@ -173,17 +182,20 @@ jobs:
           key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
 
       - name: Install dependencies
+        shell: bash
         run: |
-          python3 -m pip install -r ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt
+          python3 -m pip install -r "ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt"
 
       - name: Install galaxy dependencies
         working-directory: ansible_collections/cowdogmoo/workstation
+        shell: bash
         run: |
           ansible-galaxy collection install -r requirements.yml
           ansible-galaxy install -r requirements.yml
 
       - name: Run molecule test
         working-directory: ansible_collections/cowdogmoo/workstation/${{ matrix.path }}
+        shell: bash
         run: |
           set -ex
           molecule --version
@@ -191,7 +203,24 @@ jobs:
 
           if ! MOLECULE_DEBUG=1 molecule test; then
             echo "Molecule test failed. Collecting debug information..."
-            [debug collection commands...]
+
+            echo "Docker containers:"
+            docker ps -a
+
+            echo "=== Docker Container Logs ==="
+            while read -r container; do
+              echo "=== Logs from container ${container} ==="
+              docker logs "${container}" 2>&1
+              echo "=== End logs for container ${container} ==="
+            done < <(docker ps -q)
+
+            echo "=== Molecule Logs ==="
+            while IFS= read -r -d '' log; do
+              echo "Contents of ${log}:"
+              cat "${log}"
+              echo "=== End of ${log} ==="
+            done < <(find . -name '*.log' -print0)
+
             exit 1
           fi
 
@@ -207,7 +236,14 @@ jobs:
         include: ${{ fromJSON(needs.determine-tests.outputs.playbooks-matrix) }}
 
     steps:
+      - name: Install Act dependencies
+        if: ${{ env.ACT }}
+        run: |
+          apt-get update && apt-get install rsync sudo -y
+
       - name: Delete huge unnecessary tools folder
+        if: env.ACT == ''
+        shell: bash
         run: |
           echo "Initial disk space:"
           df -h
@@ -234,17 +270,20 @@ jobs:
           key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
 
       - name: Install dependencies
+        shell: bash
         run: |
-          python3 -m pip install -r ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt
+          python3 -m pip install -r "ansible_collections/cowdogmoo/workstation/.hooks/requirements.txt"
 
       - name: Install galaxy dependencies
         working-directory: ansible_collections/cowdogmoo/workstation
+        shell: bash
         run: |
           ansible-galaxy collection install -r requirements.yml
           ansible-galaxy install -r requirements.yml
 
       - name: Run molecule test
         working-directory: ansible_collections/cowdogmoo/workstation/${{ matrix.path }}
+        shell: bash
         run: |
           set -ex
           molecule --version
@@ -252,6 +291,23 @@ jobs:
 
           if ! MOLECULE_DEBUG=1 molecule test; then
             echo "Molecule test failed. Collecting debug information..."
-            [debug collection commands...]
+
+            echo "Docker containers:"
+            docker ps -a
+
+            echo "=== Docker Container Logs ==="
+            while read -r container; do
+              echo "=== Logs from container ${container} ==="
+              docker logs "${container}" 2>&1
+              echo "=== End logs for container ${container} ==="
+            done < <(docker ps -q)
+
+            echo "=== Molecule Logs ==="
+            while IFS= read -r -d '' log; do
+              echo "Contents of ${log}:"
+              cat "${log}"
+              echo "=== End of ${log} ==="
+            done < <(find . -name '*.log' -print0)
+
             exit 1
           fi
