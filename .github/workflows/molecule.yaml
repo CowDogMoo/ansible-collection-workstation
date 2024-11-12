@@ -97,30 +97,69 @@ jobs:
 
           if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "push" ]]; then
             # Test everything for scheduled/manual runs
-            roles_json='{"include":[{"name":"Role Test - asdf","path":"roles/asdf"},{"name":"Role Test - user_setup","path":"roles/user_setup"},{"name":"Role Test - package_management","path":"roles/package_management"},{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}]}'
-            playbooks_json='{"include":[{"name":"Playbook Test - workstation","path":"playbooks/workstation"},{"name":"Playbook Test - runzero-explorer","path":"playbooks/runzero-explorer"}]}'
+            roles_json='{"include":[
+              {"name":"Role Test - asdf","path":"roles/asdf"},
+              {"name":"Role Test - logging","path":"roles/logging"},
+              {"name":"Role Test - package_management","path":"roles/package_management"},
+              {"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"},
+              {"name":"Role Test - user_setup","path":"roles/user_setup"},
+              {"name":"Role Test - vnc_setup","path":"roles/vnc_setup"},
+              {"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}
+            ]}'
+            playbooks_json='{"include":[
+              {"name":"Playbook Test - workstation","path":"playbooks/workstation"},
+              {"name":"Playbook Test - runzero-explorer","path":"playbooks/runzero-explorer"}
+            ]}'
           else
             git fetch origin "${{ github.base_ref }}" || true
             changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"..HEAD)" || true
 
             # Check requirements.yml changes first - this triggers all tests
             if grep -q "^requirements\.yml$" <<< "${changed_files}"; then
-              roles_json='{"include":[{"name":"Role Test - asdf","path":"roles/asdf"},{"name":"Role Test - user_setup","path":"roles/user_setup"},{"name":"Role Test - package_management","path":"roles/package_management"},{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}]}'
-              playbooks_json='{"include":[{"name":"Playbook Test - workstation","path":"playbooks/workstation"},{"name":"Playbook Test - runzero-explorer","path":"playbooks/runzero-explorer"}]}'
+              roles_json='{"include":[
+                {"name":"Role Test - asdf","path":"roles/asdf"},
+                {"name":"Role Test - logging","path":"roles/logging"},
+                {"name":"Role Test - package_management","path":"roles/package_management"},
+                {"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"},
+                {"name":"Role Test - user_setup","path":"roles/user_setup"},
+                {"name":"Role Test - vnc_setup","path":"roles/vnc_setup"},
+                {"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}
+              ]}'
+              playbooks_json='{"include":[
+                {"name":"Playbook Test - workstation","path":"playbooks/workstation"},
+                {"name":"Playbook Test - runzero-explorer","path":"playbooks/runzero-explorer"}
+              ]}'
             else
               # Check area/roles label
               if [[ "${{ contains(github.event.pull_request.labels.*.name, 'area/roles') }}" == "true" ]]; then
-                roles_json='{"include":[{"name":"Role Test - asdf","path":"roles/asdf"},{"name":"Role Test - user_setup","path":"roles/user_setup"},{"name":"Role Test - package_management","path":"roles/package_management"},{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}]}'
+                roles_json='{"include":[
+                  {"name":"Role Test - asdf","path":"roles/asdf"},
+                  {"name":"Role Test - logging","path":"roles/logging"},
+                  {"name":"Role Test - package_management","path":"roles/package_management"},
+                  {"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"},
+                  {"name":"Role Test - user_setup","path":"roles/user_setup"},
+                  {"name":"Role Test - vnc_setup","path":"roles/vnc_setup"},
+                  {"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}
+                ]}'
               else
                 # Check individual roles
                 if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/asdf') }}" == "true" ]] || grep -q "^roles/asdf/" <<< "${changed_files}"; then
                   roles+=('{"name":"Role Test - asdf","path":"roles/asdf"}')
                 fi
-                if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/user_setup') }}" == "true" ]] || grep -q "^roles/user_setup/" <<< "${changed_files}"; then
-                  roles+=('{"name":"Role Test - user_setup","path":"roles/user_setup"}')
+                if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/logging') }}" == "true" ]] || grep -q "^roles/logging/" <<< "${changed_files}"; then
+                  roles+=('{"name":"Role Test - logging","path":"roles/logging"}')
                 fi
                 if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/package_management') }}" == "true" ]] || grep -q "^roles/package_management/" <<< "${changed_files}"; then
                   roles+=('{"name":"Role Test - package_management","path":"roles/package_management"}')
+                fi
+                if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/runzero_explorer') }}" == "true" ]] || grep -q "^roles/runzero_explorer/" <<< "${changed_files}"; then
+                  roles+=('{"name":"Role Test - runzero_explorer","path":"roles/runzero_explorer"}')
+                fi
+                if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/user_setup') }}" == "true" ]] || grep -q "^roles/user_setup/" <<< "${changed_files}"; then
+                  roles+=('{"name":"Role Test - user_setup","path":"roles/user_setup"}')
+                fi
+                if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/vnc_setup') }}" == "true" ]] || grep -q "^roles/vnc_setup/" <<< "${changed_files}"; then
+                  roles+=('{"name":"Role Test - vnc_setup","path":"roles/vnc_setup"}')
                 fi
                 if [[ "${{ contains(github.event.pull_request.labels.*.name, 'role/zsh_setup') }}" == "true" ]] || grep -q "^roles/zsh_setup/" <<< "${changed_files}"; then
                   roles+=('{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}')
