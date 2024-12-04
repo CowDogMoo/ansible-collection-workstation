@@ -26,7 +26,7 @@ asdf_users:
         version: "1.23.1"
         scope: "global"
       - name: python
-        version: "3.13.0"
+        version: "3.13.1"
         scope: "global"
       - name: ruby
         version: "3.3.5"
