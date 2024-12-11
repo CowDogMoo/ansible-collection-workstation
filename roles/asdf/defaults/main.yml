@@ -35,7 +35,7 @@ asdf_users:
         version: "3.15.4"
         scope: "global"
       - name: kubectl
-        version: "1.31.3"
+        version: "1.31.4"
         scope: "global"
       - name: packer
         version: "1.11.2"
