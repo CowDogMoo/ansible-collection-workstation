@@ -47,6 +47,7 @@ provisioner:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
   env:
     ANSIBLE_CALLBACK_PLUGINS: "${MOLECULE_SCENARIO_DIRECTORY}/callback_plugins"
+    ANSIBLE_ROLES_PATH: "/etc/ansible/roles:~/.ansible/collections/ansible_collections/cowdogmoo/workstation/roles"
   # Uncomment for verbose output
   # env:
   #   ANSIBLE_VERBOSITY: 3

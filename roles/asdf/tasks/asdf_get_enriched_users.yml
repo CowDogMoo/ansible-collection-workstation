@@ -11,8 +11,19 @@
   when: ansible_os_family == 'Darwin'
 
 - name: Initialize asdf_enriched_users
-  ansible.builtin.set_fact:
-    asdf_enriched_users: []
+  set_fact:
+    asdf_enriched_users: >-
+      {{ (asdf_enriched_users | default([])) +
+         [user | combine({
+           'home': ansible_facts.getent_passwd[user.username][4] if user.username in ansible_facts.getent_passwd else user.home,
+           'shell_profile_lines': [
+             'export ASDF_DATA_DIR=$HOME/.asdf',
+             'export PATH="$ASDF_DATA_DIR/bin:$PATH"'
+           ]
+         })] | selectattr('home', 'defined') | list }}
+  loop: "{{ asdf_users }}"
+  loop_control:
+    loop_var: user
 
 - name: Update home for all users
   ansible.builtin.set_fact:
@@ -21,8 +32,8 @@
          [user | combine({
            'home': ansible_facts.getent_passwd[user.username][4] if user.username in ansible_facts.getent_passwd else user.home,
            'shell_profile_lines': [
-             "export ASDF_DIR=$HOME/.asdf",
-             "source $ASDF_DIR/asdf.sh"
+             'export ASDF_DATA_DIR=$HOME/.asdf',
+             'export PATH="$ASDF_DATA_DIR/bin:$PATH"'
            ]
          })] | selectattr('home', 'defined') | list }}
   loop: "{{ asdf_users }}"

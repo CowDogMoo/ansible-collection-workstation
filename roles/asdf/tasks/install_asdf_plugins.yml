@@ -10,6 +10,14 @@
     shell_executable: >-
       {% if bash_check.rc == 0 and bash_check.stdout is defined %}{{- bash_check.stdout | trim -}} {% else %} /bin/sh {% endif %}
 
+
+# HOW WE CAN INSTALL ASDF PLUGINS:
+#asdf plugin add python                                                                                                l@MacBook-Pro
+#asdf plugin add golang                                                                                                l@MacBook-Pro
+#asdf plugin add ruby
+
+# asdf install ruby 3.4.1
+
 - name: Install asdf plugins globally
   become: true
   ansible.builtin.shell:

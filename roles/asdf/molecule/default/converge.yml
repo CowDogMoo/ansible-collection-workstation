@@ -23,6 +23,7 @@
         - cowdogmoo.workstation.user_setup
         - cowdogmoo.workstation.package_management
         - cowdogmoo.workstation.zsh_setup
+        - cowdogmoo.workstation.asdf
         - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
       when: not asdf_global_install
 
@@ -32,4 +33,5 @@
       loop:
         - cowdogmoo.workstation.package_management
         - cowdogmoo.workstation.zsh_setup
+        - cowdogmoo.workstation.asdf
         - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"

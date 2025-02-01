@@ -8,6 +8,14 @@
   ansible.builtin.include_tasks: asdf_get_enriched_users.yml
   when: not asdf_global_install
 
+- name: Download ASDF binary
+  ansible.builtin.get_url:
+    url: "{{ asdf_download_url }}"
+    dest: "/tmp/asdf-{{ asdf_version }}.tar.gz"
+    checksum: "md5:{{ lookup('url', asdf_checksum_url) }}"
+    mode: "0644"
+  when: asdf_global_install
+
 - name: Check available shells
   ansible.builtin.stat:
     path: "{{ shell_path }}"
@@ -42,13 +50,12 @@
   become: true
   when: asdf_global_install
 
-- name: Clone ASDF for global installation
-  ansible.builtin.git:
-    repo: "{{ asdf_git_repo }}"
+- name: Extract ASDF binary globally
+  ansible.builtin.unarchive:
+    src: "/tmp/asdf-{{ asdf_version }}.tar.gz"
     dest: "/opt/asdf"
-    depth: 1
-    force: true
-    update: true
+    remote_src: true
+    extra_opts: [ "--strip-components=1" ]
   become: true
   when: asdf_global_install
 
@@ -57,37 +64,59 @@
     dest: "/etc/profile.d/asdf.sh"
     content: |
       export ASDF_DATA_DIR=/opt/asdf
-      . /opt/asdf/asdf.sh
-      . /opt/asdf/completions/asdf.bash
+      export PATH="/opt/asdf/bin:$PATH"
     mode: "0644"
   become: true
   when: asdf_global_install
 
-- name: Clone asdf for each user
-  ansible.builtin.git:
-    repo: "{{ asdf_git_repo }}"
-    dest: "{{ user.home }}/.asdf"
-    depth: 1
-    force: true
-    update: true
-  become: true
-  become_user: "{{ user.username }}"
+- name: Fetch ASDF MD5 checksum
+  ansible.builtin.get_url:
+    url: "{{ asdf_checksum_url }}"
+    dest: "/tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
+    mode: "0644"
+  when: not asdf_global_install
+
+- name: Extract ASDF MD5 checksum
+  ansible.builtin.shell:
+    cmd: "cat /tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
+  register: asdf_checksum
+  changed_when: false
+  when: not asdf_global_install
+
+- name: Download ASDF binary for each user
+  ansible.builtin.get_url:
+    url: "{{ asdf_download_url }}"
+    dest: "/tmp/asdf-{{ asdf_version }}-{{ user.username }}.tar.gz"
+    checksum: "md5:{{ asdf_checksum.stdout | trim }}"
+    mode: "0644"
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
   when: not asdf_global_install
 
-- name: Ensure asdf is cloned for each user
-  ansible.builtin.include_tasks: ensure_directory_exists.yml
-  args:
-    apply:
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  vars:
-    directories:
-      - path: "{{ user.home }}/.asdf"
-        owner: "{{ user.username }}"
-        group: "{{ user.usergroup | default(user.username) }}"
-        mode: "0755"
+# Ensure each user’s .asdf directory exists BEFORE extraction
+- name: Ensure .asdf directory exists for each user
+  ansible.builtin.file:
+    path: "{{ user.home }}/.asdf"
+    state: directory
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
+    mode: "0755"
+  loop: "{{ asdf_enriched_users }}"
+  loop_control:
+    loop_var: user
+  become: true
+  when: not asdf_global_install
+
+- name: Extract ASDF binary for each user
+  ansible.builtin.unarchive:
+    src: "/tmp/asdf-{{ asdf_version }}-{{ user.username }}.tar.gz"
+    dest: "{{ user.home }}/.asdf"
+    remote_src: true
+    extra_opts: [ "--strip-components=1" ]
+    owner: "{{ user.username }}"
+    group: "{{ user.usergroup | default(user.username) }}"
+  become: true
   loop: "{{ asdf_enriched_users }}"
   loop_control:
     loop_var: user
