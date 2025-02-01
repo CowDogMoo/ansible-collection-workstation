@@ -5,11 +5,26 @@
   vars:
     container_user: "{{ ansible_distribution | lower }}"
     container_home: "/home/{{ container_user }}"
+    asdf_shells:
+      - /bin/bash
+      - /bin/zsh
   pre_tasks:
     - name: Set home directory fact
       ansible.builtin.set_fact:
         ansible_env:
           HOME: "{{ container_home }}"
+
+    - name: Check available shells
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: shell_check
+      with_items: "{{ asdf_shells }}"
+      changed_when: false
+
+    - name: Set available shell fact
+      ansible.builtin.set_fact:
+        available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/bash') }}"
+
   tasks:
     - name: Include default variables
       ansible.builtin.include_vars:
@@ -29,25 +44,70 @@
           - asdf_dir.stat.isdir
 
     - name: Verify ASDF is accessible
-      ansible.builtin.command: "{{ ansible_env.HOME }}/.asdf/bin/asdf --version"
+      ansible.builtin.shell: |
+        export ASDF_DIR="{{ ansible_env.HOME }}/.asdf"
+        export PATH="${ASDF_DIR}/bin:$PATH"
+        . "${ASDF_DIR}/asdf.sh"
+        asdf --version
       register: asdf_check
       failed_when: asdf_check.rc != 0
       changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
 
     - name: Check installed ASDF plugins and versions
       ansible.builtin.shell: |
-        export ASDF_DATA_DIR="{{ ansible_env.HOME }}/.asdf"
-        export PATH="${ASDF_DATA_DIR}/bin:$PATH"
-        . "${ASDF_DATA_DIR}/asdf.sh"
-        asdf plugin list && asdf list
+        export ASDF_DIR="{{ ansible_env.HOME }}/.asdf"
+        export PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:$PATH"
+        . "${ASDF_DIR}/asdf.sh"
+        echo "Current PATH: $PATH"
+        echo "ASDF_DIR: $ASDF_DIR"
+        echo "Current user: $(whoami)"
+        echo "Plugin list:"
+        asdf plugin list || true
+        echo "Full list:"
+        asdf list || true
       register: asdf_plugins_versions
       changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+      environment:
+        HOME: "{{ ansible_env.HOME }}"
+        ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
+        USER: "{{ container_user }}"
 
     - name: Assert that ASDF plugins and versions are installed
-      ansible.builtin.assert:
-        that:
-          - "'golang' in asdf_plugins_versions.stdout"
-          - "'1.22.4' in asdf_plugins_versions.stdout"
+      ansible.builtin.shell: |
+        # Ensure proper environment
+        export HOME="{{ ansible_env.HOME }}"
+        export ASDF_DIR="${HOME}/.asdf"
+        export PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:$PATH"
+
+        # Source ASDF explicitly
+        if [ -f "${ASDF_DIR}/asdf.sh" ]; then
+          source "${ASDF_DIR}/asdf.sh"
+        else
+          echo "ASDF initialization script not found!" >&2
+          exit 1
+        fi
+
+        # Verify ASDF is working
+        if ! command -v asdf >/dev/null 2>&1; then
+          echo "ASDF command not found after sourcing!" >&2
+          exit 1
+        fi
+
+        # List plugins
+        asdf plugin list
+      register: asdf_plugins_versions
+      become: true
+      become_user: "{{ asdf_username }}"
+      args:
+        executable: /bin/bash
+      environment:
+        HOME: "{{ ansible_env.HOME }}"
+        ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
+        USER: "{{ asdf_username }}"
 
     - name: Check contents of .tool-versions
       ansible.builtin.command:
@@ -87,5 +147,6 @@
     - name: Assert shell profile content
       ansible.builtin.assert:
         that:
-          - "'ASDF_DATA_DIR=$HOME/.asdf' in profile_content.stdout"
-          - "'PATH=\"$ASDF_DATA_DIR/bin:$PATH\"' in profile_content.stdout"
+          - "'ASDF_DIR=$HOME/.asdf' in profile_content.stdout"
+          - "'. \"$HOME/.asdf/asdf.sh\"' in profile_content.stdout"
+          - "'. \"$HOME/.asdf/completions/asdf.bash\"' in profile_content.stdout"

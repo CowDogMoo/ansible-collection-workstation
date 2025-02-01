@@ -1,63 +1,94 @@
 #!/bin/bash
 set -e
 
+# Base directory setup
 export HOME="{{ ansible_env.HOME }}"
-export ASDF_DATA_DIR="${HOME}/.asdf"
-export PATH="${ASDF_DATA_DIR}/bin:${ASDF_DATA_DIR}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-export ASDF_BIN="${ASDF_DATA_DIR}/bin/asdf"
+ASDF_BASE_DIR="${HOME}/.asdf"
 
-error_handler() {
-    local line_no=$1
-    local err_code=$2
-    echo "Error in $(basename "$0") at line ${line_no} (exit code: ${err_code})" >&2
-    exit "${err_code}"
-}
-trap 'error_handler ${LINENO} $?' ERR
+# ASDF environment setup
+export ASDF_DIR="${ASDF_BASE_DIR}"
+export ASDF_BIN="${ASDF_BASE_DIR}/bin/asdf"
+export PATH="${ASDF_BASE_DIR}/bin:${ASDF_BASE_DIR}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-# Source asdf
-if [ -f "$ASDF_DATA_DIR/asdf.sh" ]; then
-    . "$ASDF_DATA_DIR/asdf.sh"
+# Source ASDF
+ASDF_INIT_SCRIPT="${ASDF_BASE_DIR}/asdf.sh"
+if [ -f "$ASDF_INIT_SCRIPT" ]; then
+    . "$ASDF_INIT_SCRIPT"
 else
-    echo "ERROR: ASDF initialization script not found at $ASDF_DATA_DIR/asdf.sh" >&2
+    echo "ERROR: ASDF initialization script not found at ${ASDF_INIT_SCRIPT}" >&2
     exit 1
 fi
 
-echo "==========================================="
-echo "ASDF Plugin Installation Script Called..."
-echo "HOME             = $HOME"
-echo "ASDF_DATA_DIR    = $ASDF_DATA_DIR"
-echo "PATH             = $PATH"
-echo "ASDF Version     = $($ASDF_BIN --version)"
-echo "==========================================="
-
-{% for plugin in asdf_plugins_with_versions %}
-echo "----------------------------------------------"
-echo "Processing Plugin: {{ plugin.name }}"
-echo "Target Version: {{ plugin.version }}"
-
-# Add plugin if needed
-if ! $ASDF_BIN plugin list 2>/dev/null | grep -Fq "{{ plugin.name }}"; then
-    echo "Adding plugin {{ plugin.name }}..."
-    $ASDF_BIN plugin add "{{ plugin.name }}"
+# Verify ASDF availability
+if ! command -v asdf >/dev/null 2>&1; then
+    echo "ERROR: asdf command not found in PATH: ${PATH}" >&2
+    exit 1
 fi
 
-echo "Installing version {{ plugin.version }} for plugin {{ plugin.name }}..."
-$ASDF_BIN install "{{ plugin.name }}" "{{ plugin.version }}" || {
-    echo "ERROR: Failed to install {{ plugin.name }} {{ plugin.version }}" >&2
-    exit 1
+needs_changes=false
+
+check_plugin() {
+    local plugin=$1
+    local version=$2
+    local scope=$3
+
+    # Check if plugin is installed
+    if ! asdf plugin list 2>/dev/null | grep -Fxq "$plugin"; then
+        needs_changes=true
+        return 0
+    fi
+
+    # Check if version is installed
+    if ! asdf list "$plugin" 2>/dev/null | grep -Fxq "$version"; then
+        needs_changes=true
+        return 0
+    fi
+
+    # Check global version for global scope
+    if [ "$scope" = "global" ]; then
+        current_version=$(asdf current "$plugin" 2>/dev/null | awk '{print $2}' || echo "none")
+        if [ "$current_version" != "$version" ]; then
+            needs_changes=true
+            return 0
+        fi
+    fi
 }
 
-if [ "{{ plugin.scope }}" == "global" ]; then
-    echo "Setting global version for {{ plugin.name }} to {{ plugin.version }}..."
-    $ASDF_BIN global "{{ plugin.name }}" "{{ plugin.version }}"
-fi
-
-echo "Running asdf reshim for {{ plugin.name }}..."
-$ASDF_BIN reshim "{{ plugin.name }}"
-
-echo "Plugin {{ plugin.name }} successfully installed!"
-echo "----------------------------------------------"
+# Process plugins
+{% for plugin in asdf_plugins_with_versions %}
+check_plugin "{{ plugin.name }}" "{{ plugin.version }}" "{{ plugin.scope }}"
 {% endfor %}
 
-echo "==========================================="
-echo "ASDF Plugin Installation Complete!"
+if [ "$needs_changes" = true ]; then
+    {% for plugin in asdf_plugins_with_versions %}
+    echo "Processing plugin: {{ plugin.name }}"
+
+    # Add plugin if needed
+    if ! asdf plugin list 2>/dev/null | grep -Fxq "{{ plugin.name }}"; then
+        echo "Adding plugin: {{ plugin.name }}"
+        asdf plugin add "{{ plugin.name }}"
+    fi
+
+    # Install version if needed
+    if ! asdf list "{{ plugin.name }}" 2>/dev/null | grep -Fxq "{{ plugin.version }}"; then
+        echo "Installing {{ plugin.name }} version {{ plugin.version }}"
+        asdf install "{{ plugin.name }}" "{{ plugin.version }}"
+    fi
+
+    # Set global version if needed
+    if [ "{{ plugin.scope }}" = "global" ]; then
+        current_version=$(asdf current "{{ plugin.name }}" 2>/dev/null | awk '{print $2}' || echo "none")
+        if [ "$current_version" != "{{ plugin.version }}" ]; then
+            echo "Setting global {{ plugin.name }} version to {{ plugin.version }}"
+            asdf global "{{ plugin.name }}" "{{ plugin.version }}"
+        fi
+    fi
+
+    echo "Reshimming {{ plugin.name }}"
+    asdf reshim "{{ plugin.name }}"
+    {% endfor %}
+
+    echo "CHANGED: Updates were applied"
+else
+    echo "OK: No changes required"
+fi

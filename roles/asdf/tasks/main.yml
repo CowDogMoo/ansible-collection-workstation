@@ -70,7 +70,6 @@
       shell_profile_lines:
         - "# ASDF Setup"
         - "export ASDF_DIR=$HOME/.asdf"
-        - "export ASDF_DATA_DIR=$HOME/.asdf"
         - ". \"$HOME/.asdf/asdf.sh\""
         - ". \"$HOME/.asdf/completions/asdf.bash\""
 
@@ -149,7 +148,7 @@
     src: templates/install_asdf_plugins.sh.j2
     dest: /tmp/install_asdf_plugins.sh
     mode: '0755'
-  changed_when: false 
+  changed_when: false
 
 - name: Run ASDF plugin installation script
   ansible.builtin.shell: /tmp/install_asdf_plugins.sh
@@ -157,10 +156,10 @@
     executable: /bin/bash
   environment:
     HOME: "{{ ansible_env.HOME }}"
-    ASDF_DATA_DIR: "{{ ansible_env.HOME }}/.asdf"
     PATH: "{{ ansible_env.HOME }}/.asdf/bin:{{ ansible_env.HOME }}/.asdf/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     ASDF_BIN: "{{ ansible_env.HOME }}/.asdf/bin/asdf"
+    ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
   become: true
   become_user: "{{ asdf_username }}"
-  register: plugin_install_result
-  failed_when: plugin_install_result.rc != 0
+  changed_when: false
+  failed_when: asdf_result.rc != 0
