@@ -1,0 +1,63 @@
+#!/bin/bash
+set -e
+
+export HOME="{{ ansible_env.HOME }}"
+export ASDF_DATA_DIR="${HOME}/.asdf"
+export PATH="${ASDF_DATA_DIR}/bin:${ASDF_DATA_DIR}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+export ASDF_BIN="${ASDF_DATA_DIR}/bin/asdf"
+
+error_handler() {
+    local line_no=$1
+    local err_code=$2
+    echo "Error in $(basename "$0") at line ${line_no} (exit code: ${err_code})" >&2
+    exit "${err_code}"
+}
+trap 'error_handler ${LINENO} $?' ERR
+
+# Source asdf
+if [ -f "$ASDF_DATA_DIR/asdf.sh" ]; then
+    . "$ASDF_DATA_DIR/asdf.sh"
+else
+    echo "ERROR: ASDF initialization script not found at $ASDF_DATA_DIR/asdf.sh" >&2
+    exit 1
+fi
+
+echo "==========================================="
+echo "ASDF Plugin Installation Script Called..."
+echo "HOME             = $HOME"
+echo "ASDF_DATA_DIR    = $ASDF_DATA_DIR"
+echo "PATH             = $PATH"
+echo "ASDF Version     = $($ASDF_BIN --version)"
+echo "==========================================="
+
+{% for plugin in asdf_plugins_with_versions %}
+echo "----------------------------------------------"
+echo "Processing Plugin: {{ plugin.name }}"
+echo "Target Version: {{ plugin.version }}"
+
+# Add plugin if needed
+if ! $ASDF_BIN plugin list 2>/dev/null | grep -Fq "{{ plugin.name }}"; then
+    echo "Adding plugin {{ plugin.name }}..."
+    $ASDF_BIN plugin add "{{ plugin.name }}"
+fi
+
+echo "Installing version {{ plugin.version }} for plugin {{ plugin.name }}..."
+$ASDF_BIN install "{{ plugin.name }}" "{{ plugin.version }}" || {
+    echo "ERROR: Failed to install {{ plugin.name }} {{ plugin.version }}" >&2
+    exit 1
+}
+
+if [ "{{ plugin.scope }}" == "global" ]; then
+    echo "Setting global version for {{ plugin.name }} to {{ plugin.version }}..."
+    $ASDF_BIN global "{{ plugin.name }}" "{{ plugin.version }}"
+fi
+
+echo "Running asdf reshim for {{ plugin.name }}..."
+$ASDF_BIN reshim "{{ plugin.name }}"
+
+echo "Plugin {{ plugin.name }} successfully installed!"
+echo "----------------------------------------------"
+{% endfor %}
+
+echo "==========================================="
+echo "ASDF Plugin Installation Complete!"

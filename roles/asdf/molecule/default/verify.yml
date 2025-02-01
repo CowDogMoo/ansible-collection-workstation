@@ -2,135 +2,90 @@
 - name: Verify
   hosts: all
   gather_facts: true
+  vars:
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  pre_tasks:
+    - name: Set home directory fact
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
   tasks:
     - name: Include default variables
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Include main variables
-      ansible.builtin.include_vars:
-        file: "../../vars/main.yml"
-
-    - name: Check if global ASDF installation directory exists
+    - name: Check if .asdf directory exists
       ansible.builtin.stat:
-        path: "/opt/asdf"
-      register: asdf_global_dir
-      when: asdf_global_install | default(false)
+        path: "{{ ansible_env.HOME }}/.asdf"
+      register: asdf_dir
+      become: true
+      become_user: "{{ container_user }}"
 
-    - name: Assert that global ASDF installation directory exists
+    - name: Assert that .asdf directory exists
       ansible.builtin.assert:
         that:
-          - asdf_global_dir.stat.exists
-          - asdf_global_dir.stat.isdir
-      when: asdf_global_install | default(false)
+          - asdf_dir.stat.exists
+          - asdf_dir.stat.isdir
 
-    - name: Check if asdf.sh script exists and is executable globally
-      ansible.builtin.stat:
-        path: "/etc/profile.d/asdf.sh"
-      register: asdf_script_stat
-      when: asdf_global_install | default(false)
-
-    - name: Assert that asdf.sh script exists and is executable globally
-      ansible.builtin.assert:
-        that:
-          - asdf_script_stat.stat.exists
-          - asdf_script_stat.stat.mode | string | match('0?755$')
-      when: asdf_global_install | default(false)
-
-    - name: Verify ASDF is accessible globally
-      ansible.builtin.command: "/opt/asdf/bin/asdf --version"
+    - name: Verify ASDF is accessible
+      ansible.builtin.command: "{{ ansible_env.HOME }}/.asdf/bin/asdf --version"
       register: asdf_check
       failed_when: asdf_check.rc != 0
       changed_when: false
-      when: asdf_global_install | default(false)
 
     - name: Check installed ASDF plugins and versions
       ansible.builtin.shell: |
-        {% if shell_executable != '/bin/sh' %}
-        set -o pipefail
-        {% endif %}
-        . /etc/profile.d/asdf.sh
-        asdf plugin list
-        asdf list
+        export ASDF_DATA_DIR="{{ ansible_env.HOME }}/.asdf"
+        export PATH="${ASDF_DATA_DIR}/bin:$PATH"
+        . "${ASDF_DATA_DIR}/asdf.sh"
+        asdf plugin list && asdf list
       register: asdf_plugins_versions
       changed_when: false
-      when: asdf_global_install | default(false)
 
     - name: Assert that ASDF plugins and versions are installed
       ansible.builtin.assert:
         that:
           - "'golang' in asdf_plugins_versions.stdout"
           - "'1.22.4' in asdf_plugins_versions.stdout"
-          - "'kubectl' in asdf_plugins_versions.stdout"
-          - "'1.29.3' in asdf_plugins_versions.stdout"
-      when: asdf_global_install | default(false)
 
-    - name: Check if asdf is cloned for each user
-      ansible.builtin.stat:
-        path: "/home/{{ user.username }}/.asdf"
-      register: asdf_clone_result
-      loop: "{{ asdf_users }}"
-      loop_control:
-        loop_var: user
-      when: not asdf_global_install | default(false)
-
-    - name: Assert that asdf is cloned for each user
-      ansible.builtin.assert:
-        that:
-          - item.stat.exists
-          - item.stat.isdir
-      loop: "{{ asdf_clone_result.results }}"
-      loop_control:
-        loop_var: item
-      when: not asdf_global_install | default(false)
-
-    - name: Check if setup_asdf.sh exists and is executable for each user
-      ansible.builtin.stat:
-        path: "{{ asdf_install_script_path }}"
-      register: setup_asdf_stat
-      when: not asdf_global_install | default(false)
-
-    - name: Assert that setup_asdf.sh exists and is executable
-      ansible.builtin.assert:
-        that:
-          - setup_asdf_stat.stat.exists
-          - setup_asdf_stat.stat.mode | regex_search('0755')
-      when: not asdf_global_install | default(false)
-
-    - name: Verify ASDF is accessible for each user
-      ansible.builtin.command: "/home/{{ user.username }}/.asdf/bin/asdf --version"
-      register: asdf_check
-      failed_when: asdf_check.rc != 0
-      changed_when: false
-      loop: "{{ asdf_users }}"
-      loop_control:
-        loop_var: user
-      when: not asdf_global_install | default(false)
-
-    - name: Check contents of .tool-versions for each user
+    - name: Check contents of .tool-versions
       ansible.builtin.command:
-        cmd: "cat /home/{{ user.username }}/.tool-versions"
+        cmd: "cat {{ ansible_env.HOME }}/.tool-versions"
       register: tool_versions_content
-      loop: "{{ asdf_users }}"
-      loop_control:
-        loop_var: user
       changed_when: false
-      when: not asdf_global_install | default(false)
 
     - name: Set expected version facts
       ansible.builtin.set_fact:
-        expected_golang_version: "{{ asdf_users[0].plugins[0].version }}"
-      when: not asdf_global_install | default(false)
+        expected_golang_version: "{{ asdf_plugins[0].version }}"
 
     - name: Assert .tool-versions content
       ansible.builtin.assert:
         that:
-          - "'golang' in item.stdout"
-          - "expected_golang_version in item.stdout"
+          - "'golang' in tool_versions_content.stdout"
+          - "expected_golang_version in tool_versions_content.stdout"
         fail_msg: "Expected version {{ expected_golang_version }} not found in .tool-versions"
         success_msg: "Found expected golang version {{ expected_golang_version }}"
-      loop: "{{ tool_versions_content.results }}"
-      loop_control:
-        loop_var: item
-        label: "Checking .tool-versions content"
-      when: not asdf_global_install | default(false)
+
+    - name: Check shell profile setup
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/{{ (available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+      register: shell_profile
+
+    - name: Assert shell profile exists
+      ansible.builtin.assert:
+        that:
+          - shell_profile.stat.exists
+          - shell_profile.stat.mode == '0644'
+
+    - name: Check shell profile content
+      ansible.builtin.command:
+        cmd: "cat {{ ansible_env.HOME }}/{{ (available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+      register: profile_content
+      changed_when: false
+
+    - name: Assert shell profile content
+      ansible.builtin.assert:
+        that:
+          - "'ASDF_DATA_DIR=$HOME/.asdf' in profile_content.stdout"
+          - "'PATH=\"$ASDF_DATA_DIR/bin:$PATH\"' in profile_content.stdout"

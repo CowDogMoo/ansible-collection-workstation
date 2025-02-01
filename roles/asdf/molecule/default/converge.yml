@@ -2,36 +2,33 @@
 - name: Converge
   hosts: all
   vars:
-    asdf_global_install: true
-    asdf_users:
-      - username: "{{ asdf_default_username }}"
-        usergroup: "{{ asdf_default_group }}"
-        shell: "/usr/bin/zsh"
-        plugins:
-          - name: golang
-            version: "1.22.4"
-            scope: "global"
+    # Set explicit home directory for container environment
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  pre_tasks:
+    - name: Create test user
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        shell: /bin/bash
+        create_home: true
+      become: true
+
+    - name: Set home directory fact
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
   tasks:
     - name: Include default variables
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Run roles for individual user installation
-      ansible.builtin.include_role:
-        name: "{{ item }}"
-      loop:
-        - cowdogmoo.workstation.user_setup
-        - cowdogmoo.workstation.package_management
-        - cowdogmoo.workstation.zsh_setup
-        - cowdogmoo.workstation.asdf
-        - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
-      when: not asdf_global_install
-
-    - name: Run roles for global installation
+    - name: Run roles
       ansible.builtin.include_role:
         name: "{{ item }}"
       loop:
         - cowdogmoo.workstation.package_management
         - cowdogmoo.workstation.zsh_setup
-        - cowdogmoo.workstation.asdf
         - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+      vars:
+        asdf_username: "{{ container_user }}"
