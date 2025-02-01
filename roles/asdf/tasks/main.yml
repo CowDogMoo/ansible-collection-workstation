@@ -27,8 +27,7 @@
     mode: "0644"
 
 - name: Extract ASDF MD5 checksum
-  ansible.builtin.shell:
-    cmd: "cat /tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
+  ansible.builtin.command: "cat /tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
   register: asdf_checksum
   changed_when: false
 
@@ -124,19 +123,19 @@
   when: ansible_distribution == 'Rocky'
 
 - name: Initialize plugins with versions
-  set_fact:
+  ansible.builtin.set_fact:
     asdf_plugins_with_versions: []
 
 - name: Get available versions for plugins
-  include_tasks: tasks/get_available_versions.yml
+  ansible.builtin.include_tasks: tasks/get_available_versions.yml
   loop: "{{ asdf_plugins }}"
   loop_control:
     loop_var: plugin
   register: plugin_versions
 
 - name: Update plugins with available versions
-  set_fact:
-    asdf_plugins_with_versions: "{{ asdf_plugins_with_versions + [plugin | combine({'version': available_versions.stdout_lines[-1] | default('latest')})] }}"
+  ansible.builtin.set_fact:
+    "{{ asdf_plugins_with_versions + [plugin | combine({'version': available_versions.stdout_lines[-1] | default('latest')})] }}"
   loop: "{{ asdf_plugins }}"
   loop_control:
     loop_var: plugin

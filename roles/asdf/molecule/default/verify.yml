@@ -100,14 +100,11 @@
         # List plugins
         asdf plugin list
       register: asdf_plugins_versions
+      changed_when: false
       become: true
       become_user: "{{ asdf_username }}"
       args:
         executable: /bin/bash
-      environment:
-        HOME: "{{ ansible_env.HOME }}"
-        ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
-        USER: "{{ asdf_username }}"
 
     - name: Check contents of .tool-versions
       ansible.builtin.command:
