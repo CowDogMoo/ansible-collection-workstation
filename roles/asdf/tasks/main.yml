@@ -1,205 +1,189 @@
 ---
 - name: Set default username for Kali systems
   ansible.builtin.set_fact:
-    asdf_default_username: "kali"
-  when: ansible_distribution_release == "kali-rolling" and asdf_default_username is not defined
+    asdf_username: "kali"
+  when: ansible_distribution_release == "kali-rolling" and asdf_username is not defined
 
-- name: Include asdf_get_enriched_users tasks
-  ansible.builtin.include_tasks: asdf_get_enriched_users.yml
-  when: not asdf_global_install
+- name: Reapply external asdf_plugins variable if provided
+  ansible.builtin.set_fact:
+    asdf_plugins: "{{ hostvars[inventory_hostname]['asdf_plugins'] | default(asdf_plugins) }}"
+  when: hostvars[inventory_hostname]['asdf_plugins'] is defined
 
 - name: Check available shells
   ansible.builtin.stat:
-    path: "{{ shell_path }}"
+    path: "{{ item }}"
   register: shell_check
   with_items: "{{ asdf_shells }}"
-  loop_control:
-    loop_var: shell_path
   changed_when: false
-  when: not asdf_global_install
 
 - name: Set available shell fact
   ansible.builtin.set_fact:
     available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
-  when: not asdf_global_install
 
-- name: Set user shell to available shell
-  ansible.builtin.set_fact:
-    asdf_enriched_users: >-
-      {{ asdf_enriched_users | map('combine', {
-        'shell': available_shell
-      }) | list }}
-  when:
-    - not asdf_global_install
-    - asdf_enriched_users is defined
-    - available_shell is defined
-
-- name: Create global ASDF installation directory
-  ansible.builtin.file:
-    path: "/opt/asdf"
-    state: directory
-    mode: "0755"
-  become: true
-  when: asdf_global_install
-
-- name: Clone ASDF for global installation
-  ansible.builtin.git:
-    repo: "{{ asdf_git_repo }}"
-    dest: "/opt/asdf"
-    depth: 1
-    force: true
-    update: true
-  become: true
-  when: asdf_global_install
-
-- name: Create asdf.sh script for global ASDF installation
-  ansible.builtin.copy:
-    dest: "/etc/profile.d/asdf.sh"
-    content: |
-      export ASDF_DATA_DIR=/opt/asdf
-      . /opt/asdf/asdf.sh
-      . /opt/asdf/completions/asdf.bash
+- name: Fetch ASDF MD5 checksum
+  ansible.builtin.get_url:
+    url: "{{ asdf_checksum_url }}"
+    dest: "/tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
     mode: "0644"
-  become: true
-  when: asdf_global_install
 
-- name: Clone asdf for each user
-  ansible.builtin.git:
-    repo: "{{ asdf_git_repo }}"
-    dest: "{{ user.home }}/.asdf"
-    depth: 1
-    force: true
-    update: true
-  become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  when: not asdf_global_install
-
-- name: Ensure asdf is cloned for each user
-  ansible.builtin.include_tasks: ensure_directory_exists.yml
-  args:
-    apply:
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  vars:
-    directories:
-      - path: "{{ user.home }}/.asdf"
-        owner: "{{ user.username }}"
-        group: "{{ user.usergroup | default(user.username) }}"
-        mode: "0755"
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  when: not asdf_global_install
-
-- name: Deploy .tool-versions file
-  ansible.builtin.copy:
-    dest: "{{ user.home }}/.tool-versions"
-    content: |
-      {% for plugin in user.plugins %}
-      {{ plugin.name }} {{ plugin.version }}
-      {% endfor %}
-    owner: "{{ user.username }}"
-    group: "{{ user.usergroup | default(user.username) }}"
-    mode: "0644"
-  become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  when:
-    - not asdf_global_install
-    - user.plugins is defined
-
-- name: Ensure .asdf directory exists for each user
-  ansible.builtin.include_tasks: ensure_directory_exists.yml
-  args:
-    apply:
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  vars:
-    directories:
-      - path: "{{ user.home }}/.asdf"
-        owner: "{{ user.username }}"
-        group: "{{ user.usergroup | default(user.username) }}"
-        mode: "0755"
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  when: not asdf_global_install
-
-- name: Set permissions for each user's ASDF directory
-  ansible.builtin.include_tasks: ensure_directory_exists.yml
-  args:
-    apply:
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  vars:
-    directories:
-      - path: "{{ user.home }}/.asdf"
-        owner: "{{ user.username }}"
-        group: "{{ user.usergroup | default(user.username) }}"
-        recurse: true
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  when: not asdf_global_install
-
-- name: Include task to update shell profiles for each user
-  ansible.builtin.include_tasks: update_shell_profiles.yml
-  vars:
-    line: "{{ user.shell_profile_lines }}"
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  when: not asdf_global_install
-
-- name: Template ASDF environment setup script
-  ansible.builtin.template:
-    src: setup_asdf_env.sh.j2
-    dest: "{{ asdf_install_script_path }}"
-    mode: "0755"
-  vars:
-    shell_to_use: "{{ available_shell | default('/bin/sh') }}"
-  when: not asdf_global_install
-
-- name: Gather installed ASDF plugins and versions for each user
-  ansible.builtin.shell:
-    cmd: |
-      {% if user.shell != '/bin/sh' %}
-      set -o pipefail
-      {% endif %}
-      export ASDF_DIR="{{ user.home }}/.asdf"
-      if [ -f "${ASDF_DIR}/asdf.sh" ]; then
-        . "${ASDF_DIR}/asdf.sh"
-      fi
-      {% if user.plugins is defined %}
-      {% for plugin in user.plugins %}
-      if command -v asdf >/dev/null 2>&1; then
-        if ! asdf plugin list 2>/dev/null | grep -q {{ plugin.name }}; then
-          asdf plugin add {{ plugin.name }} || true;
-        fi;
-      fi;
-      {% endfor %}
-      plugins=$(asdf plugin list 2>/dev/null || echo "")
-      versions=$(asdf list all 2>/dev/null | tr '\n' ',' || echo "")
-      echo "plugins:${plugins},versions:${versions}"
-      {% else %}
-      echo "plugins:,versions:"
-      {% endif %}
-    executable: "{{ user.shell }}"
-  register: asdf_info
+- name: Extract ASDF MD5 checksum
+  ansible.builtin.command: "cat /tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
+  register: asdf_checksum
   changed_when: false
+
+- name: Download ASDF binary
+  ansible.builtin.get_url:
+    url: "{{ asdf_download_url }}"
+    dest: "/tmp/asdf-{{ asdf_version }}.tar.gz"
+    checksum: "md5:{{ asdf_checksum.stdout | trim }}"
+    mode: "0644"
+
+- name: Ensure .asdf directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.asdf"
+    state: directory
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Extract ASDF binary
+  ansible.builtin.unarchive:
+    src: "/tmp/asdf-{{ asdf_version }}.tar.gz"
+    dest: "{{ ansible_env.HOME }}/.asdf"
+    remote_src: true
+    extra_opts: [ "--strip-components=1" ]
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_username }}"
+    mode: "0755"
   become: true
-  become_user: "{{ user.username }}"
-  loop: "{{ asdf_enriched_users }}"
-  loop_control:
-    loop_var: user
-  ignore_errors: true
-  when: not asdf_global_install
+
+- name: Update shell profile for ASDF
+  ansible.builtin.include_tasks: update_shell_profile.yml
+  vars:
+    asdf_enriched_user:
+      username: "{{ asdf_username }}"
+      usergroup: "{{ asdf_usergroup }}"
+      home: "{{ ansible_env.HOME }}"
+      shell: "{{ available_shell }}"
+      shell_profile_lines:
+        - "# ASDF Setup"
+        - "export ASDF_DIR=$HOME/.asdf"
+        - ". \"$HOME/.asdf/asdf.sh\""
+        - ". \"$HOME/.asdf/completions/asdf.bash\""
+
+- name: Ensure ASDF bin directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.asdf/bin"
+    state: directory
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_username }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Download asdf.sh file
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/asdf-vm/asdf/master/asdf.sh"
+    dest: "{{ ansible_env.HOME }}/.asdf/asdf.sh"
+    mode: "0644"
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_username }}"
+  become: true
+
+- name: Copy asdf script to bin directory
+  ansible.builtin.copy:
+    src: "{{ ansible_env.HOME }}/.asdf/asdf.sh"
+    dest: "{{ ansible_env.HOME }}/.asdf/bin/asdf"
+    remote_src: yes
+    mode: "0755"
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_username }}"
+  become: true
 
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
   when: ansible_distribution == 'Rocky'
 
-- name: Install asdf plugins and set versions
-  ansible.builtin.include_tasks: install_asdf_plugins.yml
+- name: Set common ASDF environment variables
+  ansible.builtin.set_fact:
+    asdf_env:
+      HOME: "{{ ansible_env.HOME }}"
+      ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
+      PATH: "{{ ansible_env.HOME }}/.asdf/bin:{{ ansible_env.HOME }}/.asdf/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      USER: "{{ asdf_username }}"
+
+- name: Verify ASDF installation and initialize environment
+  ansible.builtin.shell: |
+    set -o pipefail
+    if [ ! -f "${ASDF_DIR}/asdf.sh" ]; then
+      echo "ASDF not properly initialized - asdf.sh missing" >&2
+      exit 1
+    fi
+    . "${ASDF_DIR}/asdf.sh"
+    if ! command -v asdf >/dev/null 2>&1; then
+      echo "ASDF command not found in PATH" >&2
+      exit 1
+    fi
+  args:
+    executable: /bin/bash
+  environment: "{{ asdf_env }}"
+  become: true
+  become_user: "{{ asdf_username }}"
+  changed_when: false
+
+- name: Install and configure plugins
+  ansible.builtin.shell: |
+    set -eo pipefail
+    . "${ASDF_DIR}/asdf.sh"
+
+    # Add plugin if not present
+    if ! asdf plugin list | grep -q "{{ item.name }}"; then
+      asdf plugin add "{{ item.name }}"
+    fi
+
+    # Install specific version if provided, otherwise get latest
+    VERSION="{{ item.version | default('latest') }}"
+
+    # If version is 'latest', find the latest version
+    if [ "$VERSION" = "latest" ]; then
+      VERSION=$(asdf list-all "{{ item.name }}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | tail -n 1)
+    fi
+
+    # Install plugin version
+    asdf install "{{ item.name }}" "${VERSION}"
+
+    # Set scope based on item.scope, default to global
+    SCOPE="{{ item.scope | default('global') }}"
+    if [ "$SCOPE" = "global" ]; then
+      asdf global "{{ item.name }}" "${VERSION}"
+    else
+      asdf local "{{ item.name }}" "${VERSION}"
+    fi
+
+    echo "${VERSION}" > "/tmp/{{ item.name }}_version"
+  args:
+    executable: /bin/bash
+  environment: "{{ asdf_env }}"
+  become: true
+  become_user: "{{ asdf_username }}"
+  register: plugin_versions
+  changed_when: false
+  loop: "{{ asdf_plugins }}"
+
+- name: Generate .tool-versions file
+  ansible.builtin.template:
+    src: tool-versions.j2
+    dest: "{{ ansible_env.HOME }}/.tool-versions"
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Ensure proper ownership of ASDF directory
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.asdf"
+    state: directory
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_username }}"
+    recurse: true
+  become: true
