@@ -100,7 +100,77 @@
     group: "{{ asdf_username }}"
   become: true
 
-- name: Deploy .tool-versions file
+- name: Install libyaml from source
+  ansible.builtin.include_tasks: install_libyaml.yml
+  when: ansible_distribution == 'Rocky'
+
+- name: Set common ASDF environment variables
+  ansible.builtin.set_fact:
+    asdf_env:
+      HOME: "{{ ansible_env.HOME }}"
+      ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
+      PATH: "{{ ansible_env.HOME }}/.asdf/bin:{{ ansible_env.HOME }}/.asdf/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      USER: "{{ asdf_username }}"
+
+- name: Verify ASDF installation and initialize environment
+  ansible.builtin.shell: |
+    set -o pipefail
+    if [ ! -f "${ASDF_DIR}/asdf.sh" ]; then
+      echo "ASDF not properly initialized - asdf.sh missing" >&2
+      exit 1
+    fi
+    . "${ASDF_DIR}/asdf.sh"
+    if ! command -v asdf >/dev/null 2>&1; then
+      echo "ASDF command not found in PATH" >&2
+      exit 1
+    fi
+  args:
+    executable: /bin/bash
+  environment: "{{ asdf_env }}"
+  become: true
+  become_user: "{{ asdf_username }}"
+  changed_when: false
+
+- name: Install and configure plugins
+  ansible.builtin.shell: |
+    set -eo pipefail
+    . "${ASDF_DIR}/asdf.sh"
+
+    # Add plugin if not present
+    if ! asdf plugin list | grep -q "{{ item.name }}"; then
+      asdf plugin add "{{ item.name }}"
+    fi
+
+    # Install specific version if provided, otherwise get latest
+    VERSION="{{ item.version | default('latest') }}"
+
+    # If version is 'latest', find the latest version
+    if [ "$VERSION" = "latest" ]; then
+      VERSION=$(asdf list-all "{{ item.name }}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | tail -n 1)
+    fi
+
+    # Install plugin version
+    asdf install "{{ item.name }}" "${VERSION}"
+
+    # Set scope based on item.scope, default to global
+    SCOPE="{{ item.scope | default('global') }}"
+    if [ "$SCOPE" = "global" ]; then
+      asdf global "{{ item.name }}" "${VERSION}"
+    else
+      asdf local "{{ item.name }}" "${VERSION}"
+    fi
+
+    echo "${VERSION}" > "/tmp/{{ item.name }}_version"
+  args:
+    executable: /bin/bash
+  environment: "{{ asdf_env }}"
+  become: true
+  become_user: "{{ asdf_username }}"
+  register: plugin_versions
+  changed_when: false
+  loop: "{{ asdf_plugins }}"
+
+- name: Generate .tool-versions file
   ansible.builtin.template:
     src: tool-versions.j2
     dest: "{{ ansible_env.HOME }}/.tool-versions"
@@ -117,49 +187,3 @@
     group: "{{ asdf_username }}"
     recurse: true
   become: true
-
-- name: Install libyaml from source
-  ansible.builtin.include_tasks: install_libyaml.yml
-  when: ansible_distribution == 'Rocky'
-
-- name: Initialize plugins with versions
-  ansible.builtin.set_fact:
-    asdf_plugins_with_versions: []
-
-- name: Get available versions for plugins
-  ansible.builtin.include_tasks: tasks/get_available_versions.yml
-  loop: "{{ asdf_plugins }}"
-  loop_control:
-    loop_var: plugin
-  register: plugin_versions
-
-- name: Update plugins with available versions
-  ansible.builtin.set_fact:
-    "{{ asdf_plugins_with_versions + [plugin | combine({'version': available_versions.stdout_lines[-1] | default('latest')})] }}"
-  loop: "{{ asdf_plugins }}"
-  loop_control:
-    loop_var: plugin
-  vars:
-    available_versions: "{{ (plugin_versions.results | selectattr('item.name', 'equalto', plugin.name) | list)[0].available_version }}"
-
-- name: Deploy ASDF plugin installation script
-  ansible.builtin.template:
-    src: templates/install_asdf_plugins.sh.j2
-    dest: /tmp/install_asdf_plugins.sh
-    mode: '0755'
-  changed_when: false
-
-- name: Run ASDF plugin installation script
-  ansible.builtin.shell: /tmp/install_asdf_plugins.sh
-  args:
-    executable: /bin/bash
-  environment:
-    HOME: "{{ ansible_env.HOME }}"
-    PATH: "{{ ansible_env.HOME }}/.asdf/bin:{{ ansible_env.HOME }}/.asdf/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-    ASDF_BIN: "{{ ansible_env.HOME }}/.asdf/bin/asdf"
-    ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
-  become: true
-  become_user: "{{ asdf_username }}"
-  register: asdf_result
-  changed_when: false
-  failed_when: asdf_result.rc != 0
