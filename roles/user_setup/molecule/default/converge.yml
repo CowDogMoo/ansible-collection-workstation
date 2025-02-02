@@ -1,5 +1,7 @@
 ---
 - name: Converge
   hosts: all
-  roles:
-    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+  tasks:
+    - name: Include role under test
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.user_setup

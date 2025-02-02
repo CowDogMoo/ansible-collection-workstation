@@ -20,4 +20,6 @@ galaxy_info:
   galaxy_tags:
     - user
     - setup
-dependencies: []
+
+dependencies:
+  - role: cowdogmoo.workstation.user_setup

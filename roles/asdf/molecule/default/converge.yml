@@ -1,22 +1,6 @@
 ---
 - name: Converge
   hosts: all
-  pre_tasks:
-    - name: Ensure sudoers configuration
-      ansible.builtin.lineinfile:
-        path: /etc/sudoers
-        regexp: '^%wheel'
-        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
-        validate: /usr/sbin/visudo -cf %s
-      become: true
-      when: ansible_distribution == 'RedHat' or ansible_distribution == 'Rocky'
-    - name: Add user to wheel group
-      ansible.builtin.user:
-        name: "{{ container_user }}"
-        groups: wheel
-        append: true
-      become: true
-      when: ansible_distribution == 'RedHat' or ansible_distribution == 'Rocky'
   vars:
     container_user: "{{ ansible_distribution | lower }}"
     container_home: "/home/{{ container_user }}"
@@ -37,7 +21,7 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Run roles
+    - name: Include role under test
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.asdf
       vars:

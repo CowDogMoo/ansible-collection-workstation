@@ -32,23 +32,6 @@ platforms:
     cgroupns_mode: host
     privileged: true
 
-  - name: redhat-asdf
-    image: "geerlingguy/docker-rockylinux9-ansible:latest"
-    # Setting the command to this is necessary for systemd containers
-    command: ""
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
-    privileged: true
-    groups:
-      - wheel
-    environment:
-      container: docker
-    provision_command:
-      - sh -c "echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
-      - sh -c "groupadd -f wheel"
-      - sh -c "usermod -aG wheel ansible"
-
 provisioner:
   name: ansible
   config_file: ${MOLECULE_PROJECT_DIRECTORY}/../../ansible.cfg

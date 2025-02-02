@@ -3,4 +3,4 @@
   hosts: all
   roles:
     - role: cowdogmoo.workstation.user_setup
-    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+    - role: cowdogmoo.workstation.zsh_setup
