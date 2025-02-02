@@ -20,11 +20,19 @@ provisioner:
   name: ansible
   env:
     ANSIBLE_ROLES_PATH: "../../../../roles:${ANSIBLE_ROLES_PATH:-/etc/ansible/roles}"
+    ANSIBLE_COLLECTIONS_PATH: "~/.ansible/collections"
+
   config_options:
     defaults:
       interpreter_python: auto_silent
-      roles_path: ../../../../roles
-      collections_paths: ~/.ansible/collections:/usr/share/ansible/collections:../../../../
+      collections_paths: "~/.ansible/collections"
+
+  inventory:
+    links:
+      hosts: inventory
+
+  playbooks:
+    converge: converge.yml
 
   ansible_args:
     - --connection=docker
