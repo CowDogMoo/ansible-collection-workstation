@@ -1,30 +1,24 @@
 ---
-- name: Check if shell exists
-  ansible.builtin.command: "which {{ asdf_enriched_user.shell | default('/bin/bash') }}"
-  register: shell_path
-  ignore_errors: true
-  changed_when: false
+- name: Detect shell and set profile
+  block:
+    - name: Check if shell exists
+      ansible.builtin.command: "which {{ asdf_enriched_user.shell | default('/bin/bash') }}"
+      register: shell_path
+      ignore_errors: true
+      changed_when: false
 
-- name: Set detected shell fact
-  ansible.builtin.set_fact:
-    detected_shell: "{{ shell_path.stdout if shell_path.stdout != '' else '/bin/bash' }}"
-
-- name: Set ASDF profile lines
-  ansible.builtin.set_fact:
-    asdf_profile_lines:
-      - "# ASDF Setup"
-      - "export ASDF_DIR=$HOME/.asdf"
-      - "export ASDF_DATA_DIR=$HOME/.asdf"
-      - ". \"$HOME/.asdf/asdf.sh\""
-      - ". \"$HOME/.asdf/completions/asdf.bash\""
+    - name: Set detected shell fact
+      ansible.builtin.set_fact:
+        detected_shell: "{{ shell_path.stdout if shell_path.stdout != '' else '/bin/bash' }}"
 
 - name: Update shell profile for the user
   ansible.builtin.blockinfile:
     path: "{{ asdf_user_home }}/{{ (detected_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
     block: |
-      {% for line in asdf_profile_lines %}
-      {{ line }}
-      {% endfor %}
+      # ASDF Setup
+      export ASDF_DIR=$HOME/.asdf
+      export ASDF_DATA_DIR=$HOME/.asdf
+      . "$HOME/.asdf/asdf.sh"
     create: true
     mode: "0644"
     owner: "{{ asdf_username }}"

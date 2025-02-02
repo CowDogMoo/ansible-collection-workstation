@@ -124,4 +124,3 @@
         that:
           - "'ASDF_DIR=$HOME/.asdf' in profile_content.stdout"
           - "'. \"$HOME/.asdf/asdf.sh\"' in profile_content.stdout"
-          - "'. \"$HOME/.asdf/completions/asdf.bash\"' in profile_content.stdout"
