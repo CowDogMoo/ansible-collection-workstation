@@ -282,6 +282,8 @@ jobs:
             path: "roles/package_management"
           - name: "Role Test - zsh_setup"
             path: "roles/zsh_setup"
+          - name: "Role Test - logging"
+            path: "roles/logging"
           - name: "Playbook Test - workstation"
             path: "playbooks/workstation"
 
