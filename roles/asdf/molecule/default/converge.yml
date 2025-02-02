@@ -10,6 +10,13 @@
         validate: /usr/sbin/visudo -cf %s
       become: true
       when: ansible_distribution == 'RedHat' or ansible_distribution == 'Rocky'
+    - name: Add user to wheel group
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        groups: wheel
+        append: true
+      become: true
+      when: ansible_distribution == 'RedHat' or ansible_distribution == 'Rocky'
   vars:
     container_user: "{{ ansible_distribution | lower }}"
     container_home: "/home/{{ container_user }}"

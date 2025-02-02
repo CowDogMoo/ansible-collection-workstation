@@ -1,6 +1,15 @@
 ---
 - name: Converge
   hosts: all
+  become: true
+  pre_tasks:
+    - name: Configure sudo for RedHat
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+        validate: /usr/sbin/visudo -cf %s
+      when: ansible_distribution == 'RedHat'
+
   tasks:
     - name: Include role based on the environment variable
       ansible.builtin.include_role:
