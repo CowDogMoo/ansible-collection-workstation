@@ -106,7 +106,7 @@
     remote_src: yes
     mode: "0755"
     owner: "{{ asdf_username }}"
-    group: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
 - name: Install libyaml from source
@@ -193,6 +193,6 @@
     path: "{{ asdf_user_home }}/.asdf"
     state: directory
     owner: "{{ asdf_username }}"
-    group: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
     recurse: true
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
