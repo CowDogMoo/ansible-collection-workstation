@@ -160,5 +160,6 @@
     ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
   become: true
   become_user: "{{ asdf_username }}"
+  register: asdf_result
   changed_when: false
   failed_when: asdf_result.rc != 0
