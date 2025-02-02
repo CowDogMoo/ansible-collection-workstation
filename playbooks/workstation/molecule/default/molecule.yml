@@ -24,6 +24,8 @@ provisioner:
     defaults:
       interpreter_python: auto_silent
       roles_path: ../../../../roles
+      collections_paths: ~/.ansible/collections:/usr/share/ansible/collections:../../../../
+
   ansible_args:
     - --connection=docker
     - -v
