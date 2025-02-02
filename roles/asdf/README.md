@@ -67,7 +67,6 @@ Key tasks in this role:
 
 - Check and install libyaml.
 - Update shell profiles for users.
-- Clone ASDF repository.
 - Deploy `.tool-versions` file.
 - Set permissions for ASDF directories.
 - Gather installed ASDF plugins and versions.
@@ -79,7 +78,6 @@ This role is tested on the following platforms:
 - Ubuntu
 - macOS
 - Kali
-- EL (Enterprise Linux)
 
 ## Author Information
 

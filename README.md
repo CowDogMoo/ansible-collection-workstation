@@ -23,7 +23,7 @@ various cybersecurity tools.
 Install latest version of the Workstation collection:
 
 ```bash
-ansible-galaxy collection install git+https://github.com/cowdogmoo/workstation.git,main
+ansible-galaxy collection install git+https://github.com/CowDogMoo/ansible-collection-workstation.git,main
 ```
 
 ## Roles

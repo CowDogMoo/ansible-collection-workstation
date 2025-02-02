@@ -58,7 +58,6 @@ This role is tested on the following platforms:
 - Ubuntu
 - macOS
 - Kali Linux
-- Enterprise Linux (EL)
 
 ## Dependencies
 
