@@ -8,5 +8,9 @@
         ansible_user_id: "{{ 'ubuntu' if ansible_distribution == 'Ubuntu' else 'rocky' }}"
       when: ansible_distribution in ['Ubuntu', 'RedHat', 'Rocky']
 
-- name: Import playbook for testing
+    - name: Setup role paths for testing
+      ansible.builtin.set_fact:
+        ansible_roles_path: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../roles:{{ lookup('env', 'ANSIBLE_ROLES_PATH') | default('/etc/ansible/roles', true) }}"
+
+- name: Run the workstation playbook
   ansible.builtin.import_playbook: ../../workstation.yml
