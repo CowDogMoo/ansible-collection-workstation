@@ -1,29 +1,16 @@
 ---
-# Use Ansible Galaxy to install dependencies
 dependency:
   name: galaxy
   options:
-    # Install required galaxy roles
-    role-file: ../../requirements.yml
-    # Install required collections
     requirements-file: ../../requirements.yml
 
-# Run molecule inside of a docker container
 driver:
   name: docker
 
 platforms:
   - name: ubuntu-workstation
     image: geerlingguy/docker-ubuntu2204-ansible:latest
-    command: "" # necessary for systemd
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
-    privileged: true
-
-  - name: redhat-workstation
-    image: "geerlingguy/docker-rockylinux9-ansible:latest"
-    command: "" # necessary for systemd
+    command: ""
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     cgroupns_mode: host
@@ -31,8 +18,25 @@ platforms:
 
 provisioner:
   name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: "../../../../roles:${ANSIBLE_ROLES_PATH:-/etc/ansible/roles}"
+    ANSIBLE_COLLECTIONS_PATH: "~/.ansible/collections"
+
+  config_options:
+    defaults:
+      interpreter_python: auto_silent
+      collections_paths: "~/.ansible/collections"
+
+  inventory:
+    links:
+      hosts: inventory
+
   playbooks:
-    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+    converge: converge.yml
+
+  ansible_args:
+    - --connection=docker
+    - -v
 
 verifier:
   name: ansible

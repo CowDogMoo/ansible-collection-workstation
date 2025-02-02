@@ -9,10 +9,6 @@
   ansible.builtin.set_fact:
     detected_shell: "{{ shell_path.stdout if shell_path.stdout != '' else '/bin/bash' }}"
 
-- name: Update asdf_enriched_user with detected shell
-  ansible.builtin.set_fact:
-    asdf_enriched_user: "{{ asdf_enriched_user | combine({'shell': detected_shell}) }}"
-
 - name: Set ASDF profile lines
   ansible.builtin.set_fact:
     asdf_profile_lines:
@@ -24,24 +20,13 @@
 
 - name: Update shell profile for the user
   ansible.builtin.blockinfile:
-    path: "{{ asdf_enriched_user.home }}/{{ (detected_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+    path: "{{ asdf_user_home }}/{{ (detected_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
     block: |
       {% for line in asdf_profile_lines %}
       {{ line }}
       {% endfor %}
     create: true
     mode: "0644"
-  become: true
-  become_user: "{{ asdf_enriched_user.username }}"
-
-- name: Ensure user home directory exists (via include)
-  ansible.builtin.include_tasks: ensure_directory_exists.yml
-  args:
-    apply:
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  vars:
-    directories:
-      - path: "{{ asdf_enriched_user.home }}"
-        owner: "{{ asdf_enriched_user.username }}"
-        group: "{{ asdf_enriched_user.usergroup | default(asdf_enriched_user.username) }}"
-        mode: "0755"
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"

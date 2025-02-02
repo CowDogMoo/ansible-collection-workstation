@@ -139,6 +139,13 @@ jobs:
           ansible-galaxy collection install -r requirements.yml
           ansible-galaxy install -r requirements.yml
 
+      - name: Build and install collection locally
+        working-directory: ${{ env.COLLECTION_PATH }}
+        shell: bash
+        run: |
+          ansible-galaxy collection build
+          ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz --force
+
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
@@ -232,6 +239,13 @@ jobs:
         run: |
           ansible-galaxy collection install -r requirements.yml
           ansible-galaxy install -r requirements.yml
+
+      - name: Build and install collection locally
+        working-directory: ${{ env.COLLECTION_PATH }}
+        shell: bash
+        run: |
+          ansible-galaxy collection build
+          ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz --force
 
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
@@ -332,6 +346,13 @@ jobs:
         run: |
           ansible-galaxy collection install -r requirements.yml
           ansible-galaxy install -r requirements.yml
+
+      - name: Build and install collection locally
+        working-directory: ${{ env.COLLECTION_PATH }}
+        shell: bash
+        run: |
+          ansible-galaxy collection build
+          ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz --force
 
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}

@@ -1,4 +1,13 @@
 ---
+- name: Debug user variables
+  ansible.builtin.debug:
+    msg: |
+      ansible_user_id: {{ ansible_user_id | default('not set') }}
+      ansible_user: {{ ansible_user | default('not set') }}
+      ansible_env.HOME: {{ ansible_env.HOME }}
+      ansible_facts['env'].HOME: {{ ansible_facts['env'].HOME }}
+      effective_user: {{ ansible_effective_user_id | default('not set') }}
+
 - name: Set default username for Kali systems
   ansible.builtin.set_fact:
     asdf_username: "kali"
@@ -40,7 +49,7 @@
 
 - name: Ensure .asdf directory exists
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.asdf"
+    path: "{{ asdf_dir }}"
     state: directory
     owner: "{{ asdf_username }}"
     group: "{{ asdf_usergroup }}"
@@ -50,13 +59,13 @@
 - name: Extract ASDF binary
   ansible.builtin.unarchive:
     src: "/tmp/asdf-{{ asdf_version }}.tar.gz"
-    dest: "{{ ansible_env.HOME }}/.asdf"
+    dest: "{{ asdf_dir }}"
     remote_src: true
     extra_opts: [ "--strip-components=1" ]
     owner: "{{ asdf_username }}"
-    group: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
     mode: "0755"
-  become: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
 - name: Update shell profile for ASDF
   ansible.builtin.include_tasks: update_shell_profile.yml
@@ -64,41 +73,41 @@
     asdf_enriched_user:
       username: "{{ asdf_username }}"
       usergroup: "{{ asdf_usergroup }}"
-      home: "{{ ansible_env.HOME }}"
+      home: "{{ asdf_user_home }}"
       shell: "{{ available_shell }}"
       shell_profile_lines:
         - "# ASDF Setup"
-        - "export ASDF_DIR=$HOME/.asdf"
-        - ". \"$HOME/.asdf/asdf.sh\""
-        - ". \"$HOME/.asdf/completions/asdf.bash\""
+        - "export ASDF_DIR={{ asdf_dir }}"
+        - ". \"{{ asdf_dir }}/asdf.sh\""
+        - ". \"{{ asdf_dir }}/completions/asdf.bash\""
 
 - name: Ensure ASDF bin directory exists
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.asdf/bin"
+    path: "{{ asdf_dir }}/bin"
     state: directory
     owner: "{{ asdf_username }}"
-    group: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
 - name: Download asdf.sh file
   ansible.builtin.get_url:
     url: "https://raw.githubusercontent.com/asdf-vm/asdf/master/asdf.sh"
-    dest: "{{ ansible_env.HOME }}/.asdf/asdf.sh"
+    dest: "{{ asdf_dir }}/asdf.sh"
     mode: "0644"
     owner: "{{ asdf_username }}"
-    group: "{{ asdf_username }}"
-  become: true
+    group: "{{ asdf_usergroup }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
 - name: Copy asdf script to bin directory
   ansible.builtin.copy:
-    src: "{{ ansible_env.HOME }}/.asdf/asdf.sh"
-    dest: "{{ ansible_env.HOME }}/.asdf/bin/asdf"
+    src: "{{ asdf_dir }}/asdf.sh"
+    dest: "{{ asdf_dir }}/bin/asdf"
     remote_src: yes
     mode: "0755"
     owner: "{{ asdf_username }}"
     group: "{{ asdf_username }}"
-  become: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
@@ -107,9 +116,9 @@
 - name: Set common ASDF environment variables
   ansible.builtin.set_fact:
     asdf_env:
-      HOME: "{{ ansible_env.HOME }}"
-      ASDF_DIR: "{{ ansible_env.HOME }}/.asdf"
-      PATH: "{{ ansible_env.HOME }}/.asdf/bin:{{ ansible_env.HOME }}/.asdf/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      HOME: "{{ asdf_user_home }}"
+      ASDF_DIR: "{{ asdf_dir }}"
+      PATH: "{{ asdf_dir }}/bin:{{ asdf_dir }}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
       USER: "{{ asdf_username }}"
 
 - name: Verify ASDF installation and initialize environment
@@ -127,7 +136,7 @@
   args:
     executable: /bin/bash
   environment: "{{ asdf_env }}"
-  become: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
   changed_when: false
 
@@ -164,7 +173,7 @@
   args:
     executable: /bin/bash
   environment: "{{ asdf_env }}"
-  become: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
   register: plugin_versions
   changed_when: false
@@ -173,7 +182,7 @@
 - name: Generate .tool-versions file
   ansible.builtin.template:
     src: tool-versions.j2
-    dest: "{{ ansible_env.HOME }}/.tool-versions"
+    dest: "{{ asdf_user_home }}/.tool-versions"
     owner: "{{ asdf_username }}"
     group: "{{ asdf_usergroup }}"
     mode: "0644"
@@ -181,9 +190,9 @@
 
 - name: Ensure proper ownership of ASDF directory
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.asdf"
+    path: "{{ asdf_user_home }}/.asdf"
     state: directory
     owner: "{{ asdf_username }}"
     group: "{{ asdf_username }}"
     recurse: true
-  become: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"

@@ -3,10 +3,24 @@
   hosts: all
   gather_facts: true
   pre_tasks:
-    - name: Set ansible_user_id based on OS
-      ansible.builtin.set_fact:
-        ansible_user_id: "{{ 'ubuntu' if ansible_distribution == 'Ubuntu' else 'rocky' }}"
-      when: ansible_distribution in ['Ubuntu', 'RedHat', 'Rocky']
+    - name: Create test user
+      ansible.builtin.user:
+        name: "{{ ansible_distribution | lower }}"
+        shell: /bin/bash
+        create_home: true
+      become: true
 
-- name: Import playbook for testing
+    - name: Set ansible_user_id and home facts
+      ansible.builtin.set_fact:
+        ansible_user_id: "{{ ansible_distribution | lower }}"
+        ansible_env:
+          HOME: "/home/{{ ansible_distribution | lower }}"
+
+    - name: Setup role paths for testing
+      ansible.builtin.set_fact:
+        ansible_roles_path: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../roles:{{ lookup('env', 'ANSIBLE_ROLES_PATH') | default('/etc/ansible/roles', true) }}"
+
+- name: Run the workstation playbook
   ansible.builtin.import_playbook: ../../workstation.yml
+  vars:
+    asdf_username: "{{ ansible_distribution | lower }}"

@@ -1,7 +1,9 @@
 ---
 asdf_version: "0.16.0"
-asdf_username: "{{ ansible_env.USER if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"
-asdf_usergroup: "{{ 'staff' if ansible_os_family == 'Darwin' else ansible_distribution | lower }}"
+asdf_username: "{{ ansible_user_id | default(ansible_user) }}"
+asdf_usergroup: "{{ asdf_username }}"
+asdf_user_home: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_env.HOME, '/home/' + asdf_username) }}"
+asdf_dir: "{{ asdf_user_home }}/.asdf"
 asdf_install_script_path: /tmp/setup_asdf_env
 asdf_shells:
   - "/usr/bin/zsh"
