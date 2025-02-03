@@ -7,17 +7,7 @@ ASDF_BASE_DIR="${HOME}/.asdf"
 
 # ASDF environment setup
 export ASDF_DIR="${ASDF_BASE_DIR}"
-export ASDF_BIN="${ASDF_BASE_DIR}/bin/asdf"
 export PATH="${ASDF_BASE_DIR}/bin:${ASDF_BASE_DIR}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-
-# Source ASDF
-ASDF_INIT_SCRIPT="${ASDF_BASE_DIR}/asdf.sh"
-if [ -f "$ASDF_INIT_SCRIPT" ]; then
-    . "$ASDF_INIT_SCRIPT"
-else
-    echo "ERROR: ASDF initialization script not found at ${ASDF_INIT_SCRIPT}" >&2
-    exit 1
-fi
 
 # Verify ASDF availability
 if ! command -v asdf >/dev/null 2>&1; then

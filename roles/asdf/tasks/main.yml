@@ -1,13 +1,4 @@
 ---
-- name: Debug user variables
-  ansible.builtin.debug:
-    msg: |
-      ansible_user_id: {{ ansible_user_id | default('not set') }}
-      ansible_user: {{ ansible_user | default('not set') }}
-      ansible_env.HOME: {{ ansible_env.HOME }}
-      ansible_facts['env'].HOME: {{ ansible_facts['env'].HOME }}
-      effective_user: {{ ansible_effective_user_id | default('not set') }}
-
 - name: Set default username for Kali systems
   ansible.builtin.set_fact:
     asdf_username: "kali"
@@ -29,106 +20,78 @@
   ansible.builtin.set_fact:
     available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
 
-- name: Fetch ASDF MD5 checksum
-  ansible.builtin.get_url:
-    url: "{{ asdf_checksum_url }}"
-    dest: "/tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
-    mode: "0644"
+- name: Fetch and verify ASDF binary
+  block:
+    - name: Fetch ASDF MD5 checksum
+      ansible.builtin.get_url:
+        url: "{{ asdf_checksum_url }}"
+        dest: "/tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
+        mode: "0644"
 
-- name: Extract ASDF MD5 checksum
-  ansible.builtin.command: "cat /tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
-  register: asdf_checksum
-  changed_when: false
+    - name: Extract ASDF MD5 checksum
+      ansible.builtin.command: "cat /tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
+      register: asdf_checksum
+      changed_when: false
 
-- name: Download ASDF binary
-  ansible.builtin.get_url:
-    url: "{{ asdf_download_url }}"
-    dest: "/tmp/asdf-{{ asdf_version }}.tar.gz"
-    checksum: "md5:{{ asdf_checksum.stdout | trim }}"
-    mode: "0644"
+    - name: Download ASDF binary
+      ansible.builtin.get_url:
+        url: "{{ asdf_download_url }}"
+        dest: "/tmp/asdf-{{ asdf_version }}.tar.gz"
+        checksum: "md5:{{ asdf_checksum.stdout | trim }}"
+        mode: "0644"
 
-- name: Ensure .asdf directory exists
+    - name: Extract ASDF binary
+      ansible.builtin.unarchive:
+        src: "/tmp/asdf-{{ asdf_version }}.tar.gz"
+        dest: "/usr/local/bin"
+        remote_src: true
+        mode: "0755"
+
+- name: Setup ASDF directory structure
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   ansible.builtin.file:
     path: "{{ asdf_dir }}"
     state: directory
     owner: "{{ asdf_username }}"
     group: "{{ asdf_usergroup }}"
     mode: "0755"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
-- name: Extract ASDF binary
-  ansible.builtin.unarchive:
-    src: "/tmp/asdf-{{ asdf_version }}.tar.gz"
-    dest: "{{ asdf_dir }}"
-    remote_src: true
-    extra_opts: [ "--strip-components=1" ]
-    owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
-    mode: "0755"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-
-- name: Update shell profile for ASDF
+- name: Update shell profile
   ansible.builtin.include_tasks: update_shell_profile.yml
-  vars:
-    asdf_enriched_user:
-      username: "{{ asdf_username }}"
-      usergroup: "{{ asdf_usergroup }}"
-      home: "{{ asdf_user_home }}"
-      shell: "{{ available_shell }}"
-      shell_profile_lines:
-        - "# ASDF Setup"
-        - "export ASDF_DIR={{ asdf_dir }}"
-        - ". \"{{ asdf_dir }}/asdf.sh\""
-        - ". \"{{ asdf_dir }}/completions/asdf.bash\""
-
-- name: Ensure ASDF bin directory exists
-  ansible.builtin.file:
-    path: "{{ asdf_dir }}/bin"
-    state: directory
-    owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
-    mode: "0755"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-
-- name: Download asdf.sh file
-  ansible.builtin.get_url:
-    url: "https://raw.githubusercontent.com/asdf-vm/asdf/master/asdf.sh"
-    dest: "{{ asdf_dir }}/asdf.sh"
-    mode: "0644"
-    owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-
-- name: Copy asdf script to bin directory
-  ansible.builtin.copy:
-    src: "{{ asdf_dir }}/asdf.sh"
-    dest: "{{ asdf_dir }}/bin/asdf"
-    remote_src: yes
-    mode: "0755"
-    owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
   when: ansible_distribution == 'Rocky'
+
+- name: Generate ASDF environment setup script
+  ansible.builtin.template:
+    src: setup_asdf_env.sh.j2
+    dest: "{{ asdf_install_script_path }}"
+    mode: "0755"
+  vars:
+    shell_to_use: "{{ available_shell | default('/bin/sh') }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Ensure proper ownership of ASDF directory
+  ansible.builtin.file:
+    path: "{{ asdf_user_home }}/.asdf"
+    state: directory
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
+    recurse: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
 - name: Set common ASDF environment variables
   ansible.builtin.set_fact:
     asdf_env:
       HOME: "{{ asdf_user_home }}"
       ASDF_DIR: "{{ asdf_dir }}"
-      PATH: "{{ asdf_dir }}/bin:{{ asdf_dir }}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      PATH: "{{ asdf_dir }}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
       USER: "{{ asdf_username }}"
 
-- name: Verify ASDF installation and initialize environment
+- name: Verify ASDF installation
   ansible.builtin.shell: |
     set -o pipefail
-    if [ ! -f "${ASDF_DIR}/asdf.sh" ]; then
-      echo "ASDF not properly initialized - asdf.sh missing" >&2
-      exit 1
-    fi
-    . "${ASDF_DIR}/asdf.sh"
     if ! command -v asdf >/dev/null 2>&1; then
       echo "ASDF command not found in PATH" >&2
       exit 1
@@ -140,44 +103,16 @@
   become_user: "{{ asdf_username }}"
   changed_when: false
 
-- name: Install and configure plugins
+- name: Install and set ASDF plugins
   ansible.builtin.shell: |
-    set -eo pipefail
-    . "${ASDF_DIR}/asdf.sh"
-
-    # Add plugin if not present
-    if ! asdf plugin list | grep -q "{{ item.name }}"; then
-      asdf plugin add "{{ item.name }}"
-    fi
-
-    # Install specific version if provided, otherwise get latest
-    VERSION="{{ item.version | default('latest') }}"
-
-    # If version is 'latest', find the latest version
-    if [ "$VERSION" = "latest" ]; then
-      VERSION=$(asdf list-all "{{ item.name }}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | tail -n 1)
-    fi
-
-    # Install plugin version
-    asdf install "{{ item.name }}" "${VERSION}"
-
-    # Set scope based on item.scope, default to global
-    SCOPE="{{ item.scope | default('global') }}"
-    if [ "$SCOPE" = "global" ]; then
-      asdf global "{{ item.name }}" "${VERSION}"
-    else
-      asdf local "{{ item.name }}" "${VERSION}"
-    fi
-
-    echo "${VERSION}" > "/tmp/{{ item.name }}_version"
+    asdf install {{ item.name }} {{ item.version | default('latest') }} {{ item.scope | default('global') }} || true
   args:
     executable: /bin/bash
   environment: "{{ asdf_env }}"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
-  register: plugin_versions
-  changed_when: false
   loop: "{{ asdf_plugins }}"
+  changed_when: false
 
 - name: Generate .tool-versions file
   ansible.builtin.template:
@@ -188,11 +123,17 @@
     mode: "0644"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
-- name: Ensure proper ownership of ASDF directory
-  ansible.builtin.file:
-    path: "{{ asdf_user_home }}/.asdf"
-    state: directory
-    owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
-    recurse: true
+- name: Reshim after default packages
+  ansible.builtin.shell: |
+    set -eo pipefail
+    {% for plugin in asdf_plugins %}
+    if [ -f "${asdf_user_home}/.default-{{ plugin.name }}-pkgs" ]; then
+      asdf reshim {{ plugin.name }}
+    fi
+    {% endfor %}
+  args:
+    executable: /bin/bash
+  environment: "{{ asdf_env }}"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ asdf_username }}"
+  changed_when: false

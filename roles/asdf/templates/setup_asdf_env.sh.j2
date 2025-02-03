@@ -7,10 +7,9 @@ if [ -z "$1" ]; then
 fi
 
 export ASDF_DIR="$1/.asdf"
-export PATH="$ASDF_DIR/bin:$PATH"
+export PATH="$ASDF_DIR/bin:$ASDF_DIR/shims:$PATH"
+
 if [ ! -d "$ASDF_DIR" ]; then
     echo "ASDF_DIR '$ASDF_DIR' does not exist" >&2
     exit 1
 fi
-
-echo "Set ASDF_DIR to: $ASDF_DIR"
