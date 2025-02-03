@@ -49,7 +49,6 @@
       ansible.builtin.shell: |
         export ASDF_DIR="{{ asdf_user_home }}/.asdf"
         export PATH="${ASDF_DIR}/bin:$PATH"
-        . "${ASDF_DIR}/asdf.sh"
         asdf --version
       register: asdf_check
       failed_when: asdf_check.rc != 0
@@ -61,7 +60,6 @@
       ansible.builtin.shell: |
         export ASDF_DIR="{{ asdf_user_home }}/.asdf"
         export PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:$PATH"
-        . "${ASDF_DIR}/asdf.sh"
         echo "Current PATH: $PATH"
         echo "ASDF_DIR: $ASDF_DIR"
         echo "Current user: $(whoami)"
@@ -123,4 +121,3 @@
       ansible.builtin.assert:
         that:
           - "'ASDF_DIR=$HOME/.asdf' in profile_content.stdout"
-          - "'. \"$HOME/.asdf/asdf.sh\"' in profile_content.stdout"
