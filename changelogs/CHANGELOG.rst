@@ -1,8 +1,29 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.0 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.1 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.1
+======
+
+Release Summary
+---------------
+
+Improved ASDF plugin installation process with better version handling and error management
+
+Added
+-----
+
+- Added new template-based approach for ASDF plugin installation
+- Improved handling of 'latest' version specifications in ASDF plugin installation
+
+Changed
+-------
+
+- Enhanced ASDF plugin installation process with better version checking
+- Improved plugin installation script with more robust error handling
+- Refactored plugin installation to use templated shell script instead of direct shell commands
 
 v2.0.0
 ======

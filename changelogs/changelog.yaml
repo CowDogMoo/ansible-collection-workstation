@@ -444,3 +444,16 @@ releases:
       - Removed unnecessary `Taskfile.yaml` tasks for changelog generation and running
         GitHub Actions with Act
     release_date: '2025-02-02'
+  2.0.1:
+    changes:
+      added:
+      - Added new template-based approach for ASDF plugin installation
+      - Improved handling of 'latest' version specifications in ASDF plugin installation
+      changed:
+      - Enhanced ASDF plugin installation process with better version checking
+      - Improved plugin installation script with more robust error handling
+      - Refactored plugin installation to use templated shell script instead of direct
+        shell commands
+      release_summary: Improved ASDF plugin installation process with better version
+        handling and error management
+    release_date: '2025-02-03'
