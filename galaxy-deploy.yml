@@ -53,5 +53,5 @@
 
     - name: Publish the collection.
       ansible.builtin.command: >
-        ansible-galaxy collection publish ./{{ namespace }}-{{ collection }}-{{ release_tag }}.tar.gz
+        ansible-galaxy collection publish ./{{ collection_namespace }}-{{ collection }}-{{ release_tag }}.tar.gz
       changed_when: false

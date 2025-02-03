@@ -1,8 +1,48 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 1.9.4 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.0
+======
+
+Release Summary
+---------------
+
+Major refactor of Molecule tests, improved Renovate and GitHub Actions workflows, streamlined ASDF role, and removed deprecated tasks for a more maintainable codebase.
+
+Added
+-----
+
+- Added dependency enforcement in the `asdf` role for `package_management` and `zsh_setup`
+- Added input validation for Molecule workflows to ensure either a role or playbook is specified, not both
+- Enhanced `asdf` role with dynamic variable assignments and improved user profile configurations
+- Implemented local collection build and installation in GitHub Actions workflows for Molecule testing
+- Introduced a `full_test` job in the Molecule workflow that runs all role and playbook tests when no specific input is given
+- Introduced improved error handling and debugging for Ansible Molecule tests
+- Introduced regex-based Renovate configuration for managing Helm and Ruby versions in `roles/asdf/defaults/main.yml`
+
+Changed
+-------
+
+- Improved Ansible collection paths in Molecule configurations for consistency
+- Improved Renovate configuration by extending from `config:recommended` instead of `config:base`
+- Refactored Ansible pre-task execution in `playbooks/workstation` to dynamically determine user settings
+- Refactored `molecule.yaml` files across roles to remove hardcoded platform specifications and improve test flexibility
+- Removed Enterprise Linux (EL) testing references from multiple roles
+- Replaced `roles/asdf/defaults/main.yml` structure with a more modular approach, removing nested user definitions
+- Standardized `converge.yml` in Molecule tests to explicitly include roles instead of relying on implicit paths
+- Updated package versions in `requirements.yml`, including Amazon AWS, Ansible Windows, community.docker, and community.general collections
+- Updated various GitHub Actions workflows (`meta-labeler`, `meta-sync-labels`, `pre-commit`, `release`, and `renovate`) to use newer action versions for security and efficiency
+
+Removed
+-------
+
+- Deleted deprecated `asdf_get_enriched_users.yml` and `install_asdf_plugins.yml` tasks, integrating functionality directly into the main playbook
+- Eliminated redundant shell profile update tasks, consolidating them into `update_shell_profile.yml`
+- Removed outdated Molecule role tests for Red Hat-based distributions
+- Removed unnecessary `Taskfile.yaml` tasks for changelog generation and running GitHub Actions with Act
 
 v1.9.4
 ======
