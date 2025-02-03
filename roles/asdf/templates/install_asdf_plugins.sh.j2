@@ -28,29 +28,37 @@ check_plugin() {
         return 0
     fi
 
-    # Check if version is installed
-    if ! asdf list "$plugin" 2>/dev/null | grep -Fxq "$version"; then
-        needs_changes=true
-        return 0
-    fi
-
-    # Check global version for global scope
-    if [ "$scope" = "global" ]; then
-        current_version=$(asdf current "$plugin" 2>/dev/null | awk '{print $2}' || echo "none")
-        if [ "$current_version" != "$version" ]; then
+    if [ "$version" = "latest" ]; then
+        # For "latest", consider the plugin valid if any version is installed
+        if ! asdf list "$plugin" 2>/dev/null | grep -q .; then
             needs_changes=true
             return 0
+        fi
+    else
+        # Check if version is installed - handle asterisk in version list
+        if ! asdf list "$plugin" 2>/dev/null | sed 's/^\*\?[[:space:]]*//g' | grep -Fxq "$version"; then
+            needs_changes=true
+            return 0
+        fi
+
+        # Check global version for global scope
+        if [ "$scope" = "global" ]; then
+            current_version=$(asdf current "$plugin" 2>/dev/null | awk '{print $2}' || echo "none")
+            if [ "$current_version" != "$version" ]; then
+                needs_changes=true
+                return 0
+            fi
         fi
     fi
 }
 
 # Process plugins
-{% for plugin in asdf_plugins_with_versions %}
-check_plugin "{{ plugin.name }}" "{{ plugin.version }}" "{{ plugin.scope }}"
+{% for plugin in asdf_plugins %}
+check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}" "{{ plugin.scope | default('global') }}"
 {% endfor %}
 
 if [ "$needs_changes" = true ]; then
-    {% for plugin in asdf_plugins_with_versions %}
+    {% for plugin in asdf_plugins %}
     echo "Processing plugin: {{ plugin.name }}"
 
     # Add plugin if needed
@@ -60,18 +68,13 @@ if [ "$needs_changes" = true ]; then
     fi
 
     # Install version if needed
-    if ! asdf list "{{ plugin.name }}" 2>/dev/null | grep -Fxq "{{ plugin.version }}"; then
-        echo "Installing {{ plugin.name }} version {{ plugin.version }}"
-        asdf install "{{ plugin.name }}" "{{ plugin.version }}"
-    fi
+    echo "Installing {{ plugin.name }} version {{ plugin.version | default('latest') }}"
+    asdf install {{ plugin.name }} {{ plugin.version | default('latest') }} {{ plugin.scope | default('global') }} || true
 
     # Set global version if needed
-    if [ "{{ plugin.scope }}" = "global" ]; then
-        current_version=$(asdf current "{{ plugin.name }}" 2>/dev/null | awk '{print $2}' || echo "none")
-        if [ "$current_version" != "{{ plugin.version }}" ]; then
-            echo "Setting global {{ plugin.name }} version to {{ plugin.version }}"
-            asdf global "{{ plugin.name }}" "{{ plugin.version }}"
-        fi
+    if [ "{{ plugin.scope | default('global') }}" = "global" ]; then
+        echo "Setting global {{ plugin.name }} version to {{ plugin.version | default('latest') }}"
+        asdf global "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
     fi
 
     echo "Reshimming {{ plugin.name }}"

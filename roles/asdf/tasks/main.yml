@@ -103,15 +103,22 @@
   become_user: "{{ asdf_username }}"
   changed_when: false
 
-- name: Install and set ASDF plugins
-  ansible.builtin.shell: |
-    asdf install {{ item.name }} {{ item.version | default('latest') }} {{ item.scope | default('global') }} || true
+- name: Generate ASDF plugin installation script
+  ansible.builtin.template:
+    src: install_asdf_plugins.sh.j2
+    dest: "{{ asdf_install_script_path }}_plugins"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  changed_when: false
+
+- name: Install ASDF plugins
+  ansible.builtin.shell: "{{ asdf_install_script_path }}_plugins"
   args:
     executable: /bin/bash
   environment: "{{ asdf_env }}"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
-  loop: "{{ asdf_plugins }}"
+  register: plugin_installation
   changed_when: false
 
 - name: Generate .tool-versions file
