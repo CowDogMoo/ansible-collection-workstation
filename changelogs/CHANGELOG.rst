@@ -1,8 +1,37 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.1 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.2 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.2
+======
+
+Release Summary
+---------------
+
+Streamlined ZSH setup role with improved user management and added template synchronization capabilities for better repository maintenance
+
+Added
+-----
+
+- Added `.templatesyncignore` file to control which files are synchronized
+- Added template synchronization workflow for maintaining consistency across repositories
+
+Changed
+-------
+
+- Enhanced user and group management in ZSH setup role
+- Improved user home directory detection logic in ZSH setup
+- Refactored ZSH setup role to use simplified user management
+- Streamlined ZSH installation process with better environment handling
+- Updated ZSH configuration to use predefined plugins list
+
+Removed
+-------
+
+- Eliminated redundant user iteration in ZSH setup tasks
+- Removed complex user enrichment tasks in favor of simpler direct user management
 
 v2.0.1
 ======
