@@ -2,12 +2,15 @@
 - name: Gather available local users
   ansible.builtin.getent:
     database: passwd
+    key: "{{ zsh_setup_username }}"
   register: getent_passwd
+  ignore_errors: true
   when: ansible_os_family != 'Darwin'
 
 - name: Gather available local users on macOS
   cowdogmoo.workstation.getent_passwd:
   register: getent_passwd
+  ignore_errors: true
   when: ansible_os_family == 'Darwin'
 
 - name: Set user home directory

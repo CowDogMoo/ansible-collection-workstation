@@ -8,18 +8,11 @@
   vars:
     package_management_common_install_packages: "{{ zsh_setup_common_install_packages }}"
 
-- name: Check if user exists
-  ansible.builtin.getent:
-    database: passwd
-    key: "{{ zsh_setup_username }}"
-  register: user_exists
-  ignore_errors: true
-
 - name: Ensure user group exists
   ansible.builtin.group:
     name: "{{ zsh_setup_usergroup }}"
     state: present
-  when: user_exists.failed | default(false)
+  when: getent_passwd.failed | default(false)
 
 - name: Ensure user exists
   ansible.builtin.user:
@@ -28,7 +21,7 @@
     shell: "{{ zsh_setup_shell }}"
     home: "{{ zsh_setup_user_home }}"
     state: present
-  when: user_exists.failed | default(false)
+  when: getent_passwd.failed | default(false)
 
 - name: Include common tasks
   ansible.builtin.include_tasks: common.yml
