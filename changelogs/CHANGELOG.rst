@@ -1,8 +1,25 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.2 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.3 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.3
+======
+
+Release Summary
+---------------
+
+Improved ASDF default shell handling and refactored ZSH setup verification for simplified user checks and dependency removal
+
+Changed
+-------
+
+- Improved ZSH verification logic to assert correct `.oh-my-zsh` and `.zshrc` file existence with streamlined assertions
+- Refactored ZSH setup verification to use `container_user` and `container_home` instead of `zsh_setup_users`
+- Removed dependency on `cowdogmoo.workstation.zsh_setup` from the ASDF role
+- Simplified verification tasks in ZSH setup by removing redundant user iteration
+- Updated ASDF default shell setting to use `/bin/bash` instead of `/usr/bin/zsh` for non-MacOS systems
 
 v2.0.2
 ======

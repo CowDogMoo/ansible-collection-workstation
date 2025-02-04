@@ -475,3 +475,17 @@ releases:
       - Eliminated redundant user iteration in ZSH setup tasks
       - Removed complex user enrichment tasks in favor of simpler direct user management
     release_date: '2025-02-03'
+  2.0.3:
+    changes:
+      changed:
+      - Improved ZSH verification logic to assert correct `.oh-my-zsh` and `.zshrc`
+        file existence with streamlined assertions
+      - Refactored ZSH setup verification to use `container_user` and `container_home`
+        instead of `zsh_setup_users`
+      - Removed dependency on `cowdogmoo.workstation.zsh_setup` from the ASDF role
+      - Simplified verification tasks in ZSH setup by removing redundant user iteration
+      - Updated ASDF default shell setting to use `/bin/bash` instead of `/usr/bin/zsh`
+        for non-MacOS systems
+      release_summary: Improved ASDF default shell handling and refactored ZSH setup
+        verification for simplified user checks and dependency removal
+    release_date: '2025-02-04'
