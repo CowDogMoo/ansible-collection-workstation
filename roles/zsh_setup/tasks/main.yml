@@ -1,6 +1,6 @@
 ---
-- name: Include tasks to gather enriched users
-  ansible.builtin.include_tasks: zsh_setup_get_enriched_users.yml
+- name: Include tasks to get user home directory
+  ansible.builtin.include_tasks: zsh_setup_get_user_home.yml
 
 - name: Install required packages for zsh
   ansible.builtin.include_role:
@@ -8,24 +8,20 @@
   vars:
     package_management_common_install_packages: "{{ zsh_setup_common_install_packages }}"
 
-- name: Ensure groups exist for users
+- name: Ensure user group exists
   ansible.builtin.group:
-    name: "{{ user.usergroup }}"
+    name: "{{ zsh_setup_usergroup }}"
     state: present
-  loop: "{{ zsh_setup_enriched_users }}"
-  loop_control:
-    loop_var: user
+  when: getent_passwd.failed | default(false)
 
 - name: Ensure user exists
   ansible.builtin.user:
-    name: "{{ user.username }}"
-    group: "{{ user.usergroup }}"
-    shell: "{{ user.shell }}"
-    home: "{{ user.home }}"
+    name: "{{ zsh_setup_username }}"
+    group: "{{ zsh_setup_usergroup }}"
+    shell: "{{ zsh_setup_shell }}"
+    home: "{{ zsh_setup_user_home }}"
     state: present
-  loop: "{{ zsh_setup_enriched_users }}"
-  loop_control:
-    loop_var: user
+  when: getent_passwd.failed | default(false)
 
 - name: Include common tasks
   ansible.builtin.include_tasks: common.yml
