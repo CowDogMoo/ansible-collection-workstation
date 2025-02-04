@@ -42,10 +42,15 @@
     {% if shell_executable != '/bin/sh' %}
     set -o pipefail
     {% endif %}
+    export HOME="{{ zsh_setup_user_home }}"
+    export ZSH="{{ zsh_setup_user_home }}/.oh-my-zsh"
     echo 'y' | {{ zsh_setup_user_home }}/omz-installer.sh --unattended --keep-zshrc
   args:
     creates: "{{ zsh_setup_user_home }}/.oh-my-zsh"
     executable: "{{ shell_executable }}"
+  environment:
+    HOME: "{{ zsh_setup_user_home }}"
+    ZSH: "{{ zsh_setup_user_home }}/.oh-my-zsh"
   become: true
   become_user: "{{ zsh_setup_username }}"
   when: not oh_my_zsh_installed.stat.exists
