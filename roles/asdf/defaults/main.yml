@@ -10,7 +10,7 @@ asdf_shells:
   - "/bin/zsh"
   - "/usr/bin/bash"
   - "/bin/bash"
-asdf_shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/usr/bin/zsh' }}"
+asdf_shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/bin/bash' }}"
 asdf_plugins:
   - name: golang
     version: "1.23.5"
