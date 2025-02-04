@@ -16,9 +16,6 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Include zsh_setup_get_enriched_users tasks
-      ansible.builtin.include_tasks: ../../tasks/zsh_setup_get_enriched_users.yml
-
     - name: Ensure zsh_setup_enriched_users is a list
       ansible.builtin.set_fact:
         zsh_setup_enriched_users: "{{ zsh_setup_enriched_users | default([]) }}"
