@@ -22,4 +22,3 @@ galaxy_info:
 
 dependencies:
   - role: cowdogmoo.workstation.package_management
-  - role: cowdogmoo.workstation.zsh_setup
