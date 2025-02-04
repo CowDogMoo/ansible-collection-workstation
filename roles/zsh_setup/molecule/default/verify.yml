@@ -2,6 +2,11 @@
 - name: Verify
   hosts: all
   gather_facts: true
+  vars:
+    zsh_setup_users:
+      - username: "{{ ansible_distribution | lower }}"
+        usergroup: "{{ ansible_distribution | lower }}"
+        shell: "/bin/zsh"
   tasks:
     - name: Include variables
       ansible.builtin.include_vars:

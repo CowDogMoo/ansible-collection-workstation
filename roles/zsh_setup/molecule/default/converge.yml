@@ -1,6 +1,46 @@
 ---
 - name: Converge
   hosts: all
-  roles:
-    - role: cowdogmoo.workstation.user_setup
-    - role: cowdogmoo.workstation.zsh_setup
+  vars:
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Check if test user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ container_user }}"
+      register: user_check
+      become: true
+
+    - name: Create test user
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        shell: /bin/bash
+        create_home: true
+      become: true
+      when: user_check.failed is defined and user_check.failed
+
+    - name: Set home directory fact
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Include user setup role
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.user_setup
+      vars:
+        zsh_setup_username: "{{ container_user }}"
+        zsh_setup_usergroup: "{{ container_user }}"
+        zsh_setup_shell: "/bin/zsh"
+
+    - name: Include zsh setup role
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.zsh_setup
+      vars:
+        zsh_setup_username: "{{ container_user }}"
+        zsh_setup_usergroup: "{{ container_user }}"
+        zsh_setup_shell: "/bin/zsh"
