@@ -3,10 +3,8 @@
   hosts: all
   gather_facts: true
   vars:
-    zsh_setup_users:
-      - username: "{{ ansible_distribution | lower }}"
-        usergroup: "{{ ansible_distribution | lower }}"
-        shell: "/bin/zsh"
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
   tasks:
     - name: Include variables
       ansible.builtin.include_vars:
@@ -16,11 +14,15 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Ensure zsh_setup_enriched_users is a list
+    - name: Set zsh setup username
       ansible.builtin.set_fact:
-        zsh_setup_enriched_users: "{{ zsh_setup_enriched_users | default([]) }}"
+        zsh_setup_username: "{{ container_user }}"
+        zsh_setup_usergroup: "{{ container_user }}"
+        zsh_setup_shell: "/bin/zsh"
 
-    # Confirm sudo configuration for Linux systems
+    - name: Include tasks to get user home directory
+      ansible.builtin.include_tasks: ../../tasks/zsh_setup_get_user_home.yml
+
     - name: Check if sudo is passwordless for current user
       ansible.builtin.command: "sudo -n true"
       register: sudo_check
@@ -35,46 +37,37 @@
         msg: "Passwordless sudo is not configured for the current user"
       when: ansible_facts['os_family'] != 'Darwin'
 
-    # Confirm that .oh-my-zsh directories exist for all users
-    - name: Confirm per-user $HOME/.oh-my-zsh directories exist for all users
+    - name: Confirm $HOME/.oh-my-zsh directory exists
       ansible.builtin.stat:
-        path: "{{ item.home }}/.oh-my-zsh"
+        path: "{{ zsh_setup_user_home }}/.oh-my-zsh"
       register: oh_my_zsh_test
-      loop: "{{ zsh_setup_enriched_users }}"
 
-    - name: Assert per-user $HOME/.oh-my-zsh directories
+    - name: Assert $HOME/.oh-my-zsh directory
       ansible.builtin.assert:
         that:
-          - "oh_my_zsh_test.results[item | int].stat.exists"
-          - "oh_my_zsh_test.results[item | int].stat.mode == '0755'"
-        msg: "$HOME/.oh-my-zsh directory check failed for {{ item.username }}"
-      loop: "{{ zsh_setup_enriched_users }}"
+          - "oh_my_zsh_test.stat.exists"
+          - "oh_my_zsh_test.stat.mode == '0755'"
+        msg: "$HOME/.oh-my-zsh directory check failed for {{ zsh_setup_username }}"
 
-    # Confirm that omz-installer.sh is removed for all zsh_setup_enriched_users
-    - name: Confirm omz-installer.sh is removed for all zsh_setup_enriched_users
+    - name: Confirm omz-installer.sh is removed
       ansible.builtin.stat:
-        path: "{{ item.home }}/omz-installer.sh"
+        path: "{{ zsh_setup_user_home }}/omz-installer.sh"
       register: zsh_installer_test
-      loop: "{{ zsh_setup_enriched_users }}"
 
     - name: Assert omz-installer.sh removal
       ansible.builtin.assert:
         that:
-          - "not zsh_installer_test.results[item | int].stat.exists"
-        msg: "zsh-installer.sh removal check failed for {{ item.username }}"
-      loop: "{{ zsh_setup_enriched_users }}"
+          - "not zsh_installer_test.stat.exists"
+        msg: "zsh-installer.sh removal check failed for {{ zsh_setup_username }}"
 
-    # Confirm that .zshrc files exist for all users
-    - name: Confirm per-user $HOME/.zshrc files exist for all users
+    - name: Confirm $HOME/.zshrc file exists
       ansible.builtin.stat:
-        path: "{{ item.home }}/.zshrc"
+        path: "{{ zsh_setup_user_home }}/.zshrc"
       register: zshrc_test
-      loop: "{{ zsh_setup_enriched_users }}"
 
-    - name: Assert per-user $HOME/.zshrc files
+    - name: Assert $HOME/.zshrc file
       ansible.builtin.assert:
         that:
-          - "zshrc_test.results[item | int].stat.exists"
-          - "zshrc_test.results[item | int].stat.mode == '0644'"
-        msg: "$HOME/.zshrc file check failed for {{ item.username }}"
-      loop: "{{ zsh_setup_enriched_users }}"
+          - "zshrc_test.stat.exists"
+          - "zshrc_test.stat.mode == '0644'"
+        msg: "$HOME/.zshrc file check failed for {{ zsh_setup_username }}"
