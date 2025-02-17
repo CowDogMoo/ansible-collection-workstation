@@ -13,13 +13,13 @@ asdf_shells:
 asdf_shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/bin/bash' }}"
 asdf_plugins:
   - name: golang
-    version: "1.23.5"
+    version: "1.24.0"
     scope: "global"
   - name: python
     version: "3.13.2"
     scope: "global"
   - name: ruby
-    version: "3.3.5"
+    version: "3.4.1"
     scope: "global"
   - name: helm
     version: "3.17.1"
