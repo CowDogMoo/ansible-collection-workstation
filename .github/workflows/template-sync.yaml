@@ -52,7 +52,7 @@ jobs:
           token: "${{ steps.app-token.outputs.token }}"
 
       - name: Template Sync
-        uses: AndreasAugustin/actions-template-sync@0fa0fe63d066890c68f92dd53eed9ca9e38487d1 # v2.5.0
+        uses: AndreasAugustin/actions-template-sync@bcb94410a4f1dffdfe5eaabc8234c3b8e76ebc5b # v2.5.1
         with:
           source_gh_token: ${{ steps.app-token.outputs.token }}
           git_user_name: github-actions[bot]
