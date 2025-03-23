@@ -26,10 +26,11 @@ on:
         default: ''
         type: string
 
-# Cancel any in-progress job when a new workflow is triggered
 concurrency:
-  cancel-in-progress: true
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only cancel in-progress runs for PRs, not for main branch or scheduled runs
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && ! contains(github.event.pull_request.labels.*.name, 'renovate') }}
+  # Use different group keys based on the event type
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && ! contains(github.event.pull_request.labels.*.name, 'renovate') && github.event.pull_request.number || github.ref }}
 
 env:
   ANSIBLE_FORCE_COLOR: "1"
