@@ -90,7 +90,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 3
       matrix:
         include:
           - name: ${{ format('Role Test - {0}', github.event.inputs.ROLE) }}
@@ -191,7 +191,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 3
       matrix:
         include:
           - name: ${{ format('Playbook Test - {0}', github.event.inputs.PLAYBOOK) }}
@@ -288,7 +288,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 3
       matrix:
         include:
           - name: "Role Test - asdf"
