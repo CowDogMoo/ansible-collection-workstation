@@ -359,6 +359,11 @@ jobs:
           ansible-galaxy collection build
           ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz --force
 
+      - name: Configure passwordless sudo
+        run: |
+          sudo bash -c "echo '${USER} ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/github"
+          sudo chmod 0440 /etc/sudoers.d/github
+
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
