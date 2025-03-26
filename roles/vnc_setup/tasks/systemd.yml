@@ -89,6 +89,7 @@
         group: "{{ item.usergroup | default(item.username) }}"
       loop: "{{ vnc_setup_users }}"
       register: service_file_updated
+      notify: "Reload user systemd daemon"
 
     - name: Add start_vnc script to profile.d
       become: true
@@ -109,6 +110,7 @@
   register: vnc_service_status
   changed_when: false
   failed_when: false
+  # noqa: command-instead-of-module
 
 - name: Stop VNC service if running and configs changed
   become: true
@@ -125,17 +127,6 @@
     - item.1.rc == 0  # Service is active (rc=0 for is-active)
     - (service_file_updated.changed or start_vnc_script_updated.changed)
   failed_when: false
-
-- name: Reload user systemd daemon
-  become: true
-  become_user: "{{ item.username }}"
-  ansible.builtin.command: systemctl --user daemon-reload
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ item.uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ item.uid }}/bus"
-  loop: "{{ vnc_setup_users_uid.result }}"
-  when: service_file_updated.changed
-  changed_when: service_file_updated.changed
 
 - name: Start VNC service with systemd
   block:
@@ -154,7 +145,6 @@
       loop: "{{ vnc_setup_users_uid.result | zip(vnc_service_status.results) | list }}"
       when: item.1.rc != 0 or service_file_updated.changed or start_vnc_script_updated.changed
       register: systemd_vnc_start
-      ignore_errors: true
 
     - name: Check if VNC started successfully with systemd
       become: true
