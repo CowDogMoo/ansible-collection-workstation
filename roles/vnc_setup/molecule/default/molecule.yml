@@ -36,26 +36,10 @@ platforms:
     environment:
       ANSIBLE_PYTHON_INTERPRETER: /usr/bin/python3
 
-  - name: redhat-vnc-setup
-    image: geerlingguy/docker-rockylinux9-ansible:latest
-    # Setting the command to this is necessary for systemd containers
-    command: ""
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
-    privileged: true
-    environment:
-      ANSIBLE_PYTHON_INTERPRETER: /usr/bin/python3
-
 provisioner:
   name: ansible
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
-  config_options:
-    defaults:
-      remote_user: root
-      become: true
-      become_method: sudo
 
 verifier:
   name: ansible
