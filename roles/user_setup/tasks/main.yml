@@ -13,12 +13,14 @@
 - name: Gather the list of unique shells to install
   become: true
   ansible.builtin.set_fact:
-    # 1. Extract 'shell' attribute from each user.
-    # 2. Filter out duplicate shell entries.
-    # 3. Strip the '/bin/' prefix from each shell name.
-    # 4. Convert the result into a list.
-    unique_shells: "{{ user_setup_default_users | map(attribute='shell') | unique | map('regex_replace', '^/bin/(.*)$', '\\1') | list }}"
-  when: ansible_os_family != 'Windows'
+    unique_shells: >-
+      {{ user_setup_default_users
+         | map(attribute='shell')
+         | unique
+         | map('basename')
+         | select('match', '^(?!bash$).+')
+         | list }}
+  when: ansible_os_family not in ['Windows', 'Darwin']
 
 - name: Install base packages for all users
   ansible.builtin.include_role:
