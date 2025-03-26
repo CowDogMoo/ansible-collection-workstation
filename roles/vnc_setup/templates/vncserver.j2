@@ -1,13 +1,32 @@
 [Unit]
 Description=Remote desktop service (VNC)
-After=syslog.target network.target
+After=network.target
 
 [Service]
 Type=forking
-PAMName=login
-ExecStartPre=/bin/sh -c '/usr/bin/vncserver -kill :{{ item.vnc_num }} > /dev/null 2>&1 || :'
-ExecStart=/usr/bin/vncserver :{{ item.vnc_num }} {{ vnc_setup_client_options }}
-ExecStop=/usr/bin/vncserver -kill :{{ item.vnc_num }}
+PIDFile=/home/{{ item.username }}/.vnc/%H:{{ item.vnc_num }}.pid
+# Set environment variables
+Environment=HOME=/home/{{ item.username }}
+Environment=DISPLAY=:{{ item.vnc_num }}
+Environment=XDG_RUNTIME_DIR=/run/user/$(id -u {{ item.username }})
+
+# Cleanup any previous VNC instance
+ExecStartPre=-/bin/sh -c '{{ tigervnc_binary | default('/usr/bin/vncserver') }} -kill :{{ item.vnc_num }} > /dev/null 2>&1 || true'
+ExecStartPre=-/bin/sh -c 'rm -f /tmp/.X{{ item.vnc_num }}-lock /tmp/.X11-unix/X{{ item.vnc_num }} || true'
+
+# Start VNC server with configured client options
+ExecStart={{ tigervnc_binary | default('/usr/bin/vncserver') }} :{{ item.vnc_num }} -localhost {{ vnc_setup_client_options }} -depth {{ vnc_setup_depth }}
+
+# Stop VNC server when service stops
+ExecStop={{ tigervnc_binary | default('/usr/bin/vncserver') }} -kill :{{ item.vnc_num }}
+
+# Auto restart on failure
+Restart=on-failure
+RestartSec=10s
+
+# Timeout values for starting and stopping the service
+TimeoutStartSec=300s
+TimeoutStopSec=60s
 
 [Install]
 WantedBy=default.target

@@ -10,109 +10,35 @@
     package_management_debian_specific_packages: "{{ vnc_setup_debian_specific_packages }}"
     package_management_redhat_specific_packages: "{{ vnc_setup_redhat_specific_packages }}"
 
-- name: Set the default username for kali systems
+- name: Set OS-specific defaults
   ansible.builtin.set_fact:
-    vnc_default_username: "kali"
-  when: ansible_distribution_release == "kali-rolling"
+    vnc_default_username: "{{ 'kali' if ansible_distribution_release == 'kali-rolling' else vnc_setup_default_username }}"
 
-- name: Check if zshrc file exists
-  ansible.builtin.stat:
-    path: /etc/zsh/zshrc
-  register: zshrc_check
+- name: Configure shell environments
+  ansible.builtin.import_tasks: shell_config.yml
 
-- name: Ensure zsh sources /etc/profile.d scripts
-  become: true
-  ansible.builtin.lineinfile:
-    path: /etc/zsh/zshrc
-    line: "for file in /etc/profile.d/*.sh; do . $file; done"
-    create: true
-    insertafter: EOF
-    mode: "0644"
-  register: zshrc_update
-  failed_when: zshrc_update is failed and not zshrc_check.stat.exists
-  changed_when: zshrc_update.changed
+- name: Prepare user VNC directories and configurations
+  ansible.builtin.import_tasks: user_config.yml
 
-- name: Create .vnc dirs
-  become: true
-  ansible.builtin.file:
-    path: "/home/{{ item.username }}/.vnc"
-    state: directory
-    mode: 0700
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
+- name: Generate and set VNC passwords
+  ansible.builtin.import_tasks: password_config.yml
+
+- name: Determine if systemd is present
+  ansible.builtin.command: systemctl --version
+  ignore_errors: true
+  register: systemd_check
   changed_when: false
-  with_items: "{{ vnc_setup_users }}"
 
-- name: Generate random passwords for vnc_setup_users with vnc_pw.py
-  cowdogmoo.workstation.vnc_pw:
-    vnc_setup_users: "{{ vnc_setup_users }}"
-  register: updated_data
-
-- name: Update vnc_setup_users with the random generated passwords
-  no_log: true
+- name: Set fact for systemd presence
   ansible.builtin.set_fact:
-    vnc_setup_users_pw: "{{ vnc_setup_users_pw | default([]) + [item] }}"
-  loop: "{{ updated_data.result }}"
+    is_systemd_present: "{{ systemd_check.rc == 0 }}"
 
-- name: Ensure .vnc directory exists for each user
-  become: true
-  ansible.builtin.file:
-    path: "/home/{{ item.username }}/.vnc"
-    state: directory
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
-    mode: "0700"
-  loop: "{{ vnc_setup_users }}"
+- name: Get user UIDs
+  ansible.builtin.import_tasks: get_uids.yml
 
-- name: Set random passwords for vnc_setup_users (if one isn't already set)
-  become: true
-  no_log: true
-  block:
-    - name: Check if passwd file exists
-      ansible.builtin.stat:
-        path: "/home/{{ item.username }}/.vnc/passwd"
-      register: passwd_file
-      loop: "{{ vnc_setup_users_pw }}"
-
-    - name: Generate and set password if passwd file does not exist
-      ansible.builtin.shell: |
-        user_home="/home/{{ item.username }}"
-        mkdir -p ${user_home}/.vnc
-        echo -n "{{ item.pass }}" > passwd_input
-        vncpwd -f < passwd_input > ${user_home}/.vnc/passwd
-        rm passwd_input
-      args:
-        executable: /bin/bash
-      when: not passwd_file.results | selectattr('item.username', 'equalto', item.username) | map(attribute='stat.exists') | first | bool
-      loop: "{{ vnc_setup_users_pw }}"
-      changed_when: true
-
-- name: Check if VNC password file exists
-  become: true
-  ansible.builtin.stat:
-    path: "/home/{{ item.username }}/.vnc/passwd"
-  register: vnc_passwd_stat
-  loop: "{{ vnc_setup_users }}"
-  loop_control:
-    loop_var: item
-
-- name: Set perms on vnc passwd files
-  become: true
-  ansible.builtin.file:
-    path: "/home/{{ item.username }}/.vnc/passwd"
-    owner: "{{ item.username }}"
-    group: "{{ item.usergroup | default(item.username) }}"
-    mode: 0700
-  when: vnc_passwd_stat.results | selectattr('item.username','equalto',item.username) | map(attribute='stat.exists') | first
-  with_items: "{{ vnc_setup_users }}"
-
-- name: Create docker-entrypoint.sh
-  become: true
-  ansible.builtin.template:
-    src: docker-entrypoint.sh.j2
-    dest: "/run/docker-entrypoint.sh"
-    mode: 0755
-
-- name: Configure systemd auto-start service
+- name: Configure systemd for VNC
   ansible.builtin.import_tasks: systemd.yml
-  when: vnc_setup_systemd|bool
+  when: is_systemd_present | bool and vnc_setup_systemd | bool
+
+- name: Start VNC services (non-systemd or systemd startup failure recovery)
+  ansible.builtin.import_tasks: service.yml
