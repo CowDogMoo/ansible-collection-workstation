@@ -51,6 +51,11 @@ provisioner:
   name: ansible
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+  config_options:
+    defaults:
+      remote_user: root
+      become: true
+      become_method: sudo
 
 verifier:
   name: ansible
