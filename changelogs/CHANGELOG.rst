@@ -1,8 +1,40 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.3 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.4 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.4
+======
+
+Release Summary
+---------------
+
+Improved VNC setup with enhanced systemd integration, more robust session management, and comprehensive verification. Added awscli to default asdf plugins and updated all plugin and Ansible collection versions.
+
+Added
+-----
+
+- Added awscli as a new asdf plugin (version 2.24.0)
+- Added comprehensive verification tests for VNC setup to validate configuration, services, and ports
+- Added explicit cleanup tasks for VNC sessions to ensure clean restarts
+- Added new `vnc_setup_depth` parameter to control color depth in VNC connections
+- Added proper handling of user UIDs for improved VNC session management
+
+Changed
+-------
+
+- Enhanced VNC systemd service template with improved error handling, environment variables, and restart policies
+- Improved user shell detection in user_setup role using basename and pattern matching
+- Refactored VNC setup role with modular task files for better organization and maintenance
+- Refactored user_setup role to handle shell installation more robustly
+- Updated Ansible collection versions: amazon.aws (9.1.1 to 9.3.0), ansible.windows (2.7.0 to 2.8.0), community.docker (4.3.1 to 4.5.2), community.general (10.3.0 to 10.5.0)
+- Updated asdf plugin versions: golang (1.23.5 to 1.24.0), python (3.13.1 to 3.13.2), ruby (3.3.5 to 3.4.2), helm (3.17.0 to 3.17.2), kubectl (1.32.1 to 1.32.3)
+
+Removed
+-------
+
+- Removed RedHat-specific testing platform from VNC setup molecule configuration
 
 v2.0.3
 ======
