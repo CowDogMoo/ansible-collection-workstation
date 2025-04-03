@@ -34,10 +34,11 @@
   ansible.builtin.package:
     name: "{{ shell }}"
     state: present
-  loop: "{{ unique_shells }}"
+  loop: "{{ unique_shells | default([]) }}"
   loop_control:
     loop_var: shell
   when:
+    - unique_shells is defined
     - shell != ''
     - shell != 'bash'
     - ansible_os_family not in ['Darwin', 'Windows']
