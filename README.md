@@ -69,6 +69,13 @@ Include the roles from this collection in your playbook. Here's an example:
     ...
 ```
 
+## Development
+
+### Release Process
+
+For information on creating new releases of this collection, see our
+[Release Process Documentation](docs/releases.md).
+
 ## License
 
 This collection is licensed under the MIT License - see the [LICENSE](LICENSE)

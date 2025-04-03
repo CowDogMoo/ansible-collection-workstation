@@ -12,8 +12,7 @@ This document outlines the process for creating new releases of the Ansible coll
   installed
 - [Molecule](https://molecule.readthedocs.io/en/latest/installation.html)
   installed (for testing)
-- [act](https://github.com/nektos/act) installed (for GitHub Actions
-  local testing)
+- [act](https://github.com/nektos/act) installed (for GitHub Actions local testing)
 - [jq](https://stedolan.github.io/jq/download/) installed (for JSON processing)
 - Docker installed (required for Molecule and act)
 
@@ -69,7 +68,7 @@ Before creating a release, you should perform these preparation steps:
    Update all collection dependencies and version numbers in `requirements.yml`
    and role defaults as needed.
 
-### Changelog Management
+## Changelog Management
 
 The collection uses [antsibull-changelog](https://github.com/ansible-community/antsibull-changelog)
 to manage the changelog.
@@ -146,7 +145,7 @@ task: [ansible:changelog-release] antsibull-changelog release --version $NEXT_VE
 
 Follow these steps to create a new release:
 
-1. **Run Tests and Linting**
+1. Run Tests and Linting
 
    Ensure all tests pass and code is linted:
 
@@ -157,11 +156,19 @@ Follow these steps to create a new release:
    task ansible:lint-ansible
    ```
 
-1. **Update Documentation**
+1. Update Documentation
 
    Ensure all documentation is up-to-date, including README files and role documentation.
 
-1. **Generate Changelog**
+1. Create a Version Branch
+
+   Create a new branch for the release version:
+
+   ```bash
+   git checkout -b $NEXT_VERSION  # e.g., git checkout -b 2.0.4
+   ```
+
+1. Generate Changelog
 
    **Option 1: Complete changelog process in one command**
 
@@ -187,20 +194,84 @@ Follow these steps to create a new release:
    automatically remove the fragment files from the filesystem. This is normal
    behavior.
 
-1. **Create a Release Commit**
+1. Create a Release Commit
 
    ```bash
    git add .
-   git commit -m "Release version x.y.z"
+   git commit
    ```
 
-1. **Push Changes**
+   Use this format for your commit message:
 
    ```bash
-   git push origin main
+   feat: Improve VNC setup and add awscli as asdf plugin
+
+   **Key Changes:**
+
+   - Enhanced VNC setup with better systemd integration and verification.
+   - Added awscli (v2.24.0) as default asdf plugin.
+   - Refactored user and VNC roles for better maintainability.
+   - Updated Ansible collections and asdf plugin versions.
+
+   **Added:**
+
+   - `awscli` plugin (v2.24.0) to asdf defaults.
+   - Verification tests for VNC: config, services, and port checks.
+   - Cleanup tasks for VNC sessions to support clean restarts.
+   - `vnc_setup_depth` param to control color depth in VNC.
+   - UID-aware handling for better VNC session management.
+
+   **Changed:**
+
+   - Improved VNC systemd template: error handling, env vars, restarts.
+   - Refactored VNC setup into modular task files.
+   - Improved shell detection in user_setup via basename + patterns.
+   - Refactored user_setup role for robust shell installation.
+   - Bumped Ansible collections:
+     - amazon.aws: 9.1.1 → 9.3.0
+     - ansible.windows: 2.7.0 → 2.8.0
+     - community.docker: 4.3.1 → 4.5.2
+     - community.general: 10.3.0 → 10.5.0
+   - Bumped asdf plugins:
+     - golang: 1.23.5 → 1.24.0
+     - python: 3.13.1 → 3.13.2
+     - ruby: 3.3.5 → 3.4.2
+     - helm: 3.17.0 → 3.17.2
+     - kubectl: 1.32.1 → 1.32.3
+
+   **Removed:**
+
+   - RedHat platform from VNC Molecule tests.
    ```
 
-1. **Create GitHub Release and Tag**
+1. Push the Branch
+
+   ```bash
+   git push origin $NEXT_VERSION  # e.g., git push origin 2.0.4
+   ```
+
+   This will output a URL you can use to create a Pull Request:
+
+   ```bash
+   remote: Create a pull request for '$NEXT_VERSION' on GitHub by visiting:
+   remote:      https://github.com/CowDogMoo/ansible-collection-workstation/pull/new/$NEXT_VERSION
+   ```
+
+1. Create and Merge the Pull Request
+
+   - Click the URL from the previous step to create a PR
+   - Wait for all CI tests to pass
+   - Review the changes
+   - Merge the PR into the main branch
+
+1. Checkout the Main Branch
+
+   ```bash
+   git checkout main
+   git pull
+   ```
+
+1. Create GitHub Release and Tag
 
    ```bash
    # This creates both a GitHub release and a git tag
@@ -213,7 +284,7 @@ Follow these steps to create a new release:
    - Generate release notes automatically based on commits since the last release
    - Create a corresponding git tag
 
-1. **Build and Publish Collection**
+1. Build and Publish Collection
 
    If using Ansible Galaxy:
 
