@@ -284,14 +284,14 @@ Follow these steps to create a new release:
    - Generate release notes automatically based on commits since the last release
    - Create a corresponding git tag
 
-1. Build and Publish Collection
+1. Automatic Collection Publishing
 
-   If using Ansible Galaxy:
+   The GitHub Action defined in `.github/workflows/release.yaml` will automatically:
 
-   ```bash
-   ansible-galaxy collection build
-   ansible-galaxy collection publish ./your-namespace-collection-x.y.z.tar.gz
-   ```
+   - Be triggered by the new tag you created
+   - Build the Ansible collection
+   - Publish it to Ansible Galaxy using the GALAXY_API_KEY secret
+     stored in the repository settings
 
 ## Release Versioning
 
