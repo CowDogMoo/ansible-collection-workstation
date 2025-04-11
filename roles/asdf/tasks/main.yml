@@ -21,6 +21,7 @@
     available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
 
 - name: Fetch and verify ASDF binary
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   block:
     - name: Fetch ASDF MD5 checksum
       ansible.builtin.get_url:

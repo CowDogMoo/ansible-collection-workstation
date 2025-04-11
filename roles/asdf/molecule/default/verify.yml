@@ -121,3 +121,35 @@
       ansible.builtin.assert:
         that:
           - "'ASDF_DIR=$HOME/.asdf' in profile_content.stdout"
+
+    - name: Verify golang is functional
+      ansible.builtin.shell: |
+        set -e
+        cd "{{ asdf_user_home }}"
+        export ASDF_DIR="{{ asdf_user_home }}/.asdf"
+        export PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:$PATH"
+        source "${ASDF_DIR}/asdf.sh" || true
+        asdf current golang
+        go version
+      register: go_version
+      failed_when: go_version.rc != 0 or expected_golang_version not in go_version.stdout
+      changed_when: false
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ asdf_username }}"
+      environment:
+        HOME: "{{ asdf_user_home }}"
+        ASDF_DIR: "{{ asdf_user_home }}/.asdf"
+        USER: "{{ asdf_username }}"
+
+    - name: Assert golang version
+      ansible.builtin.assert:
+        that:
+          - expected_golang_version in go_version.stdout
+        fail_msg: "Expected golang version {{ expected_golang_version }} not found in output"
+        success_msg: "Found expected golang version {{ expected_golang_version }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ asdf_username }}"
+      environment:
+        HOME: "{{ asdf_user_home }}"
+        ASDF_DIR: "{{ asdf_user_home }}/.asdf"
+        USER: "{{ asdf_username }}"
