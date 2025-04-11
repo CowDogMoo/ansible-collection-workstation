@@ -1,15 +1,12 @@
 #!/bin/bash
 set -e
 
-# Base directory setup
-export HOME="{{ ansible_env.HOME }}"
-ASDF_BASE_DIR="${HOME}/.asdf"
+# Set environment variables
+export HOME="{{ asdf_user_home }}"
+export ASDF_DATA_DIR="{{ asdf_data_dir }}"
+export PATH="{{ asdf_bin_dir }}:${ASDF_DATA_DIR}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-# ASDF environment setup
-export ASDF_DIR="${ASDF_BASE_DIR}"
-export PATH="${ASDF_BASE_DIR}/bin:${ASDF_BASE_DIR}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-
-# Verify ASDF availability
+# Verify asdf command is available
 if ! command -v asdf >/dev/null 2>&1; then
     echo "ERROR: asdf command not found in PATH: ${PATH}" >&2
     exit 1
@@ -22,26 +19,26 @@ check_plugin() {
     local version=$2
     local scope=$3
 
-    # Check if plugin is installed
+    # Check if plugin exists
     if ! asdf plugin list 2>/dev/null | grep -Fxq "$plugin"; then
         needs_changes=true
         return 0
     fi
 
+    # For latest version, just check if any version is installed
     if [ "$version" = "latest" ]; then
-        # For "latest", consider the plugin valid if any version is installed
         if ! asdf list "$plugin" 2>/dev/null | grep -q .; then
             needs_changes=true
             return 0
         fi
     else
-        # Check if version is installed - handle asterisk in version list
+        # Check if specific version is installed
         if ! asdf list "$plugin" 2>/dev/null | sed 's/^\*\?[[:space:]]*//g' | grep -Fxq "$version"; then
             needs_changes=true
             return 0
         fi
 
-        # Check global version for global scope
+        # For global scope, check if it's set as the global version
         if [ "$scope" = "global" ]; then
             current_version=$(asdf current "$plugin" 2>/dev/null | awk '{print $2}' || echo "none")
             if [ "$current_version" != "$version" ]; then
@@ -52,7 +49,7 @@ check_plugin() {
     fi
 }
 
-# Process plugins
+# Check each plugin for changes
 {% for plugin in asdf_plugins %}
 check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}" "{{ plugin.scope | default('global') }}"
 {% endfor %}
@@ -61,22 +58,26 @@ if [ "$needs_changes" = true ]; then
     {% for plugin in asdf_plugins %}
     echo "Processing plugin: {{ plugin.name }}"
 
-    # Add plugin if needed
+    # Add plugin if it doesn't exist
     if ! asdf plugin list 2>/dev/null | grep -Fxq "{{ plugin.name }}"; then
         echo "Adding plugin: {{ plugin.name }}"
         asdf plugin add "{{ plugin.name }}"
     fi
 
-    # Install version if needed
+    # Install specified version
     echo "Installing {{ plugin.name }} version {{ plugin.version | default('latest') }}"
-    asdf install {{ plugin.name }} {{ plugin.version | default('latest') }} {{ plugin.scope | default('global') }} || true
+    asdf install {{ plugin.name }} {{ plugin.version | default('latest') }} || true
 
-    # Set global version if needed
+    # Set version based on scope
     if [ "{{ plugin.scope | default('global') }}" = "global" ]; then
         echo "Setting global {{ plugin.name }} version to {{ plugin.version | default('latest') }}"
-        asdf global "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+        asdf set --home {{ plugin.name }} {{ plugin.version | default('latest') }}
+    else
+        echo "Setting local {{ plugin.name }} version to {{ plugin.version | default('latest') }}"
+        asdf set {{ plugin.name }} {{ plugin.version | default('latest') }}
     fi
 
+    # Reshim the plugin
     echo "Reshimming {{ plugin.name }}"
     asdf reshim "{{ plugin.name }}"
     {% endfor %}

@@ -15,6 +15,8 @@
           HOME: "{{ container_home }}"
         asdf_username: "{{ container_user }}"
         asdf_user_home: "{{ container_home }}"
+        asdf_data_dir: "{{ container_home }}/.asdf"
+        asdf_bin_dir: "/usr/local/bin"
 
     - name: Check available shells
       ansible.builtin.stat:
@@ -32,23 +34,34 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Check if .asdf directory exists
+    - name: Check if .asdf data directory exists
       ansible.builtin.stat:
-        path: "{{ asdf_user_home }}/.asdf"
-      register: asdf_dir
+        path: "{{ asdf_data_dir }}"
+      register: asdf_dir_check
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
 
-    - name: Assert that .asdf directory exists
+    - name: Assert that .asdf data directory exists
       ansible.builtin.assert:
         that:
-          - asdf_dir.stat.exists
-          - asdf_dir.stat.isdir
+          - asdf_dir_check.stat.exists
+          - asdf_dir_check.stat.isdir
+
+    - name: Check if asdf binary exists
+      ansible.builtin.stat:
+        path: "{{ asdf_bin_dir }}/asdf"
+      register: asdf_bin_check
+
+    - name: Assert that asdf binary exists
+      ansible.builtin.assert:
+        that:
+          - asdf_bin_check.stat.exists
+          - asdf_bin_check.stat.executable
 
     - name: Verify ASDF is accessible
       ansible.builtin.shell: |
-        export ASDF_DIR="{{ asdf_user_home }}/.asdf"
-        export PATH="${ASDF_DIR}/bin:$PATH"
+        export PATH="{{ asdf_bin_dir }}:$PATH"
+        export ASDF_DATA_DIR="{{ asdf_data_dir }}"
         asdf --version
       register: asdf_check
       failed_when: asdf_check.rc != 0
@@ -58,10 +71,11 @@
 
     - name: Check installed ASDF plugins and versions
       ansible.builtin.shell: |
-        export ASDF_DIR="{{ asdf_user_home }}/.asdf"
-        export PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:$PATH"
+        export PATH="{{ asdf_bin_dir }}:$PATH"
+        export ASDF_DATA_DIR="{{ asdf_data_dir }}"
+        export PATH="${ASDF_DATA_DIR}/shims:$PATH"
         echo "Current PATH: $PATH"
-        echo "ASDF_DIR: $ASDF_DIR"
+        echo "ASDF_DATA_DIR: $ASDF_DATA_DIR"
         echo "Current user: $(whoami)"
         echo "Plugin list:"
         asdf plugin list || true
@@ -73,7 +87,7 @@
       become_user: "{{ asdf_username }}"
       environment:
         HOME: "{{ asdf_user_home }}"
-        ASDF_DIR: "{{ asdf_user_home }}/.asdf"
+        ASDF_DATA_DIR: "{{ asdf_data_dir }}"
         USER: "{{ asdf_username }}"
 
     - name: Check contents of .tool-versions
@@ -120,15 +134,16 @@
     - name: Assert shell profile content
       ansible.builtin.assert:
         that:
-          - "'ASDF_DIR=$HOME/.asdf' in profile_content.stdout"
+          - "'ASDF_DATA_DIR' in profile_content.stdout"
+          - "'shims' in profile_content.stdout"
 
     - name: Verify golang is functional
       ansible.builtin.shell: |
         set -e
         cd "{{ asdf_user_home }}"
-        export ASDF_DIR="{{ asdf_user_home }}/.asdf"
-        export PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:$PATH"
-        source "${ASDF_DIR}/asdf.sh" || true
+        export PATH="{{ asdf_bin_dir }}:$PATH"
+        export ASDF_DATA_DIR="{{ asdf_data_dir }}"
+        export PATH="${ASDF_DATA_DIR}/shims:$PATH"
         asdf current golang
         go version
       register: go_version
@@ -138,7 +153,7 @@
       become_user: "{{ asdf_username }}"
       environment:
         HOME: "{{ asdf_user_home }}"
-        ASDF_DIR: "{{ asdf_user_home }}/.asdf"
+        ASDF_DATA_DIR: "{{ asdf_data_dir }}"
         USER: "{{ asdf_username }}"
 
     - name: Assert golang version
@@ -151,5 +166,5 @@
       become_user: "{{ asdf_username }}"
       environment:
         HOME: "{{ asdf_user_home }}"
-        ASDF_DIR: "{{ asdf_user_home }}/.asdf"
+        ASDF_DATA_DIR: "{{ asdf_data_dir }}"
         USER: "{{ asdf_username }}"

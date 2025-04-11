@@ -20,7 +20,16 @@
   ansible.builtin.set_fact:
     available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
 
-- name: Fetch and verify ASDF binary
+- name: Create bin directory if it doesn't exist
+  ansible.builtin.file:
+    path: "{{ asdf_bin_dir }}"
+    state: directory
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Fetch and install ASDF binary
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   block:
     - name: Fetch ASDF MD5 checksum
@@ -44,14 +53,23 @@
     - name: Extract ASDF binary
       ansible.builtin.unarchive:
         src: "/tmp/asdf-{{ asdf_version }}.tar.gz"
-        dest: "/usr/local/bin"
+        dest: "{{ asdf_bin_dir }}"
         remote_src: true
         mode: "0755"
 
-- name: Setup ASDF directory structure
+- name: Setup ASDF data directory structure
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   ansible.builtin.file:
-    path: "{{ asdf_dir }}"
+    path: "{{ asdf_data_dir }}"
+    state: directory
+    owner: "{{ asdf_username }}"
+    group: "{{ asdf_usergroup }}"
+    mode: "0755"
+
+- name: Setup ASDF shims directory
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  ansible.builtin.file:
+    path: "{{ asdf_data_dir }}/shims"
     state: directory
     owner: "{{ asdf_username }}"
     group: "{{ asdf_usergroup }}"
@@ -64,30 +82,12 @@
   ansible.builtin.include_tasks: install_libyaml.yml
   when: ansible_distribution == 'Rocky'
 
-- name: Generate ASDF environment setup script
-  ansible.builtin.template:
-    src: setup_asdf_env.sh.j2
-    dest: "{{ asdf_install_script_path }}"
-    mode: "0755"
-  vars:
-    shell_to_use: "{{ available_shell | default('/bin/sh') }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-
-- name: Ensure proper ownership of ASDF directory
-  ansible.builtin.file:
-    path: "{{ asdf_user_home }}/.asdf"
-    state: directory
-    owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
-    recurse: true
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-
 - name: Set common ASDF environment variables
   ansible.builtin.set_fact:
     asdf_env:
       HOME: "{{ asdf_user_home }}"
-      ASDF_DIR: "{{ asdf_dir }}"
-      PATH: "{{ asdf_dir }}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      ASDF_DATA_DIR: "{{ asdf_data_dir }}"
+      PATH: "{{ asdf_bin_dir }}:{{ asdf_data_dir }}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
       USER: "{{ asdf_username }}"
 
 - name: Verify ASDF installation
@@ -107,13 +107,13 @@
 - name: Generate ASDF plugin installation script
   ansible.builtin.template:
     src: install_asdf_plugins.sh.j2
-    dest: "{{ asdf_install_script_path }}_plugins"
+    dest: "/tmp/install_asdf_plugins"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   changed_when: false
 
 - name: Install ASDF plugins
-  ansible.builtin.shell: "{{ asdf_install_script_path }}_plugins"
+  ansible.builtin.shell: "/tmp/install_asdf_plugins"
   args:
     executable: /bin/bash
   environment: "{{ asdf_env }}"

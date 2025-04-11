@@ -16,13 +16,27 @@
     path: "{{ asdf_user_home }}/{{ ('zsh' in detected_shell) | ternary('.zshrc', '.bashrc') }}"
     marker: "# {mark} ANSIBLE MANAGED BLOCK - ASDF SETUP"
     block: |
-      export ASDF_DIR=$HOME/.asdf
-      export PATH="$ASDF_DIR/bin:$ASDF_DIR/shims:$PATH"
-      if [[ -f "$ASDF_DIR/asdf.sh" ]]; then
-        source "$ASDF_DIR/asdf.sh"
+      # asdf binary path
+      export PATH="{{ asdf_bin_dir }}:$PATH"
+      # Configure asdf data directory
+      export ASDF_DATA_DIR="{{ asdf_data_dir }}"
+      # asdf shims path
+      export PATH="${ASDF_DATA_DIR}/shims:$PATH"
+
+      # Set up shell completions
+      if command -v asdf >/dev/null; then
+        if [[ -n "${ZSH_VERSION-}" ]]; then
+          # Add asdf completions to fpath
+          fpath=(${ASDF_DATA_DIR}/completions $fpath)
+          autoload -Uz compinit && compinit
+        elif [[ -n "${BASH_VERSION-}" ]]; then
+          # Source bash completions if available
+          if [[ -f "${ASDF_DATA_DIR}/completions/asdf.bash" ]]; then
+            source "${ASDF_DATA_DIR}/completions/asdf.bash"
+          fi
+        fi
       fi
     create: true
     mode: "0644"
     owner: "{{ asdf_username }}"
     group: "{{ asdf_usergroup }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
