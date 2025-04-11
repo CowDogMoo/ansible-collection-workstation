@@ -4,18 +4,22 @@ After=network.target
 
 [Service]
 Type=forking
-PIDFile=/home/{{ item.username }}/.vnc/%H:{{ item.vnc_num }}.pid
+PIDFile=/home/{{ item.username }}/.vnc/{{ ansible_fqdn }}:{{ item.vnc_num }}.pid
+KillMode=process
+
 # Set environment variables
 Environment=HOME=/home/{{ item.username }}
 Environment=DISPLAY=:{{ item.vnc_num }}
-Environment=XDG_RUNTIME_DIR=/run/user/$(id -u {{ item.username }})
+Environment=XDG_RUNTIME_DIR=/run/user/%U
 
-# Cleanup any previous VNC instance
-ExecStartPre=-/bin/sh -c '{{ tigervnc_binary | default('/usr/bin/vncserver') }} -kill :{{ item.vnc_num }} > /dev/null 2>&1 || true'
-ExecStartPre=-/bin/sh -c 'rm -f /tmp/.X{{ item.vnc_num }}-lock /tmp/.X11-unix/X{{ item.vnc_num }} || true'
+# Cleanup any previous VNC instance - improved kill commands
+ExecStartPre=-/usr/bin/pkill -u {{ item.username }} Xtigervnc
+ExecStartPre=-/usr/bin/rm -f /home/{{ item.username }}/.vnc/{{ ansible_fqdn }}:{{ item.vnc_num }}.pid
+ExecStartPre=-/usr/bin/rm -f /tmp/.X{{ item.vnc_num }}-lock
+ExecStartPre=-/usr/bin/rm -f /tmp/.X11-unix/X{{ item.vnc_num }}
 
 # Start VNC server with configured client options
-ExecStart={{ tigervnc_binary | default('/usr/bin/vncserver') }} :{{ item.vnc_num }} -localhost {{ vnc_setup_client_options }} -depth {{ vnc_setup_depth }}
+ExecStart={{ tigervnc_binary | default('/usr/bin/vncserver') }} :{{ item.vnc_num }} -localhost {{ vnc_setup_client_options | default('-geometry 1920x1080') }} -depth {{ vnc_setup_depth | default('24') }}
 
 # Stop VNC server when service stops
 ExecStop={{ tigervnc_binary | default('/usr/bin/vncserver') }} -kill :{{ item.vnc_num }}
