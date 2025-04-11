@@ -16,9 +16,11 @@
     path: "{{ asdf_user_home }}/{{ ('zsh' in detected_shell) | ternary('.zshrc', '.bashrc') }}"
     marker: "# {mark} ANSIBLE MANAGED BLOCK - ASDF SETUP"
     block: |
-      # ASDF Setup
       export ASDF_DIR=$HOME/.asdf
-      export PATH="$ASDF_DIR/shims:$PATH"
+      export PATH="$ASDF_DIR/bin:$ASDF_DIR/shims:$PATH"
+      if [[ -f "$ASDF_DIR/asdf.sh" ]]; then
+        source "$ASDF_DIR/asdf.sh"
+      fi
     create: true
     mode: "0644"
     owner: "{{ asdf_username }}"
