@@ -28,6 +28,7 @@
     group: "{{ asdf_usergroup }}"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  changed_when: false
 
 - name: Fetch and install ASDF binary
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
