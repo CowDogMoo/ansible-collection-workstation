@@ -6,9 +6,11 @@
       role: cowdogmoo.workstation.user_setup
       # For debugging
       # role: ../../roles/user_setup
+
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup
       # For debugging
       # role: ../../roles/zsh_setup
+
     - name: Setup ASDF Configuration
       role: cowdogmoo.workstation.asdf
