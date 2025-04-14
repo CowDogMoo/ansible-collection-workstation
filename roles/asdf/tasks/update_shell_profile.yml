@@ -22,13 +22,14 @@
       export ASDF_DATA_DIR="{{ asdf_data_dir }}"
       # asdf shims path
       export PATH="${ASDF_DATA_DIR}/shims:$PATH"
-
       # Set up shell completions
       if command -v asdf >/dev/null; then
         if [[ -n "${ZSH_VERSION-}" ]]; then
           # Add asdf completions to fpath
-          fpath=(${ASDF_DATA_DIR}/completions $fpath)
-          autoload -Uz compinit && compinit
+          if [[ -d "${ASDF_DATA_DIR}/completions" ]]; then
+            fpath=(${ASDF_DATA_DIR}/completions $fpath)
+            autoload -Uz compinit && compinit
+          fi
         elif [[ -n "${BASH_VERSION-}" ]]; then
           # Source bash completions if available
           if [[ -f "${ASDF_DATA_DIR}/completions/asdf.bash" ]]; then
@@ -39,4 +40,4 @@
     create: true
     mode: "0644"
     owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
+    group: "{{ lookup('env', 'GITHUB_ACTIONS') | bool | ternary(omit, asdf_usergroup) }}"
