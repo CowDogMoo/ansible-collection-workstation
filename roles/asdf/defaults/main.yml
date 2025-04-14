@@ -1,7 +1,9 @@
 ---
 asdf_username: "{{ ansible_user_id | default(ansible_user) }}"
 asdf_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', asdf_username) }}"
-asdf_user_home: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_env.HOME, '/home/' + asdf_username) }}"
+asdf_user_home: >-
+  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_env.HOME,
+     (asdf_username == 'root') | ternary('/root', '/home/' + asdf_username)) }}
 
 asdf_bin_dir: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('/usr/local/bin', '/usr/local/bin') }}"
 asdf_data_dir: "{{ asdf_user_home }}/.asdf"
