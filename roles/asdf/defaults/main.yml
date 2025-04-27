@@ -30,7 +30,7 @@ asdf_plugins:
     version: "3.17.3"
     scope: "global"
   - name: kubectl
-    version: "1.32.3"
+    version: "1.33.0"
     scope: "global"
   - name: packer
     version: "1.12.0"
