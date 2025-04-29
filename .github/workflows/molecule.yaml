@@ -305,6 +305,8 @@ jobs:
             path: "roles/logging"
           - name: "Playbook Test - workstation"
             path: "playbooks/workstation"
+          - name: "Playbook Test - vnc_box"
+            path: "playbooks/vnc_box"
 
     steps:
       - name: Install Act dependencies
