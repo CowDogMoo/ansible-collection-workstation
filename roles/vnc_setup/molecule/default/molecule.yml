@@ -14,7 +14,7 @@ driver:
 
 platforms:
   - name: ubuntu-vnc-setup
-    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    image: geerlingguy/docker-ubuntu2404-ansible:latest
     # Setting the command to this is necessary for systemd containers
     command: ""
     volumes:
@@ -23,6 +23,9 @@ platforms:
     privileged: true
     environment:
       ANSIBLE_PYTHON_INTERPRETER: /usr/bin/python3
+    hostname: ubuntu-vnc_box
+    extra_hosts:
+      - "ubuntu-vnc_box:127.0.1.1"
 
   - name: kali-vnc-setup
     image: cisagov/docker-kali-ansible:latest
