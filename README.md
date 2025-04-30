@@ -26,6 +26,14 @@ Install latest version of the Workstation collection:
 ansible-galaxy collection install git+https://github.com/CowDogMoo/ansible-collection-workstation.git,main
 ```
 
+Alternatively, you can build the collection locally and install it from
+the generated tarball:
+
+```bash
+ansible-galaxy collection build --force && \
+  ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz -p ~/.ansible/collections --force --pre
+```
+
 ## Roles
 
 ### ASDF
