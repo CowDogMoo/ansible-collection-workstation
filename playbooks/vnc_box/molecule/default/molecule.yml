@@ -13,22 +13,10 @@ driver:
   name: docker
 
 platforms:
-  - name: ubuntu-vnc-setup
+  - name: ubuntu-vnc_box
     image: geerlingguy/docker-ubuntu2404-ansible:latest
     # Setting the command to this is necessary for systemd containers
     command: ""
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
-    privileged: true
-    environment:
-      ANSIBLE_PYTHON_INTERPRETER: /usr/bin/python3
-
-  - name: kali-vnc-setup
-    image: cisagov/docker-kali-ansible:latest
-    # Setting the command to this is necessary for systemd containers
-    command: ""
-    pre_build_image: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     cgroupns_mode: host
