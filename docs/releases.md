@@ -174,7 +174,7 @@ Follow these steps to create a new release:
 
    ```bash
    export TASK_X_REMOTE_TASKFILES=1
-   NEXT_VERSION=x.y.z task -y ansible:gen-changelog
+   NEXT_VERSION=$NEXT_VERSION task -y ansible:gen-changelog
    ```
 
    **Option 2: Run individual changelog tasks**

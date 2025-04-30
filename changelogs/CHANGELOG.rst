@@ -1,8 +1,53 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.4 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.5 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.5
+======
+
+Release Summary
+---------------
+
+Added VNC box playbook, thoroughly refactored ASDF role to support binary-based installs, improved service reliability, and updated numerous dependencies. Fixed issues with user home detection, shell integrations, and Molecule testing.
+
+Added
+-----
+
+- Added Molecule scenario for VNC box playbook and registered it in the GitHub Actions workflow
+- Added VNC box playbook (`playbooks/vnc_box/vnc_box.yml`) to configure a VNC workstation
+- Added conditional check for ASDF completions directory in shell profile setup
+- Added environment detection for GitHub Actions CI environments in ASDF role
+- Added shell completions for ASDF in Bash and Zsh via `update_shell_profile.yml`
+- Added verification for Golang functionality in ASDF Molecule tests
+
+Changed
+-------
+
+- Improved ASDF shell profile setup for v0.16+ compatibility and CI environments
+- Improved VNC service startup and cleanup reliability with better process handling
+- Optimized task running documentation
+- Refactored ASDF role to support binary-based installs with improved shell integration
+- Switched VNC playbook and role tests to use Ubuntu 24.04 for testing
+- Updated actions/setup-python from v5.5.0 to v5.6.0
+- Updated ansible.windows from 2.8.0 to 3.0.0
+- Updated ansible/ansible-lint from v25.1.3 to v25.4.0
+- Updated community.general from 10.5.0 to 10.6.0
+- Updated helm/helm from v3.17.2 to v1.17.3
+- Updated kubernetes/kubernetes from v1.32.3 to v1.33.0
+- Updated python/cpython from v3.13.2 to v3.13.3
+
+Fixed
+-----
+
+- Addressed minor inaccuracy in releases.md
+- Fixed ASDF path in dotfile configuration
+- Fixed bug determining asdf_user_home for the root user
+- Fixed bug in workstation playbook molecule tests
+- Fixed idempotency issues in various roles
+- Fixed issue with zsh_setup_get_user_home.yml to handle root user home on Linux and macOS
+- Fixed naming issue causing molecule test failure for vnc_box playbook
 
 v2.0.4
 ======
