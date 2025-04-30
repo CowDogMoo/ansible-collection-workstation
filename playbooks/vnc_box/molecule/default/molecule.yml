@@ -13,7 +13,7 @@ driver:
   name: docker
 
 platforms:
-  - name: ubuntu-vnc_box
+  - name: ubuntu-vnc-box
     image: geerlingguy/docker-ubuntu2404-ansible:latest
     # Setting the command to this is necessary for systemd containers
     command: ""
