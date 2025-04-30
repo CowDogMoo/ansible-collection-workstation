@@ -26,7 +26,7 @@ Before creating a release, you should perform these preparation steps:
 
    ```bash
    export TASK_X_REMOTE_TASKFILES=1
-   task ansible:run-molecule-tests
+   task -y ansible:run-molecule-tests
    ```
 
    This command will:
@@ -41,11 +41,11 @@ Before creating a release, you should perform these preparation steps:
    ```bash
    # Test a specific role
    export TASK_X_REMOTE_TASKFILES=1
-   task ansible:run-molecule-action ROLE=asdf
+   task -y ansible:run-molecule-action ROLE=asdf
 
    # Test a specific playbook
    export TASK_X_REMOTE_TASKFILES=1
-   task ansible:run-molecule-action PLAYBOOK=workstation
+   task -y ansible:run-molecule-action PLAYBOOK=workstation
    ```
 
    The run-molecule-action task will:
@@ -58,7 +58,7 @@ Before creating a release, you should perform these preparation steps:
 
    ```bash
    export TASK_X_REMOTE_TASKFILES=1
-   task ansible:lint-ansible
+   task -y ansible:lint-ansible
    ```
 
    This runs ansible-lint with the configuration file at .hooks/linters/ansible-lint.yaml.
@@ -108,7 +108,7 @@ You can work with the changelog in two ways:
 
 ```bash
 export TASK_X_REMOTE_TASKFILES=1
-NEXT_VERSION=1.0.0 task ansible:gen-changelog
+NEXT_VERSION=1.0.0 task -y ansible:gen-changelog
 ```
 
 This command will run all the necessary steps (linting and release generation).
@@ -119,14 +119,14 @@ Lint the changelog first:
 
 ```bash
 export TASK_X_REMOTE_TASKFILES=1
-task ansible:changelog-lint
+task -y ansible:changelog-lint
 ```
 
 Then generate the release:
 
 ```bash
 export TASK_X_REMOTE_TASKFILES=1
-NEXT_VERSION=1.0.0 task ansible:changelog-release
+NEXT_VERSION=1.0.0 task -y ansible:changelog-release
 ```
 
 **Required Variables:**
@@ -151,9 +151,9 @@ Follow these steps to create a new release:
 
    ```bash
    export TASK_X_REMOTE_TASKFILES=1
-   task ansible:run-molecule-tests
+   task -y ansible:run-molecule-tests
    export TASK_X_REMOTE_TASKFILES=1
-   task ansible:lint-ansible
+   task -y ansible:lint-ansible
    ```
 
 1. Update Documentation
@@ -174,7 +174,7 @@ Follow these steps to create a new release:
 
    ```bash
    export TASK_X_REMOTE_TASKFILES=1
-   NEXT_VERSION=x.y.z task ansible:gen-changelog
+   NEXT_VERSION=x.y.z task -y ansible:gen-changelog
    ```
 
    **Option 2: Run individual changelog tasks**
@@ -182,11 +182,11 @@ Follow these steps to create a new release:
    ```bash
    # First lint the changelog
    export TASK_X_REMOTE_TASKFILES=1
-   task ansible:changelog-lint
+   task -y ansible:changelog-lint
 
    # Then generate the release (this will also update galaxy.yml)
    export TASK_X_REMOTE_TASKFILES=1
-   NEXT_VERSION=x.y.z task ansible:changelog-release
+   NEXT_VERSION=x.y.z task -y ansible:changelog-release
    ```
 
    **Note:** When these commands run, antsibull-changelog will process your
