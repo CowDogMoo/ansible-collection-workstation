@@ -2,6 +2,6 @@
 - name: Converge
   hosts: all
   gather_facts: true
-  roles:
-    - name: Setup VNC Server
-      role: cowdogmoo.workstation.vnc_setup
+
+- name: Run the vnc_box playbook
+  ansible.builtin.import_playbook: ../../vnc_box.yml
