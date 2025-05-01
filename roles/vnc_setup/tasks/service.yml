@@ -30,9 +30,6 @@
       become: true
       become_user: "{{ item.0.username }}"
       ansible.builtin.shell: |
-        export XDG_RUNTIME_DIR=/run/user/{{ item.0.uid }}
-        mkdir -p $XDG_RUNTIME_DIR
-        chmod 0700 $XDG_RUNTIME_DIR
         /usr/bin/vncserver -kill :{{ item.0.vnc_num }} > /dev/null 2>&1 || true
         /usr/bin/vncserver :{{ item.0.vnc_num }} -localhost {{ vnc_setup_client_options }} -depth {{ vnc_setup_depth }}
       loop: "{{ vnc_setup_users_uid.result | default(vnc_setup_users) | zip(vnc_running_check.results) | list }}"
