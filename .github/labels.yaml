@@ -35,6 +35,11 @@
   description: >-
     Changes made to Ansible roles
 
+- name: area/playbooks
+  color: "FF99CC" # Pink
+  description: >-
+    Changes made to playbooks directory
+
 - name: area/taskfiles
   color: "66CCFF" # Sky Blue
   description: >-
@@ -44,6 +49,11 @@
   color: "99CC00" # Lime Green
   description: >-
     Changes made to galaxy.yml
+
+- name: area/molecule
+  color: "FFCC00" # Light Yellow
+  description: >-
+    Changes made to molecule test files
 
 - name: area/plugins
   color: "FF99CC" # Pink
@@ -87,6 +97,11 @@
   description: >-
     Changes made to workstation playbook
 
+- name: playbook/vnc_box
+  color: "00FF00" # Bright Green
+  description: >-
+    Changes made to vnc_box playbook
+
 # Renovate
 - name: renovate/container
   color: "FFC300" # Golden Yellow
@@ -94,6 +109,7 @@
   color: "FFD700" # Gold
 - name: renovate/github-release
   color: "FFE4B5" # Moccasin
+
 # Semantic Type
 - name: type/digest
   color: "FFEC19" # Yellow
@@ -105,9 +121,11 @@
   color: "F6412D" # Red Orange
 - name: type/break
   color: "FF0000" # Bright Red
+
 # Release Issue
 - name: image-not-found
   color: "EE0701" # Error Red
+
 # Uncategorized
 - name: bug
   color: "D93F0B" # Dark Red

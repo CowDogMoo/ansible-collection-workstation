@@ -41,6 +41,10 @@ area/galaxy:
   - changed-files:
       - any-glob-to-any-file: "galaxy.yml"
 
+area/molecule:
+  - changed-files:
+      - any-glob-to-any-file: "**/molecule/**/*"
+
 area/plugins:
   - changed-files:
       - any-glob-to-any-file: "plugins/**/*"
@@ -74,3 +78,7 @@ role/zsh_setup:
 playbook/workstation:
   - changed-files:
       - any-glob-to-any-file: "playbooks/workstation/**/*"
+
+playbook/vnc_box:
+  - changed-files:
+      - any-glob-to-any-file: "playbooks/vnc_box/**/*"
