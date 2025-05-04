@@ -8,6 +8,14 @@
   become: true
   when: ansible_os_family == 'Debian'
 
+- name: Install Kali Linux archive keyring
+  ansible.builtin.get_url:
+    url: https://archive.kali.org/archive-keyring.gpg
+    dest: /usr/share/keyrings/kali-archive-keyring.gpg
+    mode: '0644'
+  become: true
+  when: ansible_distribution == 'Kali'
+
 - name: Install packages
   become: true
   ansible.builtin.package:
