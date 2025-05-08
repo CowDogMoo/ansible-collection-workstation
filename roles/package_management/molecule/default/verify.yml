@@ -7,6 +7,21 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
+    # Check that no apt locks remain after role execution
+    - name: Verify no apt locks are present
+      ansible.builtin.command: lsof /var/lib/dpkg/lock-frontend
+      register: apt_lock_post_check
+      changed_when: false
+      failed_when: apt_lock_post_check.rc == 0  # Fail if lock is found
+      when: ansible_os_family == 'Debian'
+
+    - name: Verify no dpkg lock is present
+      ansible.builtin.command: lsof /var/lib/dpkg/lock
+      register: dpkg_lock_check
+      changed_when: false
+      failed_when: dpkg_lock_check.rc == 0  # Fail if lock is found
+      when: ansible_os_family == 'Debian'
+
     - name: Check if common packages are installed
       ansible.builtin.package:
         name: "{{ item }}"

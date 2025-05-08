@@ -1,4 +1,15 @@
 ---
+# Ensure apt locks are released before any package operations
+- name: Check for apt locks
+  ansible.builtin.command: lsof /var/lib/dpkg/lock-frontend
+  register: apt_lock_check
+  changed_when: false
+  failed_when: false
+  retries: 10
+  delay: 5
+  until: apt_lock_check.rc != 0
+  when: ansible_os_family == 'Debian'
+
 - name: Set DEBIAN_FRONTEND to noninteractive
   ansible.builtin.lineinfile:
     path: /etc/environment
