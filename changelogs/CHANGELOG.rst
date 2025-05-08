@@ -1,8 +1,36 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.5 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.6 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.6
+======
+
+Release Summary
+---------------
+
+This release focuses on improving package management reliability, especially for Debian-based systems with better apt lock handling. Added support for Kali Linux package verification and simplified VNC service management. Several dependencies were also updated to their latest versions.
+
+Added
+-----
+
+- Added Kali archive keyring installation task for Kali-based systems
+- Added Molecule verification to ensure no apt/dpkg locks remain after package_management role runs
+- Added `area/molecule` and `playbook/vnc_box` labels for improved PR categorization
+- Added retry loop in package_management role to wait until apt locks are released
+
+Changed
+-------
+
+- Fixed label formatting and added missing area label for playbooks
+- Improved reliability of package installation on Debian-based systems
+- Simplified VNC service setup by removing redundant XDG_RUNTIME_DIR handling
+- Updated Debian package tasks to proactively prevent apt lock contention
+- Updated actions/create-github-app-token from v2.0.2 to v2.0.6
+- Updated adrienverge/yamllint from v1.37.0 to v1.37.1
+- Updated community.docker from 4.5.2 to 4.6.0
+- Updated renovatebot/github-action from v41.0.22 to v42.0.1
 
 v2.0.5
 ======
@@ -25,6 +53,13 @@ Added
 Changed
 -------
 
+- Addressed minor inaccuracy in releases.md
+- Fixed ASDF path in dotfile configuration
+- Fixed bug determining asdf_user_home for the root user
+- Fixed bug in workstation playbook molecule tests
+- Fixed idempotency issues in various roles
+- Fixed issue with zsh_setup_get_user_home.yml to handle root user home on Linux and macOS
+- Fixed naming issue causing molecule test failure for vnc_box playbook
 - Improved ASDF shell profile setup for v0.16+ compatibility and CI environments
 - Improved VNC service startup and cleanup reliability with better process handling
 - Optimized task running documentation
@@ -37,17 +72,6 @@ Changed
 - Updated helm/helm from v3.17.2 to v1.17.3
 - Updated kubernetes/kubernetes from v1.32.3 to v1.33.0
 - Updated python/cpython from v3.13.2 to v3.13.3
-
-Fixed
------
-
-- Addressed minor inaccuracy in releases.md
-- Fixed ASDF path in dotfile configuration
-- Fixed bug determining asdf_user_home for the root user
-- Fixed bug in workstation playbook molecule tests
-- Fixed idempotency issues in various roles
-- Fixed issue with zsh_setup_get_user_home.yml to handle root user home on Linux and macOS
-- Fixed naming issue causing molecule test failure for vnc_box playbook
 
 v2.0.4
 ======
