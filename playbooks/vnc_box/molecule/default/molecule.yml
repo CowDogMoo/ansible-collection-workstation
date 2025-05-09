@@ -15,19 +15,28 @@ driver:
 platforms:
   - name: ubuntu-vnc-box
     image: geerlingguy/docker-ubuntu2404-ansible:latest
-    # Setting the command to this is necessary for systemd containers
-    command: ""
+    command: "" # necessary for systemd
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     cgroupns_mode: host
     privileged: true
-    environment:
-      ANSIBLE_PYTHON_INTERPRETER: /usr/bin/python3
+
+  - name: kali-vnc-box
+    image: cisagov/docker-kali-ansible:latest
+    command: "" # necessary for systemd
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+    pre_build_image: true
 
 provisioner:
   name: ansible
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+  # Uncomment for verbose output
+  # env:
+  #   ANSIBLE_VERBOSITY: 3
 
 verifier:
   name: ansible
