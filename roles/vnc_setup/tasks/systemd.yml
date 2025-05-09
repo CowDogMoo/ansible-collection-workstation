@@ -1,6 +1,8 @@
 ---
 - name: Clean up existing VNC sessions
   ansible.builtin.import_tasks: cleanup.yml
+  vars:
+    vnc_needs_restart: true
 
 - name: Ensure required systemd services are running
   become: true
@@ -89,7 +91,9 @@
         group: "{{ item.usergroup | default(item.username) }}"
       loop: "{{ vnc_setup_users }}"
       register: service_file_updated
-      notify: "Reload user systemd daemon"
+      when:
+        - is_systemd_present | bool
+        - vnc_setup_systemd | bool
 
     - name: Add start_vnc script to profile.d
       become: true

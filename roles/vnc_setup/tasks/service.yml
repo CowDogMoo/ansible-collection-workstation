@@ -30,11 +30,16 @@
       become: true
       become_user: "{{ item.0.username }}"
       ansible.builtin.shell: |
+        # Kill existing VNC server
         /usr/bin/vncserver -kill :{{ item.0.vnc_num }} > /dev/null 2>&1 || true
-        /usr/bin/vncserver :{{ item.0.vnc_num }} -localhost {{ vnc_setup_client_options }} -depth {{ vnc_setup_depth }}
+
+        # Start VNC server with password file
+        /usr/bin/vncserver :{{ item.0.vnc_num }} -localhost {{ vnc_setup_client_options }} -depth {{ vnc_setup_depth }} -rfbauth /home/{{ item.0.username }}/.vnc/passwd
+      args:
+        executable: /bin/bash
       loop: "{{ vnc_setup_users_uid.result | default(vnc_setup_users) | zip(vnc_running_check.results) | list }}"
       when: >
         (item.1.rc != 0 or vnc_needs_restart | bool) and
-        (systemd_vnc_start_failed | default(false) | bool)
+        (not is_systemd_present | bool or not vnc_setup_systemd | bool or systemd_vnc_start_failed | default(false) | bool)
       register: vnc_start_result
       changed_when: item.1.rc != 0 or vnc_needs_restart | bool
