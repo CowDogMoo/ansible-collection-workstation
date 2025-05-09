@@ -42,4 +42,4 @@
         (item.1.rc != 0 or vnc_needs_restart | bool) and
         (not is_systemd_present | bool or not vnc_setup_systemd | bool or systemd_vnc_start_failed | default(false) | bool)
       register: vnc_start_result
-      changed_when: item.1.rc != 0 or vnc_needs_restart | bool
+      changed_when: false
