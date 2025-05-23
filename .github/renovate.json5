@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "username": "rosey-bot[bot]",
-  "gitAuthor": "rosey-bot <98030736+rosey-bot[bot]@users.noreply.github.com>",
+  "username": "cowdogmoo-renovate-bot[bot]",
+  "gitAuthor": "cowdogmoo-renovate-bot <157187596+cowdogmoo-renovate-bot[bot]@users.noreply.github.com>",
   "extends": [
     "config:recommended",
     "docker:enableMajor",
