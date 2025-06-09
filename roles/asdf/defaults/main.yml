@@ -18,7 +18,7 @@ asdf_shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/bin/bash' 
 
 asdf_plugins:
   - name: golang
-    version: "1.24.0"
+    version: "1.24.4"
     scope: "global"
   - name: python
     version: "3.13.4"
