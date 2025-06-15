@@ -21,7 +21,7 @@ asdf_plugins:
     version: "1.24.4"
     scope: "global"
   - name: python
-    version: "3.13.4"
+    version: "3.13.5"
     scope: "global"
   - name: ruby
     version: "3.4.2"
