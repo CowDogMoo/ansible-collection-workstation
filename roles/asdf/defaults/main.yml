@@ -27,7 +27,7 @@ asdf_plugins:
     version: "3.4.2"
     scope: "global"
   - name: helm
-    version: "3.18.3"
+    version: "3.18.4"
     scope: "global"
   - name: kubectl
     version: "1.33.2"
