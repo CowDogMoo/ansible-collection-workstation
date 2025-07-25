@@ -14,3 +14,10 @@
 
     - name: Setup ASDF Configuration
       role: cowdogmoo.workstation.asdf
+      # For debugging
+      # role: ../../roles/asdf
+
+    - name: Install Go Task
+      role: cowdogmoo.workstation.go_task
+      # For debugging
+      # role: ../../roles/go_task
