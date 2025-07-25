@@ -1,0 +1,31 @@
+---
+- name: Set download filename for Windows
+  ansible.builtin.set_fact:
+    go_task_filename: "task_{{ go_task_os }}_{{ go_task_arch }}.zip"
+
+- name: Create installation directory
+  ansible.windows.win_file:
+    path: "{{ go_task_windows_install_dir }}"
+    state: directory
+
+- name: Download go-task for Windows
+  ansible.windows.win_get_url:
+    url: "{{ go_task_download_base_url }}/v{{ go_task_version }}/{{ go_task_filename }}"
+    dest: "{{ go_task_windows_install_dir }}\\{{ go_task_filename }}"
+
+- name: Extract go-task archive
+  community.windows.win_unzip:
+    src: "{{ go_task_windows_install_dir }}\\{{ go_task_filename }}"
+    dest: "{{ go_task_windows_install_dir }}"
+
+- name: Remove downloaded archive
+  ansible.windows.win_file:
+    path: "{{ go_task_windows_install_dir }}\\{{ go_task_filename }}"
+    state: absent
+
+- name: Add go-task to PATH
+  ansible.windows.win_path:
+    elements:
+      - "{{ go_task_windows_install_dir }}"
+    state: present
+  when: go_task_windows_add_to_path

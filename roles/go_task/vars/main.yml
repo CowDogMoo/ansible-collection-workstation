@@ -1,0 +1,7 @@
+---
+# Base URL for go-task releases
+go_task_github_api_url: "https://api.github.com/repos/go-task/task/releases"
+go_task_download_base_url: "https://github.com/go-task/task/releases/download"
+
+# Checksums file name
+go_task_checksums_file: "task_checksums.txt"
