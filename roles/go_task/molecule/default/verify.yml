@@ -56,9 +56,9 @@
         that:
           - task_version_output.rc == 0
           - >
-            'task version' in task_version_output.stdout.lower() or
-            'task v' in task_version_output.stdout.lower() or
-            task_version_output.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+')
+            ('task version' in task_version_output.stdout.lower()) or
+            ('task v' in task_version_output.stdout.lower()) or
+            (task_version_output.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+') is not none)
         fail_msg: "Task command failed or version output not recognized. Output was: {{ task_version_output.stdout }}"
       when: ansible_os_family != 'Windows'
 
@@ -67,8 +67,8 @@
         that:
           - task_version_output_windows.rc == 0
           - >
-            'task version' in task_version_output_windows.stdout.lower() or
-            'task v' in task_version_output_windows.stdout.lower() or
-            task_version_output_windows.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+')
+            ('task version' in task_version_output_windows.stdout.lower()) or
+            ('task v' in task_version_output_windows.stdout.lower()) or
+            (task_version_output_windows.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+') is not none)
         fail_msg: "Task command failed or version output not recognized. Output was: {{ task_version_output_windows.stdout }}"
       when: ansible_os_family == 'Windows'
