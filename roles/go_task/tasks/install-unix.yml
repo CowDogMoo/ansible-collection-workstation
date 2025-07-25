@@ -1,0 +1,87 @@
+---
+- name: Set download filename for Unix-like systems
+  ansible.builtin.set_fact:
+    go_task_filename: "task_{{ go_task_os }}_{{ go_task_arch }}.tar.gz"
+
+- name: Check if go-task is already installed
+  ansible.builtin.stat:
+    path: "{{ go_task_install_dir }}/task"
+  register: go_task_installed
+
+- name: Check installed go-task version
+  ansible.builtin.command: "{{ go_task_install_dir }}/task --version"
+  register: go_task_installed_version
+  changed_when: false
+  failed_when: false
+  when: go_task_installed.stat.exists
+
+- name: Set fact for whether installation is needed
+  ansible.builtin.set_fact:
+    go_task_needs_install: >-
+      {{ not go_task_installed.stat.exists or
+         go_task_installed_version.stdout is not defined or
+         go_task_version not in go_task_installed_version.stdout }}
+
+- name: Download and install go-task
+  when: go_task_needs_install
+  block:
+    - name: Create temporary download directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: go-task
+      register: go_task_temp_dir
+
+    - name: Download checksums file
+      ansible.builtin.get_url:
+        url: "{{ go_task_download_base_url }}/v{{ go_task_version }}/{{ go_task_checksums_file }}"
+        dest: "{{ go_task_temp_dir.path }}/{{ go_task_checksums_file }}"
+        mode: '0644'
+      retries: 3
+      delay: 2
+
+    - name: Extract checksum for specific file
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep {{ go_task_filename }} {{ go_task_temp_dir.path }}/{{ go_task_checksums_file }} | awk '{print "sha256:" $1}'
+      args:
+        executable: /bin/bash
+      register: go_task_checksum_result
+      changed_when: false
+
+    - name: Download go-task archive
+      ansible.builtin.get_url:
+        url: "{{ go_task_download_base_url }}/v{{ go_task_version }}/{{ go_task_filename }}"
+        dest: "{{ go_task_temp_dir.path }}/{{ go_task_filename }}"
+        mode: '0644'
+        checksum: "{{ go_task_checksum_result.stdout }}"
+      retries: 3
+      delay: 2
+
+    - name: Extract go-task archive
+      ansible.builtin.unarchive:
+        src: "{{ go_task_temp_dir.path }}/{{ go_task_filename }}"
+        dest: "{{ go_task_temp_dir.path }}"
+        remote_src: true
+
+    - name: Ensure installation directory exists
+      become: true
+      ansible.builtin.file:
+        path: "{{ go_task_install_dir }}"
+        state: directory
+        mode: '0755'
+      when: ansible_os_family != 'Darwin'
+
+    - name: Install go-task binary
+      become: "{{ ansible_os_family != 'Darwin' }}"
+      ansible.builtin.copy:
+        src: "{{ go_task_temp_dir.path }}/task"
+        dest: "{{ go_task_install_dir }}/task"
+        mode: '0755'
+        remote_src: true
+
+  always:
+    - name: Clean up temporary directory
+      ansible.builtin.file:
+        path: "{{ go_task_temp_dir.path }}"
+        state: absent
+      when: go_task_temp_dir.path is defined
