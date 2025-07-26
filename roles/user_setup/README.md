@@ -1,86 +1,71 @@
-# Ansible Role: User Setup
+<!-- DOCSIBLE START -->
+# user_setup
 
-This role sets up user accounts with optional sudo privileges for Unix-like
-systems.
+## Description
 
----
+Sets up user accounts with optional sudo privileges for Unix-like and Windows systems.
 
 ## Requirements
 
-- Ansible 2.14 or higher.
-- Python packages. Install with:
-
-  ```bash
-  python3 -m pip install --upgrade \
-    ansible-core \
-    molecule \
-    molecule-docker \
-    "molecule-plugins[docker]"
-  ```
-
----
-
-## Role Variables
-
-| Variable                    | Default Value                | Description                  |
-| --------------------------- | ---------------------------- | ---------------------------- |
-| user_setup_install_packages | bash, sudo                   | Base packages for users.     |
-| user_setup_default_users    | Defined in defaults/main.yml | Default user configurations. |
-
-### Default Configuration for `user_setup_default_users`
-
-- `username`: Default username based on OS distribution.
-- `usergroup`: Default group based on OS distribution.
-- `sudo`: Whether the user has sudo privileges.
-- `shell`: Default shell for the user.
-
-Example `user_setup_default_users` configuration:
-
-```yaml
-- username: "{{ ansible_env.USER if ansible_distribution == 'MacOSX' else
-  user_setup_default_username }}"
-  usergroup: "{{ 'staff' if ansible_distribution == 'MacOSX' else
-  user_setup_default_group }}"
-  sudo: true
-  shell: /bin/zsh
-```
-
----
-
-## Testing
-
-To test the role, use Molecule:
-
-```bash
-molecule converge
-molecule idempotence
-molecule verify
-molecule destroy
-```
-
-## Role Tasks
-
-Key tasks in this role:
-
-- Gather list of unique shells to install.
-- Install base packages for all users.
-- Install user-specific shells.
-- Ensure groups exist for users.
-- Create users with specific attributes.
-- Provide sudoers access for relevant users.
-
-## Platforms
-
-This role is tested on the following platforms:
-
-- Ubuntu
-- Kali
+- Ansible >= 2.14
 
 ## Dependencies
 
-No dependencies.
+- cowdogmoo.workstation.package_management
+
+## Role Variables
+
+### Default Variables (main.yml)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user_setup_default_username` | str | `{{ ansible_distribution | lower }}` | No description |
+| `user_setup_default_group` | str | `{{ ansible_distribution | lower }}` | No description |
+| `user_setup_default_users` | list | `[]` | No description |
+| `user_setup_default_users.0` | dict | `{}` | No description |
+
+### Role Variables (main.yml)
+
+| Variable | Type | Value | Description |
+|----------|------|-------|-------------|
+| `user_setup_install_packages` | list | `[]` | No description |
+| `user_setup_install_packages.0` | str | `bash` | No description |
+| `user_setup_install_packages.1` | str | `sudo` | No description |
+
+## Tasks
+
+### main.yml
+
+- **Gather available local users** (ansible.builtin.getent) - Conditional
+- **Gather available local users on macOS** (cowdogmoo.workstation.getent_passwd) - Conditional
+- **Gather the list of unique shells to install** (ansible.builtin.set_fact) - Conditional
+- **Install base packages for all users** (ansible.builtin.include_role) - Conditional
+- **Install user-specific shells** (ansible.builtin.package) - Conditional
+- **Ensure groups exist for users** (ansible.builtin.group) - Conditional
+- **Create users on non-Windows systems** (ansible.builtin.user) - Conditional
+- **Ensure users exist and have home directories** (ansible.builtin.user) - Conditional
+- **Provide sudoers access for relevant users in sudoers.d** (ansible.builtin.copy) - Conditional
+- **Create a new Windows user** (ansible.windows.win_user) - Conditional
+- **Ensure specified user groups are in place for Windows** (ansible.windows.win_group_membership) - Conditional
+
+## Example Playbook
+
+```yaml
+- hosts: servers
+  roles:
+    - user_setup
+```
 
 ## Author Information
 
-This role was created by Jayson Grace and is maintained as part of
-the CowDogMoo project.
+- **Author**: Jayson Grace
+- **Company**: CowDogMoo
+- **License**: MIT
+
+## Platforms
+
+- Ubuntu: all
+- Kali: all
+- EL: all
+- Windows: all
+<!-- DOCSIBLE END -->

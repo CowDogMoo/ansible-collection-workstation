@@ -79,6 +79,21 @@ Include the roles from this collection in your playbook. Here's an example:
 
 ## Development
 
+### Setting Up Development Environment
+
+To set up the development environment and install all required dependencies,
+including docsible for automatic documentation generation:
+
+```bash
+python3 -m pip install -r .hooks/requirements.txt
+```
+
+### Documentation Generation
+
+This project uses [docsible](https://github.com/docsible/docsible) to automatically
+generate documentation for Ansible roles. Documentation is generated automatically
+via pre-commit hooks when changes are made to role files.
+
 ### Release Process
 
 For information on creating new releases of this collection, see our

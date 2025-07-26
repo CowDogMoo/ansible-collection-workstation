@@ -1,68 +1,58 @@
-# Ansible Role: Logging
+<!-- DOCSIBLE START -->
+# logging
 
-This role provides logging directories and log rotation for other roles,
-ensuring proper logging infrastructure on Unix-like systems.
+## Description
 
----
+Provides logging directories and log rotation for other roles.
 
 ## Requirements
 
-- Ansible 2.14 or higher.
-- Python packages. Install with:
-
-  ```bash
-  python3 -m pip install --upgrade \
-    ansible-core \
-    molecule \
-    molecule-docker \
-    "molecule-plugins[docker]"
-  ```
-
----
+- Ansible >= 2.14
 
 ## Role Variables
 
-| Variable                    | Default Value | Description                            |
-| --------------------------- | ------------- | -------------------------------------- |
-| logging_directories         | [See below]   | Directories to be created for logging. |
-| logging_log_rotation_config | Configurable  | Configuration for log rotation.        |
+### Default Variables (main.yml)
 
-### Default Configuration for `logging_directories`
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `logging_directories` | list | `[]` | No description |
+| `logging_directories.0` | dict | `{}` | No description |
+| `logging_log_rotation_config` | dict | `{}` | No description |
+| `logging_log_rotation_config.path` | str | `/var/log/ansible/*.log` | No description |
+| `logging_log_rotation_config.rotate` | int | `4` | No description |
+| `logging_log_rotation_config.frequency` | str | `weekly` | No description |
+| `logging_log_rotation_config.compress` | bool | `True` | No description |
+| `logging_log_rotation_config.missingok` | bool | `True` | No description |
+| `logging_log_rotation_config.notifempty` | bool | `True` | No description |
+| `logging_log_rotation_config.create` | bool | `True` | No description |
+| `logging_log_rotation_config.dateext` | bool | `True` | No description |
+| `logging_log_rotation_config.owner` | str | `root` | No description |
+| `logging_log_rotation_config.group` | str | `root` | No description |
 
-- `path`: The path of the directory to be created for logging, e.g., "/var/log/ansible"
+## Tasks
 
----
+### main.yml
 
-## Testing
+- **Ensure logging directories exist** (ansible.builtin.file)
+- **Setup log rotation** (ansible.builtin.template)
 
-To test the role, use Molecule:
+## Example Playbook
 
-```bash
-molecule converge
-molecule idempotence
-molecule verify
-molecule destroy
+```yaml
+- hosts: servers
+  roles:
+    - logging
 ```
-
-## Role Tasks
-
-Key tasks in this role:
-
-- Ensure logging directories exist.
-- Setup log rotation.
-
-## Platforms
-
-This role is tested on the following platforms:
-
-- Ubuntu
-- Kali
-
-## Dependencies
-
-No dependencies.
 
 ## Author Information
 
-This role was created by Jayson Grace and is maintained as part of
-the CowDogMoo project.
+- **Author**: Jayson Grace
+- **Company**: CowDogMoo
+- **License**: MIT
+
+## Platforms
+
+- Ubuntu: all
+- Kali: all
+- EL: all
+<!-- DOCSIBLE END -->
