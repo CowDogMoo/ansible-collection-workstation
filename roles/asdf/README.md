@@ -22,17 +22,20 @@ programming languages on Unix-like systems.
 
 ## Testing
 
-To test the role, use Molecule:
+This role includes Molecule tests. To test the role:
 
 ```bash
-molecule converge
-molecule idempotence
-molecule verify
-molecule destroy
+# Run the full test sequence
+molecule test
+
+# Or run individual steps
+molecule converge    # Deploy the playbook
+molecule idempotence # Test idempotency
+molecule verify      # Run verification tests
+molecule destroy     # Clean up test instances
 ```
 
 ---
 
 <!-- DOCSIBLE START -->
-
 <!-- DOCSIBLE END -->

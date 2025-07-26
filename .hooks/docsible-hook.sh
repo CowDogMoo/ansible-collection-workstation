@@ -7,15 +7,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Function to clean up temporary files on exit
-cleanup() {
-    # Clean up any temporary files that might have been left behind
-    find . -name "*.tmp.before" -o -name "*.tmp.after" | xargs rm -f 2> /dev/null || true
-}
-
-# Set up trap to ensure cleanup happens on exit
-trap cleanup EXIT INT TERM
-
 # Check if docsible is installed
 if ! command -v docsible &> /dev/null && ! python3 -m docsible --help &> /dev/null 2>&1; then
     echo -e "${RED}Error: docsible is not installed${NC}"
@@ -32,65 +23,12 @@ run_docsible() {
     fi
 }
 
-# Function to preserve custom content outside DOCSIBLE markers
-preserve_custom_content() {
-    local readme_file="$1"
-    local temp_before="${readme_file}.tmp.before"
-    local temp_after="${readme_file}.tmp.after"
-
-    # Clean up any existing temp files first
-    rm -f "$temp_before" "$temp_after"
-
-    if [ -f "$readme_file" ]; then
-        # Check if markers exist
-        if grep -q "<!-- DOCSIBLE START -->" "$readme_file" && grep -q "<!-- DOCSIBLE END -->" "$readme_file"; then
-            # Extract content before DOCSIBLE START
-            sed -n '1,/<!-- DOCSIBLE START -->/p' "$readme_file" | head -n -1 > "$temp_before"
-
-            # Extract content after DOCSIBLE END
-            sed -n '/<!-- DOCSIBLE END -->/,$p' "$readme_file" | tail -n +2 > "$temp_after"
-
-            return 0
-        fi
-    fi
-
-    return 1
-}
-
-# Function to merge custom content with docsible output
-merge_content() {
-    local readme_file="$1"
-    local temp_file="${readme_file}.tmp"
-    local temp_before="${readme_file}.tmp.before"
-    local temp_after="${readme_file}.tmp.after"
-
-    if [ -f "$temp_before" ] || [ -f "$temp_after" ]; then
-        # Create new file with preserved content
-        if [ -f "$temp_before" ] && [ -s "$temp_before" ]; then
-            cat "$temp_before" > "$temp_file"
-        fi
-
-        # Add the docsible-generated content
-        cat "$readme_file" >> "$temp_file"
-
-        if [ -f "$temp_after" ] && [ -s "$temp_after" ]; then
-            cat "$temp_after" >> "$temp_file"
-        fi
-
-        # Replace original with merged content
-        mv "$temp_file" "$readme_file"
-    fi
-
-    # Always clean up temp files after merging
-    rm -f "$temp_before" "$temp_after" "$temp_file"
-}
-
 # Get the repository root
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT"
 
 # Template locations
-ROLE_TEMPLATE_PATH=".hooks/templates/docsible-template.md.j2"
+ROLE_TEMPLATE_PATH=".hooks/templates/role-template.md.j2"
 PLAYBOOK_TEMPLATE_PATH=".hooks/templates/playbook-template.md.j2"
 
 # Check if role template exists
@@ -102,6 +40,42 @@ fi
 # Track if any files were modified
 FILES_MODIFIED=0
 
+# Function to update content between DOCSIBLE markers
+update_docsible_section() {
+    local readme_file="$1"
+    local new_content_file="$2"
+
+    if [ -f "$readme_file" ] && grep -q "<!-- DOCSIBLE START -->" "$readme_file" && grep -q "<!-- DOCSIBLE END -->" "$readme_file"; then
+        # Create a new README with updated content
+        awk '
+            /<!-- DOCSIBLE START -->/ {
+                print
+                print ""
+                while ((getline line < "'"$new_content_file"'") > 0) {
+                    print line
+                }
+                close("'"$new_content_file"'")
+                print ""
+                skip = 1
+            }
+            /<!-- DOCSIBLE END -->/ {
+                print
+                skip = 0
+                next
+            }
+            !skip {
+                print
+            }
+        ' "$readme_file" > "${readme_file}.new"
+
+        # Replace the original file
+        mv "${readme_file}.new" "$readme_file"
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Generate documentation for all roles
 if [ -d "roles" ]; then
     echo -e "${YELLOW}Generating documentation for roles...${NC}"
@@ -110,38 +84,31 @@ if [ -d "roles" ]; then
         if [ -d "$role_dir" ]; then
             role_name=$(basename "$role_dir")
             readme_file="${role_dir}README.md"
+            temp_file="${role_dir}README.md.docsible.tmp"
+
             echo -e "Processing role: ${GREEN}$role_name${NC}"
 
-            # Preserve custom content if README exists
-            has_custom_content=0
-            if preserve_custom_content "$readme_file"; then
-                has_custom_content=1
-            fi
-
-            # Change to the role directory to avoid path issues
-            pushd "$role_dir" > /dev/null
-
-            # Generate README for the role
-            run_docsible --role . \
-                --md-template "$REPO_ROOT/$ROLE_TEMPLATE_PATH" \
-                --output "README.md" \
+            # Generate docsible content to a temporary file
+            # Use relative path from repo root and specify output correctly
+            if run_docsible --role "$role_dir" \
+                --md-template "$ROLE_TEMPLATE_PATH" \
+                --output "$temp_file" \
                 --no-backup \
                 --no-docsible \
-                --comments \
-                --playbook /dev/null || {
-                    echo -e "  ${RED}Failed to generate documentation for $role_name${NC}"
-                    popd > /dev/null
-                    # Clean up temp files on failure
-                    rm -f "${readme_file}.tmp.before" "${readme_file}.tmp.after"
-                    continue
-            }
+                --comments; then
 
-            popd > /dev/null
-
-            # Merge custom content if it existed
-            if [ $has_custom_content -eq 1 ]; then
-                merge_content "$readme_file"
+                # Update the README content between DOCSIBLE markers
+                if update_docsible_section "$readme_file" "$temp_file"; then
+                    echo "  Updated documentation between DOCSIBLE markers"
+                else
+                    echo -e "  ${YELLOW}No DOCSIBLE markers found, skipping${NC}"
+                fi
+            else
+                echo -e "  ${RED}Failed to generate documentation for $role_name${NC}"
             fi
+
+            # Clean up temp file
+            rm -f "$temp_file"
 
             # Check if the file was modified
             if ! git diff --quiet "$readme_file" 2> /dev/null; then
@@ -154,7 +121,7 @@ if [ -d "roles" ]; then
     done
 fi
 
-# Generate documentation for playbooks if template exists
+# Generate documentation for playbooks using a custom approach
 if [ -d "playbooks" ] && [ -f "$PLAYBOOK_TEMPLATE_PATH" ]; then
     echo -e "${YELLOW}Generating documentation for playbooks...${NC}"
 
@@ -163,48 +130,111 @@ if [ -d "playbooks" ] && [ -f "$PLAYBOOK_TEMPLATE_PATH" ]; then
             playbook_name=$(basename "$playbook_dir")
             playbook_file="${playbook_dir}${playbook_name}.yml"
             readme_file="${playbook_dir}README.md"
+            temp_file="${readme_file}.docsible.tmp"
 
             # Check if the main playbook file exists
             if [ -f "$playbook_file" ]; then
                 echo -e "Processing playbook: ${GREEN}$playbook_name${NC}"
 
-                # Use jinja2 CLI if available, otherwise use Python
-                if command -v jinja2 &> /dev/null; then
-                    jinja2 "$PLAYBOOK_TEMPLATE_PATH" \
-                        -D playbook_name="$playbook_name" \
-                        -D playbook_path="playbooks/$playbook_name" \
-                        -D playbook_file="$playbook_name.yml" \
-                        > "$readme_file"
-                else
-                    python3 -c "
+                # Extract playbook information using Python and generate documentation
+                if python3 << 'EOF' > "$temp_file"
+import yaml
 import jinja2
-import sys
 import os
+import sys
 
-template_path = '$PLAYBOOK_TEMPLATE_PATH'
-playbook_name = '$playbook_name'
-playbook_path = 'playbooks/$playbook_name'
-playbook_file = '$playbook_name.yml'
+try:
+    # Read playbook content
+    with open('${playbook_file}', 'r') as f:
+        playbook_content = f.read()
+        playbook_data = yaml.safe_load(playbook_content)
 
-# Read playbook content
-with open('$playbook_file', 'r') as f:
-    playbook_content = f.read()
+    # Extract information from playbook
+    playbook_info = {
+        'name': '${playbook_name}',
+        'path': 'playbooks/${playbook_name}',
+        'file': '${playbook_name}.yml',
+        'content': playbook_content,
+        'plays': []
+    }
 
-# Load and render template
-with open(template_path, 'r') as f:
-    template = jinja2.Template(f.read())
+    # Process plays
+    if isinstance(playbook_data, list):
+        for play in playbook_data:
+            play_info = {
+                'name': play.get('name', 'Unnamed play'),
+                'hosts': play.get('hosts', 'all'),
+                'tasks': []
+            }
 
-output = template.render(
-    playbook_name=playbook_name,
-    playbook_path=playbook_path,
-    playbook_file=playbook_file,
-    playbook_content=playbook_content
-)
+            # Extract tasks
+            tasks = play.get('tasks', [])
+            for task in tasks:
+                if isinstance(task, dict):
+                    task_name = task.get('name', 'Unnamed task')
+                    # Get the module name (first key that's not a task directive)
+                    module = None
+                    task_directives = {
+                        'name', 'when', 'with_items', 'loop', 'tags', 'become',
+                        'become_user', 'register', 'vars', 'delegate_to', 'run_once',
+                        'ignore_errors', 'changed_when', 'failed_when', 'notify',
+                        'block', 'rescue', 'always', 'include_role', 'import_role',
+                        'include_tasks', 'import_tasks'
+                    }
+                    for key in task.keys():
+                        if key not in task_directives:
+                            module = key
+                            break
 
-with open('$readme_file', 'w') as f:
-    f.write(output)
-"
+                    play_info['tasks'].append({
+                        'name': task_name,
+                        'module': module or 'unknown'
+                    })
+
+            # Extract roles
+            roles = play.get('roles', [])
+            play_info['roles'] = []
+            for role in roles:
+                if isinstance(role, dict):
+                    play_info['roles'].append(role.get('role', role.get('name', str(role))))
+                else:
+                    play_info['roles'].append(str(role))
+
+            # Extract variables
+            play_info['vars'] = play.get('vars', {})
+
+            playbook_info['plays'].append(play_info)
+
+    # Load and render template
+    with open('${PLAYBOOK_TEMPLATE_PATH}', 'r') as f:
+        template = jinja2.Template(f.read())
+
+    output = template.render(
+        playbook=playbook_info,
+        playbook_name=playbook_info['name'],
+        playbook_path=playbook_info['path'],
+        playbook_file=playbook_info['file']
+    )
+
+    print(output)
+
+except Exception as e:
+    print(f"Error processing playbook: {e}", file=sys.stderr)
+    sys.exit(1)
+EOF
+                then
+                    # Update the README content between DOCSIBLE markers
+                    if update_docsible_section "$readme_file" "$temp_file"; then
+                        echo "  Updated documentation between DOCSIBLE markers"
+                    else
+                        echo -e "  ${YELLOW}No DOCSIBLE markers found, skipping${NC}"
+                    fi
+                else
+                    echo -e "  ${RED}Failed to generate documentation for $playbook_name${NC}"
                 fi
+
+                # Clean up temp file
+                rm -f "$temp_file"
 
                 # Check if the file was modified
                 if ! git diff --quiet "$readme_file" 2> /dev/null; then
