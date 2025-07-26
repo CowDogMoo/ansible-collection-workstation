@@ -63,3 +63,11 @@ repos:
         entry: .hooks/prettier-hook.sh
         language: script
         types: [json, yaml]
+
+      - id: docsible
+        name: Generate Ansible documentation with docsible
+        entry: .hooks/docsible-hook.sh
+        language: script
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
