@@ -1,41 +1,58 @@
-# Ansible Role: Logging
+<!-- DOCSIBLE START -->
+# logging
 
-This role provides logging directories and log rotation for other roles,
-ensuring proper logging infrastructure on Unix-like systems.
+## Description
 
----
+Provides logging directories and log rotation for other roles.
 
-## Base Requirements
+## Requirements
 
-- Ansible 2.14 or higher.
-- Python packages. Install with:
+- Ansible >= 2.14
 
-  ```bash
-  python3 -m pip install --upgrade \
-    ansible-core \
-    molecule \
-    molecule-docker \
-    "molecule-plugins[docker]"
-  ```
+## Role Variables
 
----
+### Default Variables (main.yml)
 
-## Testing
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `logging_directories` | list | `[]` | No description |
+| `logging_directories.0` | dict | `{}` | No description |
+| `logging_log_rotation_config` | dict | `{}` | No description |
+| `logging_log_rotation_config.path` | str | `/var/log/ansible/*.log` | No description |
+| `logging_log_rotation_config.rotate` | int | `4` | No description |
+| `logging_log_rotation_config.frequency` | str | `weekly` | No description |
+| `logging_log_rotation_config.compress` | bool | `True` | No description |
+| `logging_log_rotation_config.missingok` | bool | `True` | No description |
+| `logging_log_rotation_config.notifempty` | bool | `True` | No description |
+| `logging_log_rotation_config.create` | bool | `True` | No description |
+| `logging_log_rotation_config.dateext` | bool | `True` | No description |
+| `logging_log_rotation_config.owner` | str | `root` | No description |
+| `logging_log_rotation_config.group` | str | `root` | No description |
 
-This role includes Molecule tests. To test the role:
+## Tasks
 
-```bash
-# Run the full test sequence
-molecule test
+### main.yml
 
-# Or run individual steps
-molecule converge    # Deploy the playbook
-molecule idempotence # Test idempotency
-molecule verify      # Run verification tests
-molecule destroy     # Clean up test instances
+- **Ensure logging directories exist** (ansible.builtin.file)
+- **Setup log rotation** (ansible.builtin.template)
+
+## Example Playbook
+
+```yaml
+- hosts: servers
+  roles:
+    - logging
 ```
 
----
+## Author Information
 
-<!-- DOCSIBLE START -->
+- **Author**: Jayson Grace
+- **Company**: CowDogMoo
+- **License**: MIT
+
+## Platforms
+
+- Ubuntu: all
+- Kali: all
+- EL: all
 <!-- DOCSIBLE END -->

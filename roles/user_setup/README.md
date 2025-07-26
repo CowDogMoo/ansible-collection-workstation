@@ -1,41 +1,71 @@
-# Ansible Role: User Setup
+<!-- DOCSIBLE START -->
+# user_setup
 
-This role sets up user accounts with optional sudo privileges for Unix-like
-systems.
+## Description
 
----
+Sets up user accounts with optional sudo privileges for Unix-like and Windows systems.
 
-## Base Requirements
+## Requirements
 
-- Ansible 2.14 or higher.
-- Python packages. Install with:
+- Ansible >= 2.14
 
-  ```bash
-  python3 -m pip install --upgrade \
-    ansible-core \
-    molecule \
-    molecule-docker \
-    "molecule-plugins[docker]"
-  ```
+## Dependencies
 
----
+- cowdogmoo.workstation.package_management
 
-## Testing
+## Role Variables
 
-This role includes Molecule tests. To test the role:
+### Default Variables (main.yml)
 
-```bash
-# Run the full test sequence
-molecule test
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user_setup_default_username` | str | `{{ ansible_distribution | lower }}` | No description |
+| `user_setup_default_group` | str | `{{ ansible_distribution | lower }}` | No description |
+| `user_setup_default_users` | list | `[]` | No description |
+| `user_setup_default_users.0` | dict | `{}` | No description |
 
-# Or run individual steps
-molecule converge    # Deploy the playbook
-molecule idempotence # Test idempotency
-molecule verify      # Run verification tests
-molecule destroy     # Clean up test instances
+### Role Variables (main.yml)
+
+| Variable | Type | Value | Description |
+|----------|------|-------|-------------|
+| `user_setup_install_packages` | list | `[]` | No description |
+| `user_setup_install_packages.0` | str | `bash` | No description |
+| `user_setup_install_packages.1` | str | `sudo` | No description |
+
+## Tasks
+
+### main.yml
+
+- **Gather available local users** (ansible.builtin.getent) - Conditional
+- **Gather available local users on macOS** (cowdogmoo.workstation.getent_passwd) - Conditional
+- **Gather the list of unique shells to install** (ansible.builtin.set_fact) - Conditional
+- **Install base packages for all users** (ansible.builtin.include_role) - Conditional
+- **Install user-specific shells** (ansible.builtin.package) - Conditional
+- **Ensure groups exist for users** (ansible.builtin.group) - Conditional
+- **Create users on non-Windows systems** (ansible.builtin.user) - Conditional
+- **Ensure users exist and have home directories** (ansible.builtin.user) - Conditional
+- **Provide sudoers access for relevant users in sudoers.d** (ansible.builtin.copy) - Conditional
+- **Create a new Windows user** (ansible.windows.win_user) - Conditional
+- **Ensure specified user groups are in place for Windows** (ansible.windows.win_group_membership) - Conditional
+
+## Example Playbook
+
+```yaml
+- hosts: servers
+  roles:
+    - user_setup
 ```
 
----
+## Author Information
 
-<!-- DOCSIBLE START -->
+- **Author**: Jayson Grace
+- **Company**: CowDogMoo
+- **License**: MIT
+
+## Platforms
+
+- Ubuntu: all
+- Kali: all
+- EL: all
+- Windows: all
 <!-- DOCSIBLE END -->

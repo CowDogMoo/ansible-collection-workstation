@@ -1,39 +1,92 @@
-# Ansible Role: ZSH Setup
+<!-- DOCSIBLE START -->
+# zsh_setup
 
-This role installs and configures `zsh` with `oh-my-zsh` for user accounts on
-Unix-like systems.
+## Description
 
-## Base Requirements
+Installs and configures zsh with oh-my-zsh.
 
-- Ansible 2.14 or higher.
-- Python packages. Install with:
+## Requirements
 
-  ```bash
-  python3 -m pip install --upgrade \
-    ansible-core \
-    molecule \
-    molecule-docker \
-    "molecule-plugins[docker]"
-  ```
+- Ansible >= 2.14
 
----
+## Dependencies
 
-## Testing
+- cowdogmoo.workstation.package_management
 
-This role includes Molecule tests. To test the role:
+## Role Variables
 
-```bash
-# Run the full test sequence
-molecule test
+### Default Variables (main.yml)
 
-# Or run individual steps
-molecule converge    # Deploy the playbook
-molecule idempotence # Test idempotency
-molecule verify      # Run verification tests
-molecule destroy     # Clean up test instances
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `zsh_setup_username` | str | `{{ ansible_user_id | default(ansible_user) | default(ansible_distribution | lower) }}` | No description |
+| `zsh_setup_usergroup` | str | `{{ 'staff' if ansible_os_family == 'Darwin' else 'Administrators' if ansible_os_family == 'Windows' else zsh_setup_username }}` | No description |
+| `zsh_setup_shell` | str | `{{ 'powershell' if ansible_os_family == 'Windows' else (ansible_env.SHELL | default('/bin/bash')).strip() | regex_replace('
+', '') }}` | No description |
+| `zsh_setup_theme` | str | `af-magic` | No description |
+| `zsh_setup_plugins` | list | `[]` | No description |
+| `zsh_setup_plugins.0` | str | `asdf` | No description |
+| `zsh_setup_plugins.1` | str | `aws` | No description |
+| `zsh_setup_plugins.2` | str | `git` | No description |
+| `zsh_setup_plugins.3` | str | `docker` | No description |
+| `zsh_setup_plugins.4` | str | `helm` | No description |
+| `zsh_setup_plugins.5` | str | `kubectl` | No description |
+| `zsh_setup_plugins.6` | str | `zsh-completions` | No description |
+
+### Role Variables (main.yml)
+
+| Variable | Type | Value | Description |
+|----------|------|-------|-------------|
+| `zsh_setup_common_install_packages` | list | `[]` | No description |
+| `zsh_setup_common_install_packages.0` | str | `zsh` | No description |
+| `zsh_setup_common_install_packages.1` | str | `zsh-autosuggestions` | No description |
+| `zsh_setup_omz_install_script_url` | str | `https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh` | No description |
+
+## Tasks
+
+### zsh_setup_get_user_home.yml
+
+- **Gather available local users** (ansible.builtin.getent) - Conditional
+- **Gather available local users on macOS** (cowdogmoo.workstation.getent_passwd) - Conditional
+- **Set user home directory** (ansible.builtin.set_fact) - Conditional
+- **Set user home directory for macOS** (ansible.builtin.set_fact) - Conditional
+
+### common.yml
+
+- **Ensure user home directory exists** (ansible.builtin.include_tasks) - Conditional
+- **Check if oh-my-zsh exists** (ansible.builtin.stat)
+- **Download oh-my-zsh install script** (ansible.builtin.get_url) - Conditional
+- **Check for bash** (ansible.builtin.command)
+- **Set shell executable** (ansible.builtin.set_fact)
+- **Install oh-my-zsh** (ansible.builtin.shell) - Conditional
+- **Remove omz-installer.sh** (ansible.builtin.file) - Conditional
+- **Check if .zshrc exists** (ansible.builtin.stat)
+- **Ensure .zshrc exists** (ansible.builtin.template) - Conditional
+
+### main.yml
+
+- **Include tasks to get user home directory** (ansible.builtin.include_tasks)
+- **Install required packages for zsh** (ansible.builtin.include_role)
+- **Ensure user group exists** (ansible.builtin.group) - Conditional
+- **Ensure user exists** (ansible.builtin.user) - Conditional
+- **Include common tasks** (ansible.builtin.include_tasks)
+
+## Example Playbook
+
+```yaml
+- hosts: servers
+  roles:
+    - zsh_setup
 ```
 
----
+## Author Information
 
-<!-- DOCSIBLE START -->
+- **Author**: Jayson Grace
+- **Company**: CowDogMoo
+- **License**: MIT
+
+## Platforms
+
+- Ubuntu: all
+- macOS: all
 <!-- DOCSIBLE END -->
