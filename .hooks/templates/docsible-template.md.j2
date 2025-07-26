@@ -1,335 +1,192 @@
-# 📃 Role overview
+#!/usr/bin/env bash
+set -euo pipefail
 
-## {{ role.name }}
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-{% if role.belongs_to_collection -%}
-```
-Role belongs to {{ role.belongs_to_collection.namespace }}/{{ role.belongs_to_collection.name }}
-Namespace - {{ role.belongs_to_collection.namespace }}
-Collection - {{ role.belongs_to_collection.name }}
-Version - {{ role.belongs_to_collection.version }}
-Repository - {{ role.belongs_to_collection.repository }}
-```
-{%- endif %}
+# Check if docsible is installed
+if ! command -v docsible &> /dev/null && ! python3 -m docsible --help &> /dev/null 2>&1; then
+    echo -e "${RED}Error: docsible is not installed${NC}"
+    echo "Install it with: pip install docsible"
+    exit 1
+fi
 
-{% if role.meta and role.meta.galaxy_info -%}
-Description: {{ role.meta.galaxy_info.description or 'Not available.' }}
-{% else %}
-Description: Not available.
-{%- endif %}
+# Function to run docsible
+run_docsible() {
+    if command -v docsible &> /dev/null; then
+        docsible "$@"
+    else
+        python3 -m docsible "$@"
+    fi
+}
 
-{% if role.docsible -%}
-| Field                | Value           |
-|--------------------- |-----------------|
-{%- if role.docsible.description %}
-| Functional description | {{ role.docsible.description }} |
-{%- endif %}
-{%- if role.docsible.requester %}
-| Requester            | {{ role.docsible.requester }} |
-{%- endif %}
-{%- if role.docsible.users %}
-| Users                | {{ role.docsible.users }} |
-{%- endif %}
-{%- if role.docsible.dt_dev %}
-| Date dev             | {{ role.docsible.dt_dev }} |
-{%- endif %}
-{%- if role.docsible.dt_prod %}
-| Date prod            | {{ role.docsible.dt_prod }} |
-{%- endif %}
-{%- if role.docsible.dt_update %}
-| Readme update        | {{ role.docsible.dt_update }} |
-{%- endif %}
-{%- if role.docsible.version %}
-| Version              | {{ role.docsible.version }} |
-{%- endif %}
-{%- if role.docsible.time_saving %}
-| Time Saving          | {{ role.docsible.time_saving }} |
-{%- endif %}
-{%- if role.docsible.category %}
-| Category             | {{ role.docsible.category }} |
-{%- endif %}
-{%- if role.docsible.subCategory %}
-| Sub category         | {{ role.docsible.subCategory }} |
-{%- endif %}
-{%- if role.docsible.aap_hub %}
-| AAP Hub              | {{ role.docsible.aap_hub }} |
-{%- endif %}
-{%- if role.docsible.automation_kind %}
-| Automation Kind      | {{ role.docsible.automation_kind }} |
-{%- endif %}
-{%- if role.docsible.critical %}
-| Critical ⚠️          | {{ role.docsible.critical }} |
-{%- endif %}
-{%- endif %}
+# Get the repository root
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
 
-{% macro render_arguments_list(arguments, level=0) %}
-{% for arg, details in arguments.items() %}
-  {%- set indent = '  ' * level %}
-  {{ indent }}- **{{ arg }}**
-  {{ indent }}  - **Required**: {{ details.required | default('false') }}
-  {{ indent }}  - **Type**: {{ details.type }}
-  {{ indent }}  - **Default**: {{ details.default | default('none') }}
-  {{ indent }}  - **Description**: {{ details.description | default('No description provided') }}
-  {% if details.choices is defined %}
-    {{ indent }}  - **Choices**:
-    {% for choice in details.choices %}
-      {{ indent }}    - {{ choice }}
-    {% endfor %}
-  {% endif %}
-  {% if details.aliases is defined %}
-    {{ indent }}  - **Aliases**:
-    {% for alias in details.aliases %}
-      {{ indent }}    - {{ alias }}
-    {% endfor %}
-  {% endif %}
-  {% if details.type == 'dict' and details.options %}
-    {{ render_arguments_list(details.options, level + 1) }}
-  {% elif details.type == 'list' and details.elements == 'dict' %}
-    {% for elem in details.default %}
-      {% if elem is mapping %}
-        {{ render_arguments_list(elem, level + 1) }}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-{% endfor %}
-{% endmacro %}
+# Template locations
+ROLE_TEMPLATE_PATH=".hooks/templates/role-template.md.j2"
+PLAYBOOK_TEMPLATE_PATH=".hooks/templates/playbook-template.md.j2"
 
-{% if role.argument_specs %}
-<details>
-<summary><b>🧩 Argument Specifications in meta/argument_specs</b></summary>
-{% for section, specs in role.argument_specs.argument_specs.items() %}
-#### Key: {{ section }}
-**Description**: {{ specs.description or specs.short_description or 'No description provided' }}
-{{ render_arguments_list(specs.options) }}
-{% endfor %}
-</details>
-{% else %}
-{% endif %}
+# Check if role template exists
+if [ ! -f "$ROLE_TEMPLATE_PATH" ]; then
+    echo -e "${RED}Error: Role template not found at $ROLE_TEMPLATE_PATH${NC}"
+    exit 1
+fi
 
-{% macro render_repo_link(repo, role_name, file_path, line, repo_type, branch) -%}
-  {%- if repo and file_path and line is not none -%}
-    {%- if role.belongs_to_collection -%}
-      {%- set full_path = 'roles/' ~ role_name ~ '/' ~ file_path -%}
-    {%- else -%}
-      {%- set full_path = file_path -%}
-    {%- endif %}
-    {%- set encoded_path = full_path | replace(' ', '%20') -%}
+# Track if any files were modified
+FILES_MODIFIED=0
 
-    {%- if repo_type == 'github' -%}
-      {{ repo }}/blob/{{ branch }}/{{ encoded_path }}#L{{ line }}
-    {%- elif repo_type == 'gitlab' -%}
-      {{ repo }}/-/blob/{{ branch }}/{{ encoded_path }}#L{{ line }}
-    {%- elif repo_type == 'gitea' -%}
-      {{ repo }}/src/branch/{{ branch }}/{{ encoded_path }}#L{{ line }}
-    {%- else -%}
-      {{ repo }}/{{ encoded_path }}#L{{ line }}
-    {%- endif %}
-  {%- else -%}
-    {{ file_path }}#L{{ line }}
-  {%- endif %}
-{%- endmacro %}
+# Generate documentation for all roles
+if [ -d "roles" ]; then
+    echo -e "${YELLOW}Generating documentation for roles...${NC}"
 
-{% if role.defaults|length > 0 -%}
-### Defaults
+    for role_dir in roles/*/; do
+        if [ -d "$role_dir" ]; then
+            role_name=$(basename "$role_dir")
+            readme_file="${role_dir}README.md"
+            temp_file="${readme_file}.docsible.tmp"
 
-#### These are static variables with lower priority
-{%- for defaultfile in role.defaults|sort(attribute='file') %}
+            echo -e "Processing role: ${GREEN}$role_name${NC}"
 
-#### File: defaults/{{ defaultfile.file }}
-{# Cycle used for deciding to set Title and Required Column #}
-{% set ns = namespace(details_required = false, details_title = false, details_choices = false) %}
-{%- for key, details in defaultfile.data.items() -%}
-    {%- if details.required is not none -%}{%- set ns.details_required = true -%}{%- endif -%}
-    {%- if details.title is not none -%}{%- set ns.details_title = true -%}{%- endif -%}
-    {%- if details.choices != None -%}{%- set ns.details_choices = true -%}{%- endif -%}
-{%- endfor -%}
-| Var          | Type         | Value       |{% if ns.details_choices %}Choices    |{% endif %}{% if ns.details_required %}Required    |{% endif %}{% if ns.details_title %} Title       |{% endif %}
-|--------------|--------------|-------------|{% if ns.details_choices %}-----------|{% endif %}{% if ns.details_required %}------------|{% endif %}{% if ns.details_title %}-------------|{% endif %}
-{%- for key, details in defaultfile.data.items() %}
-{%- set var_type = details.value.__class__.__name__ %}
-{%- if '.' in key %}
-| [{{ key.rsplit('.', 1)[0] ~ '.**' ~ key.rsplit('.', 1)[1] ~ '**' }}]({{ render_repo_link(role.repository, role.name, 'defaults/' ~ defaultfile.file, details.line, role.repository_type, role.repository_branch) }}) | {{ var_type }} | {% if details.value is string and details.value | length == 0 %}{% else %}`{{ details.value | replace('|', '¦') }}`{% endif %} |{% if ns.details_choices %} {{ details.choices | replace('|', '¦') }} |{% endif %}{% if ns.details_required %} {{ details.required }} |{% endif %}{% if ns.details_title %} {{ details.title | replace('|', '¦') }} |{% endif %}
-{%- else %}
-| [{{ key }}]({{ render_repo_link(role.repository, role.name, 'defaults/' ~ defaultfile.file, details.line, role.repository_type, role.repository_branch) }}) | {{ var_type }} | {% if details.value is string and details.value | length == 0 %}{% else %}`{{ details.value | replace('|', '¦') }}`{% endif %} |{% if ns.details_choices %} {{ details.choices | replace('|', '¦') }} |{% endif %}{% if ns.details_required %} {{ details.required }} |{% endif %}{% if ns.details_title %} {{ details.title | replace('|', '¦') }} |{% endif %}
-{%- endif %}
-{%- endfor %}
-{%- endfor %}
+            # Change to the role directory to avoid path issues
+            pushd "$role_dir" > /dev/null
 
-{%- for defaultfile in role.defaults|sort(attribute='file') -%}
-{%- set ns = namespace(has_descriptions = false) -%}
-{%- for key, details in defaultfile.data.items() -%}
-    {%- if details.description != None -%}{%- set ns.has_descriptions = true -%}{% endif -%}
-{%- endfor -%}
-{%- if ns.has_descriptions %}
-<details>
-<summary><b>🖇️ Full descriptions for vars in defaults/{{ defaultfile.file }}</b></summary>
-<br>
-<table>
-<th>Var</th><th>Description</th>
-{%- for key, details in defaultfile.data.items() %}
-    {%- if details.description != None %}
-<tr><td><b>{{ key }}</b></td><td>{{details.description }}</td></tr>
-    {%- endif %}
-{%- endfor %}
-</table>
-<br>
-</details>
-{%- endif %}
-{%- endfor %}
-{%- else %}
-{%- endif %}
+            # Generate docsible content to a temporary file
+            run_docsible --role . \
+                --md-template "$REPO_ROOT/$ROLE_TEMPLATE_PATH" \
+                --output "$temp_file" \
+                --no-backup \
+                --no-docsible \
+                --comments \
+                --playbook /dev/null || {
+                    echo -e "  ${RED}Failed to generate documentation for $role_name${NC}"
+                    rm -f "$temp_file"
+                    popd > /dev/null
+                    continue
+            }
 
+            # If README exists and has DOCSIBLE markers, update only the content between them
+            if [ -f "README.md" ] && grep -q "<!-- DOCSIBLE START -->" "README.md" && grep -q "<!-- DOCSIBLE END -->" "README.md"; then
+                # Create a new README with updated content
+                awk '
+                    /<!-- DOCSIBLE START -->/ {
+                        print
+                        print ""
+                        while ((getline line < "'"$temp_file"'") > 0) {
+                            print line
+                        }
+                        close("'"$temp_file"'")
+                        print ""
+                        skip = 1
+                    }
+                    /<!-- DOCSIBLE END -->/ {
+                        print
+                        skip = 0
+                        next
+                    }
+                    !skip {
+                        print
+                    }
+                ' README.md > README.md.new
 
-{% if role.vars|length > 0 -%}
-### Vars
+                # Replace the original file
+                mv README.md.new README.md
+            else
+                # No markers found, use the generated file as-is
+                mv "$temp_file" README.md
+            fi
 
-#### These are variables with higher priority
-{%- for varsfile in role.vars|sort(attribute='file') %}
-#### File: vars/{{ varsfile.file }}
-{# Cycle used for deciding to set Title and Required Column #}
-{% set ns = namespace(details_required = false, details_title = false, details_choices = false) %}
-{%- for key, details in varsfile.data.items() -%}
-    {%- if details.required is not none -%}{%- set ns.details_required = true -%}{%- endif -%}
-    {%- if details.title is not none -%}{%- set ns.details_title = true -%}{%- endif -%}
-    {%- if details.choices != None -%}{%- set ns.details_choices = true -%}{%- endif -%}
-{%- endfor -%}
-| Var          | Type         | Value       |{% if ns.details_choices %}Choices    |{% endif %}{% if ns.details_required %}Required    |{% endif %}{% if ns.details_title %} Title       |{% endif %}
-|--------------|--------------|-------------|{% if ns.details_choices %}-----------|{% endif %}{% if ns.details_required %}------------|{% endif %}{% if ns.details_title %}-------------|{% endif %}
-{%- for key, details in varsfile.data.items() %}
-{%- set var_type = details.value.__class__.__name__ %}
-{%- if '.' in key %}
-| [{{ key.rsplit('.', 1)[0] ~ '.**' ~ key.rsplit('.', 1)[1] ~ '**' }}]({{ render_repo_link(role.repository, role.name, 'vars/' ~ varsfile.file, details.line, role.repository_type, role.repository_branch) }}) | {{ var_type }} | {% if details.value is string and details.value | length == 0 %}{% else %}`{{ details.value | replace('|', '¦') }}`{% endif %} |{% if ns.details_choices %} {{ details.choices | replace('|', '¦') }} |{% endif %}{% if ns.details_required %} {{ details.required }} |{% endif %}{% if ns.details_title %} {{ details.title | replace('|', '¦') }} |{% endif %}
-{%- else %}
-| [{{ key }}]({{ render_repo_link(role.repository, role.name, 'vars/' ~ varsfile.file, details.line, role.repository_type, role.repository_branch) }}) | {{ var_type }} | {% if details.value is string and details.value | length == 0 %}{% else %}`{{ details.value | replace('|', '¦') }}`{% endif %} |{% if ns.details_choices %} {{ details.choices | replace('|', '¦') }} |{% endif %}{% if ns.details_required %} {{ details.required }} |{% endif %}{% if ns.details_title %} {{ details.title | replace('|', '¦') }} |{% endif %}
-{%- endif %}
-{%- endfor %}
-{%- endfor %}
+            # Clean up temp file if it still exists
+            rm -f "$temp_file"
 
-{%- for varsfile in role.vars|sort(attribute='file') -%}
-{% set ns = namespace(has_descriptions = false) -%}
-{%- for key, details in varsfile.data.items() -%}
-    {%- if details.description != None -%}{%- set ns.has_descriptions = true -%}{%- endif %}
-{%- endfor %}
-{%- if ns.has_descriptions %}
-<details>
-<summary><b>🖇️ Full Descriptions for vars in vars/{{ varsfile.file }}</b></summary>
-<br>
-<table>
-<th>Var</th><th>Description</th>
-{%- for key, details in varsfile.data.items() %}
-    {%- if details.description != None %}
-<tr><td><b>{{ key }}</b></td><td>{{details.description }}</td></tr>
-    {%- endif %}
-{%- endfor %}
-</table>
-<br>
-</details>
-{%- endif %}
-{%- endfor %}
-{%- else %}
-{%- endif %}
+            popd > /dev/null
 
+            # Check if the file was modified
+            if ! git diff --quiet "$readme_file" 2> /dev/null; then
+                echo -e "  ${YELLOW}Documentation updated - please stage and commit${NC}"
+                FILES_MODIFIED=1
+            else
+                echo "  No changes in documentation"
+            fi
+        fi
+    done
+fi
 
-### Tasks
+# Generate documentation for playbooks if template exists
+if [ -d "playbooks" ] && [ -f "$PLAYBOOK_TEMPLATE_PATH" ]; then
+    echo -e "${YELLOW}Generating documentation for playbooks...${NC}"
 
-{% for taskfile in role.tasks|sort(attribute='file') %}
-#### File: tasks/{{ taskfile.file }}
-{% set ns = namespace (tags_required = false, comments_required = false) %}
-{%- for t in taskfile['mermaid'] %}
-  {%- if 'tags' in t and t['tags'] != "" %}{% set ns.tags_required = true %}{% endif %}
-{%- endfor %}
-{%- for comment in taskfile['comments'] %}
-  {%- if comment != "" %}{% set ns.comments_required = true %}{% endif %}
-{%- endfor %}
-| Name | Module | Has Conditions |{% if ns.tags_required %} Tags |{% endif %}{% if ns.comments_required %} Comments |{% endif %}
-| ---- | ------ | -------------- |{% if ns.tags_required %} -----|{% endif %}{% if ns.comments_required %} -------- |{% endif %}
-{%- for task in taskfile.tasks %}
-{%- if taskfile['lines'] | length > 0 %}
-| [{{ task.name.replace("|", "¦") }}]({{ render_repo_link(role.repository, role.name, 'tasks/' ~ taskfile.file, taskfile['lines'][task.name], role.repository_type, role.repository_branch) }}) | {{ task.module }} | {{ 'True' if task.when else 'False' }} |{% if ns.tags_required %} {{ taskfile['mermaid'] | selectattr('name', 'equalto', task.name) | map(attribute='tags') | list | first | join(',') }} |{% endif %}{% if ns.comments_required %} {{ taskfile['comments'] | selectattr('task_name', 'equalto', task.name) | map(attribute='task_comments') | join }} |{% endif %}
-{%- else %}
-| {{ task.name.replace("|", "¦") }} | {{ task.module }} | {{ 'True' if task.when else 'False' }} |{% if ns.tags_required %} {{ taskfile['mermaid'] | selectattr('name', 'equalto', task.name) | map(attribute='tags') | list | first | join(',') }} |{% endif %}{% if ns.comments_required %} {{ taskfile['comments'] | selectattr('task_name', 'equalto', task.name) | map(attribute='task_comments') | join }} |{% endif %}
-{%- endif %}
-{%- endfor %}
-{% endfor %}
+    for playbook_dir in playbooks/*/; do
+        if [ -d "$playbook_dir" ]; then
+            playbook_name=$(basename "$playbook_dir")
+            playbook_file="${playbook_dir}${playbook_name}.yml"
+            readme_file="${playbook_dir}README.md"
 
-{% if mermaid_code_per_file -%}
-## Task Flow Graphs
+            # Check if the main playbook file exists
+            if [ -f "$playbook_file" ]; then
+                echo -e "Processing playbook: ${GREEN}$playbook_name${NC}"
 
-{% for task_file, mermaid_code in mermaid_code_per_file.items() %}
+                # Use jinja2 CLI if available, otherwise use Python
+                if command -v jinja2 &> /dev/null; then
+                    jinja2 "$PLAYBOOK_TEMPLATE_PATH" \
+                        -D playbook_name="$playbook_name" \
+                        -D playbook_path="playbooks/$playbook_name" \
+                        -D playbook_file="$playbook_name.yml" \
+                        > "$readme_file"
+                else
+                    python3 -c "
+import jinja2
+import sys
+import os
 
-### Graph for {{ task_file }}
+template_path = '$PLAYBOOK_TEMPLATE_PATH'
+playbook_name = '$playbook_name'
+playbook_path = 'playbooks/$playbook_name'
+playbook_file = '$playbook_name.yml'
 
-```mermaid
-{{ mermaid_code }}
-```
-{% endfor %}
-{%- endif %}
+# Read playbook content
+with open('$playbook_file', 'r') as f:
+    playbook_content = f.read()
 
-{% if role.playbook.content -%}
-## Playbook
+# Load and render template
+with open(template_path, 'r') as f:
+    template = jinja2.Template(f.read())
 
-```yml
-{{ role.playbook.content }}
-```
-{%- endif %}
-{% if role.playbook.graph -%}
-## Playbook graph
-```mermaid
-{{ role.playbook.graph }}
-```
-{%- endif %}
+output = template.render(
+    playbook_name=playbook_name,
+    playbook_path=playbook_path,
+    playbook_file=playbook_file,
+    playbook_content=playbook_content
+)
 
-{% if role.meta.galaxy_info -%}
-## Author Information
-{{ role.meta.galaxy_info.author or 'Unknown Author' }}
+with open('$readme_file', 'w') as f:
+    f.write(output)
+"
+                fi
 
-### License
+                # Check if the file was modified
+                if ! git diff --quiet "$readme_file" 2> /dev/null; then
+                    echo -e "  ${YELLOW}Documentation updated - please stage and commit${NC}"
+                    FILES_MODIFIED=1
+                else
+                    echo "  No changes in documentation"
+                fi
+            fi
+        fi
+    done
+fi
 
-{{ role.meta.galaxy_info.license or 'No license specified.' }}
-
-### Minimum Ansible Version
-
-{{ role.meta.galaxy_info.min_ansible_version or 'No minimum version specified.' }}
-
-### Platforms
-
-{% if role.meta.galaxy_info.platforms -%}
-{% for platform in role.meta.galaxy_info.platforms -%}
-- **{{ platform.name }}**: {{ platform.versions }}
-{% endfor -%}
-{%- else -%}
-No platforms specified.
-{%- endif %}
-{%- endif %}
-
-### Dependencies
-
-{% if role.meta.dependencies %}
-{%- for dep in role.meta.dependencies -%}
-- {% if dep is string -%}
-  **{{ dep }}**
-{%- elif dep.role -%}
-  **{{ dep.role }}**{% if dep.name %} (alias: _{{ dep.name }}_){% endif -%}{% if dep.version %} - version: `{{ dep.version }}`{% endif -%}
-  {% if dep.vars -%}
-    {%- set vars = dep.vars.items() | list -%}
-    {% if vars|length > 0 %}
-    - **Vars:**
-      {% for k, v in vars -%}
-      - {{ k }} = {{ v }}
-      {% endfor -%}
-    {%- endif -%}
-  {% endif %}
-  {% if dep.tags -%}
-    {% set tags = dep.tags if dep.tags is iterable and dep.tags is not string else [dep.tags] -%}
-    - **Tags:** {{ tags | join(', ') }}
-  {%- endif %}
-  {% if dep.when -%}
-    - **When:** `{{ dep.when }}`
-  {%- endif %}
-{%- else -%}
-  {{ dep | tojson(indent=0) }}
-{%- endif %}
-{% endfor -%}
-{%- else -%}
-No dependencies specified.
-{%- endif -%}
+# Exit with appropriate code
+if [ $FILES_MODIFIED -eq 1 ]; then
+    echo -e "${YELLOW}Documentation files have been updated${NC}"
+    echo -e "${YELLOW}Please review and stage the changes${NC}"
+    echo -e "${YELLOW}Then retry your commit${NC}"
+    exit 1  # Exit with failure so the commit doesn't proceed
+else
+    echo -e "${GREEN}All documentation is up to date${NC}"
+    exit 0
+fi

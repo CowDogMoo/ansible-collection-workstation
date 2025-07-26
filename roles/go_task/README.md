@@ -1,7 +1,7 @@
-# Ansible Role: VNC Setup
+# Ansible Role: go-task
 
-This role configures VNC services with systemd integration, ensuring isolated
-and secure remote desktop access for each user on Unix-like systems.
+This role installs and configures [go-task](https://github.com/go-task/task)
+on Unix-like and Windows systems, providing a task runner for automation.
 
 ---
 
