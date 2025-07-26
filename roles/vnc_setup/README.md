@@ -46,10 +46,60 @@ Provides logging directories and log rotation for other roles.
 
 ## Tasks
 
-### user_config.yml
+### cleanup.yml
 
-- **Create .vnc directories for all users** (ansible.builtin.file)
-- **Create xstartup file for VNC** (ansible.builtin.template)
+- **Check if VNC needs to be restarted** (ansible.builtin.set_fact)
+- **Attempt to stop VNC using vncserver -kill** (ansible.builtin.shell) - Conditional
+- **Get running VNC processes for users** (ansible.builtin.command) - Conditional
+- **Stop VNC processes with SIGTERM first** (ansible.builtin.shell) - Conditional
+- **Wait for processes to terminate gracefully** (ansible.builtin.pause) - Conditional
+- **Force kill remaining VNC processes with SIGKILL** (ansible.builtin.shell) - Conditional
+- **Clean up VNC lock files** (ansible.builtin.file) - Conditional
+- **Clean up VNC socket files** (ansible.builtin.file) - Conditional
+- **Clean up VNC PID files** (ansible.builtin.shell) - Conditional
+
+### get_uids.yml
+
+- **Get uids of users** (ansible.builtin.command) - Conditional
+- **Create uid_results from uids** (ansible.builtin.set_fact) - Conditional
+- **Merge uids into vnc_setup_users** (cowdogmoo.workstation.merge_list_dicts_into_list) - Conditional
+
+### main.yml
+
+- **Install vncpwd** (ansible.builtin.import_tasks)
+- **Install required packages for vnc** (ansible.builtin.include_role)
+- **Set OS-specific defaults** (ansible.builtin.set_fact)
+- **Configure shell environments** (ansible.builtin.import_tasks)
+- **Prepare user VNC directories and configurations** (ansible.builtin.import_tasks)
+- **Generate and set VNC passwords** (ansible.builtin.import_tasks)
+- **Determine if systemd is present** (ansible.builtin.command)
+- **Set fact for systemd presence** (ansible.builtin.set_fact)
+- **Get user UIDs** (ansible.builtin.import_tasks)
+- **Configure systemd for VNC** (ansible.builtin.import_tasks) - Conditional
+- **Start VNC services (non-systemd or systemd startup failure recovery)** (ansible.builtin.import_tasks)
+
+### password_config.yml
+
+- **Generate random passwords for vnc_setup_users with vnc_pw.py** (cowdogmoo.workstation.vnc_pw)
+- **Update vnc_setup_users with the random generated passwords** (ansible.builtin.set_fact)
+- **Process VNC passwords** (block)
+- **Check if VNC password file exists** (ansible.builtin.stat)
+- **Generate and set VNC passwords** (ansible.builtin.shell) - Conditional
+- **Set permissions on VNC password files** (ansible.builtin.file)
+
+### service.yml
+
+- **Clean up existing VNC sessions** (ansible.builtin.import_tasks) - Conditional
+- **Start VNC directly when systemd failed or is unavailable** (block) - Conditional
+- **Check if VNC is already running for each user (broader check)** (ansible.builtin.shell)
+- **Set fact for when VNC needs to be restarted** (ansible.builtin.set_fact)
+- **Start VNC service directly for each user** (ansible.builtin.shell) - Conditional
+
+### shell_config.yml
+
+- **Check if zshrc file exists** (ansible.builtin.stat)
+- **Ensure zsh sources /etc/profile.d scripts** (ansible.builtin.lineinfile)
+- **Create docker-entrypoint.sh** (ansible.builtin.template)
 
 ### systemd.yml
 
@@ -73,60 +123,10 @@ Provides logging directories and log rotation for other roles.
 - **Check if VNC started successfully with systemd** (ansible.builtin.command)
 - **Set fact for systemd start success** (ansible.builtin.set_fact) - Conditional
 
-### service.yml
+### user_config.yml
 
-- **Clean up existing VNC sessions** (ansible.builtin.import_tasks) - Conditional
-- **Start VNC directly when systemd failed or is unavailable** (block) - Conditional
-- **Check if VNC is already running for each user (broader check)** (ansible.builtin.shell)
-- **Set fact for when VNC needs to be restarted** (ansible.builtin.set_fact)
-- **Start VNC service directly for each user** (ansible.builtin.shell) - Conditional
-
-### cleanup.yml
-
-- **Check if VNC needs to be restarted** (ansible.builtin.set_fact)
-- **Attempt to stop VNC using vncserver -kill** (ansible.builtin.shell) - Conditional
-- **Get running VNC processes for users** (ansible.builtin.command) - Conditional
-- **Stop VNC processes with SIGTERM first** (ansible.builtin.shell) - Conditional
-- **Wait for processes to terminate gracefully** (ansible.builtin.pause) - Conditional
-- **Force kill remaining VNC processes with SIGKILL** (ansible.builtin.shell) - Conditional
-- **Clean up VNC lock files** (ansible.builtin.file) - Conditional
-- **Clean up VNC socket files** (ansible.builtin.file) - Conditional
-- **Clean up VNC PID files** (ansible.builtin.shell) - Conditional
-
-### shell_config.yml
-
-- **Check if zshrc file exists** (ansible.builtin.stat)
-- **Ensure zsh sources /etc/profile.d scripts** (ansible.builtin.lineinfile)
-- **Create docker-entrypoint.sh** (ansible.builtin.template)
-
-### password_config.yml
-
-- **Generate random passwords for vnc_setup_users with vnc_pw.py** (cowdogmoo.workstation.vnc_pw)
-- **Update vnc_setup_users with the random generated passwords** (ansible.builtin.set_fact)
-- **Process VNC passwords** (block)
-- **Check if VNC password file exists** (ansible.builtin.stat)
-- **Generate and set VNC passwords** (ansible.builtin.shell) - Conditional
-- **Set permissions on VNC password files** (ansible.builtin.file)
-
-### get_uids.yml
-
-- **Get uids of users** (ansible.builtin.command) - Conditional
-- **Create uid_results from uids** (ansible.builtin.set_fact) - Conditional
-- **Merge uids into vnc_setup_users** (cowdogmoo.workstation.merge_list_dicts_into_list) - Conditional
-
-### main.yml
-
-- **Install vncpwd** (ansible.builtin.import_tasks)
-- **Install required packages for vnc** (ansible.builtin.include_role)
-- **Set OS-specific defaults** (ansible.builtin.set_fact)
-- **Configure shell environments** (ansible.builtin.import_tasks)
-- **Prepare user VNC directories and configurations** (ansible.builtin.import_tasks)
-- **Generate and set VNC passwords** (ansible.builtin.import_tasks)
-- **Determine if systemd is present** (ansible.builtin.command)
-- **Set fact for systemd presence** (ansible.builtin.set_fact)
-- **Get user UIDs** (ansible.builtin.import_tasks)
-- **Configure systemd for VNC** (ansible.builtin.import_tasks) - Conditional
-- **Start VNC services (non-systemd or systemd startup failure recovery)** (ansible.builtin.import_tasks)
+- **Create .vnc directories for all users** (ansible.builtin.file)
+- **Create xstartup file for VNC** (ansible.builtin.template)
 
 ### vncpwd.yml
 

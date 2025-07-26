@@ -44,7 +44,7 @@
 {%- endif %}
 
 ## Tasks
-{%- for taskfile in role.tasks %}
+{%- for taskfile in role.tasks | sort(attribute='file') %}
 
 ### {{ taskfile.file }}
 {% for task in taskfile.tasks %}

@@ -51,12 +51,9 @@ Install asdf
 
 ## Tasks
 
-### update_shell_profile.yml
+### ensure_directory_exists.yml
 
-- **Detect shell and set profile** (block)
-- **Check if shell exists** (ansible.builtin.command)
-- **Set detected shell fact** (ansible.builtin.set_fact)
-- **Update shell profile for the user** (ansible.builtin.blockinfile)
+- **Ensure directory exists** (ansible.builtin.file)
 
 ### install_libyaml.yml
 
@@ -65,10 +62,6 @@ Install asdf
 - **Download libyaml source** (ansible.builtin.get_url)
 - **Extract libyaml tarball** (ansible.builtin.unarchive)
 - **Compile and install libyaml** (ansible.builtin.shell)
-
-### ensure_directory_exists.yml
-
-- **Ensure directory exists** (ansible.builtin.file)
 
 ### main.yml
 
@@ -92,6 +85,13 @@ Install asdf
 - **Install ASDF plugins** (ansible.builtin.shell)
 - **Generate .tool-versions file** (ansible.builtin.template)
 - **Reshim after default packages** (ansible.builtin.shell)
+
+### update_shell_profile.yml
+
+- **Detect shell and set profile** (block)
+- **Check if shell exists** (ansible.builtin.command)
+- **Set detected shell fact** (ansible.builtin.set_fact)
+- **Update shell profile for the user** (ansible.builtin.blockinfile)
 
 ## Example Playbook
 
