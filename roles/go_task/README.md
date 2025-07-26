@@ -40,15 +40,6 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 
 ## Tasks
 
-### install-windows.yml
-
-- **Set download filename for Windows** (ansible.builtin.set_fact)
-- **Create installation directory** (ansible.windows.win_file)
-- **Download go-task for Windows** (ansible.windows.win_get_url)
-- **Extract go-task archive** (community.windows.win_unzip)
-- **Remove downloaded archive** (ansible.windows.win_file)
-- **Add go-task to PATH** (ansible.windows.win_path) - Conditional
-
 ### install-unix.yml
 
 - **Set download filename for Unix-like systems** (ansible.builtin.set_fact)
@@ -63,6 +54,15 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 - **Extract go-task archive** (ansible.builtin.unarchive)
 - **Ensure installation directory exists** (ansible.builtin.file) - Conditional
 - **Install go-task binary** (ansible.builtin.copy)
+
+### install-windows.yml
+
+- **Set download filename for Windows** (ansible.builtin.set_fact)
+- **Create installation directory** (ansible.windows.win_file)
+- **Download go-task for Windows** (ansible.windows.win_get_url)
+- **Extract go-task archive** (community.windows.win_unzip)
+- **Remove downloaded archive** (ansible.windows.win_file)
+- **Add go-task to PATH** (ansible.windows.win_path) - Conditional
 
 ### main.yml
 

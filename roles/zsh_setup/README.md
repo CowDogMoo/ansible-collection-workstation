@@ -44,13 +44,6 @@ Installs and configures zsh with oh-my-zsh.
 
 ## Tasks
 
-### zsh_setup_get_user_home.yml
-
-- **Gather available local users** (ansible.builtin.getent) - Conditional
-- **Gather available local users on macOS** (cowdogmoo.workstation.getent_passwd) - Conditional
-- **Set user home directory** (ansible.builtin.set_fact) - Conditional
-- **Set user home directory for macOS** (ansible.builtin.set_fact) - Conditional
-
 ### common.yml
 
 - **Ensure user home directory exists** (ansible.builtin.include_tasks) - Conditional
@@ -70,6 +63,13 @@ Installs and configures zsh with oh-my-zsh.
 - **Ensure user group exists** (ansible.builtin.group) - Conditional
 - **Ensure user exists** (ansible.builtin.user) - Conditional
 - **Include common tasks** (ansible.builtin.include_tasks)
+
+### zsh_setup_get_user_home.yml
+
+- **Gather available local users** (ansible.builtin.getent) - Conditional
+- **Gather available local users on macOS** (cowdogmoo.workstation.getent_passwd) - Conditional
+- **Set user home directory** (ansible.builtin.set_fact) - Conditional
+- **Set user home directory for macOS** (ansible.builtin.set_fact) - Conditional
 
 ## Example Playbook
 
