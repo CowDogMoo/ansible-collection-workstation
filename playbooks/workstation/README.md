@@ -81,8 +81,3 @@ dev2 ansible_host=192.168.1.51
 ansible_user=ubuntu
 ansible_become=yes
 ```
-
----
-
-<!-- DOCSIBLE START -->
-<!-- DOCSIBLE END -->

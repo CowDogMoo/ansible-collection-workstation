@@ -65,8 +65,3 @@ workstation2 ansible_host=192.168.1.101
 ansible_user=ubuntu
 ansible_become=true
 ```
-
----
-
-<!-- DOCSIBLE START -->
-<!-- DOCSIBLE END -->
