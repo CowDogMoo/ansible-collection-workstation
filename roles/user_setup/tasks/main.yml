@@ -2,18 +2,18 @@
 - name: Gather available local users
   ansible.builtin.getent:
     database: passwd
-  register: getent_passwd
+  register: user_setup_getent_passwd
   when: ansible_os_family != 'Darwin' and ansible_os_family != 'Windows'
 
 - name: Gather available local users on macOS
   cowdogmoo.workstation.getent_passwd:
-  register: getent_passwd
+  register: user_setup_getent_passwd
   when: ansible_os_family == 'Darwin'
 
 - name: Gather the list of unique shells to install
   become: true
   ansible.builtin.set_fact:
-    unique_shells: >-
+    user_setup_unique_shells: >-
       {{ user_setup_default_users
          | map(attribute='shell')
          | unique
@@ -34,11 +34,11 @@
   ansible.builtin.package:
     name: "{{ shell }}"
     state: present
-  loop: "{{ unique_shells | default([]) }}"
+  loop: "{{ user_setup_unique_shells | default([]) }}"
   loop_control:
     loop_var: shell
   when:
-    - unique_shells is defined
+    - user_setup_unique_shells is defined
     - shell != ''
     - shell != 'bash'
     - ansible_os_family not in ['Darwin', 'Windows']
@@ -46,7 +46,7 @@
 
 - name: Ensure groups exist for users
   ansible.builtin.group:
-    name: "{{ group.usergroup | trim | regex_replace('\\n', '') }}"
+    name: "{{ group.usergroup | trim | regex_replace('\n', '') }}"
     state: present
   become: true
   loop: "{{ user_setup_default_users }}"
@@ -57,18 +57,18 @@
 - name: Create users on non-Windows systems
   become: true
   ansible.builtin.user:
-    name: "{{ user.username | trim | regex_replace('\\n', '') }}"
-    group: "{{ user.usergroup | trim | regex_replace('\\n', '') }}"
-    shell: "{{ user.shell | trim | regex_replace('\\n', '') }}"
-    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username | trim | regex_replace('\\n', '') }}"
+    name: "{{ user.username | trim | regex_replace('\n', '') }}"
+    group: "{{ user.usergroup | trim | regex_replace('\n', '') }}"
+    shell: "{{ user.shell | trim | regex_replace('\n', '') }}"
+    home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username | trim | regex_replace('\n', '') }}"
     state: present
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username | trim | regex_replace('\\n', '') not in ansible_facts.getent_passwd
-    - user.username | trim | regex_replace('\\n', '') != 'root'
+    - user.username | trim | regex_replace('\n', '') not in (user_setup_getent_passwd | default(ansible_facts.getent_passwd, true))
+    - user.username | trim | regex_replace('\n', '') != 'root'
 
 - name: Ensure users exist and have home directories
   ansible.builtin.user:
@@ -78,13 +78,13 @@
     create_home: true
     move_home: false
     home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username | trim }}"
-  register: user_info
+  register: user_setup_user_info
   loop: "{{ user_setup_default_users }}"
   loop_control:
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username | trim not in ansible_facts.getent_passwd
+    - user.username | trim not in (user_setup_getent_passwd | default(ansible_facts.getent_passwd, true))
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
