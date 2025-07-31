@@ -15,7 +15,7 @@
 - name: Check if oh-my-zsh exists
   ansible.builtin.stat:
     path: "{{ zsh_setup_user_home }}/.oh-my-zsh"
-  register: oh_my_zsh_installed
+  register: zsh_setup_oh_my_zsh_installed
 
 - name: Download oh-my-zsh install script
   ansible.builtin.get_url:
@@ -24,22 +24,22 @@
     mode: '0755'
   become: true
   become_user: "{{ zsh_setup_username }}"
-  when: not oh_my_zsh_installed.stat.exists
+  when: not zsh_setup_oh_my_zsh_installed.stat.exists
 
 - name: Check for bash
   ansible.builtin.command: which bash
-  register: bash_check
+  register: zsh_setup_bash_check
   changed_when: false
   ignore_errors: true
 
 - name: Set shell executable
   ansible.builtin.set_fact:
-    shell_executable: >-
-      {% if bash_check.rc == 0 and bash_check.stdout is defined %}{{- bash_check.stdout | trim -}}{% else %}/bin/sh{% endif %}
+    zsh_setup_shell_executable: >-
+      {% if zsh_setup_bash_check.rc == 0 and zsh_setup_bash_check.stdout is defined %}{{- zsh_setup_bash_check.stdout | trim -}}{% else %}/bin/sh{% endif %}
 
 - name: Install oh-my-zsh
   ansible.builtin.shell: |
-    {% if shell_executable != '/bin/sh' %}
+    {% if zsh_setup_shell_executable != '/bin/sh' %}
     set -o pipefail
     {% endif %}
     export HOME="{{ zsh_setup_user_home }}"
@@ -47,13 +47,13 @@
     echo 'y' | {{ zsh_setup_user_home }}/omz-installer.sh --unattended --keep-zshrc
   args:
     creates: "{{ zsh_setup_user_home }}/.oh-my-zsh"
-    executable: "{{ shell_executable }}"
+    executable: "{{ zsh_setup_shell_executable }}"
   environment:
     HOME: "{{ zsh_setup_user_home }}"
     ZSH: "{{ zsh_setup_user_home }}/.oh-my-zsh"
   become: true
   become_user: "{{ zsh_setup_username }}"
-  when: not oh_my_zsh_installed.stat.exists
+  when: not zsh_setup_oh_my_zsh_installed.stat.exists
 
 - name: Remove omz-installer.sh
   ansible.builtin.file:
@@ -61,13 +61,13 @@
     state: absent
   become: true
   become_user: "{{ zsh_setup_username }}"
-  when: oh_my_zsh_installed.stat.exists
+  when: zsh_setup_oh_my_zsh_installed.stat.exists
   changed_when: false
 
 - name: Check if .zshrc exists
   ansible.builtin.stat:
     path: "{{ zsh_setup_user_home }}/.zshrc"
-  register: zshrc_exists
+  register: zsh_setup_zshrc_exists
 
 - name: Ensure .zshrc exists
   ansible.builtin.template:
@@ -76,4 +76,4 @@
     mode: "0644"
   become: true
   become_user: "{{ zsh_setup_username }}"
-  when: not zshrc_exists.stat.exists
+  when: not zsh_setup_zshrc_exists.stat.exists
