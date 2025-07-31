@@ -12,13 +12,13 @@
 - name: Check available shells
   ansible.builtin.stat:
     path: "{{ item }}"
-  register: shell_check
+  register: asdf_shell_check
   with_items: "{{ asdf_shells }}"
   changed_when: false
 
 - name: Set available shell fact
   ansible.builtin.set_fact:
-    available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
+    asdf_available_shell: "{{ (asdf_shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
 
 - name: Create bin directory if it doesn't exist
   ansible.builtin.file:
@@ -120,7 +120,7 @@
   environment: "{{ asdf_env }}"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
-  register: plugin_installation
+  register: asdf_plugin_installation
   changed_when: false
 
 - name: Generate .tool-versions file

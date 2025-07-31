@@ -3,17 +3,17 @@
   block:
     - name: Check if shell exists
       ansible.builtin.command: "which {{ asdf_enriched_user.shell | default(ansible_env.SHELL | default('/bin/bash')) }}"
-      register: shell_path
+      register: asdf_shell_path
       ignore_errors: true
       changed_when: false
 
     - name: Set detected shell fact
       ansible.builtin.set_fact:
-        detected_shell: "{{ shell_path.stdout if shell_path.stdout != '' else (ansible_env.SHELL | default('/bin/bash')) }}"
+        asdf_detected_shell: "{{ asdf_shell_path.stdout if asdf_shell_path.stdout != '' else (ansible_env.SHELL | default('/bin/bash')) }}"
 
 - name: Update shell profile for the user
   ansible.builtin.blockinfile:
-    path: "{{ asdf_user_home }}/{{ ('zsh' in detected_shell) | ternary('.zshrc', '.bashrc') }}"
+    path: "{{ asdf_user_home }}/{{ ('zsh' in asdf_detected_shell) | ternary('.zshrc', '.bashrc') }}"
     marker: "# {mark} ANSIBLE MANAGED BLOCK - ASDF SETUP"
     block: |
       # asdf binary path
