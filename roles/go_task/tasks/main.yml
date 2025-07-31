@@ -25,13 +25,13 @@
 
 - name: Check if go-task is already installed on Windows
   ansible.windows.win_stat:
-    path: "{{ go_task_windows_install_dir }}\\task.exe"
+    path: "{{ go_task_windows_install_dir }}\task.exe"
   register: go_task_installed_windows
   when: ansible_os_family == 'Windows'
 
 - name: Get installed version
   ansible.builtin.command: "{{ go_task_install_dir }}/task --version"
-  register: installed_version
+  register: go_task_installed_version
   changed_when: false
   failed_when: false
   when:
@@ -39,8 +39,8 @@
     - go_task_installed.stat.exists | default(false)
 
 - name: Get installed version on Windows
-  ansible.windows.win_command: "{{ go_task_windows_install_dir }}\\task.exe --version"
-  register: installed_version_windows
+  ansible.windows.win_command: "{{ go_task_windows_install_dir }}\task.exe --version"
+  register: go_task_installed_version_windows
   changed_when: false
   failed_when: false
   when:
@@ -70,8 +70,8 @@
       {{
         (ansible_os_family != 'Windows' and not go_task_installed.stat.exists | default(true)) or
         (ansible_os_family == 'Windows' and not go_task_installed_windows.stat.exists | default(true)) or
-        (installed_version.stdout | default('') is not search('v' + go_task_version)) or
-        (installed_version_windows.stdout | default('') is not search('v' + go_task_version))
+        (go_task_installed_version.stdout | default('') is not search('v' + go_task_version)) or
+        (go_task_installed_version_windows.stdout | default('') is not search('v' + go_task_version))
       }}
 
 - name: Install go-task on Unix-like systems
