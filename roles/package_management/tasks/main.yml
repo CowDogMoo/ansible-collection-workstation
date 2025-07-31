@@ -24,8 +24,8 @@
     update_cache: true
   when: ansible_os_family in ['Debian', 'RedHat']
   environment: "{{ (ansible_os_family == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
-  register: package_result
-  until: package_result is success
+  register: package_management_package_result
+  until: package_management_package_result is success
   retries: 10
   delay: 5
   tags: packages

@@ -21,13 +21,13 @@
     - name: Check available shells
       ansible.builtin.stat:
         path: "{{ item }}"
-      register: shell_check
+      register: asdf_shell_check
       with_items: "{{ asdf_shells }}"
       changed_when: false
 
     - name: Set available shell fact
       ansible.builtin.set_fact:
-        available_shell: "{{ (shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/bash') }}"
+        asdf_available_shell: "{{ (asdf_shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/bash') }}"
 
   tasks:
     - name: Include default variables
@@ -112,7 +112,7 @@
 
     - name: Check shell profile setup
       ansible.builtin.stat:
-        path: "{{ asdf_user_home }}/{{ (available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+        path: "{{ asdf_user_home }}/{{ (asdf_available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
       register: shell_profile
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
@@ -125,7 +125,7 @@
 
     - name: Check shell profile content
       ansible.builtin.command:
-        cmd: "cat {{ asdf_user_home }}/{{ (available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+        cmd: "cat {{ asdf_user_home }}/{{ (asdf_available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
       register: profile_content
       changed_when: false
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
