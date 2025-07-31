@@ -1,7 +1,7 @@
 ---
 - name: Check if VNC needs to be restarted
   ansible.builtin.set_fact:
-    vnc_needs_restart: "{{ vnc_needs_restart | default(false) | bool or service_file_updated.changed | default(false) | bool or start_vnc_script_updated.changed | default(false) | bool }}"
+    vnc_setup_vnc_needs_restart: "{{ vnc_setup_vnc_needs_restart | default(false) | bool or vnc_setup_service_file_updated.changed | default(false) | bool or vnc_setup_start_vnc_script_updated.changed | default(false) | bool }}"
 
 - name: Attempt to stop VNC using vncserver -kill
   become: true
@@ -9,30 +9,30 @@
   ansible.builtin.shell:
     cmd: "{{ tigervnc_binary | default('/usr/bin/vncserver') }} -kill :{{ item.vnc_num }} || true"
   loop: "{{ vnc_setup_users_uid.result | default(vnc_setup_users) }}"
-  when: vnc_needs_restart | bool
+  when: vnc_setup_vnc_needs_restart | bool
   changed_when: false
   failed_when: false
 
 - name: Get running VNC processes for users
   ansible.builtin.command:
     cmd: "pgrep -u {{ item.username }} -f 'X(tigervnc|vnc).*:{{ item.vnc_num }}'"
-  register: vnc_processes
+  register: vnc_setup_vnc_processes
   loop: "{{ vnc_setup_users_uid.result | default(vnc_setup_users) }}"
   changed_when: false
   check_mode: false
   failed_when: false
-  when: vnc_needs_restart | bool
+  when: vnc_setup_vnc_needs_restart | bool
 
 - name: Stop VNC processes with SIGTERM first
   ansible.builtin.shell:
     cmd: "kill {{ item.stdout_lines | join(' ') }} || true"
-  loop: "{{ vnc_processes.results | default([]) }}"
+  loop: "{{ vnc_setup_vnc_processes.results | default([]) }}"
   when:
-    - vnc_needs_restart | bool
+    - vnc_setup_vnc_needs_restart | bool
     - item.stdout_lines is defined
     - item.stdout_lines | default([]) | length > 0
     - item.rc == 0
-  register: kill_result
+  register: vnc_setup_kill_result
   changed_when: false
   failed_when: false
 
@@ -40,15 +40,15 @@
   ansible.builtin.pause:
     seconds: 2
   when:
-    - vnc_needs_restart | bool
-    - kill_result.changed | default(false)
+    - vnc_setup_vnc_needs_restart | bool
+    - vnc_setup_kill_result.changed | default(false)
 
 - name: Force kill remaining VNC processes with SIGKILL
   ansible.builtin.shell:
     cmd: "kill -9 {{ item.stdout_lines | join(' ') }} || true"
-  loop: "{{ vnc_processes.results | default([]) }}"
+  loop: "{{ vnc_setup_vnc_processes.results | default([]) }}"
   when:
-    - vnc_needs_restart | bool
+    - vnc_setup_vnc_needs_restart | bool
     - item.stdout_lines is defined
     - item.stdout_lines | default([]) | length > 0
     - item.rc == 0
@@ -63,7 +63,7 @@
   loop_control:
     loop_var: user_item
   failed_when: false
-  when: vnc_needs_restart | bool
+  when: vnc_setup_vnc_needs_restart | bool
 
 - name: Clean up VNC socket files
   ansible.builtin.file:
@@ -73,7 +73,7 @@
   loop_control:
     loop_var: user_item
   failed_when: false
-  when: vnc_needs_restart | bool
+  when: vnc_setup_vnc_needs_restart | bool
 
 - name: Clean up VNC PID files
   ansible.builtin.shell:
@@ -83,4 +83,4 @@
     loop_var: user_item
   changed_when: false
   failed_when: false
-  when: vnc_needs_restart | bool
+  when: vnc_setup_vnc_needs_restart | bool
