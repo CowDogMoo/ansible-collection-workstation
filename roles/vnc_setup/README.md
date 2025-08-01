@@ -116,7 +116,7 @@ Provides logging directories and log rotation for other roles.
 - **Create systemd directories** (ansible.builtin.file)
 - **Update per-user systemd service files** (ansible.builtin.template) - Conditional
 - **Add start_vnc script to profile.d** (ansible.builtin.template)
-- **Check VNC service status** (ansible.builtin.command)
+- **Check VNC service status** (ansible.builtin.systemd)
 - **Stop VNC service if running and configs changed** (ansible.builtin.systemd) - Conditional
 - **Start VNC service with systemd** (block)
 - **Start VNC service with systemd** (ansible.builtin.systemd) - Conditional
