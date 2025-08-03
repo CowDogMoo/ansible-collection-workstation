@@ -33,7 +33,7 @@ asdf_plugins:
     version: "1.33.3"
     scope: "global"
   - name: packer
-    version: "1.13.1"
+    version: "1.14.0"
     scope: "global"
   - name: awscli
     version: "2.24.0"
