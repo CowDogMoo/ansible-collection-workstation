@@ -67,14 +67,14 @@
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username | trim | regex_replace('\n', '') not in (user_setup_getent_passwd | default(ansible_facts.getent_passwd, true))
+    - user.username | trim | regex_replace('\n', '') not in (user_setup_getent_passwd.ansible_facts.getent_passwd.keys() | default([]))
     - user.username | trim | regex_replace('\n', '') != 'root'
 
 - name: Ensure users exist and have home directories
   ansible.builtin.user:
     name: "{{ user.username | trim }}"
-    group: "{{ user.usergroup | trim }}"
-    shell: "{{ user.shell }}"
+    state: present
+    shell: "{{ user.shell | default('/bin/bash') }}"
     create_home: true
     move_home: false
     home: "{{ '/Users' if ansible_os_family == 'Darwin' else '/home' }}/{{ user.username | trim }}"
@@ -84,7 +84,7 @@
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username | trim not in (user_setup_getent_passwd | default(ansible_facts.getent_passwd, true))
+    - user.username | trim not in (user_setup_getent_passwd.ansible_facts.getent_passwd.keys() | default([]))
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
