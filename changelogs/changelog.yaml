@@ -578,3 +578,47 @@ releases:
         for Kali Linux package verification and simplified VNC service management.
         Several dependencies were also updated to their latest versions.
     release_date: '2025-05-08'
+  2.0.7:
+    changes:
+      added:
+      - Added Molecule create/destroy playbooks for all roles to improve test infrastructure
+      - Added docsible documentation generation via pre-commit hooks with custom templates
+      - Added go_task role for installing Task runner (go-task) on Unix-like and Windows
+        systems
+      - Added markdownlint configuration to replace mdl Ruby-based linting
+      - Added renovate dashboard labels configuration
+      - Added support for Go 1.24.4 and Python 3.13.5 in ASDF defaults
+      changed:
+      - Fixed VNC setup role with improved systemd handling and process cleanup
+      - Fixed shell detection and profile updates in ASDF role
+      - Improved variable namespacing across all roles to prevent conflicts
+      - Migrated from Ruby-based mdl to markdownlint-cli for markdown linting
+      - Refactored renovate configuration to JSON5 format with improved bot configuration
+      - Replaced manual documentation generation with automated docsible integration
+      - Updated ASDF role to version 0.16.7 with improved architecture detection
+      - Updated GitHub Actions workflows with improved environment variable handling
+      - Updated all role README files with standardized docsible-generated documentation
+      - Updated amazon.aws from 9.4.0 to 10.1.0
+      - Updated ansible.windows from 3.0.0 to 3.2.0
+      - Updated ansible/ansible-lint from v25.4.0 to v25.7.0
+      - Updated community.docker from 4.6.0 to 4.7.0
+      - Updated community.general from 10.6.0 to 11.1.2
+      - Updated golang/go from 1.24.0 to 1.24.4
+      - Updated helm/helm from 3.17.3 to 3.18.4
+      - Updated kubectl from 1.33.0 to 1.33.3
+      - Updated packer from 1.12.0 to 1.14.1
+      - Updated pre-commit configuration to use docsible for documentation generation
+      - Updated python/cpython from 3.13.3 to 3.13.5
+      - Updated renovatebot/github-action from v42.0.1 to v43.0.5
+      - Updated template sync workflow to use latest action versions
+      - Updated workstation playbook to include new go_task role
+      release_summary: Major update featuring automated documentation generation with
+        docsible, addition of go_task role for Task runner installation, improved
+        renovate configuration, and comprehensive variable namespacing improvements
+        across all roles. Migrated from Ruby-based to JavaScript-based markdown linting
+        and updated numerous dependencies to their latest versions.
+      removed:
+      - Removed Ruby-based mdstyle.rb linter configuration
+      - Removed manual Python-based documentation generator (generate_docs.py)
+      - Removed renovate-bot.json5 in favor of consolidated renovate.json5
+    release_date: '2025-08-05'
