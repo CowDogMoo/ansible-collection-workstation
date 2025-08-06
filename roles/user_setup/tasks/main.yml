@@ -10,6 +10,11 @@
   register: user_setup_getent_passwd
   when: ansible_os_family == 'Darwin'
 
+- name: Normalize getent_passwd structure
+  ansible.builtin.set_fact:
+    user_setup_normalized_users: "{{ user_setup_getent_passwd.ansible_facts.getent_passwd if user_setup_getent_passwd.ansible_facts is defined else {} }}"
+  when: user_setup_getent_passwd is defined
+
 - name: Gather the list of unique shells to install
   become: true
   ansible.builtin.set_fact:
@@ -67,7 +72,7 @@
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username | trim | regex_replace('\n', '') not in (user_setup_getent_passwd.ansible_facts.getent_passwd.keys() | default([]))
+    - user.username | trim | regex_replace('\n', '') not in (user_setup_normalized_users.keys() | default([]))
     - user.username | trim | regex_replace('\n', '') != 'root'
 
 - name: Ensure users exist and have home directories
@@ -84,7 +89,7 @@
     loop_var: user
   when:
     - ansible_os_family != 'Windows'
-    - user.username | trim not in (user_setup_getent_passwd.ansible_facts.getent_passwd.keys() | default([]))
+    - user.username | trim not in (user_setup_normalized_users.keys() | default([]))
 
 - name: Provide sudoers access for relevant users in sudoers.d
   become: true
