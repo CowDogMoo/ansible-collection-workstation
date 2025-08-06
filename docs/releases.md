@@ -61,7 +61,7 @@ Before creating a release, you should perform these preparation steps:
    task -y ansible:lint-ansible
    ```
 
-   This runs ansible-lint with the configuration file at .hooks/linters/ansible-lint.yaml.
+   This runs ansible-lint with the configuration file at `.hooks/linters/ansible-lint.yaml`.
 
 1. **Update Collection Dependencies and Versions**
 
