@@ -38,6 +38,7 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 
 - **Gather available local users** (ansible.builtin.getent) - Conditional
 - **Gather available local users on macOS** (cowdogmoo.workstation.getent_passwd) - Conditional
+- **Normalize getent_passwd structure** (ansible.builtin.set_fact) - Conditional
 - **Gather the list of unique shells to install** (ansible.builtin.set_fact) - Conditional
 - **Install base packages for all users** (ansible.builtin.include_role) - Conditional
 - **Install user-specific shells** (ansible.builtin.package) - Conditional
