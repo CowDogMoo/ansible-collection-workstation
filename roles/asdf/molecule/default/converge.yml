@@ -26,7 +26,3 @@
         name: cowdogmoo.workstation.asdf
       vars:
         asdf_username: "{{ container_user }}"
-        asdf_plugins:
-          - name: golang
-            version: "1.24.4"
-            scope: "global"

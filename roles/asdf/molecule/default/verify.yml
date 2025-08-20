@@ -98,17 +98,18 @@
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
 
-    - name: Set expected version facts
+    - name: Extract actual golang version from .tool-versions
       ansible.builtin.set_fact:
-        expected_golang_version: "{{ asdf_plugins[0].version }}"
+        actual_golang_version: "{{ tool_versions_content.stdout | regex_search('golang\\s+(\\S+)', '\\1') | first }}"
+      when: "'golang' in tool_versions_content.stdout"
 
     - name: Assert .tool-versions content
       ansible.builtin.assert:
         that:
           - "'golang' in tool_versions_content.stdout"
-          - "expected_golang_version in tool_versions_content.stdout"
-        fail_msg: "Expected version {{ expected_golang_version }} not found in .tool-versions"
-        success_msg: "Found expected golang version {{ expected_golang_version }}"
+          - actual_golang_version is defined
+        fail_msg: "Golang not found in .tool-versions"
+        success_msg: "Found golang version {{ actual_golang_version }} in .tool-versions"
 
     - name: Check shell profile setup
       ansible.builtin.stat:
@@ -147,7 +148,7 @@
         asdf current golang
         go version
       register: go_version
-      failed_when: go_version.rc != 0 or expected_golang_version not in go_version.stdout
+      failed_when: go_version.rc != 0
       changed_when: false
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
@@ -156,15 +157,10 @@
         ASDF_DATA_DIR: "{{ asdf_data_dir }}"
         USER: "{{ asdf_username }}"
 
-    - name: Assert golang version
+    - name: Assert golang version matches
       ansible.builtin.assert:
         that:
-          - expected_golang_version in go_version.stdout
-        fail_msg: "Expected golang version {{ expected_golang_version }} not found in output"
-        success_msg: "Found expected golang version {{ expected_golang_version }}"
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-      become_user: "{{ asdf_username }}"
-      environment:
-        HOME: "{{ asdf_user_home }}"
-        ASDF_DATA_DIR: "{{ asdf_data_dir }}"
-        USER: "{{ asdf_username }}"
+          - actual_golang_version in go_version.stdout
+        fail_msg: "Expected golang version {{ actual_golang_version }} not found in output: {{ go_version.stdout }}"
+        success_msg: "Found expected golang version {{ actual_golang_version }}"
+      when: actual_golang_version is defined
