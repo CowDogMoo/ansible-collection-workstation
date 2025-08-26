@@ -84,9 +84,9 @@
     {
       customType: 'regex',
       description: 'Update asdf tool versions',
-      managerFilePatterns: ['**/*.yml', '**/*.yaml'],
+      managerFilePatterns: ['**/roles/asdf/defaults/main.yml'],
       matchStrings: [
-        'asdf_plugins:[\\s\\S]*?# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
+        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
       ],
       versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}'
     }
