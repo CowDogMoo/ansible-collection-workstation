@@ -11,14 +11,62 @@
     ':automergeDigest',
     'helpers:pinGitHubActionDigests',
   ],
-  dependencyDashboardLabels: ['renovate-dashboard'],
+  dependencyDashboardLabels: [
+    'renovate-dashboard',
+  ],
   dependencyDashboardTitle: 'Renovate Dashboard 🤖',
-  suppressNotifications: ['prIgnoreNotification'],
+  suppressNotifications: [
+    'prIgnoreNotification',
+  ],
   rebaseWhen: 'conflicted',
   commitBodyTable: true,
-  labels: ['renovate'],
+  labels: [
+    'renovate',
+  ],
   'pre-commit': {
     enabled: true,
+  },
+  packageRules: [
+    {
+      description: 'Auto merge Galaxy dependencies',
+      matchDatasources: [
+        'galaxy',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'digest',
+      ],
+    },
+    {
+      description: 'Auto-merge GitHub Actions',
+      matchManagers: [
+        'github-actions',
+      ],
+      matchDatasources: [
+        'github-tags',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    },
+    {
+      description: 'Group Ansible Galaxy dependencies',
+      matchManagers: [
+        'ansible-galaxy',
+      ],
+      groupName: 'ansible-dependencies',
+    },
+  ],
+  ansible: {
+    managerFilePatterns: [
+      '/^requirements\\.yml$/',
+      '/^roles/[^/]+/meta/main\\.yml$/',
+      '/^galaxy\\.yml$/',
+    ],
   },
   customManagers: [
     {
@@ -26,55 +74,9 @@
       description: 'Update asdf tool versions',
       managerFilePatterns: ['**/*.yml', '**/*.yaml'],
       matchStrings: [
-        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
+        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: packageName=(?<packageName>\\S+))?(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
       ],
       versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}'
     }
   ],
-    {
-      matchPackageNames: ['golang/go'],
-      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)',
-      extractVersion: '^go(?<version>.*)'
-    },
-    {
-      matchPackageNames: ['python/cpython'],
-      extractVersion: '^v?(?<version>.*?)$'
-    },
-    {
-      matchPackageNames: ['ruby/ruby'],
-      versioning: 'regex:^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$',
-      extractVersion: '^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$'
-    },
-    {
-      matchPackageNames: ['kubernetes/kubernetes'],
-      extractVersion: '^v(?<version>.*)'
-    },
-    {
-      description: 'Auto merge Galaxy dependencies',
-      matchDatasources: ['galaxy'],
-      automerge: true,
-      automergeType: 'pr',
-      matchUpdateTypes: ['digest']
-    },
-    {
-      description: 'Auto-merge GitHub Actions',
-      matchManagers: ['github-actions'],
-      matchDatasources: ['github-tags'],
-      automerge: true,
-      automergeType: 'pr',
-      matchUpdateTypes: ['minor', 'patch']
-    },
-    {
-      description: 'Group Ansible Galaxy dependencies',
-      matchManagers: ['ansible-galaxy'],
-      groupName: 'ansible-dependencies'
-    }
-  ],
-  ansible: {
-    managerFilePatterns: [
-      '/^requirements\\.yml$/',
-      '/^roles/[^/]+/meta/main\\.yml$/',
-      '/^galaxy\\.yml$/'
-    ]
-  }
 }
