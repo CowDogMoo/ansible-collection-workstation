@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: 🤖 Renovate
 on:
   push:
@@ -75,4 +76,4 @@ jobs:
         with:
           configurationFile: "${{ env.RENOVATE_ONBOARDING_CONFIG_FILE_NAME }}"
           token: "${{ steps.app-token.outputs.token }}"
-          renovate-version: "${{ inputs.version || 'full' }}"
+          renovate-version: "${{ inputs.version || 'latest' }}"

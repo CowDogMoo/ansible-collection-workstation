@@ -91,11 +91,12 @@
       datasourceTemplate: 'github-tags',
       depNameTemplate: 'golang/go',
       versioningTemplate: 'semver',
+      extractVersionTemplate: '^go(?<version>.*)$',
     },
     {
       customType: 'regex',
       managerFilePatterns: [
-        '/^roles/asdf/defaults/main\\.yml$/',
+        '/^roles/asdf/defaults/main\\.yml$/'
       ],
       matchStrings: [
         'name: (?<depName>python)\\s+version: "(?<currentValue>[0-9.]+)"',
@@ -103,6 +104,7 @@
       datasourceTemplate: 'github-tags',
       depNameTemplate: 'python/cpython',
       versioningTemplate: 'semver',
+      extractVersionTemplate: '^v?(?<version>.*)$',
     },
     {
       customType: 'regex',
@@ -139,6 +141,7 @@
       datasourceTemplate: 'github-tags',
       depNameTemplate: 'ruby/ruby',
       versioningTemplate: 'semver',
+      extractVersionTemplate: '^v?(?<version>\\d+)_(?<version>\\d+)_(?<version>\\d+)$',
     },
     {
       customType: 'regex',
