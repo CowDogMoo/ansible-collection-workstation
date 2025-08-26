@@ -11,18 +11,12 @@
     ':automergeDigest',
     'helpers:pinGitHubActionDigests',
   ],
-  dependencyDashboardLabels: [
-    'renovate-dashboard',
-  ],
+  dependencyDashboardLabels: ['renovate-dashboard'],
   dependencyDashboardTitle: 'Renovate Dashboard 🤖',
-  suppressNotifications: [
-    'prIgnoreNotification',
-  ],
+  suppressNotifications: ['prIgnoreNotification'],
   rebaseWhen: 'conflicted',
   commitBodyTable: true,
-  labels: [
-    'renovate',
-  ],
+  labels: ['renovate'],
   'pre-commit': {
     enabled: true,
   },
@@ -44,11 +38,8 @@
       extractVersion: '^go(?<version>.*)'
     },
     {
-      matchPackageNames: ['python/cpython'],
-    },
-    {
-      "packageNames": [ "ruby/ruby" ],
-      "extractVersion": "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$"
+      matchPackageNames: ['ruby/ruby'],
+      extractVersion: '^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$'
     },
     {
       matchPackageNames: ['kubernetes/kubernetes'],
@@ -56,43 +47,30 @@
     },
     {
       description: 'Auto merge Galaxy dependencies',
-      matchDatasources: [
-        'galaxy',
-      ],
+      matchDatasources: ['galaxy'],
       automerge: true,
       automergeType: 'pr',
-      matchUpdateTypes: [
-        'digest',
-      ],
+      matchUpdateTypes: ['digest']
     },
     {
       description: 'Auto-merge GitHub Actions',
-      matchManagers: [
-        'github-actions',
-      ],
-      matchDatasources: [
-        'github-tags',
-      ],
+      matchManagers: ['github-actions'],
+      matchDatasources: ['github-tags'],
       automerge: true,
       automergeType: 'pr',
-      matchUpdateTypes: [
-        'minor',
-        'patch',
-      ],
+      matchUpdateTypes: ['minor', 'patch']
     },
     {
       description: 'Group Ansible Galaxy dependencies',
-      matchManagers: [
-        'ansible-galaxy',
-      ],
-      groupName: 'ansible-dependencies',
-    },
+      matchManagers: ['ansible-galaxy'],
+      groupName: 'ansible-dependencies'
+    }
   ],
   ansible: {
     managerFilePatterns: [
       '/^requirements\\.yml$/',
       '/^roles/[^/]+/meta/main\\.yml$/',
-      '/^galaxy\\.yml$/',
-    ],
-  },
+      '/^galaxy\\.yml$/'
+    ]
+  }
 }
