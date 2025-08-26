@@ -26,7 +26,35 @@
   'pre-commit': {
     enabled: true,
   },
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Update asdf tool versions',
+      managerFilePatterns: ['**/*.yml', '**/*.yaml'],
+      matchStrings: [
+        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: extractVersion=(?<extractVersion>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
+      ],
+      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}'
+    }
+  ],
   packageRules: [
+    {
+      matchPackageNames: ['golang/go'],
+      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)',
+      extractVersion: '^go(?<version>.*)'
+    },
+    {
+      matchPackageNames: ['python/cpython'],
+      extractVersion: '^v?(?<version>.*)'
+    },
+    {
+      matchPackageNames: ['ruby/ruby'],
+      extractVersion: '^v?(?<version>.*)'
+    },
+    {
+      matchPackageNames: ['kubernetes/kubernetes'],
+      extractVersion: '^v(?<version>.*)'
+    },
     {
       description: 'Auto merge Galaxy dependencies',
       matchDatasources: [
@@ -68,15 +96,4 @@
       '/^galaxy\\.yml$/',
     ],
   },
-  customManagers: [
-    {
-      customType: 'regex',
-      description: 'Update asdf tool versions',
-      managerFilePatterns: ['**/*.yml', '**/*.yaml'],
-      matchStrings: [
-        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) packageName=(?<packageName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
-      ],
-      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}'
-    }
-  ],
 }
