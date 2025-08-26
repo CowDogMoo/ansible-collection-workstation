@@ -60,6 +60,18 @@
       ],
       groupName: 'ansible-dependencies',
     },
+    {
+      matchPackageNames: ['golang/go'],
+      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)'
+    },
+    {
+      matchPackageNames: ['python/cpython'],
+      versioning: 'pep440'
+    },
+    {
+      matchPackageNames: ['ruby/ruby'],
+      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$'
+    },
   ],
   ansible: {
     managerFilePatterns: [
