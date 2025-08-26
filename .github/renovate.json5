@@ -71,12 +71,14 @@
   customManagers: [
     {
       "customType": "regex",
-      "description": "Update tool versions with inline renovate comments",
+      "description": "Update asdf plugin versions",
       "managerFilePatterns": ["**/*.yml", "**/*.yaml"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: packageName=(?<packageName>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+- name: \\S+\\s+version: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+        "asdf_plugins:[\\s\\S]*?- name: (?<depName>\\w+)\\s+version: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
-      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "{{#if (equals depName 'golang')}}golang/go{{else if (equals depName 'python')}}python/cpython{{else if (equals depName 'ruby')}}ruby/ruby{{else if (equals depName 'helm')}}helm/helm{{else if (equals depName 'kubectl')}}kubernetes/kubernetes{{else if (equals depName 'packer')}}hashicorp/packer{{else if (equals depName 'awscli')}}aws/aws-cli{{else}}{{depName}}{{/if}}",
+      "extractVersionTemplate": "{{#if (equals depName 'golang')}}^go(?<version>.*)${{else if (equals depName 'python')}}^v?(?<version>.*)${{else if (equals depName 'kubectl')}}^v(?<version>.*)${{else if (equals depName 'awscli')}}^(?<version>.*)${{else}}^v?(?<version>.*)${{/if}}"
     }
   ],
 }
