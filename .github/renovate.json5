@@ -31,14 +31,18 @@
       versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}'
     }
   ],
-  packageRules: [
     {
       matchPackageNames: ['golang/go'],
       versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)',
       extractVersion: '^go(?<version>.*)'
     },
     {
+      matchPackageNames: ['python/cpython'],
+      extractVersion: '^v?(?<version>.*?)$'
+    },
+    {
       matchPackageNames: ['ruby/ruby'],
+      versioning: 'regex:^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$',
       extractVersion: '^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$'
     },
     {
