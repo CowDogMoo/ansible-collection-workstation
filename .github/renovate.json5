@@ -140,8 +140,8 @@
       ],
       datasourceTemplate: 'github-tags',
       depNameTemplate: 'ruby/ruby',
-      versioningTemplate: 'semver',
-      extractVersionTemplate: '^v?(\\d+)_(\\d+)_(\\d+)$',
+      versioningTemplate: 'regex:^v?(\\d+)[_\\.](\\d+)[_\\.](\\d+)$',
+      extractVersionTemplate: '^v?(?<version>\\d+_\\d+_\\d+)$',
     },
     {
       customType: 'regex',
