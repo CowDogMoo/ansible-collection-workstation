@@ -32,7 +32,7 @@
       description: 'Update asdf tool versions',
       managerFilePatterns: ['**/*.yml', '**/*.yaml'],
       matchStrings: [
-        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: extractVersion=(?<extractVersion>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
+        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
       ],
       versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}'
     }
@@ -45,11 +45,10 @@
     },
     {
       matchPackageNames: ['python/cpython'],
-      extractVersion: '^v?(?<version>.*)'
     },
     {
-      matchPackageNames: ['ruby/ruby'],
-      extractVersion: '^v?(?<version>.*)'
+      "packageNames": [ "ruby/ruby" ],
+      "extractVersion": "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$"
     },
     {
       matchPackageNames: ['kubernetes/kubernetes'],
