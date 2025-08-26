@@ -141,7 +141,7 @@
       datasourceTemplate: 'github-tags',
       depNameTemplate: 'ruby/ruby',
       versioningTemplate: 'semver',
-      extractVersionTemplate: '^v?(?<version>\\d+)_(?<version>\\d+)_(?<version>\\d+)$',
+      extractVersionTemplate: '^v?(\\d+)_(\\d+)_(\\d+)$',
     },
     {
       customType: 'regex',
