@@ -140,7 +140,7 @@
       ],
       datasourceTemplate: 'github-tags',
       depNameTemplate: 'ruby/ruby',
-      versioningTemplate: 'regex:^v?(\\d+)[_\\.](\\d+)[_\\.](\\d+)$',
+      versioningTemplate: 'regex:^v?(?<major>\\d+)[_\\.](?<minor>\\d+)[_\\.](?<patch>\\d+)$',
       extractVersionTemplate: '^v?(?<version>\\d+_\\d+_\\d+)$',
     },
     {
