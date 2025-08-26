@@ -1,15 +1,19 @@
 ---
 # Version of go-task to install
-go_task_version: "latest"
+go_task_version: latest
 
 # Installation directory for Unix-like systems
-go_task_install_dir: "/usr/local/bin"
+go_task_install_dir: /usr/local/bin
 
 # Installation directory for Windows systems
-go_task_windows_install_dir: "C:\\Program Files\\task"
+go_task_windows_install_dir: C:\\Program Files\\task
 
-# Whether to add to PATH on Windows
+# Add to PATH on Windows
 go_task_windows_add_to_path: true
+
+# GitHub token for API authentication (optional)
+# Can be set via environment variable GITHUB_TOKEN
+go_task_github_token: "{{ lookup('env', 'GITHUB_TOKEN') | default('') }}"
 
 # Architecture mapping
 go_task_arch_map:
