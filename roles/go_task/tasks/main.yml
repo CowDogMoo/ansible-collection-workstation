@@ -54,11 +54,11 @@
       ansible.builtin.uri:
         url: "{{ go_task_github_api_url }}/latest"
         method: GET
-        headers:
-          Accept: "application/vnd.github.v3+json"
+        headers: "{{ {'Accept': 'application/vnd.github.v3+json'} | combine((go_task_github_token | length > 0) | ternary({'Authorization': 'Bearer ' + go_task_github_token}, {})) }}"
       register: go_task_latest_release
       retries: 3
-      delay: 2
+      delay: 5
+      until: go_task_latest_release is not failed
 
     - name: Set version to latest
       ansible.builtin.set_fact:
