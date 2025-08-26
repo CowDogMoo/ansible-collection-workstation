@@ -72,26 +72,14 @@
     {
       customType: 'regex',
       managerFilePatterns: [
-        '/(^|/)requirements\\.ya?ml$/',
-        '/(^|/)galaxy\\.ya?ml$/',
-      ],
-      matchStrings: [
-        'name: (?<depName>[^\\s]+)\\n\\s+src: (?<packageName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)',
-      ],
-      datasourceTemplate: 'git-tags',
-    },
-    {
-      customType: 'regex',
-      managerFilePatterns: [
         '/^roles/asdf/defaults/main\\.yml$/',
       ],
       matchStrings: [
         'name: (?<depName>golang)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'golang/go',
       versioningTemplate: 'semver',
-      extractVersionTemplate: '^go(?<version>.*)$',
     },
     {
       customType: 'regex',
@@ -101,10 +89,9 @@
       matchStrings: [
         'name: (?<depName>python)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'python/cpython',
       versioningTemplate: 'semver',
-      extractVersionTemplate: '^v?(?<version>.*)$',
     },
     {
       customType: 'regex',
@@ -114,7 +101,7 @@
       matchStrings: [
         'name: (?<depName>kubectl)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'kubernetes/kubernetes',
       versioningTemplate: 'semver',
     },
@@ -126,7 +113,7 @@
       matchStrings: [
         'name: (?<depName>packer)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'hashicorp/packer',
       versioningTemplate: 'semver',
     },
@@ -138,10 +125,9 @@
       matchStrings: [
         'name: (?<depName>ruby)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'ruby/ruby',
-      versioningTemplate: 'regex:^v?(?<major>\\d+)[_\\.](?<minor>\\d+)[_\\.](?<patch>\\d+)$',
-      extractVersionTemplate: '^v?(?<version>\\d+_\\d+_\\d+)$',
+      versioningTemplate: 'semver',
     },
     {
       customType: 'regex',
@@ -151,7 +137,7 @@
       matchStrings: [
         'name: (?<depName>helm)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'helm/helm',
       versioningTemplate: 'semver',
     },
