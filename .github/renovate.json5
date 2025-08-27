@@ -88,6 +88,7 @@
       matchStrings: [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?)\\s+depName=(?<depName>.*?)\\s*\\n\\s*-\\s*name:\\s*\\w+\\s*\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
+      extractVersionTemplate: "{{#if (contains depName 'golang/go')}}^go(?<version>.*)${{else if (contains depName 'python/cpython')}}^v(?<version>.*)${{else if (contains depName 'ruby/ruby')}}^v(?<version>.*)${{else}}^v?(?<version>.*)${{/if}}"
     },
   ],
 }
