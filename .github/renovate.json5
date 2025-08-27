@@ -60,17 +60,15 @@
       ],
       groupName: 'ansible-dependencies',
     },
-    {
+{
+      matchDatasources: ['github-tags'],
       matchPackageNames: ['golang/go'],
-      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)'
+      extractVersionTemplate: '^go(?<version>.*)$'
     },
     {
-      matchPackageNames: ['python/cpython'],
-      versioning: 'pep440'
-    },
-    {
-      matchPackageNames: ['ruby/ruby'],
-      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$'
+      matchDatasources: ['github-tags'],
+      matchPackageNames: ['python/cpython', 'ruby/ruby'],
+      extractVersionTemplate: '^v(?<version>.*)$'
     },
   ],
   ansible: {
@@ -85,10 +83,9 @@
       customType: 'regex',
       description: 'Update asdf tool versions',
       managerFilePatterns: ["\\.ya?ml$"],
-      matchStrings: [
+      "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?)\\s+depName=(?<depName>.*?)\\s*\\n\\s*-\\s*name:\\s*\\w+\\s*\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
-      extractVersionTemplate: "{{#if (contains depName 'golang/go')}}^go(?<version>.*)${{else if (contains depName 'python/cpython')}}^v(?<version>.*)${{else if (contains depName 'ruby/ruby')}}^v(?<version>.*)${{else}}^v?(?<version>.*)${{/if}}"
     },
   ],
 }
