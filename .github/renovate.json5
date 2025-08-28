@@ -17,24 +17,110 @@
   labels: ["renovate"],
 
   packageRules: [
+    // Auto-merge Galaxy digest-only bumps
     { matchDatasources: ["galaxy"], matchUpdateTypes: ["digest"], automerge: true, automergeType: "pr" },
+
+    // Auto-merge minor/patch GitHub Actions
     { matchManagers: ["github-actions"], matchDatasources: ["github-tags"], matchUpdateTypes: ["minor","patch"], automerge: true, automergeType: "pr" },
+
+    // Group Galaxy deps
     { matchManagers: ["ansible-galaxy"], groupName: "ansible-dependencies" },
-    { matchDatasources: ["github-runners"], enabled: false } // silence ubuntu-latest etc.
+
+    // Silence ubuntu-latest etc.
+    { matchDatasources: ["github-runners"], enabled: false }
   ],
 
   customManagers: [
+    // ===== asdf in roles/asdf/defaults/main.yml =====
+
+    // golang (use language datasource; no tag parsing)
     {
-      // Asdf defaults file: pull datasource/depName from the inline hint
       customType: "regex",
       managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
       matchStrings: [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name:\\s*\\S+\\s+version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+        "-\\s*name:\\s*golang[\\s\\S]*?\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
-      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+      datasourceTemplate: "golang-version",
+      depNameTemplate: "go",
+      versioningTemplate: "semver"
     },
 
-    // Workflow: python-version
+    // python
+    {
+      customType: "regex",
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
+      matchStrings: [
+        "-\\s*name:\\s*python[\\s\\S]*?\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      datasourceTemplate: "python-version",
+      depNameTemplate: "python",
+      versioningTemplate: "python"
+    },
+
+    // ruby
+    {
+      customType: "regex",
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
+      matchStrings: [
+        "-\\s*name:\\s*ruby[\\s\\S]*?\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      datasourceTemplate: "ruby-version",
+      depNameTemplate: "ruby",
+      versioningTemplate: "ruby"
+    },
+
+    // helm (GitHub releases)
+    {
+      customType: "regex",
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
+      matchStrings: [
+        "-\\s*name:\\s*helm[\\s\\S]*?\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      datasourceTemplate: "github-releases",
+      packageNameTemplate: "helm/helm",
+      versioningTemplate: "semver"
+    },
+
+    // kubectl (GitHub tags, strip leading 'v')
+    {
+      customType: "regex",
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
+      matchStrings: [
+        "-\\s*name:\\s*kubectl[\\s\\S]*?\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      datasourceTemplate: "github-tags",
+      packageNameTemplate: "kubernetes/kubernetes",
+      extractVersionTemplate: "^v(?<version>.*)$",
+      versioningTemplate: "semver"
+    },
+
+    // packer (GitHub releases)
+    {
+      customType: "regex",
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
+      matchStrings: [
+        "-\\s*name:\\s*packer[\\s\\S]*?\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      datasourceTemplate: "github-releases",
+      packageNameTemplate: "hashicorp/packer",
+      versioningTemplate: "semver"
+    },
+
+    // awscli (GitHub tags)
+    {
+      customType: "regex",
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
+      matchStrings: [
+        "-\\s*name:\\s*awscli[\\s\\S]*?\\n\\s*version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      datasourceTemplate: "github-tags",
+      packageNameTemplate: "aws/aws-cli",
+      versioningTemplate: "semver"
+    },
+
+    // ===== GitHub Actions workflows =====
+
+    // python-version in workflows
     {
       customType: "regex",
       managerFilePatterns: ["/\\.github/workflows/.*\\.ya?ml$"],
@@ -46,7 +132,7 @@
       versioningTemplate: "python"
     },
 
-    // Workflow: go-version
+    // go-version in workflows
     {
       customType: "regex",
       managerFilePatterns: ["/\\.github/workflows/.*\\.ya?ml$"],
