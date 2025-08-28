@@ -46,8 +46,8 @@
 
     // Version extraction helpers for asdf inline comments
     { matchPackageNames: ["golang/go"],  extractVersion: "^go(?<version>.*)$" },
-    { "matchPackageNames": ["python/cpython"], "extractVersion": "^v(?<version>.+)$" }
-    { "matchPackageNames": ["ruby/ruby"], "extractVersion": "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" },
+    { matchPackageNames: ["python/cpython"], extractVersion: "^v(?<version>.+)$" },
+    { matchPackageNames: ["ruby/ruby"], extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" }
   ],
 
   customManagers: [
