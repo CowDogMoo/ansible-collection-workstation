@@ -18,7 +18,6 @@
   labels: ["renovate"],
 
   packageRules: [
-    // Auto-merge Galaxy digest updates
     {
       description: "Auto merge Galaxy dependencies",
       matchDatasources: ["galaxy"],
@@ -26,8 +25,6 @@
       automergeType: "pr",
       matchUpdateTypes: ["digest"]
     },
-
-    // Auto-merge GitHub Actions minors/patches
     {
       description: "Auto-merge GitHub Actions",
       matchManagers: ["github-actions"],
@@ -36,8 +33,6 @@
       automergeType: "pr",
       matchUpdateTypes: ["minor", "patch"]
     },
-
-    // Group Galaxy dependencies
     {
       description: "Group Ansible Galaxy dependencies",
       matchManagers: ["ansible-galaxy"],
@@ -45,16 +40,16 @@
     },
 
     // Version extraction helpers for asdf inline comments
-    { matchPackageNames: ["golang/go"],  extractVersion: "^go(?<version>.*)$" },
+    { matchPackageNames: ["golang/go"],      extractVersion: "^go(?<version>.*)$" },
     { matchPackageNames: ["python/cpython"], extractVersion: "^v(?<version>.+)$" },
-    { matchPackageNames: ["ruby/ruby"], extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" }
+    { matchPackageNames: ["ruby/ruby"],      extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" }
   ],
 
   customManagers: [
     {
       customType: "regex",
-      description: "Update asdf tool versions embedded in Ansible defaults",
-      managerFilePatterns: ["/roles/asdf/defaults/main.yml$"],
+      description: "Update asdf tool versions in Ansible defaults",
+      fileMatch: ["/roles/asdf/defaults/main\\.yml$"],
       matchStrings: [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
