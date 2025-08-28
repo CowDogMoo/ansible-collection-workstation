@@ -35,28 +35,18 @@
     // If you also want Renovate's global extractors to understand these repos:
     { matchPackageNames: ["golang/go"],      extractVersion: "^go(?<version>.*)$" },
     { matchPackageNames: ["python/cpython"], extractVersion: "^v(?<version>.+)$" },
-    { matchPackageNames: ["ruby/ruby"],      extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" }
+    { "matchPackageNames": ["ruby/ruby"], "extractVersion": "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" }
   ],
 
-  customManagers: [
+"customManagers": [
     {
-      customType: "regex",
-      description: "Update asdf tool versions in Ansible defaults",
-      // Use managerFilePatterns per docs
-      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
-      // RE2, match across line boundaries (see docs note)
-      matchStrings: [
-        // 1) golang (tags like 'go1.25.0' => extract '1.25.0')
-        "(?:^|\\r\\n|\\r|\\n)\\s*#\\s*renovate:\\s*datasource=(?<datasource>github-tags)\\s+depName=(?<depName>golang/go)(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*(?:\\r\\n|\\r|\\n)\\s*-\\s+name:\\s+golang\\s*(?:\\r\\n|\\r|\\n)\\s+version:\\s*['\"]?(?<currentValue>[^'\"\\s]+)",
-
-        // 2) python/cpython (tags like 'v3.13.6' => extract '3.13.6')
-        "(?:^|\\r\\n|\\r|\\n)\\s*#\\s*renovate:\\s*datasource=(?<datasource>github-tags)\\s+depName=(?<depName>python/cpython)(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*(?:\\r\\n|\\r|\\n)\\s*-\\s+name:\\s+python\\s*(?:\\r\\n|\\r|\\n)\\s+version:\\s*['\"]?(?<currentValue>[^'\"\\s]+)",
-
-        // 3) ruby/ruby (tags like 'v3_4_5' => map to 3.4.5 via named groups)
-        "(?:^|\\r\\n|\\r|\\n)\\s*#\\s*renovate:\\s*datasource=(?<datasource>github-tags)\\s+depName=(?<depName>ruby/ruby)(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*(?:\\r\\n|\\r|\\n)\\s*-\\s+name:\\s+ruby\\s*(?:\\r\\n|\\r|\\n)\\s+version:\\s*['\"]?(?<currentValue>[^'\"\\s]+)"
+      "customType": "regex",
+      "description": "Update asdf tool versions in Ansible defaults",
+      "fileMatch": ["/roles/asdf/defaults/main\\.yml$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
-      // Default to the per-hint versioning if present, else semver-coerced (per docs)
-      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
     }
   ]
 }
