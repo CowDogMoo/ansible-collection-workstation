@@ -27,9 +27,9 @@ asdf_plugins:
     version: "3.13.6"
     scope: "global"
 
-  # renovate: datasource=github-tags depName=ruby/ruby packageName=ruby/ruby versioning=semver-coerced extractVersion=^v(?<major>\d+)_(?<minor>\d+)_(?<patch>\d+)$
+  # renovate: datasource=ruby-version depName=ruby
   - name: ruby
-    version: "3.4.5"
+    version: "3.3.0"
     scope: "global"
 
   # renovate: datasource=github-releases depName=helm/helm
