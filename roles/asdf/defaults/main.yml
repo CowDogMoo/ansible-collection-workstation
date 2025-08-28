@@ -27,7 +27,7 @@ asdf_plugins:
     version: "3.13.6"
     scope: "global"
 
-  # renovate: datasource=ruby-version depName=ruby
+  # renovate: datasource=github-releases depName=ruby/ruby versioning=ruby extractVersion=^v(?<major>\d+)[_.](?<minor>\d+)[_.](?<patch>\d+)$
   - name: ruby
     version: "3.3.0"
     scope: "global"
