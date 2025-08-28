@@ -53,7 +53,8 @@
     },
     {
       matchPackageNames: ["ruby/ruby"],
-      extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$"
+      extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$",
+      versioning: "semver"
     }
   ],
   customManagers: [
