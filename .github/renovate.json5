@@ -60,11 +60,6 @@
       ],
       groupName: 'ansible-dependencies',
     },
-    {
-      matchPackageNames: ['golang/go'],
-      extractVersion: '^go(?<version>.*)$',
-      versioning: 'semver-coerced'
-    },
   ],
   ansible: {
     managerFilePatterns: [
@@ -80,7 +75,7 @@
       managerFilePatterns: ['**/roles/asdf/defaults/main.yml'],
       matchStrings: [
         '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
-      ]
+      ],
       versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}',
       extractVersionTemplate: '{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.*)${{/if}}'
     }
