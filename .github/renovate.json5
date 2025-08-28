@@ -17,7 +17,6 @@
   commitBodyTable: true,
   labels: ["renovate"],
 
-  // Optional helpers for GitHub datasources with odd tag schemes.
   packageRules: [
     {
       description: "Auto-merge GitHub Actions minors/patches",
@@ -32,21 +31,21 @@
       matchManagers: ["ansible-galaxy"],
       groupName: "ansible-dependencies"
     },
-    // If you also want Renovate's global extractors to understand these repos:
     { matchPackageNames: ["golang/go"],      extractVersion: "^go(?<version>.*)$" },
     { matchPackageNames: ["python/cpython"], extractVersion: "^v(?<version>.+)$" },
     { "matchPackageNames": ["ruby/ruby"], "extractVersion": "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" }
   ],
 
-"customManagers": [
+customManagers: [
     {
-      "customType": "regex",
-      "description": "Update asdf tool versions in Ansible defaults",
-      "fileMatch": ["/roles/asdf/defaults/main\\.yml$"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      customType: "regex",
+      description: "Update asdf tool versions in Ansible defaults",
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],   
+      matchStrings: [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+packageName=(?<packageName>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*(?:\\r\\n|\\r|\\n)\\s*-\\s+name:\\s+\\S+\\s*(?:\\r\\n|\\r|\\n)\\s+version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
-      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}",
+      packageNameTemplate: "{{#if packageName}}{{{packageName}}}{{else}}{{{depName}}}{{/if}}"
     }
   ]
 }
