@@ -21,11 +21,11 @@ asdf_plugins:
   - name: golang
     version: "1.23.0"
     scope: "global"
-  # renovate: datasource=github-tags depName=python/cpython versioning=pep440 extractVersion=^v(?<version>.*)$
+  # renovate: datasource=github-releases depName=python/cpython versioning=pep440
   - name: python
     version: "3.13.0"
     scope: "global"
-  # renovate: datasource=github-tags depName=ruby/ruby versioning=ruby extractVersion=^v(?<version>.*)$
+  # renovate: datasource=github-releases depName=ruby/ruby versioning=ruby
   - name: ruby
     version: "3.3.0"
     scope: "global"
