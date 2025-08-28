@@ -1,93 +1,64 @@
 {
-  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  gitAuthor: 'cowdogmoo-renovate-bot <157187596+cowdogmoo-renovate-bot[bot]@users.noreply.github.com>',
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  gitAuthor: "cowdogmoo-renovate-bot <157187596+cowdogmoo-renovate-bot[bot]@users.noreply.github.com>",
   extends: [
-    'config:recommended',
-    'docker:enableMajor',
-    ':disableRateLimiting',
-    ':dependencyDashboard',
-    ':semanticCommits',
-    ':enablePreCommit',
-    ':automergeDigest',
-    'helpers:pinGitHubActionDigests',
+    "config:best-practices",
+    "docker:enableMajor",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":enablePreCommit",
+    ":automergeDigest"
   ],
-  dependencyDashboardLabels: [
-    'renovate-dashboard',
-  ],
-  dependencyDashboardTitle: 'Renovate Dashboard 🤖',
-  suppressNotifications: [
-    'prIgnoreNotification',
-  ],
-  rebaseWhen: 'conflicted',
+
+  dependencyDashboardLabels: ["renovate"],
+  dependencyDashboardTitle: "Renovate Dashboard 🤖",
+  suppressNotifications: ["prIgnoreNotification"],
+  rebaseWhen: "conflicted",
   commitBodyTable: true,
-  labels: [
-    'renovate',
-  ],
-  'pre-commit': {
-    enabled: true,
-  },
+  labels: ["renovate"],
+
   packageRules: [
+    // Auto-merge Galaxy digest updates
     {
-      description: 'Auto merge Galaxy dependencies',
-      matchDatasources: [
-        'galaxy',
-      ],
+      description: "Auto merge Galaxy dependencies",
+      matchDatasources: ["galaxy"],
       automerge: true,
-      automergeType: 'pr',
-      matchUpdateTypes: [
-        'digest',
-      ],
+      automergeType: "pr",
+      matchUpdateTypes: ["digest"]
     },
+
+    // Auto-merge GitHub Actions minors/patches
     {
-      description: 'Auto-merge GitHub Actions',
-      matchManagers: [
-        'github-actions',
-      ],
-      matchDatasources: [
-        'github-tags',
-      ],
+      description: "Auto-merge GitHub Actions",
+      matchManagers: ["github-actions"],
+      matchDatasources: ["github-tags"],
       automerge: true,
-      automergeType: 'pr',
-      matchUpdateTypes: [
-        'minor',
-        'patch',
-      ],
+      automergeType: "pr",
+      matchUpdateTypes: ["minor", "patch"]
     },
+
+    // Group Galaxy dependencies
     {
-      description: 'Group Ansible Galaxy dependencies',
-      matchManagers: [
-        'ansible-galaxy',
-      ],
-      groupName: 'ansible-dependencies',
+      description: "Group Ansible Galaxy dependencies",
+      matchManagers: ["ansible-galaxy"],
+      groupName: "ansible-dependencies"
     },
-    {
-      matchPackageNames: ['golang/go'],
-      extractVersion: '^go(?<version>.*)$',
-    },
-    {
-      packageNames: [ "ruby/ruby" ],
-      extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$"
-    },
-    {
-      packageNames: [ "python/cpython" ],
-      extractVersion: "^v(?<version>.+)$"
-    },
+
+    // Version extraction helpers for asdf inline comments
+    { matchPackageNames: ["golang/go"],  extractVersion: "^go(?<version>.*)$" },
+    { matchPackageNames: ["ruby/ruby"],  extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$" },
+    { matchPackageNames: ["python/cpython"], extractVersion: "^v(?<version>.+)$" }
   ],
-  ansible: {
-    managerFilePatterns: [
-      '/^requirements\\.yml$/',
-      '/^roles/[^/]+/meta/main\\.yml$/',
-      '/^galaxy\\.yml$/',
-    ],
-  },
-  regexManagers: [
+
+  customManagers: [
     {
-      description: 'Update asdf tool versions',
-      fileMatch: ["/roles/asdf/defaults/main.yml$"],
+      customType: "regex",
+      description: "Update asdf tool versions embedded in Ansible defaults",
+      managerFilePatterns: ["/roles/asdf/defaults/main.yml$"],
       matchStrings: [
-        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
-      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}',
+      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
     }
   ]
 }
