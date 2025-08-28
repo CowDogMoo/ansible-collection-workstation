@@ -31,7 +31,7 @@
     },
     {
       "description": "Auto-merge Ruby minor and patch updates",
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["ruby-version"],
       "matchDepNames": ["ruby"],
       "automerge": true,
@@ -51,7 +51,7 @@
     {
       "customType": "regex",
       "description": "Update asdf tool versions in Ansible defaults",
-      "fileMatch": ["/roles/asdf/defaults/main\\.yml$"],
+      "fileMatch": ["roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+packageName=(?<packageName>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*(?:\\r\\n|\\r|\\n)\\s*-\\s+name:\\s+\\S+\\s*(?:\\r\\n|\\r|\\n)\\s+version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
