@@ -69,44 +69,94 @@
     ],
   },
   customManagers: [
+    // For golang - tags are like "go1.21.5"
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^roles/asdf/defaults/main\\.yml$/"
+        "^roles/asdf/defaults/main\\.yml$"
       ],
       "matchStrings": [
-        // This regex will match YAML structure like:
-        // - name: golang
-        //   version: "1.21.5"
-        "- name: (?<depName>golang)\\s+version: [\"']?(?<currentValue>[0-9.]+)[\"']?"
+        "(?m)^\\s+-\\s+name:\\s+golang\\s+version:\\s+[\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
-      "depNameTemplate": "golang/go",
+      "packageNameTemplate": "golang/go",
+      "extractVersionTemplate": "^go(?<version>.*)$",
       "versioningTemplate": "semver"
     },
+
+    // For python - tags are like "v3.12.0"
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^roles/asdf/defaults/main\\.yml$/"
+        "^roles/asdf/defaults/main\\.yml$"
       ],
       "matchStrings": [
-        "- name: (?<depName>python)\\s+version: [\"']?(?<currentValue>[0-9.]+)[\"']?"
+        "(?m)^\\s+-\\s+name:\\s+python\\s+version:\\s+[\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
-      "depNameTemplate": "python/cpython",
+      "packageNameTemplate": "python/cpython",
+      "extractVersionTemplate": "^v(?<version>.*)$",
       "versioningTemplate": "semver"
     },
+
+    // For ruby - tags are like "v3_3_0"
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^roles/asdf/defaults/main\\.yml$/"
+        "^roles/asdf/defaults/main\\.yml$"
       ],
       "matchStrings": [
-        "- name: (?<depName>ruby)\\s+version: [\"']?(?<currentValue>[0-9.]+)[\"']?"
+        "(?m)^\\s+-\\s+name:\\s+ruby\\s+version:\\s+[\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
-      "depNameTemplate": "ruby/ruby",
+      "packageNameTemplate": "ruby/ruby",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "versioningTemplate": "regex:^(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$"
+    },
+
+    // For kubectl - tags are like "v1.29.0"
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "^roles/asdf/defaults/main\\.yml$"
+      ],
+      "matchStrings": [
+        "(?m)^\\s+-\\s+name:\\s+kubectl\\s+version:\\s+[\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "kubernetes/kubernetes",
+      "extractVersionTemplate": "^v(?<version>.*)$",
       "versioningTemplate": "semver"
-    }
+    },
+
+    // For packer - tags are like "v1.10.0"
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "^roles/asdf/defaults/main\\.yml$"
+      ],
+      "matchStrings": [
+        "(?m)^\\s+-\\s+name:\\s+packer\\s+version:\\s+[\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "hashicorp/packer",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "versioningTemplate": "semver"
+    },
+
+    // For helm - tags are like "v3.14.0"
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "^roles/asdf/defaults/main\\.yml$"
+      ],
+      "matchStrings": [
+        "(?m)^\\s+-\\s+name:\\s+helm\\s+version:\\s+[\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "helm/helm",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "versioningTemplate": "semver"
+    },
   ]
 }
