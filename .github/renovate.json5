@@ -1,13 +1,13 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  gitAuthor: "cowdogmoo-renovate-bot <157187596+cowdogmoo-renovate-bot[bot]@users.noreply.github.com>",
   extends: [
     "config:best-practices",
     "docker:enableMajor",
     ":dependencyDashboard",
     ":semanticCommits",
     ":enablePreCommit",
-    ":automergeDigest"
+    ":automergeDigest",
+    "helpers:pinGitHubActionDigests"
   ],
   dependencyDashboardLabels: ["renovate"],
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
@@ -15,39 +15,47 @@
   rebaseWhen: "conflicted",
   commitBodyTable: true,
   labels: ["renovate"],
+
   packageRules: [
-    {
-      description: "Auto-merge GitHub Actions minors/patches",
-      matchManagers: ["github-actions"],
-      matchDatasources: ["github-tags"],
-      automerge: true,
-      automergeType: "pr",
-      matchUpdateTypes: ["minor", "patch"]
-    },
-    {
-      description: "Group Ansible Galaxy dependencies",
-      matchManagers: ["ansible-galaxy"],
-      groupName: "ansible-dependencies"
-    },
-    {
-      matchPackageNames: ["golang/go"],
-      extractVersion: "^go(?<version>.*)$"
-    },
-    {
-      matchPackageNames: ["python/cpython"],
-      extractVersion: "^v(?<version>.+)$"
-    }
+    { matchDatasources: ["galaxy"], matchUpdateTypes: ["digest"], automerge: true, automergeType: "pr" },
+    { matchManagers: ["github-actions"], matchDatasources: ["github-tags"], matchUpdateTypes: ["minor","patch"], automerge: true, automergeType: "pr" },
+    { matchManagers: ["ansible-galaxy"], groupName: "ansible-dependencies" },
+    { matchDatasources: ["github-runners"], enabled: false } // silence ubuntu-latest etc.
   ],
+
   customManagers: [
     {
+      // Asdf defaults file: pull datasource/depName from the inline hint
       customType: "regex",
-      description: "Update asdf tool versions in Ansible defaults",
-      fileMatch: ["roles/asdf/defaults/main\\.yml$"],
+      managerFilePatterns: ["/roles/asdf/defaults/main\\.yml$"],
       matchStrings: [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+packageName=(?<packageName>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*(?:\\r\\n|\\r|\\n)\\s*-\\s+name:\\s+\\S+\\s*(?:\\r\\n|\\r|\\n)\\s+version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name:\\s*\\S+\\s+version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
-      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}",
-      packageNameTemplate: "{{#if packageName}}{{{packageName}}}{{else}}{{{depName}}}{{/if}}"
+      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+    },
+
+    // Workflow: python-version
+    {
+      customType: "regex",
+      managerFilePatterns: ["/\\.github/workflows/.*\\.ya?ml$"],
+      matchStrings: [
+        "\\bpython-version:\\s*['\"]?(?<currentValue>\\d+(?:\\.\\d+){1,2})['\"]?"
+      ],
+      datasourceTemplate: "python-version",
+      depNameTemplate: "python",
+      versioningTemplate: "python"
+    },
+
+    // Workflow: go-version
+    {
+      customType: "regex",
+      managerFilePatterns: ["/\\.github/workflows/.*\\.ya?ml$"],
+      matchStrings: [
+        "\\bgo-version:\\s*['\"]?(?<currentValue>\\d+(?:\\.\\d+){1,2})['\"]?"
+      ],
+      datasourceTemplate: "golang-version",
+      depNameTemplate: "go",
+      versioningTemplate: "semver"
     }
   ]
 }

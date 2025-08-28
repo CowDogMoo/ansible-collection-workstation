@@ -17,19 +17,19 @@ asdf_shells:
 asdf_shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/bin/bash' }}"
 
 asdf_plugins:
-  # renovate: datasource=github-tags depName=golang/go packageName=golang/go versioning=semver-coerced extractVersion=^go(?<version>.*)$
+  # renovate: datasource=golang-version depName=go versioning=semver
   - name: golang
     version: "1.25.0"
     scope: "global"
 
-  # renovate: datasource=github-tags depName=python/cpython packageName=python/cpython versioning=pep440 extractVersion=^v(?<version>.+)$
+  # renovate: datasource=python-version depName=python versioning=python
   - name: python
     version: "3.13.6"
     scope: "global"
 
-  # renovate: datasource=github-releases depName=ruby/ruby versioning=loose extractVersion=^v(?<major>\d+)[_.](?<minor>\d+)[_.](?<patch>\d+)$
+  # renovate: datasource=ruby-version depName=ruby versioning=ruby
   - name: ruby
-    version: "3.3.0"
+    version: "3.4.5"
     scope: "global"
 
   # renovate: datasource=github-releases depName=helm/helm
@@ -37,7 +37,7 @@ asdf_plugins:
     version: "3.18.0"
     scope: "global"
 
-  # renovate: datasource=github-tags depName=kubernetes/kubernetes
+  # renovate: datasource=github-tags depName=kubernetes/kubernetes extractVersion=^v(?<version>.*)$
   - name: kubectl
     version: "1.34.0"
     scope: "global"
