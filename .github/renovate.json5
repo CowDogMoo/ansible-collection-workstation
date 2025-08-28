@@ -63,18 +63,15 @@
     {
       matchPackageNames: ['golang/go'],
       extractVersion: '^go(?<version>.*)$',
-      versioning: 'semver-coerced'
     },
     {
-      matchPackageNames: ['python/cpython'],
-      extractVersion: '^v?(?<version>.*)$',
-      versioning: 'pep440'
+      packageNames: [ "ruby/ruby" ],
+      extractVersion: "^v(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$"
     },
     {
-      matchPackageNames: ['ruby/ruby'],
-      extractVersion: '^v?(?<version>.*)$',
-      versioning: 'ruby'
-    }
+      packageNames: [ "python/cpython" ],
+      extractVersion: "^v(?<version>.+)$"
+    },
   ],
   ansible: {
     managerFilePatterns: [
@@ -83,16 +80,14 @@
       '/^galaxy\\.yml$/',
     ],
   },
-  customManagers: [
+  regexManagers: [
     {
-      customType: 'regex',
       description: 'Update asdf tool versions',
-      managerFilePatterns: ['**/roles/asdf/defaults/main.yml'],
+      fileMatch: ["/roles/asdf/defaults/main.yml$"],
       matchStrings: [
         '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
       ],
       versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}',
-      extractVersionTemplate: '{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.*)${{/if}}'
     }
-  ],
+  ]
 }
