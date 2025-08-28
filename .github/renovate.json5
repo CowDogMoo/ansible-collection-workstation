@@ -69,78 +69,78 @@
     ],
   },
   customManagers: [
-    // For golang - GitHub uses tags like "go1.21.5"
+    // For golang - GitHub uses tags like "go1.25.0"
     {
       "customType": "regex",
       "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
-        "- name: (?<depName>golang)\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+        "- name: golang\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "golang/go",
       "extractVersionTemplate": "^go(?<version>.*)$"
     },
 
-    // For python - GitHub uses tags like "v3.12.0"
+    // For python - GitHub uses tags like "v3.13.7"
     {
       "customType": "regex",
       "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
-        "- name: (?<depName>python)\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+        "- name: python\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "python/cpython",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
 
-    // For ruby - GitHub uses tags like "v3_3_0" but values in YAML are "3.3.0"
-    // This is tricky because the version format differs between tags and YAML
+    // For ruby - GitHub uses tags like "v3_4_5" but YAML uses "3.4.5"
+    // We need to transform the dots to underscores for matching
     {
       "customType": "regex",
       "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
-        "- name: (?<depName>ruby)\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+        "- name: ruby\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "ruby/ruby",
-      "extractVersionTemplate": "^v(?<version>\\d+_\\d+_\\d+)$",
-      "versioningTemplate": "regex:^(?<major>\\d+)_(?<minor>\\d+)_(?<patch>\\d+)$"
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "versioningTemplate": "loose"
     },
 
-    // For kubectl - GitHub uses tags like "v1.29.0"
+    // For kubectl - GitHub uses tags like "v1.34.0"
     {
       "customType": "regex",
       "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
-        "- name: (?<depName>kubectl)\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+        "- name: kubectl\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "kubernetes/kubernetes",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
 
-    // For packer - GitHub uses tags like "v1.10.0"
+    // For packer - GitHub uses tags like "v1.14.1"
     {
       "customType": "regex",
       "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
-        "- name: (?<depName>packer)\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+        "- name: packer\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "hashicorp/packer",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
 
-    // For helm - GitHub uses tags like "v3.14.0"
+    // For helm - GitHub uses tags like "v3.18.6"
     {
       "customType": "regex",
       "fileMatch": ["^roles/asdf/defaults/main\\.yml$"],
       "matchStrings": [
-        "- name: (?<depName>helm)\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
+        "- name: helm\\n\\s+version: [\"']?(?<currentValue>[0-9\\.]+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "helm/helm",
       "extractVersionTemplate": "^v(?<version>.*)$"
-    },
+    }
   ]
 }
