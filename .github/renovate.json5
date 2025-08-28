@@ -65,16 +65,6 @@
       extractVersion: '^go(?<version>.*)$',
       versioning: 'semver-coerced'
     },
-    {
-      matchPackageNames: ['python/cpython'],
-      extractVersion: '^v(?<version>.*)$',
-      versioning: 'pep440'
-    },
-    {
-      matchPackageNames: ['ruby/ruby'],
-      extractVersion: '^v(?<version>.*)$',
-      versioning: 'ruby'
-    },
   ],
   ansible: {
     managerFilePatterns: [
@@ -89,9 +79,10 @@
       description: 'Update asdf tool versions',
       managerFilePatterns: ['**/roles/asdf/defaults/main.yml'],
       matchStrings: [
-        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
-      ],
-      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}'
+        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\s+- name: \\S+\\s+version: ["\']?(?<currentValue>[^"\'\\s]+)["\']?'
+      ]
+      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}',
+      extractVersionTemplate: '{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.*)${{/if}}'
     }
   ],
 }
