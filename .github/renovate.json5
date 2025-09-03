@@ -62,7 +62,7 @@
     },
   ],
   ansible: {
-    managerFilePatterns: [
+    fileMatch: [
       '/^requirements\\.yml$/',
       '/^roles/[^/]+/meta/main\\.yml$/',
       '/^galaxy\\.yml$/',
@@ -71,7 +71,7 @@
   customManagers: [
     {
       customType: 'regex',
-      managerFilePatterns: [
+      fileMatch: [
         '/(^|/)requirements\\.ya?ml$/',
         '/(^|/)galaxy\\.ya?ml$/',
       ],
@@ -82,7 +82,7 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: [
+      fileMatch: [
         '/^roles/asdf/defaults/main\\.yml$/',
       ],
       matchStrings: [
@@ -94,7 +94,7 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: [
+      fileMatch: [
         '/^roles/asdf/defaults/main\\.yml$/',
       ],
       matchStrings: [
@@ -106,7 +106,7 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: [
+      fileMatch: [
         '/^roles/asdf/defaults/main\\.yml$/',
       ],
       matchStrings: [
@@ -118,7 +118,7 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: [
+      fileMatch: [
         '/^roles/asdf/defaults/main\\.yml$/',
       ],
       matchStrings: [
@@ -130,7 +130,7 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: [
+      fileMatch: [
         '/^roles/asdf/defaults/main\\.yml$/',
       ],
       matchStrings: [
@@ -142,7 +142,7 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: [
+      fileMatch: [
         '/^roles/asdf/defaults/main\\.yml$/',
       ],
       matchStrings: [
