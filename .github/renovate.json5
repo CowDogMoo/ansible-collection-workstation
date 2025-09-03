@@ -46,21 +46,17 @@
       matchManagers: ['ansible-galaxy'],
       groupName: 'ansible-dependencies',
     },
-    {
-      matchPackageNames: ['golang'],
-    },
   ],
   customManagers: [
     {
-      customType: 'regex',
-      fileMatch: [
-        '^roles/asdf/defaults/main\\.yml$',
-      ],
+      customType: "regex",
+      fileMatch: ["roles/asdf/defaults/main\\.yml"],
       matchStrings: [
-        '- name:\\s*golang\\s+version:\\s"(?<currentValue>[0-9.]+)"'
+        "- name:\\s*golang\\s+version:\\s*\"(?<currentValue>[0-9.]+)\""
       ],
-      datasourceTemplate: 'golang-version',
-      depNameTemplate: 'golang',
+      datasourceTemplate: "github-tags",
+      depNameTemplate: "golang/go",
+      extractVersionTemplate: "^go(?<version>.*)$"
     },
     {
       customType: 'regex',
