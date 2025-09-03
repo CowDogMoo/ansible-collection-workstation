@@ -61,9 +61,8 @@
       groupName: 'ansible-dependencies',
     },
   ],
-  customManagers: [
+  regexManagers: [
     {
-      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -74,7 +73,6 @@
       depNameTemplate: 'golang',
     },
     {
-      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -86,7 +84,6 @@
       extractVersionTemplate: '^v(?<version>.*)$',
     },
     {
-      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -97,7 +94,6 @@
       depNameTemplate: 'kubernetes/kubernetes',
     },
     {
-      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -108,7 +104,6 @@
       depNameTemplate: 'hashicorp/packer',
     },
     {
-      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -121,7 +116,6 @@
       versioningTemplate: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$',
     },
     {
-      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
