@@ -29,9 +29,7 @@
   packageRules: [
     {
       description: 'Auto merge Galaxy dependencies',
-      matchDatasources: [
-        'galaxy',
-      ],
+      matchDatasources: ['galaxy'],
       automerge: true,
       automergeType: 'pr',
       matchUpdateTypes: [
@@ -40,12 +38,8 @@
     },
     {
       description: 'Auto-merge GitHub Actions',
-      matchManagers: [
-        'github-actions',
-      ],
-      matchDatasources: [
-        'github-tags',
-      ],
+      matchManagers: ['github-actions'],
+      matchDatasources: ['github-tags'],
       automerge: true,
       automergeType: 'pr',
       matchUpdateTypes: [
@@ -55,11 +49,19 @@
     },
     {
       description: 'Group Ansible Galaxy dependencies',
-      matchManagers: [
-        'ansible-galaxy',
-      ],
+      matchManagers: ['ansible-galaxy'],
       groupName: 'ansible-dependencies',
     },
+    {
+      description: 'Auto-merge golang updates',
+      matchDepNames: ['golang/go'],
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    }
   ],
   customManagers: [
     {
@@ -68,7 +70,7 @@
         'roles/asdf/defaults/main.yml',
       ],
       matchStrings: [
-        "-\\s*name:\\s*golang[\\s\\S]*?\\bversion:\\s*['\\\"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)['\\\"]?"
+        "- name: golang\\s+version: [\"']?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?"
       ],
       datasourceTemplate: 'golang-version',
       depNameTemplate: 'golang/go',
