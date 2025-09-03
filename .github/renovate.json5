@@ -68,10 +68,10 @@
         '^roles/asdf/defaults/main\\.yml$',
       ],
       matchStrings: [
-        'name: (?<depName>golang)\\s+version: "(?<currentValue>[0-9.]+)"',
+        'name: golang\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      depNameTemplate: 'golang/go',
-      datasourceTemplate: 'github-releases',
+      datasourceTemplate: 'golang-version',
+      depNameTemplate: 'golang',
     },
     {
       customType: 'regex',
@@ -79,10 +79,11 @@
         '^roles/asdf/defaults/main\\.yml$',
       ],
       matchStrings: [
-        'name: (?<depName>python)\\s+version: "(?<currentValue>[0-9.]+)"',
+        'name: python\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
+      datasourceTemplate: 'github-tags',
       depNameTemplate: 'python/cpython',
-      datasourceTemplate: 'github-releases',
+      extractVersionTemplate: '^v(?<version>.*)$',
     },
     {
       customType: 'regex',
@@ -90,10 +91,10 @@
         '^roles/asdf/defaults/main\\.yml$',
       ],
       matchStrings: [
-        'name: (?<depName>kubectl)\\s+version: "(?<currentValue>[0-9.]+)"',
+        'name: kubectl\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'kubernetes/kubernetes',
-      datasourceTemplate: 'github-releases',
     },
     {
       customType: 'regex',
@@ -101,10 +102,10 @@
         '^roles/asdf/defaults/main\\.yml$',
       ],
       matchStrings: [
-        'name: (?<depName>packer)\\s+version: "(?<currentValue>[0-9.]+)"',
+        'name: packer\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'hashicorp/packer',
-      datasourceTemplate: 'github-releases',
     },
     {
       customType: 'regex',
@@ -112,10 +113,12 @@
         '^roles/asdf/defaults/main\\.yml$',
       ],
       matchStrings: [
-        'name: (?<depName>ruby)\\s+version: "(?<currentValue>[0-9.]+)"',
+        'name: ruby\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
+      datasourceTemplate: 'github-tags',
       depNameTemplate: 'ruby/ruby',
-      datasourceTemplate: 'github-releases',
+      extractVersionTemplate: '^v(\\d+)_(\\d+)_(\\d+)$',
+      versioningTemplate: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$',
     },
     {
       customType: 'regex',
@@ -123,10 +126,10 @@
         '^roles/asdf/defaults/main\\.yml$',
       ],
       matchStrings: [
-        'name: (?<depName>helm)\\s+version: "(?<currentValue>[0-9.]+)"',
+        'name: helm\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      depNameTemplate: 'helm/helm',
       datasourceTemplate: 'github-releases',
+      depNameTemplate: 'helm/helm',
     },
   ],
 }
