@@ -1,15 +1,30 @@
 ---
-logging_directories:
-  - path: "/var/log/ansible"
+# Default logging directories
+logging_directories: []
+  # Example:
+  # - path: "{{ '~/logs/myapp' if ansible_os_family == 'Darwin' else '/var/log/myapp' }}"
+  #   mode: "0755"
+  #   owner: "{{ ansible_user_id if ansible_os_family == 'Darwin' else 'root' }}"
+  #   group: "{{ 'staff' if ansible_os_family == 'Darwin' else 'root' }}"
 
-logging_log_rotation_config:
-  path: "/var/log/ansible/*.log"
-  rotate: 4
-  frequency: "weekly"
-  compress: true
-  missingok: true
-  notifempty: true
-  create: true
-  dateext: true
-  owner: "root"
-  group: "root"
+# Default log rotation configurations - supports multiple configs
+logging_rotation_configs: []
+  # Example:
+  # - name: "myapp"  # Used for config filename
+  #   path: "{{ '~/logs/myapp/*.log' if ansible_os_family == 'Darwin' else '/var/log/myapp/*.log' }}"
+  #   rotate: 30
+  #   frequency: "daily"
+  #   compress: true
+  #   missingok: true
+  #   notifempty: true
+  #   create: true
+  #   dateext: true
+  #   maxsize: "100M"
+  #   owner: "{{ ansible_user_id if ansible_os_family == 'Darwin' else 'root' }}"
+  #   group: "{{ 'staff' if ansible_os_family == 'Darwin' else 'root' }}"
+
+# LaunchAgent configuration for macOS
+logging_launchagent_label: "com.logging.logrotate"
+logging_launchagent_hour: 3
+logging_launchagent_minute: 0
+logging_logrotate_log_path: "{{ ansible_env.HOME }}/logs/logrotate" # Where logrotate itself logs

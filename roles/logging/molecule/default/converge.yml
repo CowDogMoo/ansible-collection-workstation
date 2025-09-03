@@ -2,6 +2,27 @@
 - name: Converge
   hosts: all
   tasks:
-    - name: Include role under test
+    - name: Include role under test with test variables
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.logging
+      vars:
+        logging_directories:
+          - path: /var/log/test-app
+            mode: "0755"
+            owner: root
+            group: root
+        logging_rotation_configs:
+          - name: test-app
+            path: /var/log/test-app/*.log
+            rotate: 7
+            frequency: daily
+            compress: true
+            missingok: true
+            notifempty: true
+            create: true
+            owner: root
+            group: root
+            dateext: true
+            maxsize: 100M
+        logging_logrotate_log_path: /var/log/logrotate
+        logging_logrotate_state_file: /var/lib/logrotate.state

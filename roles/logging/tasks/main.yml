@@ -1,19 +1,145 @@
 ---
-- name: Ensure logging directories exist
+- name: Set OS-specific facts
+  ansible.builtin.set_fact:
+    logging_is_macos: "{{ ansible_os_family == 'Darwin' }}"
+    logging_is_linux: "{{ ansible_os_family in ['Debian', 'RedHat'] }}"
+
+- name: Set logrotate paths based on OS
+  ansible.builtin.set_fact:
+    logging_logrotate_binary: "{{ logging_logrotate_binary_darwin if logging_is_macos else logging_logrotate_binary_linux }}"
+    logging_logrotate_config_dir: "{{ logging_logrotate_config_dir_darwin if logging_is_macos else logging_logrotate_config_dir_linux }}"
+
+- name: Check if logrotate binary exists
+  ansible.builtin.stat:
+    path: "{{ logging_logrotate_binary }}"
+  register: logging_logrotate_check
+
+- name: Install logrotate on macOS
+  community.general.homebrew:
+    name: logrotate
+    state: present
+  when:
+    - logging_is_macos
+    - not (logging_logrotate_check.stat.exists | default(false))
+
+- name: Install logrotate on Linux (Debian-based)
+  ansible.builtin.apt:
+    name: logrotate
+    state: present
+    update_cache: true
   become: true
+  when:
+    - logging_is_linux
+    - ansible_os_family == "Debian"
+
+- name: Install logrotate on Linux (RedHat-based)
+  ansible.builtin.dnf:
+    name: logrotate
+    state: present
+  become: true
+  when:
+    - logging_is_linux
+    - ansible_os_family == "RedHat"
+
+- name: Ensure logging directories exist
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ item.path | expanduser }}"
     state: directory
     mode: "{{ item.mode | default('0755') }}"
-    owner: "{{ item.owner | default('root') }}"
-    group: "{{ item.group | default('root') }}"
+    owner: "{{ item.owner | default(ansible_user_id) }}"
+    group: "{{ item.group | default(ansible_user_gid | default(ansible_user_id)) }}"
   loop: "{{ logging_directories }}"
+  become: "{{ logging_is_linux and item.path.startswith('/var') | default(false) }}"
+  when: logging_directories | length > 0
 
-- name: Setup log rotation
-  become: true
+- name: Ensure parent directory for logrotate config exists on macOS
+  ansible.builtin.file:
+    path: "{{ logging_logrotate_config_dir | dirname }}"
+    state: directory
+    mode: "0755"
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
+
+- name: Ensure logrotate config directory exists
+  ansible.builtin.file:
+    path: "{{ logging_logrotate_config_dir }}"
+    state: directory
+    mode: "0755"
+  become: "{{ logging_is_linux }}"
+  when: logging_rotation_configs | length > 0
+
+# Handle multiple log rotation configurations
+- name: Setup log rotation configurations
   ansible.builtin.template:
     src: logrotate.j2
-    dest: "/etc/logrotate.d/{{ logging_log_rotation_config.path.split('/')[-1].split('.')[0] }}"
+    dest: "{{ logging_logrotate_config_dir }}/{{ item.name | default(item.path.split('/')[-2]) }}"
     mode: "0644"
+  become: "{{ logging_is_linux }}"
+  loop: "{{ logging_rotation_configs }}"
   vars:
-    log_rotation_config: "{{ logging_log_rotation_config }}"
+    log_rotation_config: "{{ item }}"
+  when: logging_rotation_configs | length > 0
+
+- name: Ensure logrotate state directory exists on macOS
+  ansible.builtin.file:
+    path: "{{ logging_logrotate_state_file | dirname }}"
+    state: directory
+    mode: "0755"
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
+
+- name: Create logrotate state file on macOS
+  ansible.builtin.file:
+    path: "{{ logging_logrotate_state_file }}"
+    state: touch
+    mode: "0644"
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
+  changed_when: false
+
+- name: Create LaunchAgent directory on macOS
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/Library/LaunchAgents"
+    state: directory
+    mode: "0755"
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
+
+- name: Create LaunchAgent for logrotate on macOS
+  ansible.builtin.template:
+    src: com.logging.logrotate.plist.j2
+    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist"
+    mode: "0644"
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
+
+- name: Unload existing LaunchAgent if present
+  ansible.builtin.command:
+    cmd: launchctl unload {{ ansible_env.HOME }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
+  failed_when: false
+  changed_when: false
+
+- name: Load LaunchAgent for logrotate on macOS
+  ansible.builtin.command:
+    cmd: launchctl load -w {{ ansible_env.HOME }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
+  changed_when: false
+
+- name: Ensure logrotate's own log directory exists
+  ansible.builtin.file:
+    path: "{{ logging_logrotate_log_path }}"
+    state: directory
+    mode: "0755"
+  when:
+    - logging_is_macos
+    - logging_rotation_configs | length > 0
