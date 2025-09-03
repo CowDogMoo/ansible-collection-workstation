@@ -94,11 +94,6 @@ This project uses [docsible](https://github.com/docsible/docsible) to automatica
 generate documentation for Ansible roles. Documentation is generated automatically
 via pre-commit hooks when changes are made to role files.
 
-### Release Process
-
-For information on creating new releases of this collection, see our
-[Release Process Documentation](docs/releases.md).
-
 ## License
 
 This collection is licensed under the MIT License - see the [LICENSE](LICENSE)

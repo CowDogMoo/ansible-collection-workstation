@@ -1,6 +1,6 @@
 # Ansible Collection Release Process
 
-This document outlines the process for creating new releases of the Ansible collection.
+This document outlines the process for creating new releases of this Ansible collection.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ This document outlines the process for creating new releases of the Ansible coll
 
 ## Pre-Release Tasks
 
-Before creating a release, you should perform these preparation steps:
+Before creating a release, perform these preparation steps:
 
 1. **Run Molecule Tests**
 
@@ -108,7 +108,7 @@ You can work with the changelog in two ways:
 
 ```bash
 export TASK_X_REMOTE_TASKFILES=1
-NEXT_VERSION=1.0.0 task -y ansible:gen-changelog
+NEXT_VERSION=$NEXT_VERSION task -y ansible:gen-changelog
 ```
 
 This command will run all the necessary steps (linting and release generation).
@@ -126,7 +126,7 @@ Then generate the release:
 
 ```bash
 export TASK_X_REMOTE_TASKFILES=1
-NEXT_VERSION=1.0.0 task -y ansible:changelog-release
+NEXT_VERSION=$NEXT_VERSION task -y ansible:changelog-release
 ```
 
 **Required Variables:**
@@ -186,7 +186,7 @@ Follow these steps to create a new release:
 
    # Then generate the release (this will also update galaxy.yml)
    export TASK_X_REMOTE_TASKFILES=1
-   NEXT_VERSION=x.y.z task -y ansible:changelog-release
+   NEXT_VERSION=$NEXT_VERSION task -y ansible:changelog-release
    ```
 
    **Note:** When these commands run, antsibull-changelog will process your
@@ -275,7 +275,7 @@ Follow these steps to create a new release:
 
    ```bash
    # This creates both a GitHub release and a git tag
-   gh release create x.y.z --generate-notes
+   gh release create $NEXT_VERSION --generate-notes
    ```
 
    This command uses the GitHub CLI to:
