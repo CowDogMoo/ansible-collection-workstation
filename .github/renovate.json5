@@ -70,9 +70,8 @@
       matchStrings: [
         'name: (?<depName>golang)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
-      depNameTemplate: 'golang/go',
-      extractVersionTemplate: '^go(?<version>.*)$',
+      datasourceTemplate: 'golang-version',
+      depNameTemplate: 'golang',
       versioningTemplate: 'semver',
     },
     {
@@ -83,9 +82,8 @@
       matchStrings: [
         'name: (?<depName>python)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'python/cpython',
-      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
     {
@@ -96,9 +94,8 @@
       matchStrings: [
         'name: (?<depName>kubectl)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'kubernetes/kubernetes',
-      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
     {
@@ -109,9 +106,8 @@
       matchStrings: [
         'name: (?<depName>packer)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'hashicorp/packer',
-      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
     {
@@ -122,9 +118,8 @@
       matchStrings: [
         'name: (?<depName>ruby)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'ruby/ruby',
-      extractVersionTemplate: '^v(\\d+)_(\\d+)_(\\d+)$',
       versioningTemplate: 'semver',
     },
     {
@@ -135,9 +130,8 @@
       matchStrings: [
         'name: (?<depName>helm)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-tags',
+      datasourceTemplate: 'github-releases',
       depNameTemplate: 'helm/helm',
-      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
   ],
