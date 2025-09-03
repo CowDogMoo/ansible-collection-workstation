@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{{ logging_launchagent_label }}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{ logrotate_binary }}</string>
+        <string>-s</string>
+        <string>{{ logging_logrotate_state_file }}</string>
+        <string>{{ logrotate_config_dir }}/*</string>
+    </array>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>{{ logging_launchagent_hour }}</integer>
+        <key>Minute</key>
+        <integer>{{ logging_launchagent_minute }}</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>{{ logging_logrotate_log_path }}/logrotate.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{ logging_logrotate_log_path }}/logrotate.error</string>
+</dict>
+</plist>

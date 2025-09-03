@@ -2,6 +2,8 @@
 # Use Ansible Galaxy to install dependencies
 dependency:
   name: galaxy
+  options:
+    requirements-file: requirements.yml
 
 # Run molecule inside of a docker container
 driver:

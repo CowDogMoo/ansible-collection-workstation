@@ -2,6 +2,40 @@
 - name: Workstation
   hosts: all
   roles:
+    # Set up logging first to ensure log directories exist for other roles
+    - name: Configure logging and log rotation
+      role: cowdogmoo.workstation.logging
+      # For debugging
+      # role: ../../roles/logging
+      vars:
+        logging_directories:
+          - path: "~/ansible-logs"
+            mode: "0755"
+            owner: "{{ ansible_user_id }}"
+            group: "{{ ansible_user_gid | default(ansible_user_id) }}"
+          - path: "~/ansible-logs/hosts"  # For log_plays callback
+            mode: "0755"
+            owner: "{{ ansible_user_id }}"
+            group: "{{ ansible_user_gid | default(ansible_user_id) }}"
+
+        logging_rotation_configs:
+          - name: "ansible-hosts"
+            path: "~/ansible-logs/hosts/*.log"
+            rotate: 30
+            frequency: "daily"
+            compress: true
+            missingok: true
+            notifempty: true
+            create: true
+            dateext: true
+            maxsize: "100M"
+            owner: "{{ ansible_user_id }}"
+            group: "{{ ansible_user_gid | default(ansible_user_id) }}"
+
+        # Optional: Override default LaunchAgent settings for macOS
+        logging_launchagent_label: "com.ansible.logrotate"
+        logging_logrotate_log_path: "{{ ansible_env.HOME }}/ansible-logs/logrotate"
+
     - name: Setup users on workstation
       role: cowdogmoo.workstation.user_setup
       # For debugging
