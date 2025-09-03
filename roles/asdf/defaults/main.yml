@@ -36,5 +36,5 @@ asdf_plugins:
     version: "1.14.1"
     scope: "global"
   - name: awscli
-    version: "2.24.0"
+    version: "2.28.22"
     scope: "global"
