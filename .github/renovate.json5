@@ -17,7 +17,6 @@
   "rebaseWhen": "conflicted",
   "commitBodyTable": true,
   "labels": ["renovate"],
-  "platformAutomerge": true,
   "pre-commit": {"enabled": true},
   "packageRules": [
     {
@@ -38,6 +37,13 @@
       "description": "Group Ansible Galaxy dependencies",
       "matchManagers": ["ansible-galaxy"],
       "groupName": "ansible-dependencies"
+    },
+    {
+      "description": "Auto-merge asdf plugin updates",
+      "matchManagers": ["regex"],
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
     }
   ],
   "customManagers": [
