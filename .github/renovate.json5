@@ -29,12 +29,10 @@
   packageRules: [
     {
       description: 'Auto merge Galaxy dependencies',
-      matchDatasources: ['galaxy'],
+      matchManagers: ['ansible-galaxy'],
       automerge: true,
       automergeType: 'pr',
-      matchUpdateTypes: [
-        'digest',
-      ],
+      matchUpdateTypes: ['minor', 'patch']
     },
     {
       description: 'Auto-merge GitHub Actions',
@@ -42,10 +40,7 @@
       matchDatasources: ['github-tags'],
       automerge: true,
       automergeType: 'pr',
-      matchUpdateTypes: [
-        'minor',
-        'patch',
-      ],
+      matchUpdateTypes: ['minor', 'patch'],
     },
     {
       description: 'Group Ansible Galaxy dependencies',
