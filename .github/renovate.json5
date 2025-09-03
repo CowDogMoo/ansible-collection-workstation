@@ -54,7 +54,7 @@
         '^roles/asdf/defaults/main\\.yml$',
       ],
       matchStrings: [
-        '- name: golang\\n\\s+version: "(?<currentValue>[0-9.]+)"'
+        '- name:\\s*golang\\s+version:\\s"(?<currentValue>[0-9.]+)"'
       ],
       datasourceTemplate: 'golang-version',
       depNameTemplate: 'golang',
