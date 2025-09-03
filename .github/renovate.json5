@@ -47,7 +47,6 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[\\w-]+)(?: packageName=(?<packageName>[\\w-/]+))?\\s*\\n\\s*-\\s*name:\\s*[\\w-]+\\s*\\n\\s*version:\\s*\"(?<currentValue>[0-9.]+)\""
       ],
-      "extractVersionTemplate": "{{#if (equals depName 'golang')}}^go(?<version>.*)${{else if (equals depName 'kubectl')}}^v(?<version>.*)${{else if (equals depName 'helm')}}^v(?<version>.*)${{else if (equals depName 'packer')}}^v(?<version>.*)${{else if (equals depName 'python')}}^v(?<version>.*)${{else}}^v?(?<version>.*)${{/if}}"
     }
   ]
 }
