@@ -50,12 +50,11 @@
   customManagers: [
     {
       customType: "regex",
+      description: "Update asdf plugin versions",
       fileMatch: ["roles/asdf/defaults/main\\.yml"],
       matchStrings: [
-        "-\\s*name:\\s*golang\\s*\\n\\s*version:\\s*\"(?<currentValue>[0-9.]+)\""
+        "# renovate: datasource=(?<datasource>[a-z-]+?)(?: depName=(?<depName>[\\w-]+?))?(?: packageName=(?<packageName>[\\w-/]+?))?(?: extractVersion=(?<extractVersion>.+?))?\\s*\\n\\s*-\\s*name:\\s*[\\w-]+\\s*\\n\\s*version:\\s*\"(?<currentValue>[0-9.]+)\""
       ],
-      datasourceTemplate: 'golang-version',
-      depNameTemplate: "golang/go",
     },
   ],
 }
