@@ -1,59 +1,86 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "gitAuthor": "cowdogmoo-renovate-bot <157187596+cowdogmoo-renovate-bot[bot]@users.noreply.github.com>",
-  "extends": [
-    "config:recommended",
-    "docker:enableMajor",
-    ":disableRateLimiting",
-    ":dependencyDashboard",
-    ":semanticCommits",
-    ":enablePreCommit",
-    ":automergeDigest",
-    "helpers:pinGitHubActionDigests"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  gitAuthor: 'cowdogmoo-renovate-bot <157187596+cowdogmoo-renovate-bot[bot]@users.noreply.github.com>',
+  extends: [
+    'config:recommended',
+    'docker:enableMajor',
+    ':disableRateLimiting',
+    ':dependencyDashboard',
+    ':semanticCommits',
+    ':enablePreCommit',
+    ':automergeDigest',
+    'helpers:pinGitHubActionDigests',
   ],
-  "dependencyDashboardLabels": ["renovate-dashboard"],
-  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
-  "suppressNotifications": ["prIgnoreNotification"],
-  "rebaseWhen": "conflicted",
-  "commitBodyTable": true,
-  "labels": ["renovate"],
-  "pre-commit": {"enabled": true},
-  "packageRules": [
-    {
-      "description": "Auto merge Galaxy dependencies",
-      "matchManagers": ["ansible-galaxy"],
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-    {
-      "description": "Auto-merge GitHub Actions",
-      "matchManagers": ["github-actions"],
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-    {
-      "description": "Group Ansible Galaxy dependencies",
-      "matchManagers": ["ansible-galaxy"],
-      "groupName": "ansible-dependencies"
-    },
-    {
-      "description": "Auto-merge asdf plugin updates",
-      "matchManagers": ["regex"],
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
-    }
+  dependencyDashboardLabels: [
+    'renovate-dashboard',
   ],
-  "customManagers": [
+  dependencyDashboardTitle: 'Renovate Dashboard 🤖',
+  suppressNotifications: [
+    'prIgnoreNotification',
+  ],
+  rebaseWhen: 'conflicted',
+  commitBodyTable: true,
+  labels: [
+    'renovate',
+  ],
+  'pre-commit': {
+    enabled: true,
+  },
+  packageRules: [
     {
-      "customType": "regex",
-      "description": "Update asdf plugin versions",
-      "managerFilePatterns": ["/^roles\\/asdf\\/defaults\\/main\\.yml$/"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[\\w-]+)(?: packageName=(?<packageName>[\\w-/]+))?\\s*\\n\\s*-\\s*name:\\s*[\\w-]+\\s*\\n\\s*version:\\s*\"(?<currentValue>[0-9.]+)\""
+      description: 'Auto merge Galaxy dependencies',
+      matchManagers: [
+        'ansible-galaxy',
       ],
-    }
-  ]
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    },
+    {
+      description: 'Auto-merge GitHub Actions',
+      matchManagers: [
+        'github-actions',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    },
+    {
+      description: 'Group Ansible Galaxy dependencies',
+      matchManagers: [
+        'ansible-galaxy',
+      ],
+      groupName: 'ansible-dependencies',
+    },
+    {
+      description: 'Auto-merge asdf plugin updates',
+      matchManagers: [
+        'custom.regex',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    },
+  ],
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Update asdf plugin versions',
+      managerFilePatterns: [
+        '/^roles\\/asdf\\/defaults\\/main\\.yml$/',
+      ],
+      matchStrings: [
+        '# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[\\w-]+)(?: packageName=(?<packageName>[\\w-/]+))?\\s*\\n\\s*-\\s*name:\\s*[\\w-]+\\s*\\n\\s*version:\\s*"(?<currentValue>[0-9.]+)"',
+      ],
+    },
+  ],
 }
