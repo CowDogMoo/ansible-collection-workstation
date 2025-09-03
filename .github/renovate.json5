@@ -56,7 +56,8 @@
       ],
       datasourceTemplate: "github-tags",
       depNameTemplate: "golang/go",
-      extractVersionTemplate: "^go(?<version>.*)$"
+      extractVersionTemplate: "^go(.+)$",
+      versioningTemplate: "semver"
     },
     {
       customType: 'regex',
