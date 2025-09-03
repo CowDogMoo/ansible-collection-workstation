@@ -61,18 +61,21 @@
       groupName: 'ansible-dependencies',
     },
   ],
-  regexManagers: [
+  customManagers: [
     {
+      customType: 'regex',
       fileMatch: [
-        '^roles/asdf/defaults/main\\.yml$',
+        'roles/asdf/defaults/main.yml',
       ],
       matchStrings: [
-        'name: golang\\s+version: "(?<currentValue>[0-9.]+)"',
+        "-\\s*name:\\s*golang[\\s\\S]*?\\bversion:\\s*['\\\"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)['\\\"]?"
       ],
       datasourceTemplate: 'golang-version',
-      depNameTemplate: 'golang',
+      depNameTemplate: 'golang/go',
+      versioningTemplate: 'semver'
     },
     {
+      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -84,6 +87,7 @@
       extractVersionTemplate: '^v(?<version>.*)$',
     },
     {
+      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -94,6 +98,7 @@
       depNameTemplate: 'kubernetes/kubernetes',
     },
     {
+      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -104,6 +109,7 @@
       depNameTemplate: 'hashicorp/packer',
     },
     {
+      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
@@ -116,6 +122,7 @@
       versioningTemplate: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$',
     },
     {
+      customType: 'regex',
       fileMatch: [
         '^roles/asdf/defaults/main\\.yml$',
       ],
