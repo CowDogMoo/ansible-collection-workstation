@@ -79,7 +79,7 @@
         '/^roles\\/asdf\\/defaults\\/main\\.yml$/',
       ],
       matchStrings: [
-        '# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[\\w-]+)(?: packageName=(?<packageName>[\\w-/]+))?\\s*\\n\\s*-\\s*name:\\s*[\\w-]+\\s*\\n\\s*version:\\s*"(?<currentValue>[0-9.]+)"',
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[\\w-]+)(?: packageName=(?<packageName>[\\w-/]+))?(?: extractVersion=(?<extractVersion>[^\\s]+))?\\s*\\n\\s*-\\s*name:\\s*[\\w-]+\\s*\\n\\s*version:\\s*\"(?<currentValue>[0-9.]+)\""
       ],
     },
   ],
