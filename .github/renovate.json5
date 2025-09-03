@@ -46,6 +46,9 @@
       matchManagers: ['ansible-galaxy'],
       groupName: 'ansible-dependencies',
     },
+    {
+      matchPackageNames: ['golang'],
+    },
   ],
   customManagers: [
     {
