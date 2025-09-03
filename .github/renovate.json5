@@ -124,7 +124,7 @@
       ],
       datasourceTemplate: 'github-tags',
       depNameTemplate: 'ruby/ruby',
-      extractVersionTemplate: '^v(?<version>.*)$',
+      extractVersionTemplate: '^v(\\d+)_(\\d+)_(\\d+)$',
       versioningTemplate: 'semver',
     },
     {
