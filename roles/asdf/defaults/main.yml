@@ -23,7 +23,7 @@ asdf_plugins:
     scope: "global"
   # renovate: datasource=github-tags depName=python packageName=python/cpython
   - name: python
-    version: "3.13.6"
+    version: "3.13.7"
     scope: "global"
   # renovate: datasource=ruby-version depName=ruby packageName=ruby/ruby
   - name: ruby
