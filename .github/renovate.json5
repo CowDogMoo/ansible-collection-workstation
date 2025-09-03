@@ -61,25 +61,7 @@
       groupName: 'ansible-dependencies',
     },
   ],
-  ansible: {
-    fileMatch: [
-      '/^requirements\\.yml$/',
-      '/^roles/[^/]+/meta/main\\.yml$/',
-      '/^galaxy\\.yml$/',
-    ],
-  },
   customManagers: [
-    {
-      customType: 'regex',
-      fileMatch: [
-        '/(^|/)requirements\\.ya?ml$/',
-        '/(^|/)galaxy\\.ya?ml$/',
-      ],
-      matchStrings: [
-        'name: (?<depName>[^\\s]+)\\n\\s+src: (?<packageName>[^\\s]+)\\n\\s+version: (?<currentValue>[^\\s]+)',
-      ],
-      datasourceTemplate: 'git-tags',
-    },
     {
       customType: 'regex',
       fileMatch: [
