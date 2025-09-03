@@ -70,8 +70,9 @@
       matchStrings: [
         'name: (?<depName>golang)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'golang-version',
-      depNameTemplate: 'golang',
+      datasourceTemplate: 'github-tags',
+      packageNameTemplate: 'golang/go',
+      extractVersionTemplate: '^go(?<version>.*)$',
       versioningTemplate: 'semver',
     },
     {
@@ -82,8 +83,9 @@
       matchStrings: [
         'name: (?<depName>python)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-releases',
-      depNameTemplate: 'python/cpython',
+      datasourceTemplate: 'github-tags',
+      packageNameTemplate: 'python/cpython',
+      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
     {
@@ -94,8 +96,9 @@
       matchStrings: [
         'name: (?<depName>kubectl)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-releases',
-      depNameTemplate: 'kubernetes/kubernetes',
+      datasourceTemplate: 'github-tags',
+      packageNameTemplate: 'kubernetes/kubernetes',
+      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
     {
@@ -106,8 +109,9 @@
       matchStrings: [
         'name: (?<depName>packer)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-releases',
-      depNameTemplate: 'hashicorp/packer',
+      datasourceTemplate: 'github-tags',
+      packageNameTemplate: 'hashicorp/packer',
+      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
     {
@@ -118,9 +122,10 @@
       matchStrings: [
         'name: (?<depName>ruby)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-releases',
-      depNameTemplate: 'ruby/ruby',
-      versioningTemplate: 'semver',
+      datasourceTemplate: 'github-tags',
+      packageNameTemplate: 'ruby/ruby',
+      extractVersionTemplate: '^v(\\d+)_(\\d+)_(\\d+)$',
+      versioningTemplate: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$',
     },
     {
       customType: 'regex',
@@ -130,8 +135,9 @@
       matchStrings: [
         'name: (?<depName>helm)\\s+version: "(?<currentValue>[0-9.]+)"',
       ],
-      datasourceTemplate: 'github-releases',
-      depNameTemplate: 'helm/helm',
+      datasourceTemplate: 'github-tags',
+      packageNameTemplate: 'helm/helm',
+      extractVersionTemplate: '^v(?<version>.*)$',
       versioningTemplate: 'semver',
     },
   ],
