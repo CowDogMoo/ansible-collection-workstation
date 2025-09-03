@@ -56,9 +56,9 @@
       matchStrings: [
         '- name: golang\\n\\s+version: "(?<currentValue>[0-9.]+)"'
       ],
-      datasourceTemplate: 'golang-version',
+      datasourceTemplate: 'github-tags',
       depNameTemplate: 'golang/go',
-      versioningTemplate: 'semver'
+      extractVersionTemplate: '^go(?<version>.*)$',
     },
     {
       customType: 'regex',
