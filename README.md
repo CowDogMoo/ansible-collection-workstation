@@ -8,7 +8,7 @@
 This Ansible collection provides a comprehensive setup for my
 workstation environment, covering various aspects, including user setup,
 package management, ZSH configuration, VNC setup, ASDF version manager, and
-various cybersecurity tools.
+logging for different applications.
 
 ## Architecture Diagram
 
