@@ -15,10 +15,10 @@ various cybersecurity tools.
 ```mermaid
 graph TD
     Collection[Ansible Collection]
-    Collection --> Modules[📦 Modules]
-    Modules --> M0[vnc_pw]
-    Modules --> M1[merge_list_dicts_into_list]
-    Modules --> M2[getent_passwd]
+    Collection --> Plugins[🔌 Plugins]
+    Plugins --> P0[vnc_pw]
+    Plugins --> P1[merge_list_dicts_into_list]
+    Plugins --> P2[getent_passwd]
     Collection --> Roles[🎭 Roles]
     Roles --> R0[go_task 🧪]
     Roles --> R1[asdf 🧪]
@@ -28,8 +28,8 @@ graph TD
     Roles --> R5[zsh_setup 🧪]
     Roles --> R6[logging 🧪]
     Collection --> Playbooks[📚 Playbooks]
-    Playbooks --> P0[workstation 🧪]
-    Playbooks --> P1[vnc_box 🧪]
+    Playbooks --> PB0[workstation 🧪]
+    Playbooks --> PB1[vnc_box 🧪]
 ```
 
 ## Requirements

@@ -15,9 +15,8 @@ class AnsibleCollectionAnalyzer:
         self.collection_path = Path(collection_path)
         self.structure = {
             'roles': [],
-            'modules': [],
-            'playbooks': [],
-            'workflows': []
+            'plugins': [],
+            'playbooks': []
         }
 
     def analyze(self):
@@ -32,12 +31,12 @@ class AnsibleCollectionAnalyzer:
                         'has_molecule': (role_dir / 'molecule').exists()
                     })
 
-        # Analyze modules
-        modules_path = self.collection_path / 'plugins' / 'modules'
-        if modules_path.exists():
-            for module_file in modules_path.glob('*.py'):
-                if not module_file.name.startswith('__'):
-                    self.structure['modules'].append(module_file.stem)
+        # Analyze plugins
+        plugins_path = self.collection_path / 'plugins' / 'modules'
+        if plugins_path.exists():
+            for plugin_file in plugins_path.glob('*.py'):
+                if not plugin_file.name.startswith('__'):
+                    self.structure['plugins'].append(plugin_file.stem)
 
         # Analyze playbooks
         playbooks_path = self.collection_path / 'playbooks'
@@ -49,12 +48,6 @@ class AnsibleCollectionAnalyzer:
                         'has_molecule': (item / 'molecule').exists()
                     })
 
-        # Analyze GitHub workflows
-        workflows_path = self.collection_path / '.github' / 'workflows'
-        if workflows_path.exists():
-            for workflow_file in workflows_path.glob('*.yml'):
-                self.structure['workflows'].append(workflow_file.stem)
-
         return self.structure
 
 def generate_mermaid(structure):
@@ -62,11 +55,11 @@ def generate_mermaid(structure):
     lines = ["```mermaid", "graph TD"]
     lines.append("    Collection[Ansible Collection]")
 
-    # Add modules
-    if structure['modules']:
-        lines.append("    Collection --> Modules[📦 Modules]")
-        for i, module in enumerate(structure['modules']):
-            lines.append(f"    Modules --> M{i}[{module}]")
+    # Add plugins
+    if structure['plugins']:
+        lines.append("    Collection --> Plugins[🔌 Plugins]")
+        for i, plugin in enumerate(structure['plugins']):
+            lines.append(f"    Plugins --> P{i}[{plugin}]")
 
     # Add roles
     if structure['roles']:
@@ -84,13 +77,7 @@ def generate_mermaid(structure):
             pb_label = playbook['name']
             if playbook['has_molecule']:
                 pb_label += " 🧪"
-            lines.append(f"    Playbooks --> P{i}[{pb_label}]")
-
-    # Add workflows
-    if structure['workflows']:
-        lines.append("    Collection --> Workflows[🔄 CI/CD]")
-        for i, workflow in enumerate(structure['workflows']):
-            lines.append(f"    Workflows --> W{i}[{workflow}]")
+            lines.append(f"    Playbooks --> PB{i}[{pb_label}]")
 
     lines.append("```")
     return '\n'.join(lines)
@@ -151,9 +138,8 @@ def main():
         print("✅ Architecture diagram updated in README.md")
         print(f"\nCollection summary:")
         print(f"  • Roles: {len(structure['roles'])}")
-        print(f"  • Modules: {len(structure['modules'])}")
+        print(f"  • Plugins: {len(structure['plugins'])}")
         print(f"  • Playbooks: {len(structure['playbooks'])}")
-        print(f"  • Workflows: {len(structure['workflows'])}")
 
         # Stage the README.md file for commit
         import subprocess
@@ -161,7 +147,7 @@ def main():
             subprocess.run(['git', 'add', 'README.md'], check=True)
             print("✅ README.md staged for commit")
         except subprocess.CalledProcessError:
-            print("⚠️  Could not stage README.md - you may need to add it manually")
+            print("⚠️ Could not stage README.md - you may need to add it manually")
 
         return 0
     else:
