@@ -1,8 +1,54 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.7 Release Notes
+CowDogMoo Workstation Ansible Collection 2.0.8 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.0.8
+======
+
+Release Summary
+---------------
+
+Enhanced logging capabilities with a new flexible logging role supporting both macOS and Linux, automated architecture diagram generation with Mermaid, improved renovate configuration for better dependency management, and updated multiple dependencies to their latest versions.
+
+Added
+-----
+
+- Added GitHub token support for API authentication in go_task role
+- Added LaunchAgent support for logrotate on macOS in logging role
+- Added architecture diagram generation via Mermaid in pre-commit hooks
+- Added custom regex manager for asdf plugin version management in renovate
+- Added flexible logging role with support for multiple log rotation configurations
+
+Changed
+-------
+
+- Enhanced logging role to support both macOS and Linux with OS-specific configurations
+- Fixed renovate configuration for ansible-galaxy and GitHub Actions managers
+- Improved asdf role with renovate datasource annotations for automated updates
+- Simplified renovate configuration by removing redundant custom managers
+- Updated GitHub Actions to use actions/checkout v5.0.0
+- Updated actions/cache from v4.2.3 to v4.2.4
+- Updated actions/create-github-app-token from v2.0.6 to v2.1.1
+- Updated amazon.aws from 10.1.0 to 10.1.1
+- Updated ansible/ansible-lint from v25.7.0 to v25.8.2
+- Updated awscli from 2.24.0 to 2.28.22
+- Updated community.general from 11.1.2 to 11.2.1
+- Updated golang/go from 1.24.4 to 1.25.1
+- Updated helm/helm from 3.18.4 to 3.18.6
+- Updated kubectl from 1.33.3 to 1.34.0
+- Updated pre-commit-hooks from v5.0.0 to v6.0.0
+- Updated python/cpython from 3.13.5 to 3.13.7
+- Updated renovatebot/github-action from v43.0.5 to v43.0.10
+- Updated ruby/ruby from 3.4.2 to 3.4.5
+- Updated workstation playbook to configure logging role first for proper log directory setup
+
+Removed
+-------
+
+- Removed redundant custom regex managers from renovate configuration
+- Removed static architecture.png image in favor of dynamic Mermaid diagrams
 
 v2.0.7
 ======
