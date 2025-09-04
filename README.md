@@ -19,7 +19,7 @@ graph TD
     Plugins --> P0[vnc_pw]
     Plugins --> P1[merge_list_dicts_into_list]
     Plugins --> P2[getent_passwd]
-    Collection --> Roles[🎭 Roles]
+    Collection --> Roles[⚙️ Roles]
     Roles --> R0[go_task 🧪]
     Roles --> R1[asdf 🧪]
     Roles --> R2[user_setup 🧪]
