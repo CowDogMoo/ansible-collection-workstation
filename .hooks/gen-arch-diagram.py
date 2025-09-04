@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Ansible Collection Mermaid Diagram Generator
+Ansible Collection Mermaid Diagram Generator Pre-commit Hook
 
-Generates a Mermaid diagram from an Ansible collection structure.
+Generates a Mermaid diagram from an Ansible collection structure
+and updates repo README.
 """
 
 from pathlib import Path
-import argparse
+import sys
+import re
 
 class AnsibleCollectionAnalyzer:
     def __init__(self, collection_path: str):
@@ -72,7 +74,7 @@ def generate_mermaid(structure):
         for i, role in enumerate(structure['roles']):
             role_label = role['name']
             if role['has_molecule']:
-                role_label += " ✅"
+                role_label += " 🧪"
             lines.append(f"    Roles --> R{i}[{role_label}]")
 
     # Add playbooks
@@ -81,7 +83,7 @@ def generate_mermaid(structure):
         for i, playbook in enumerate(structure['playbooks']):
             pb_label = playbook['name']
             if playbook['has_molecule']:
-                pb_label += " ✅"
+                pb_label += " 🧪"
             lines.append(f"    Playbooks --> P{i}[{pb_label}]")
 
     # Add workflows
@@ -93,35 +95,78 @@ def generate_mermaid(structure):
     lines.append("```")
     return '\n'.join(lines)
 
+def update_readme(mermaid_content):
+    """Update README.md with the generated Mermaid diagram"""
+    readme_path = Path('README.md')
+
+    if not readme_path.exists():
+        print("❌ README.md not found")
+        return False
+
+    readme_content = readme_path.read_text()
+
+    # Define markers for the architecture section
+    start_marker = "## Architecture Diagram"
+    end_marker = "## Requirements"  # The next section after Architecture Diagram
+
+    # Find the start and end positions
+    start_pos = readme_content.find(start_marker)
+    if start_pos == -1:
+        print("❌ Could not find '## Architecture Diagram' section in README.md")
+        return False
+
+    end_pos = readme_content.find(end_marker, start_pos)
+    if end_pos == -1:
+        # If we can't find the next section, look for the next ## heading
+        next_section_pattern = re.compile(r'\n## (?!Architecture Diagram)')
+        match = next_section_pattern.search(readme_content, start_pos + len(start_marker))
+        if match:
+            end_pos = match.start() + 1  # +1 to keep the newline before the next section
+        else:
+            print("❌ Could not find the end of the Architecture Diagram section")
+            return False
+
+    # Build the new architecture section
+    new_section = f"{start_marker}\n\n{mermaid_content}\n\n"
+
+    # Replace the section
+    new_readme = readme_content[:start_pos] + new_section + readme_content[end_pos:]
+
+    # Write back to README
+    readme_path.write_text(new_readme)
+
+    return True
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='Generate Mermaid diagram from Ansible collection'
-    )
-    parser.add_argument('path', nargs='?', default='.',
-                       help='Path to Ansible collection (default: current directory)')
-    parser.add_argument('-o', '--output', default='arch-diagram/collection_mermaid.md',
-                       help='Output file (default: arch-diagram/collection_mermaid.md)')
-
-    args = parser.parse_args()
-
-    # Analyze collection
-    analyzer = AnsibleCollectionAnalyzer(args.path)
+    """Main function for pre-commit hook"""
+    # Analyze collection from current directory
+    analyzer = AnsibleCollectionAnalyzer('.')
     structure = analyzer.analyze()
 
     # Generate Mermaid diagram
     mermaid_content = generate_mermaid(structure)
 
-    # Save to file
-    output_file = Path(args.output)
-    output_file.write_text(mermaid_content)
+    # Update README.md
+    if update_readme(mermaid_content):
+        print("✅ Architecture diagram updated in README.md")
+        print(f"\nCollection summary:")
+        print(f"  • Roles: {len(structure['roles'])}")
+        print(f"  • Modules: {len(structure['modules'])}")
+        print(f"  • Playbooks: {len(structure['playbooks'])}")
+        print(f"  • Workflows: {len(structure['workflows'])}")
 
-    print(f"✓ Mermaid diagram saved to {output_file}")
-    print(f"\nCollection summary:")
-    print(f"  • Roles: {len(structure['roles'])}")
-    print(f"  • Modules: {len(structure['modules'])}")
-    print(f"  • Playbooks: {len(structure['playbooks'])}")
-    print(f"  • Workflows: {len(structure['workflows'])}")
-    print(f"\nPaste the contents of {output_file} into your README.md")
+        # Stage the README.md file for commit
+        import subprocess
+        try:
+            subprocess.run(['git', 'add', 'README.md'], check=True)
+            print("✅ README.md staged for commit")
+        except subprocess.CalledProcessError:
+            print("⚠️  Could not stage README.md - you may need to add it manually")
+
+        return 0
+    else:
+        print("❌ Failed to update README.md")
+        return 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
