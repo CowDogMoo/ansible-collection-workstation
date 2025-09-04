@@ -86,7 +86,7 @@ Include the roles from this collection in your playbook. Here's an example:
 
 ```yaml
 ---
-- name: Provision container
+- name: Provision system
   hosts: localhost
   roles:
     - cowdogmoo.workstation.asdf
