@@ -20,7 +20,7 @@
 
         logging_rotation_configs:
           - name: "ansible-hosts"
-            path: "~/ansible-logs/hosts/*.log"
+            path: "~/ansible-logs/hosts/*"
             rotate: 30
             frequency: "daily"
             compress: true
@@ -29,6 +29,8 @@
             create: true
             dateext: true
             maxsize: "100M"
+            copytruncate: true
+            delaycompress: true
             owner: "{{ ansible_user_id }}"
             group: "{{ ansible_user_gid | default(ansible_user_id) }}"
 
