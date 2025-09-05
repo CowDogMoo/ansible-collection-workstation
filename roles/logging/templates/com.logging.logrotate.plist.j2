@@ -6,10 +6,9 @@
     <string>{{ logging_launchagent_label }}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>{{ logging_logrotate_binary }}</string>
-        <string>-s</string>
-        <string>{{ logging_logrotate_state_file }}</string>
-        <string>{{ logging_logrotate_config_dir }}/*</string>
+        <string>/bin/sh</string>
+        <string>-c</string>
+        <string>{{ logging_logrotate_binary }} -s {{ logging_logrotate_state_file }} {{ logging_logrotate_config_dir }}/*</string>
     </array>
     <key>RunAtLoad</key>
     <false/>
