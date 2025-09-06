@@ -71,10 +71,10 @@ if [ "$needs_changes" = true ]; then
     # Set version based on scope
     if [ "{{ plugin.scope | default('global') }}" = "global" ]; then
         echo "Setting global {{ plugin.name }} version to {{ plugin.version | default('latest') }}"
-        asdf set --home {{ plugin.name }} {{ plugin.version | default('latest') }}
+        asdf set -u {{ plugin.name }} {{ plugin.version }}
     else
         echo "Setting local {{ plugin.name }} version to {{ plugin.version | default('latest') }}"
-        asdf set {{ plugin.name }} {{ plugin.version | default('latest') }}
+        asdf set {{ plugin.name }} {{ plugin.version }}
     fi
 
     # Reshim the plugin

@@ -33,11 +33,17 @@
 - name: Fetch and install ASDF binary
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   block:
+    - name: Check if checksum file exists
+      ansible.builtin.stat:
+        path: "/tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
+      register: asdf_checksum_file_stat
+
     - name: Fetch ASDF MD5 checksum
       ansible.builtin.get_url:
         url: "{{ asdf_checksum_url }}"
         dest: "/tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
         mode: "0644"
+      when: not asdf_checksum_file_stat.stat.exists
 
     - name: Extract ASDF MD5 checksum
       ansible.builtin.command: "cat /tmp/asdf-{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz.md5"
