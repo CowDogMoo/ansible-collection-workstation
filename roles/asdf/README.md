@@ -43,7 +43,7 @@ Install asdf
 
 | Variable | Type | Value | Description |
 |----------|------|-------|-------------|
-| `asdf_version` | str | `0.16.7` | No description |
+| `asdf_version` | str | `0.18.0` | No description |
 | `asdf_arch` | str | `{{ 'arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'amd64' if ansible_architecture == 'x86_64' else '386' }}` | No description |
 | `asdf_os` | str | `{{ 'darwin' if ansible_system == 'Darwin' else 'linux' }}` | No description |
 | `asdf_download_url` | str | `https://github.com/asdf-vm/asdf/releases/download/v{{ asdf_version }}/asdf-v{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz` | No description |
@@ -71,7 +71,8 @@ Install asdf
 - **Set available shell fact** (ansible.builtin.set_fact)
 - **Create bin directory if it doesn't exist** (ansible.builtin.file)
 - **Fetch and install ASDF binary** (block)
-- **Fetch ASDF MD5 checksum** (ansible.builtin.get_url)
+- **Check if checksum file exists** (ansible.builtin.stat)
+- **Fetch ASDF MD5 checksum** (ansible.builtin.get_url) - Conditional
 - **Extract ASDF MD5 checksum** (ansible.builtin.command)
 - **Download ASDF binary** (ansible.builtin.get_url)
 - **Extract ASDF binary** (ansible.builtin.unarchive)
