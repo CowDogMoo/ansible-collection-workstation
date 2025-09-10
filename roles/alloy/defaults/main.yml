@@ -1,0 +1,28 @@
+---
+# Alloy installation and configuration defaults
+alloy_version: "latest"
+alloy_config_dir: "/opt/homebrew/etc/alloy"
+alloy_config_file: "config.alloy"
+alloy_service_name: "alloy"
+alloy_user: "{{ ansible_user_id }}"
+alloy_group: "{{ ansible_user_gid }}"
+
+# Logging configuration
+alloy_log_level: "debug"
+alloy_log_format: "logfmt"
+
+# Ansible logs configuration
+alloy_ansible_logs_path: "{{ ansible_env.HOME }}/ansible-logs/hosts/*"
+alloy_ansible_logs_job: "ansible"
+alloy_ansible_logs_environment: "local"
+alloy_ansible_logs_sync_period: "10s"
+alloy_tail_from_end: false
+
+# Loki configuration
+alloy_loki_endpoint: "https://loki.techvomit.xyz/loki/api/v1/push"
+alloy_loki_application: "ansible"
+alloy_loki_service_name: "ansible"
+
+# Service management
+alloy_service_enabled: true
+alloy_service_state: started

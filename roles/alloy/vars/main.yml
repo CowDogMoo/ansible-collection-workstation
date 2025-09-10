@@ -1,0 +1,5 @@
+---
+# Platform-specific variables
+alloy_brew_tap: "grafana/grafana"
+alloy_brew_package: "grafana/grafana/alloy"
+alloy_service_plist: "homebrew.mxcl.alloy"

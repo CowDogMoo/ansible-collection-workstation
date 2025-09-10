@@ -1,0 +1,77 @@
+// Managed by Ansible - Do not edit manually
+// Enable debug logging to help troubleshoot
+logging {
+  level  = "{{ alloy_log_level }}"
+  format = "{{ alloy_log_format }}"
+}
+
+// Discover and read all non-compressed host log files
+local.file_match "ansible_logs" {
+  path_targets = [{
+    __path__ = env("HOME") + "/ansible-logs/hosts/*",
+    job      = "{{ alloy_ansible_logs_job }}",
+    environment = "{{ alloy_ansible_logs_environment }}",
+  }]
+  sync_period = "{{ alloy_ansible_logs_sync_period }}"
+}
+
+// Read logs from the discovered files
+loki.source.file "ansible" {
+  targets    = local.file_match.ansible_logs.targets
+  forward_to = [loki.process.ansible.receiver]
+
+  // Start reading from the beginning to catch existing logs
+  tail_from_end = {{ alloy_tail_from_end | lower }}
+}
+
+// Process logs and extract hostname from filename
+loki.process "ansible" {
+  // Extract the hostname from the file path
+  stage.regex {
+    expression = ".*/hosts/(?P<extracted_hostname>[^/]+)$"
+    source     = "filename"
+  }
+
+  // Drop logs from compressed files (files containing .gz)
+  stage.match {
+    selector = `{filename=~".*\\.gz.*"}`
+    action   = "drop"
+  }
+
+  // Check if it's a localhost file and create a flag
+  stage.regex {
+    expression = "^(?P<is_localhost>localhost(-[0-9]+)?)$"
+    source     = "extracted_hostname"
+  }
+
+  // Set the final hostname based on whether it's localhost or not
+  stage.template {
+    source   = "final_hostname"
+    template = `{{ "{{" }} if .is_localhost {{ "}}" }}` + constants.hostname + `{{ "{{" }} else {{ "}}" }}{{ "{{" }} .extracted_hostname {{ "}}" }}{{ "{{" }} end {{ "}}" }}`
+  }
+
+  // Add labels to the log entry
+  stage.labels {
+    values = {
+      host   = "final_hostname",
+      source = "final_hostname",
+    }
+  }
+
+  stage.static_labels {
+    values = {
+      application  = "{{ alloy_loki_application }}",
+      environment  = "{{ alloy_ansible_logs_environment }}",
+      service_name = "{{ alloy_loki_service_name }}",
+    }
+  }
+
+  forward_to = [loki.write.remote.receiver]
+}
+
+// Send logs to Loki
+loki.write "remote" {
+  endpoint {
+    url = "{{ alloy_loki_endpoint }}"
+  }
+}

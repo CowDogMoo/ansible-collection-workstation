@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  role_name: alloy
+  namespace: cowdogmoo
+  author: Jayson Grace
+  description: Grafana Alloy installation and configuration for macOS
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: macOS
+      versions:
+        - all
+  galaxy_tags:
+    - alloy
+    - grafana
+    - logging
+    - loki
+    - observability
+    - macos
+    - homebrew
+
+dependencies: []

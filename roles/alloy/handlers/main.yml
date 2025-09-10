@@ -1,0 +1,4 @@
+---
+- name: Restart alloy service
+  ansible.builtin.command: brew services restart {{ alloy_brew_package }}
+  listen: "restart alloy"
