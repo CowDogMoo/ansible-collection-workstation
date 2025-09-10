@@ -38,6 +38,92 @@
         logging_launchagent_label: "com.ansible.logrotate"
         logging_logrotate_log_path: "{{ ansible_env.HOME }}/ansible-logs/logrotate"
 
+    # Install and configure Alloy for log shipping to Loki
+    # This should come after logging setup to ensure directories exist
+    - name: Install and configure Grafana Alloy
+      role: grafana.grafana.alloy
+      vars:
+        # Alloy configuration for log collection and shipping to Loki
+        alloy_config: |
+          // Enable debug logging to help troubleshoot
+          logging {
+            level  = "debug"
+            format = "logfmt"
+          }
+
+          // Discover and read all non-compressed host log files
+          local.file_match "ansible_logs" {
+            path_targets = [{
+              __path__ = env("HOME") + "/ansible-logs/hosts/*",
+              job      = "ansible",
+              environment = "local",
+            }]
+            sync_period = "10s"
+          }
+
+          // Read logs from the discovered files
+          loki.source.file "ansible" {
+            targets    = local.file_match.ansible_logs.targets
+            forward_to = [loki.process.ansible.receiver]
+
+            // Start reading from the beginning to catch existing logs
+            tail_from_end = false
+          }
+
+          // Process logs and extract hostname from filename
+          loki.process "ansible" {
+            // Extract the hostname from the file path
+            stage.regex {
+              expression = ".*/hosts/(?P<extracted_hostname>[^/]+)$"
+              source     = "filename"
+            }
+
+            // Drop logs from compressed files (files containing .gz)
+            stage.match {
+              selector = `{filename=~".*\\.gz.*"}`
+              action   = "drop"
+            }
+
+            // Check if it's a localhost file and create a flag
+            stage.regex {
+              expression = "^(?P<is_localhost>localhost(-[0-9]+)?)$"
+              source     = "extracted_hostname"
+            }
+
+            // Use template to set the final hostname
+            // If is_localhost exists (matches localhost pattern), use constants.hostname
+            // Otherwise use the extracted_hostname
+            stage.template {
+              source   = "final_hostname"
+              template = `{{"{{ if .is_localhost }}"}}` + constants.hostname + `{{"{{ else }}"}}{{ "{{" }} .extracted_hostname {{ "}}" }}{{"{{ end }}"}}`
+            }
+
+            // Add the processed hostname as labels
+            stage.labels {
+              values = {
+                host   = "final_hostname",
+                source = "final_hostname",
+              }
+            }
+
+            // Add static labels
+            stage.static_labels {
+              values = {
+                application  = "ansible",
+                environment  = "local",
+                service_name = "ansible",
+              }
+            }
+            forward_to = [loki.write.remote.receiver]
+          }
+
+          // Send logs to Loki
+          loki.write "remote" {
+            endpoint {
+              url = "https://loki.techvomit.xyz/loki/api/v1/push"
+            }
+          }
+
     - name: Setup users on workstation
       role: cowdogmoo.workstation.user_setup
       # For debugging
