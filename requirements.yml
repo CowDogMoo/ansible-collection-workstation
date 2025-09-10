@@ -8,5 +8,6 @@ collections:
     version: 4.7.0
   - name: community.general
     version: 11.3.0
-  - name: community.grafana
-    version: 2.3.0
+  - name: https://github.com/CowDogMoo/grafana-ansible-collection.git
+    type: git
+    version: main
