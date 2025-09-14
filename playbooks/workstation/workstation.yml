@@ -124,6 +124,7 @@
               url = "https://loki.techvomit.xyz/loki/api/v1/push"
             }
           }
+        alloy_version: "1.10.1"
 
     - name: Setup users on workstation
       role: cowdogmoo.workstation.user_setup
