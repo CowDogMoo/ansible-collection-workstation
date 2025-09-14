@@ -42,6 +42,7 @@
     # This should come after logging setup to ensure directories exist
     - name: Install and configure Grafana Alloy
       role: grafana.grafana.alloy
+      become: "{{ ansible_os_family != 'Darwin' }}"
       vars:
         # Alloy configuration for log collection and shipping to Loki
         alloy_config: |
