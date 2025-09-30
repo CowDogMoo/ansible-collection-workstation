@@ -130,7 +130,9 @@
     DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ item.0.uid }}/bus"
   loop: "{{ vnc_setup_users_uid.result | zip(vnc_setup_vnc_service_status.results) | list }}"
   when:
-    - item.1.status.ActiveState == "active"  # Service is active
+    - item.1.status is defined
+    - item.1.status.ActiveState is defined
+    - item.1.status.ActiveState == "active"
     - (vnc_setup_service_file_updated.changed or vnc_setup_start_vnc_script_updated.changed)
   failed_when: false
 
@@ -149,7 +151,8 @@
         XDG_RUNTIME_DIR: "/run/user/{{ item.0.uid }}"
         DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ item.0.uid }}/bus"
       loop: "{{ vnc_setup_users_uid.result | zip(vnc_setup_vnc_service_status.results) | list }}"
-      when: item.1.status.ActiveState != "active" or vnc_setup_service_file_updated.changed or vnc_setup_start_vnc_script_updated.changed
+      when:
+        - item.1.status is not defined or item.1.status.ActiveState is not defined or item.1.status.ActiveState != "active" or vnc_setup_service_file_updated.changed or vnc_setup_start_vnc_script_updated.changed
       register: vnc_setup_systemd_vnc_start
 
     - name: Check if VNC started successfully with systemd
