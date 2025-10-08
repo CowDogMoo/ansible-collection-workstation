@@ -19,7 +19,7 @@ asdf_shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/bin/bash' 
 asdf_plugins:
   # renovate: datasource=github-tags depName=golang packageName=golang/go extractVersion=^go(?<version>.*)$
   - name: golang
-    version: "1.25.1"
+    version: "1.25.2"
     scope: "global"
   # renovate: datasource=github-tags depName=python packageName=python/cpython extractVersion=^v(?<version>.*)$
   - name: python
