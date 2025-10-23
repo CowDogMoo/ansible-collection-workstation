@@ -1,0 +1,55 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Set home directory fact
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    # Install asdf and Go first
+    - name: Install asdf and Go
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.asdf
+      vars:
+        asdf_username: "{{ container_user }}"
+        asdf_user_home: "{{ container_home }}"
+        asdf_plugins:
+          - name: golang
+            version: "1.25.3"
+            scope: "global"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Test fabric role with Go in PATH
+      environment:
+        PATH: "{{ container_home }}/.asdf/shims:/usr/local/bin:/usr/bin:/bin"
+      block:
+        - name: Include role under test (first run)
+          ansible.builtin.include_role:
+            name: cowdogmoo.workstation.fabric
+          vars:
+            fabric_username: "{{ container_user }}"
+            fabric_user_home: "{{ container_home }}"
+            fabric_init_directories: true
+
+        - name: Include role under test (second run - idempotency test)
+          ansible.builtin.include_role:
+            name: cowdogmoo.workstation.fabric
+          vars:
+            fabric_username: "{{ container_user }}"
+            fabric_user_home: "{{ container_home }}"
+            fabric_init_directories: true
+          register: second_run
+
+        - name: Assert second run is idempotent
+          ansible.builtin.assert:
+            that:
+              - second_run is not changed
+            fail_msg: "Second run should not report changes (idempotency failed)"
+            success_msg: "Role is idempotent"

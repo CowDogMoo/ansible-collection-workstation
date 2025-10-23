@@ -141,6 +141,16 @@
       # For debugging
       # role: ../../roles/asdf
 
+    - name: Install and configure Fabric AI framework
+      role: cowdogmoo.workstation.fabric
+      # For debugging
+      # role: ../../roles/fabric
+
+    - name: Install and configure Claude Code CLI
+      role: cowdogmoo.workstation.claude_code
+      # For debugging
+      # role: ../../roles/claude_code
+
     - name: Install Go Task
       role: cowdogmoo.workstation.go_task
       # For debugging

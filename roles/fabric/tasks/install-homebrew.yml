@@ -1,0 +1,27 @@
+---
+- name: Check if running on macOS
+  ansible.builtin.fail:
+    msg: "Homebrew installation method is only supported on macOS"
+  when: ansible_facts['os_family'] != 'Darwin'
+
+- name: Check if fabric is already installed
+  ansible.builtin.command: which fabric
+  register: fabric_check_brew
+  changed_when: false
+  failed_when: false
+
+- name: Install Fabric via Homebrew
+  community.general.homebrew:
+    name: fabric
+    state: present
+  when: fabric_check_brew.rc != 0
+  register: fabric_brew_install
+
+- name: Verify fabric installation
+  ansible.builtin.command: fabric --version
+  register: fabric_version_check_brew
+  changed_when: false
+
+- name: Display installed version
+  ansible.builtin.debug:
+    msg: "Fabric installed: {{ fabric_version_check_brew.stdout }}"

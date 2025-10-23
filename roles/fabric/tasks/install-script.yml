@@ -1,0 +1,36 @@
+---
+- name: Check if fabric is already installed
+  ansible.builtin.command: which fabric
+  register: fabric_check_script
+  changed_when: false
+  failed_when: false
+
+- name: Install Fabric via official install script
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://raw.githubusercontent.com/danielmiessler/fabric/main/scripts/installer/install.sh | bash
+  args:
+    executable: /bin/bash
+  environment:
+    HOME: "{{ fabric_user_home }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ fabric_username }}"
+  when: fabric_check_script.rc != 0
+  register: fabric_script_install
+  changed_when: "'Successfully installed' in fabric_script_install.stdout or fabric_script_install.rc == 0"
+
+- name: Verify fabric installation
+  ansible.builtin.command: fabric --version
+  register: fabric_version_check_script
+  changed_when: false
+  failed_when: false
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ fabric_username }}"
+  environment:
+    HOME: "{{ fabric_user_home }}"
+    PATH: "{{ fabric_user_home }}/.local/bin:{{ ansible_env.PATH }}"
+
+- name: Display installed version
+  ansible.builtin.debug:
+    msg: "Fabric installed: {{ fabric_version_check_script.stdout }}"
+  when: fabric_version_check_script.rc == 0

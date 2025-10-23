@@ -1,0 +1,98 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Set home directory fact
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    # Install Node.js 18.x for testing (Claude Code requires >=18)
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - curl
+          - ca-certificates
+          - gnupg
+        state: present
+        update_cache: true
+      become: true
+
+    - name: Create keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+      become: true
+
+    - name: Download NodeSource GPG key
+      ansible.builtin.get_url:
+        url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+        dest: /tmp/nodesource.gpg.key
+        mode: "0644"
+      become: true
+
+    - name: Dearmor NodeSource GPG key
+      ansible.builtin.command:
+        cmd: gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg /tmp/nodesource.gpg.key
+        creates: /etc/apt/keyrings/nodesource.gpg
+      become: true
+
+    - name: Add NodeSource repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main"
+        state: present
+        filename: nodesource
+      become: true
+
+    - name: Install Node.js 18.x
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+        update_cache: true
+      become: true
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Include role under test (first run)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.claude_code
+      vars:
+        claude_code_username: "{{ container_user }}"
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.config/claude"
+        claude_code_hooks:
+          - name: "test-hook"
+            event: "PreToolUse"
+            matchers:
+              - tool: "Bash"
+                pattern: "test"
+            command: "echo 'Test hook triggered' >&2"
+
+    - name: Include role under test (second run - idempotency test)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.claude_code
+      vars:
+        claude_code_username: "{{ container_user }}"
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.config/claude"
+        claude_code_hooks:
+          - name: "test-hook"
+            event: "PreToolUse"
+            matchers:
+              - tool: "Bash"
+                pattern: "test"
+            command: "echo 'Test hook triggered' >&2"
+      register: second_run
+
+    - name: Assert second run is idempotent
+      ansible.builtin.assert:
+        that:
+          - second_run is not changed
+        fail_msg: "Second run should not report changes (idempotency failed)"
+        success_msg: "Role is idempotent"

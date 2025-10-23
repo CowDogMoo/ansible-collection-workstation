@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  role_name: claude_code
+  namespace: cowdogmoo
+  author: CowDogMoo
+  description: Manages Claude Code CLI configuration including hooks and settings
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: MacOSX
+      versions:
+        - all
+  galaxy_tags:
+    - development
+    - claude
+    - ai
+    - configuration
+    - cli
+
+dependencies: []

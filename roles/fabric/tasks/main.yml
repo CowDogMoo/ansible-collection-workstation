@@ -1,0 +1,63 @@
+---
+- name: Set fabric username for Kali systems
+  ansible.builtin.set_fact:
+    fabric_username: "kali"
+  when: ansible_distribution_release == "kali-rolling" and fabric_username is not defined
+
+- name: Ensure fabric user home directory exists
+  ansible.builtin.stat:
+    path: "{{ fabric_user_home }}"
+  register: fabric_home_stat
+  changed_when: false
+
+- name: Fail if user home directory doesn't exist
+  ansible.builtin.fail:
+    msg: "User home directory {{ fabric_user_home }} does not exist"
+  when: not fabric_home_stat.stat.exists
+
+- name: Install Fabric
+  when: fabric_install | bool
+  block:
+    - name: Install Fabric via go install
+      ansible.builtin.include_tasks: install-go.yml
+      when: fabric_install_method == 'go_install'
+
+    - name: Install Fabric via install script
+      ansible.builtin.include_tasks: install-script.yml
+      when: fabric_install_method == 'script'
+
+    - name: Install Fabric via Homebrew
+      ansible.builtin.include_tasks: install-homebrew.yml
+      when: fabric_install_method == 'homebrew'
+
+    - name: Install Fabric via npm
+      ansible.builtin.include_tasks: install-npm.yml
+      when: fabric_install_method == 'npm'
+
+- name: Create fabric configuration directory
+  ansible.builtin.file:
+    path: "{{ fabric_config_dir }}"
+    state: directory
+    owner: "{{ fabric_username }}"
+    group: "{{ fabric_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: fabric_init_directories | bool
+
+- name: Create fabric patterns directory
+  ansible.builtin.file:
+    path: "{{ fabric_config_dir }}/patterns"
+    state: directory
+    owner: "{{ fabric_username }}"
+    group: "{{ fabric_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: fabric_init_directories | bool
+
+- name: Display fabric installation status
+  ansible.builtin.debug:
+    msg: >-
+      Fabric installation complete.
+      Configuration directory: {{ fabric_config_dir }}
+      Run 'fabric --setup' manually to configure API keys and complete setup.
+      Run 'fabric --update' to download patterns.

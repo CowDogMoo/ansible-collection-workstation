@@ -1,0 +1,65 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Set home directory fact
+      ansible.builtin.set_fact:
+        fabric_user_home: "{{ container_home }}"
+        fabric_config_dir: "{{ container_home }}/.config/fabric"
+
+    - name: Check if fabric binary is in PATH
+      ansible.builtin.command: which fabric
+      environment:
+        PATH: "{{ container_home }}/.asdf/shims:/usr/local/bin:/usr/bin:/bin"
+      register: fabric_which_check
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Debug fabric location
+      ansible.builtin.debug:
+        msg: "Fabric found at: {{ fabric_which_check.stdout }}"
+      when: fabric_which_check.rc == 0
+
+    - name: Assert fabric is installed
+      ansible.builtin.assert:
+        that:
+          - fabric_which_check.rc == 0
+          - fabric_which_check.stdout | length > 0
+        fail_msg: "Fabric is not installed or not in PATH"
+        success_msg: "Fabric is installed at: {{ fabric_which_check.stdout }}"
+
+    - name: Check if fabric config directory exists
+      ansible.builtin.stat:
+        path: "{{ fabric_config_dir }}"
+      register: fabric_config_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert fabric config directory exists
+      ansible.builtin.assert:
+        that:
+          - fabric_config_stat.stat.exists
+          - fabric_config_stat.stat.isdir
+        fail_msg: "Fabric config directory does not exist"
+        success_msg: "Fabric config directory exists"
+
+    - name: Check if fabric patterns directory exists
+      ansible.builtin.stat:
+        path: "{{ fabric_config_dir }}/patterns"
+      register: fabric_patterns_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert fabric patterns directory exists
+      ansible.builtin.assert:
+        that:
+          - fabric_patterns_stat.stat.exists
+          - fabric_patterns_stat.stat.isdir
+        fail_msg: "Fabric patterns directory does not exist"
+        success_msg: "Fabric patterns directory exists"

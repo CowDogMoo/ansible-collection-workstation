@@ -1,0 +1,154 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Set home directory and config facts
+      ansible.builtin.set_fact:
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.config/claude"
+        claude_code_username: "{{ container_user }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Check if claude binary is in PATH
+      ansible.builtin.command: which claude
+      environment:
+        PATH: "{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: claude_which_check
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Debug claude location
+      ansible.builtin.debug:
+        msg: "Claude found at: {{ claude_which_check.stdout }}"
+      when: claude_which_check.rc == 0
+
+    - name: Assert claude is installed
+      ansible.builtin.assert:
+        that:
+          - claude_which_check.rc == 0
+          - claude_which_check.stdout | length > 0
+        fail_msg: "Claude Code CLI is not installed or not in PATH"
+        success_msg: "Claude Code CLI is installed at: {{ claude_which_check.stdout }}"
+
+    - name: Test claude command
+      ansible.builtin.command: claude --version
+      environment:
+        PATH: "{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: claude_version_output
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert claude command works
+      ansible.builtin.assert:
+        that:
+          - claude_version_output.rc == 0
+          - >
+            ('claude' in claude_version_output.stdout.lower()) or
+            (claude_version_output.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+') is not none)
+        fail_msg: "Claude command failed or version output not recognized. Output was: {{ claude_version_output.stdout }}"
+        success_msg: "Claude command works, version: {{ claude_version_output.stdout }}"
+
+    - name: Check if claude config directory exists
+      ansible.builtin.stat:
+        path: "{{ claude_code_config_dir }}"
+      register: claude_config_dir_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert claude config directory exists
+      ansible.builtin.assert:
+        that:
+          - claude_config_dir_stat.stat.exists
+          - claude_config_dir_stat.stat.isdir
+          - claude_config_dir_stat.stat.mode == '0755'
+        fail_msg: "Claude config directory does not exist or has wrong permissions"
+        success_msg: "Claude config directory exists with correct permissions"
+
+    - name: Check if settings.json exists
+      ansible.builtin.stat:
+        path: "{{ claude_code_config_dir }}/settings.json"
+      register: claude_settings_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert settings.json exists
+      ansible.builtin.assert:
+        that:
+          - claude_settings_stat.stat.exists
+          - claude_settings_stat.stat.mode == '0644'
+        fail_msg: "settings.json does not exist or has wrong permissions"
+        success_msg: "settings.json exists with correct permissions"
+
+    - name: Read settings.json content
+      ansible.builtin.slurp:
+        path: "{{ claude_code_config_dir }}/settings.json"
+      register: claude_settings_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse settings.json
+      ansible.builtin.set_fact:
+        claude_settings: "{{ claude_settings_content['content'] | b64decode | from_json }}"
+
+    - name: Assert settings.json has hooks configuration
+      ansible.builtin.assert:
+        that:
+          - claude_settings.hooks is defined
+          - claude_settings.hooks | length > 0
+        fail_msg: "settings.json does not contain hooks configuration"
+        success_msg: "settings.json contains {{ claude_settings.hooks | length }} hook(s)"
+
+    - name: Assert hooks have required fields
+      ansible.builtin.assert:
+        that:
+          - item.name is defined
+          - item.event is defined
+          - item.matchers is defined
+          - item.command is defined
+        fail_msg: "Hook {{ item.name | default('unknown') }} is missing required fields"
+        success_msg: "Hook {{ item.name }} has all required fields"
+      loop: "{{ claude_settings.hooks }}"
+
+    - name: Assert test hook exists
+      ansible.builtin.assert:
+        that:
+          - claude_settings.hooks | selectattr('name', 'equalto', 'test-hook') | list | length == 1
+        fail_msg: "Test hook not found in settings.json"
+        success_msg: "Test hook is properly configured"
+
+    - name: Check if backup was created (if settings existed before)
+      ansible.builtin.find:
+        paths: "{{ claude_code_config_dir }}"
+        patterns: "settings.json.backup.*"
+      register: backup_files
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Display backup status
+      ansible.builtin.debug:
+        msg: "Found {{ backup_files.matched }} backup file(s)"
+
+    - name: Verify file ownership
+      ansible.builtin.stat:
+        path: "{{ claude_code_config_dir }}/settings.json"
+      register: settings_ownership
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert correct file ownership
+      ansible.builtin.assert:
+        that:
+          - settings_ownership.stat.pw_name == container_user
+        fail_msg: "settings.json has incorrect ownership"
+        success_msg: "settings.json has correct ownership ({{ container_user }})"

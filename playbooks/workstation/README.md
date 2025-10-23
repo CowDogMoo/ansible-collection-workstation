@@ -1,7 +1,8 @@
 # Ansible Playbook: Workstation
 
 This playbook sets up a complete development workstation with user management,
-ZSH configuration, ASDF version manager, and Go Task on Ubuntu systems.
+ZSH configuration, ASDF version manager, AI development tools (Fabric and Claude Code),
+logging, and Go Task on Ubuntu, Debian, EL, and macOS systems.
 
 ---
 
@@ -81,3 +82,18 @@ dev2 ansible_host=192.168.1.51
 ansible_user=ubuntu
 ansible_become=yes
 ```
+
+---
+
+## Roles Included
+
+This playbook includes the following roles in order:
+
+1. **logging** - Sets up log directories and log rotation
+2. **alloy** - Configures Grafana Alloy for log shipping to Loki
+3. **user_setup** - Creates and configures system users
+4. **zsh_setup** - Installs and configures ZSH with Oh-My-Zsh
+5. **asdf** - Installs ASDF version manager and language runtimes (Go, Python, Ruby, etc.)
+6. **fabric** - Installs Fabric AI framework via Go packages
+7. **claude_code** - Installs and configures Claude Code CLI with hooks
+8. **go_task** - Installs Go Task runner

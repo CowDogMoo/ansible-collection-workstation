@@ -1,0 +1,44 @@
+---
+- name: Check if fabric is already installed
+  ansible.builtin.command: which fabric
+  register: fabric_check
+  changed_when: false
+  failed_when: false
+
+- name: Check if Go is available
+  ansible.builtin.command: which go
+  register: fabric_go_check
+  changed_when: false
+  failed_when: false
+  when: fabric_check.rc != 0
+
+- name: Fail if Go is not available
+  ansible.builtin.fail:
+    msg: "Go is not installed or not in PATH. Install Go first or use a different fabric_install_method."
+  when:
+    - fabric_check.rc != 0
+    - fabric_go_check.rc != 0
+
+- name: Install Fabric via go install
+  ansible.builtin.shell: |
+    go install {{ fabric_go_package }}
+  environment:
+    HOME: "{{ fabric_user_home }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ fabric_username }}"
+  when: fabric_check.rc != 0
+  register: fabric_go_install
+  changed_when: true
+
+- name: Verify fabric installation
+  ansible.builtin.command: which fabric
+  register: fabric_version_check
+  changed_when: false
+  failed_when: false
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ fabric_username }}"
+
+- name: Display installed version
+  ansible.builtin.debug:
+    msg: "Fabric installed at: {{ fabric_version_check.stdout }}"
+  when: fabric_version_check.rc == 0

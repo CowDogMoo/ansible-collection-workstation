@@ -1,0 +1,30 @@
+---
+fabric_username: "{{ ansible_user_id | default(ansible_user) }}"
+fabric_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', fabric_username) }}"
+fabric_user_home: >-
+  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_env.HOME,
+     (fabric_username == 'root') | ternary('/root', '/home/' + fabric_username)) }}
+
+# Whether to install Fabric (set to false if you only want to manage config)
+fabric_install: true
+
+# Installation method: 'go_install', 'script', 'homebrew', or 'npm'
+# - go_install: Use 'go install' command directly (requires Go in PATH)
+# - script: Use official install script from https://github.com/danielmiessler/fabric
+# - homebrew: Use Homebrew (macOS only)
+# - npm: Use npm (requires Node.js)
+fabric_install_method: "go_install"
+
+# Package/binary details
+fabric_go_package: "github.com/danielmiessler/fabric/cmd/fabric@latest"
+
+# Configuration directory for fabric
+fabric_config_dir: "{{ fabric_user_home }}/.config/fabric"
+
+# Whether to run fabric --setup after installation
+# Note: This requires interactive setup for API keys, so it's disabled by default
+# Users should run this manually after installation
+fabric_run_setup: false
+
+# Whether to initialize fabric directories
+fabric_init_directories: true

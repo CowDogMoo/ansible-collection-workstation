@@ -1,0 +1,33 @@
+{
+{% if claude_code_hooks | length > 0 %}
+  "hooks": {
+{% for event, matchers in claude_code_hooks.items() %}
+    "{{ event }}": [
+{% for matcher_group in matchers %}
+      {
+        "matcher": "{{ matcher_group.matcher }}",
+        "hooks": [
+{% for hook in matcher_group.hooks %}
+          {
+            "type": "{{ hook.type }}",
+            "command": {{ hook.command | to_json }}
+          }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+        ]
+      }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+    ]{% if not loop.last %},{% endif %}
+
+{% endfor %}
+  }{% if claude_code_additional_settings | length > 0 %},{% endif %}
+
+{% endif %}
+{% if claude_code_additional_settings | length > 0 %}
+{% for key, value in claude_code_additional_settings.items() %}
+  "{{ key }}": {{ value | to_json }}{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %}
+}

@@ -7,8 +7,8 @@
 
 This Ansible collection provides a comprehensive setup for my
 workstation environment, covering various aspects, including user setup,
-package management, ZSH configuration, VNC setup, ASDF version manager, and
-logging for different applications.
+package management, ZSH configuration, VNC setup, ASDF version manager,
+AI development tools (Fabric, Claude Code), and logging for different applications.
 
 ## Architecture Diagram
 
@@ -23,10 +23,12 @@ graph TD
     Roles --> R0[go_task 🧪]
     Roles --> R1[asdf 🧪]
     Roles --> R2[user_setup 🧪]
-    Roles --> R3[vnc_setup 🧪]
-    Roles --> R4[package_management 🧪]
-    Roles --> R5[zsh_setup 🧪]
-    Roles --> R6[logging 🧪]
+    Roles --> R3[claude_code 🧪]
+    Roles --> R4[vnc_setup 🧪]
+    Roles --> R5[package_management 🧪]
+    Roles --> R6[fabric 🧪]
+    Roles --> R7[zsh_setup 🧪]
+    Roles --> R8[logging 🧪]
     Collection --> Playbooks[📚 Playbooks]
     Playbooks --> PB0[workstation 🧪]
     Playbooks --> PB1[vnc_box 🧪]
@@ -80,6 +82,16 @@ management and service setup.
 
 Creates logging directories and log rotation configurations for a provided path.
 
+### Fabric
+
+Installs and configures [Fabric](https://github.com/danielmiessler/fabric),
+an open-source AI framework for augmenting humans using AI.
+
+### Claude Code
+
+Installs and manages [Claude Code](https://docs.claude.com/en/docs/claude-code)
+CLI, including installation, configuration, hooks, and settings.
+
 ## Usage
 
 Include the roles from this collection in your playbook. Here's an example:
@@ -92,6 +104,8 @@ Include the roles from this collection in your playbook. Here's an example:
     - cowdogmoo.workstation.asdf
     - cowdogmoo.workstation.user_setup
     - cowdogmoo.workstation.package_management
+    - cowdogmoo.workstation.fabric
+    - cowdogmoo.workstation.claude_code
     ...
 ```
 
