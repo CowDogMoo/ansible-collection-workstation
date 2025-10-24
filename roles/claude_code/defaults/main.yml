@@ -24,18 +24,42 @@ claude_code_simple_hooks:
     message: "🔔 Hooks working!"
 
   - name: "Require fabric for commits"
-    command_pattern: 'git\s+commit.*-m'
-    exclude_pattern: 'fabric'
+    command_pattern: 'git\s+commit'
+    exclude_pattern: "cat <<'EOF'"
     action: block
-    message: "Use fabric for commit messages"
+    message: |
+      ❌ BLOCKED: Use fabric for commit messages with heredoc format.
+
+      ✅ Required format:
+      git commit -m "$(cat <<'EOF'
+      [paste fabric output EXACTLY as-is - no additions]
+      EOF
+      )"
+
+      Generate message: git diff --staged | fabric --pattern commit
+
+      ⚠️  DO NOT add emojis, co-author tags, or any other text.
 
   - name: "Require fabric for PRs"
     command_contains: 'gh pr create'
+    exclude_pattern: "cat <<'EOF'"
     action: block
-    message: "Use fabric for PR descriptions"
+    message: |
+      ❌ BLOCKED: Use fabric for PR descriptions with heredoc format.
+
+      ✅ Required format:
+      gh pr create --title "..." --body "$(cat <<'EOF'
+      [paste fabric output EXACTLY as-is - no additions]
+      EOF
+      )"
+
+      Generate description: git diff main...HEAD | fabric --pattern pr
+
+      ⚠️  DO NOT add emojis, generated-by tags, or any other text.
 
 # Advanced hooks - custom Python/shell scripts
 claude_code_advanced_hooks: []
 
 # Additional settings (optional)
-claude_code_additional_settings: {}
+claude_code_additional_settings:
+  alwaysThinkingEnabled: true

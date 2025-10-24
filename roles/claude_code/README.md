@@ -28,6 +28,7 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_simple_hooks.2` | dict | `{}` | No description |
 | `claude_code_advanced_hooks` | list | `[]` | No description |
 | `claude_code_additional_settings` | dict | `{}` | No description |
+| `claude_code_additional_settings.alwaysThinkingEnabled` | bool | `True` | No description |
 
 ## Tasks
 
