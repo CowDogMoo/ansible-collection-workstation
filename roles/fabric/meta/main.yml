@@ -3,7 +3,7 @@ galaxy_info:
   role_name: fabric
   namespace: cowdogmoo
   author: CowDogMoo
-  description: Installs and configures Daniel Miessler's Fabric AI framework via asdf
+  description: Installs and configures Daniel Miessler's Fabric AI framework
   company: CowDogMoo
   license: MIT
   min_ansible_version: "2.15"

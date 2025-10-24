@@ -3,7 +3,7 @@
 
 ## Description
 
-Installs and configures Daniel Miessler's Fabric AI framework via asdf
+Installs and configures Daniel Miessler's Fabric AI framework
 
 ## Requirements
 
