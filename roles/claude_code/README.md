@@ -1,145 +1,91 @@
-# Ansible Role: claude_code
-
-Installs and manages Claude Code CLI, including installation, configuration, hooks, and settings.
+<!-- DOCSIBLE START -->
+# claude_code
 
 ## Description
 
-This role installs Claude Code CLI and manages the configuration file (`~/.claude/settings.json`). Installation methods are platform-specific:
-
-- **macOS**: Homebrew
-- **Linux**: npm (if available) or install script
-- **Windows**: npm (if available) or PowerShell script
-
-Claude Code hooks are user-defined shell commands that execute at various points in Claude Code's lifecycle.
+Manages Claude Code CLI configuration including hooks and settings
 
 ## Requirements
 
-- Ansible 2.15 or higher
-- For macOS: Homebrew installed
-- For Linux/Windows with npm method: Node.js 18+ and npm installed
-- Internet connection for downloading Claude Code CLI
+- Ansible >= 2.15
 
 ## Role Variables
 
-Available variables are listed below, along with default values (see `defaults/main.yml`):
+### Default Variables (main.yml)
 
-```yaml
-# User configuration
-claude_code_username: "{{ ansible_user_id | default(ansible_user) }}"
-claude_code_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', claude_code_username) }}"
-claude_code_user_home: "{{ ... }}"
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `claude_code_username` | str | `{{ ansible_user_id | default(ansible_user) }}` | No description |
+| `claude_code_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', claude_code_username) }}` | No description |
+| `claude_code_user_home` | str | `<multiline value: folded_strip>` | No description |
+| `claude_code_config_dir` | str | `{{ claude_code_user_home }}/.claude` | No description |
+| `claude_code_install` | bool | `True` | No description |
+| `claude_code_manage_settings` | bool | `True` | No description |
+| `claude_code_backup_settings` | bool | `True` | No description |
+| `claude_code_simple_hooks` | list | `[]` | No description |
+| `claude_code_simple_hooks.0` | dict | `{}` | No description |
+| `claude_code_simple_hooks.1` | dict | `{}` | No description |
+| `claude_code_simple_hooks.2` | dict | `{}` | No description |
+| `claude_code_advanced_hooks` | list | `[]` | No description |
+| `claude_code_additional_settings` | dict | `{}` | No description |
 
-# Configuration directory for Claude Code
-claude_code_config_dir: "{{ claude_code_user_home }}/.claude"
+## Tasks
 
-# Whether to install Claude Code CLI
-claude_code_install: true
+### install-linux.yml
 
-# Whether to manage Claude Code settings
-claude_code_manage_settings: true
+- **Check if already installed** (ansible.builtin.command)
+- **Check if npm is available** (ansible.builtin.command) - Conditional
+- **Install via npm** (community.general.npm) - Conditional
+- **Install via script (fallback)** (ansible.builtin.shell) - Conditional
+- **Verify installation** (ansible.builtin.command)
+- **Display version** (ansible.builtin.debug) - Conditional
 
-# Whether to backup existing settings before overwriting
-claude_code_backup_settings: true
+### install-macos.yml
 
-# Simple hooks - easy to configure, no coding required
-claude_code_simple_hooks:
-  - name: "Hook test notification"
-    action: notify
-    message: "🔔 Hooks working!"
+- **Check if already installed** (ansible.builtin.command)
+- **Install via Homebrew** (community.general.homebrew_cask) - Conditional
+- **Verify installation** (ansible.builtin.command)
+- **Display version** (ansible.builtin.debug) - Conditional
 
-  - name: "Require fabric for git commits"
-    command_pattern: 'git\s+commit.*-m'
-    exclude_pattern: 'fabric'
-    action: block
-    message: "Use fabric for commit messages"
+### install-windows.yml
 
-  - name: "Require fabric for PRs"
-    command_contains: 'gh pr create'
-    action: block
-    message: "Use fabric for PR descriptions"
+- **Check if already installed** (ansible.windows.win_command)
+- **Check if npm is available** (ansible.windows.win_command) - Conditional
+- **Install via npm** (ansible.windows.win_shell) - Conditional
+- **Install via PowerShell (fallback)** (ansible.windows.win_shell) - Conditional
+- **Verify installation** (ansible.windows.win_command)
+- **Display version** (ansible.builtin.debug) - Conditional
 
-# Advanced hooks - for custom Python/shell scripts
-claude_code_advanced_hooks: []
+### main.yml
 
-# Additional Claude Code settings
-claude_code_additional_settings: {}
-```
-
-### Hook Configuration
-
-**📖 [Complete Documentation](docs/HOOKS_GUIDE.md)** | **[Examples](files/hook_examples.yml)** | **[Python Helpers](files/hook_helpers.py)**
-
-**Simple Hooks** - No coding required:
-
-- `action`: `notify` or `block`
-- `message`: Message to display
-- `command_pattern`: Regex (optional)
-- `command_contains`: String match (optional)
-- `exclude_pattern`: Exclusion filter (optional)
-
-**Advanced Hooks** - Custom Python/shell scripts for complex logic
-
-## Dependencies
-
-None.
+- **Set claude_code username for Kali systems** (ansible.builtin.set_fact) - Conditional
+- **Ensure claude_code user home directory exists** (ansible.builtin.stat)
+- **Fail if user home directory doesn't exist** (ansible.builtin.fail) - Conditional
+- **Install Claude Code on macOS** (ansible.builtin.include_tasks) - Conditional
+- **Install Claude Code on Linux** (ansible.builtin.include_tasks) - Conditional
+- **Install Claude Code on Windows** (ansible.builtin.include_tasks) - Conditional
+- **Create Claude Code configuration directory** (ansible.builtin.file)
+- **Generate Claude Code settings.json** (ansible.builtin.template) - Conditional
+- **Display configuration status** (ansible.builtin.debug)
 
 ## Example Playbook
 
-### Basic usage (default hooks)
-
 ```yaml
-- hosts: localhost
+- hosts: servers
   roles:
-    - cowdogmoo.workstation.claude_code
+    - claude_code
 ```
-
-### Custom hooks
-
-```yaml
-- hosts: localhost
-  roles:
-    - cowdogmoo.workstation.claude_code
-      vars:
-        claude_code_simple_hooks:
-          - name: "Block dangerous rm"
-            command_contains: "rm -rf /"
-            action: block
-            message: "Dangerous command blocked!"
-
-          - name: "Require code review"
-            command_pattern: 'git\s+push.*main'
-            action: block
-            message: "Direct push to main not allowed"
-```
-
-### Disable default hooks
-
-```yaml
-- hosts: localhost
-  roles:
-    - cowdogmoo.workstation.claude_code
-      vars:
-        claude_code_simple_hooks: []
-        claude_code_advanced_hooks: []
-```
-
-## Features
-
-- **Fabric Integration**: Default hooks enforce using Fabric for git commits and PR descriptions
-- **Automatic Backups**: Settings are backed up when changed (timestamps preserved)
-- **Idempotent**: Safe to run multiple times without side effects
-- **Multi-platform**: Works on macOS, Linux, and Windows
-
-## License
-
-MIT
 
 ## Author Information
 
-This role was created by CowDogMoo.
+- **Author**: CowDogMoo
+- **Company**: CowDogMoo
+- **License**: MIT
 
-## References
+## Platforms
 
-- [Claude Code Hooks Documentation](https://docs.claude.com/en/docs/claude-code/hooks-guide)
-- [Claude Code Configuration Guide](https://www.eesel.ai/blog/settings-json-claude-code)
-- [Fabric AI Framework](https://github.com/danielmiessler/fabric)
+- Ubuntu: focal, jammy
+- Debian: bullseye, bookworm
+- EL: 8, 9
+- MacOSX: all
+<!-- DOCSIBLE END -->

@@ -1,152 +1,97 @@
-# Ansible Role: fabric
-
-Installs and configures [Daniel Miessler's Fabric](https://github.com/danielmiessler/fabric), an open-source AI framework for augmenting humans using AI prompts.
+<!-- DOCSIBLE START -->
+# fabric
 
 ## Description
 
-This role installs Fabric and creates the necessary configuration directories. It supports multiple installation methods to accommodate different environments and preferences.
+Installs and configures Daniel Miessler's Fabric AI framework via asdf
 
 ## Requirements
 
-Depending on your chosen installation method:
-
-- **go_install** (default): Go must be installed and in PATH
-- **script**: curl and bash
-- **homebrew**: Homebrew (macOS only)
-- **npm**: Node.js and npm
+- Ansible >= 2.15
 
 ## Role Variables
 
-Available variables are listed below, along with default values (see `defaults/main.yml`):
+### Default Variables (main.yml)
 
-```yaml
-# User configuration
-fabric_username: "{{ ansible_user_id | default(ansible_user) }}"
-fabric_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', fabric_username) }}"
-fabric_user_home: "{{ ... }}"
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `fabric_username` | str | `{{ ansible_user_id | default(ansible_user) }}` | No description |
+| `fabric_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', fabric_username) }}` | No description |
+| `fabric_user_home` | str | `<multiline value: folded_strip>` | No description |
+| `fabric_install` | bool | `True` | No description |
+| `fabric_install_method` | str | `go_install` | No description |
+| `fabric_go_package` | str | `github.com/danielmiessler/fabric/cmd/fabric@latest` | No description |
+| `fabric_config_dir` | str | `{{ fabric_user_home }}/.config/fabric` | No description |
+| `fabric_run_setup` | bool | `False` | No description |
+| `fabric_init_directories` | bool | `True` | No description |
 
-# Whether to install Fabric (set to false if you only want to manage config)
-fabric_install: true
+## Tasks
 
-# Installation method: 'go_install', 'script', 'homebrew', or 'npm'
-fabric_install_method: "go_install"
+### install-go.yml
 
-# Package details (for go_install method)
-fabric_go_package: "github.com/danielmiessler/fabric@latest"
+- **Check if fabric is already installed** (ansible.builtin.command)
+- **Check if Go is available** (ansible.builtin.command) - Conditional
+- **Fail if Go is not available** (ansible.builtin.fail) - Conditional
+- **Install Fabric via go install** (ansible.builtin.shell) - Conditional
+- **Verify fabric installation** (ansible.builtin.command)
+- **Display installed version** (ansible.builtin.debug) - Conditional
 
-# Configuration directory for fabric
-fabric_config_dir: "{{ fabric_user_home }}/.config/fabric"
+### install-homebrew.yml
 
-# Whether to initialize fabric directories
-fabric_init_directories: true
+- **Check if running on macOS** (ansible.builtin.fail) - Conditional
+- **Check if fabric is already installed** (ansible.builtin.command)
+- **Install Fabric via Homebrew** (community.general.homebrew) - Conditional
+- **Verify fabric installation** (ansible.builtin.command)
+- **Display installed version** (ansible.builtin.debug)
 
-# Whether to run fabric --setup after installation
-# Note: This is disabled by default as it requires interactive input
-fabric_run_setup: false
-```
+### install-npm.yml
 
-## Dependencies
+- **Check if fabric is already installed** (ansible.builtin.command)
+- **Check if npm is available** (ansible.builtin.command) - Conditional
+- **Fail if npm is not available** (ansible.builtin.fail) - Conditional
+- **Install Fabric via npm** (community.general.npm) - Conditional
+- **Verify fabric installation** (ansible.builtin.command)
+- **Display installed version** (ansible.builtin.debug) - Conditional
 
-None. This role is self-contained and works with whatever Go/npm/brew installation you have.
+### install-script.yml
+
+- **Check if fabric is already installed** (ansible.builtin.command)
+- **Install Fabric via official install script** (ansible.builtin.shell) - Conditional
+- **Verify fabric installation** (ansible.builtin.command)
+- **Display installed version** (ansible.builtin.debug) - Conditional
+
+### main.yml
+
+- **Set fabric username for Kali systems** (ansible.builtin.set_fact) - Conditional
+- **Ensure fabric user home directory exists** (ansible.builtin.stat)
+- **Fail if user home directory doesn't exist** (ansible.builtin.fail) - Conditional
+- **Install Fabric** (block) - Conditional
+- **Install Fabric via go install** (ansible.builtin.include_tasks) - Conditional
+- **Install Fabric via install script** (ansible.builtin.include_tasks) - Conditional
+- **Install Fabric via Homebrew** (ansible.builtin.include_tasks) - Conditional
+- **Install Fabric via npm** (ansible.builtin.include_tasks) - Conditional
+- **Create fabric configuration directory** (ansible.builtin.file) - Conditional
+- **Create fabric patterns directory** (ansible.builtin.file) - Conditional
+- **Display fabric installation status** (ansible.builtin.debug)
 
 ## Example Playbook
 
-### Using go install (default)
-
 ```yaml
-- hosts: localhost
+- hosts: servers
   roles:
-    - role: cowdogmoo.workstation.fabric
+    - fabric
 ```
-
-### Using the official install script
-
-```yaml
-- hosts: localhost
-  roles:
-    - role: cowdogmoo.workstation.fabric
-      vars:
-        fabric_install_method: "script"
-```
-
-### Using Homebrew (macOS)
-
-```yaml
-- hosts: localhost
-  roles:
-    - role: cowdogmoo.workstation.fabric
-      vars:
-        fabric_install_method: "homebrew"
-```
-
-### Using npm
-
-```yaml
-- hosts: localhost
-  roles:
-    - role: cowdogmoo.workstation.fabric
-      vars:
-        fabric_install_method: "npm"
-```
-
-### Config only (skip installation)
-
-```yaml
-- hosts: localhost
-  roles:
-    - role: cowdogmoo.workstation.fabric
-      vars:
-        fabric_install: false
-```
-
-## Post-Installation
-
-After running this role, you'll need to:
-
-1. Verify Fabric is in your PATH:
-
-   ```bash
-   fabric --version
-   ```
-
-2. Run the setup command to configure API keys:
-
-   ```bash
-   fabric --setup
-   ```
-
-3. Update patterns:
-
-   ```bash
-   fabric --update
-   ```
-
-## Integration with asdf
-
-If you're using asdf to manage Go, you can have asdf automatically install Fabric:
-
-```yaml
-- hosts: localhost
-  roles:
-    - role: cowdogmoo.workstation.asdf
-      vars:
-        asdf_plugins:
-          - name: golang
-            version: "1.25.3"
-            scope: "global"
-            default_packages:
-              - github.com/danielmiessler/fabric@latest
-
-    # Only manage fabric config, skip installation
-    - role: cowdogmoo.workstation.fabric
-      vars:
-        fabric_install: false
-```
-
-## License
-
-MIT
 
 ## Author Information
 
-This role was created by CowDogMoo.
+- **Author**: CowDogMoo
+- **Company**: CowDogMoo
+- **License**: MIT
+
+## Platforms
+
+- Ubuntu: focal, jammy
+- Debian: bullseye, bookworm
+- EL: 8, 9
+- MacOSX: all
+<!-- DOCSIBLE END -->
