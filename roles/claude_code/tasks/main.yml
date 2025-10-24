@@ -1,0 +1,64 @@
+---
+- name: Set claude_code username for Kali systems
+  ansible.builtin.set_fact:
+    claude_code_username: "kali"
+  when: ansible_distribution_release == "kali-rolling" and claude_code_username is not defined
+
+- name: Ensure claude_code user home directory exists
+  ansible.builtin.stat:
+    path: "{{ claude_code_user_home }}"
+  register: claude_code_home_stat
+  changed_when: false
+
+- name: Fail if user home directory doesn't exist
+  ansible.builtin.fail:
+    msg: "User home directory {{ claude_code_user_home }} does not exist"
+  when: not claude_code_home_stat.stat.exists
+
+- name: Install Claude Code on macOS
+  ansible.builtin.include_tasks: install-macos.yml
+  when:
+    - ansible_facts['os_family'] == 'Darwin'
+    - claude_code_install | bool
+
+- name: Install Claude Code on Linux
+  ansible.builtin.include_tasks: install-linux.yml
+  when:
+    - ansible_facts['os_family'] != 'Darwin'
+    - ansible_facts['os_family'] != 'Windows'
+    - claude_code_install | bool
+
+- name: Install Claude Code on Windows
+  ansible.builtin.include_tasks: install-windows.yml
+  when:
+    - ansible_facts['os_family'] == 'Windows'
+    - claude_code_install | bool
+
+- name: Create Claude Code configuration directory
+  ansible.builtin.file:
+    path: "{{ claude_code_config_dir }}"
+    state: directory
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Generate Claude Code settings.json
+  ansible.builtin.template:
+    src: settings.json.j2
+    dest: "{{ claude_code_config_dir }}/settings.json"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0644"
+    backup: "{{ claude_code_backup_settings | bool }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: claude_code_manage_settings | bool
+  register: claude_code_settings_result
+
+- name: Display configuration status
+  ansible.builtin.debug:
+    msg: >-
+      Settings: {{ claude_code_config_dir }}/settings.json |
+      Hooks: {{ (claude_code_simple_hooks | length) + (claude_code_advanced_hooks | length) }}
+      ({{ claude_code_simple_hooks | length }} simple, {{ claude_code_advanced_hooks | length }} advanced)
+      {% if claude_code_settings_result.backup_file is defined %}| Backup: {{ claude_code_settings_result.backup_file }}{% endif %}

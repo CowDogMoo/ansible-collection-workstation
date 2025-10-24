@@ -1,0 +1,273 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_distribution | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Set home directory and config facts
+      ansible.builtin.set_fact:
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.claude"
+        claude_code_username: "{{ container_user }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Check if claude binary is in PATH
+      ansible.builtin.command: which claude
+      environment:
+        PATH: "{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: claude_which_check
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Debug claude location
+      ansible.builtin.debug:
+        msg: "Claude found at: {{ claude_which_check.stdout }}"
+      when: claude_which_check.rc == 0
+
+    - name: Assert claude is installed
+      ansible.builtin.assert:
+        that:
+          - claude_which_check.rc == 0
+          - claude_which_check.stdout | length > 0
+        fail_msg: "Claude Code CLI is not installed or not in PATH"
+        success_msg: "Claude Code CLI is installed at: {{ claude_which_check.stdout }}"
+
+    - name: Test claude command
+      ansible.builtin.command: claude --version
+      environment:
+        PATH: "{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: claude_version_output
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert claude command works
+      ansible.builtin.assert:
+        that:
+          - claude_version_output.rc == 0
+          - >
+            ('claude' in claude_version_output.stdout.lower()) or
+            (claude_version_output.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+') is not none)
+        fail_msg: "Claude command failed or version output not recognized. Output was: {{ claude_version_output.stdout }}"
+        success_msg: "Claude command works, version: {{ claude_version_output.stdout }}"
+
+    - name: Check if claude config directory exists
+      ansible.builtin.stat:
+        path: "{{ claude_code_config_dir }}"
+      register: claude_config_dir_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert claude config directory exists
+      ansible.builtin.assert:
+        that:
+          - claude_config_dir_stat.stat.exists
+          - claude_config_dir_stat.stat.isdir
+          - claude_config_dir_stat.stat.mode == '0755'
+        fail_msg: "Claude config directory does not exist or has wrong permissions"
+        success_msg: "Claude config directory exists with correct permissions"
+
+    - name: Check if settings.json exists
+      ansible.builtin.stat:
+        path: "{{ claude_code_config_dir }}/settings.json"
+      register: claude_settings_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert settings.json exists
+      ansible.builtin.assert:
+        that:
+          - claude_settings_stat.stat.exists
+          - claude_settings_stat.stat.mode == '0644'
+        fail_msg: "settings.json does not exist or has wrong permissions"
+        success_msg: "settings.json exists with correct permissions"
+
+    - name: Read settings.json content
+      ansible.builtin.slurp:
+        path: "{{ claude_code_config_dir }}/settings.json"
+      register: claude_settings_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse settings.json
+      ansible.builtin.set_fact:
+        claude_settings: "{{ claude_settings_content['content'] | b64decode | from_json }}"
+
+    - name: Display parsed settings for debugging
+      ansible.builtin.debug:
+        var: claude_settings
+
+    - name: Assert settings.json has hooks configuration
+      ansible.builtin.assert:
+        that:
+          - claude_settings.hooks is defined
+          - claude_settings.hooks is mapping
+          - claude_settings.hooks.PreToolUse is defined
+        fail_msg: "settings.json does not contain proper hooks configuration"
+        success_msg: "settings.json contains hooks configuration"
+
+    - name: Assert PreToolUse hooks have correct structure
+      ansible.builtin.assert:
+        that:
+          - claude_settings.hooks.PreToolUse is sequence
+          - claude_settings.hooks.PreToolUse | length > 0
+        fail_msg: "PreToolUse hooks not properly configured"
+        success_msg: "PreToolUse has {{ claude_settings.hooks.PreToolUse | length }} matcher group(s)"
+
+    - name: Assert each matcher group has required fields
+      ansible.builtin.assert:
+        that:
+          - item.matcher is defined
+          - item.hooks is defined
+          - item.hooks is sequence
+          - item.hooks | length > 0
+        fail_msg: "Matcher group is missing required fields"
+        success_msg: "Matcher group has {{ item.hooks | length }} hook(s)"
+      loop: "{{ claude_settings.hooks.PreToolUse }}"
+      loop_control:
+        label: "{{ item.matcher }}"
+
+    - name: Count total hooks configured
+      ansible.builtin.set_fact:
+        total_hooks: "{{ claude_settings.hooks.PreToolUse | map(attribute='hooks') | map('length') | sum }}"
+
+    - name: Assert we have all expected hooks (3 simple + 1 advanced = 4 total)
+      ansible.builtin.assert:
+        that:
+          - total_hooks | int == 4
+        fail_msg: "Expected 4 hooks but found {{ total_hooks }}"
+        success_msg: "All 4 hooks are properly configured"
+
+    - name: Verify hook commands are Python-based
+      ansible.builtin.assert:
+        that:
+          - item.type == 'command'
+          - "'python3' in item.command"
+        fail_msg: "Hook is not properly formatted"
+        success_msg: "Hook has correct structure"
+      loop: "{{ claude_settings.hooks.PreToolUse[0].hooks }}"
+      loop_control:
+        label: "{{ item.type }}"
+
+    - name: Verify simple hooks were converted correctly
+      ansible.builtin.assert:
+        that:
+          - "'rm -rf /' in claude_settings.hooks.PreToolUse[0].hooks[1].command"
+          - "'Dangerous command blocked' in claude_settings.hooks.PreToolUse[0].hooks[1].command"
+          - "'git' in claude_settings.hooks.PreToolUse[0].hooks[2].command"
+          - "'safe' in claude_settings.hooks.PreToolUse[0].hooks[2].command"
+        fail_msg: "Simple hooks were not converted correctly"
+        success_msg: "Simple hooks were converted to Python commands correctly"
+
+    - name: Verify advanced hook is preserved as-is
+      ansible.builtin.assert:
+        that:
+          - claude_settings.hooks.PreToolUse[0].hooks[3].type == 'command'
+          - "'import json, sys; sys.exit(0)' in claude_settings.hooks.PreToolUse[0].hooks[3].command"
+        fail_msg: "Advanced hook was not preserved correctly"
+        success_msg: "Advanced hook was preserved correctly"
+
+    - name: Verify matcher is set correctly
+      ansible.builtin.assert:
+        that:
+          - claude_settings.hooks.PreToolUse[0].matcher == 'Bash'
+        fail_msg: "Matcher is not set to Bash"
+        success_msg: "Matcher is correctly set to Bash"
+
+    - name: Check if backup was created (if settings existed before)
+      ansible.builtin.find:
+        paths: "{{ claude_code_config_dir }}"
+        patterns: "settings.json.backup.*"
+      register: backup_files
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Display backup status
+      ansible.builtin.debug:
+        msg: "Found {{ backup_files.matched }} backup file(s)"
+
+    - name: Verify file ownership
+      ansible.builtin.stat:
+        path: "{{ claude_code_config_dir }}/settings.json"
+      register: settings_ownership
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert correct file ownership
+      ansible.builtin.assert:
+        that:
+          - settings_ownership.stat.pw_name == container_user
+        fail_msg: "settings.json has incorrect ownership"
+        success_msg: "settings.json has correct ownership ({{ container_user }})"
+
+    # Test empty hooks scenario
+    - name: Read settings.json from empty hooks test
+      ansible.builtin.slurp:
+        path: "{{ container_home }}/.claude-empty/settings.json"
+      register: empty_settings_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse empty settings.json
+      ansible.builtin.set_fact:
+        empty_settings: "{{ empty_settings_content['content'] | b64decode | from_json }}"
+
+    - name: Assert empty hooks settings has no hooks
+      ansible.builtin.assert:
+        that:
+          - empty_settings.hooks is not defined or empty_settings.hooks | length == 0
+        fail_msg: "Empty hooks should result in no hooks configuration"
+        success_msg: "Empty hooks correctly generates settings without hooks"
+
+    # Test simple-only hooks scenario
+    - name: Read settings.json from simple-only hooks test
+      ansible.builtin.slurp:
+        path: "{{ container_home }}/.claude-simple/settings.json"
+      register: simple_settings_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse simple-only settings.json
+      ansible.builtin.set_fact:
+        simple_settings: "{{ simple_settings_content['content'] | b64decode | from_json }}"
+
+    - name: Assert simple-only hooks work correctly
+      ansible.builtin.assert:
+        that:
+          - simple_settings.hooks is defined
+          - simple_settings.hooks.PreToolUse is defined
+          - simple_settings.hooks.PreToolUse[0].hooks | length == 1
+          - "'Simple hook only' in simple_settings.hooks.PreToolUse[0].hooks[0].command"
+        fail_msg: "Simple-only hooks not configured correctly"
+        success_msg: "Simple-only hooks work correctly"
+
+    # Test advanced-only hooks scenario
+    - name: Read settings.json from advanced-only hooks test
+      ansible.builtin.slurp:
+        path: "{{ container_home }}/.claude-advanced/settings.json"
+      register: advanced_settings_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse advanced-only settings.json
+      ansible.builtin.set_fact:
+        advanced_settings: "{{ advanced_settings_content['content'] | b64decode | from_json }}"
+
+    - name: Assert advanced-only hooks work correctly
+      ansible.builtin.assert:
+        that:
+          - advanced_settings.hooks is defined
+          - advanced_settings.hooks.PreToolUse is defined
+          - advanced_settings.hooks.PreToolUse[0].hooks | length == 1
+          - "'Advanced hook' in advanced_settings.hooks.PreToolUse[0].hooks[0].command"
+          - advanced_settings.hooks.PreToolUse[0].hooks[0].type == 'command'
+        fail_msg: "Advanced-only hooks not configured correctly"
+        success_msg: "Advanced-only hooks work correctly"

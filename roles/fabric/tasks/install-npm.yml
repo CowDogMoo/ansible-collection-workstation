@@ -1,0 +1,39 @@
+---
+- name: Check if fabric is already installed
+  ansible.builtin.command: which fabric
+  register: fabric_check_npm
+  changed_when: false
+  failed_when: false
+
+- name: Check if npm is available
+  ansible.builtin.command: which npm
+  register: fabric_npm_check
+  changed_when: false
+  failed_when: false
+  when: fabric_check_npm.rc != 0
+
+- name: Fail if npm is not available
+  ansible.builtin.fail:
+    msg: "npm is not installed or not in PATH. Install Node.js/npm first or use a different fabric_install_method."
+  when:
+    - fabric_check_npm.rc != 0
+    - fabric_npm_check.rc != 0
+
+- name: Install Fabric via npm
+  community.general.npm:
+    name: "@danielmiessler/fabric"
+    global: true
+    state: present
+  when: fabric_check_npm.rc != 0
+  register: fabric_npm_install
+
+- name: Verify fabric installation
+  ansible.builtin.command: fabric --version
+  register: fabric_version_check_npm
+  changed_when: false
+  failed_when: false
+
+- name: Display installed version
+  ansible.builtin.debug:
+    msg: "Fabric installed: {{ fabric_version_check_npm.stdout }}"
+  when: fabric_version_check_npm.rc == 0

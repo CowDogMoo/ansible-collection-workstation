@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  role_name: fabric
+  namespace: cowdogmoo
+  author: CowDogMoo
+  description: Installs and configures Daniel Miessler's Fabric AI framework
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: MacOSX
+      versions:
+        - all
+  galaxy_tags:
+    - development
+    - fabric
+    - ai
+    - golang
+    - tools
+
+dependencies: []

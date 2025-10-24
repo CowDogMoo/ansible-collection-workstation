@@ -1,0 +1,61 @@
+---
+claude_code_username: "{{ ansible_user_id | default(ansible_user) }}"
+claude_code_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', claude_code_username) }}"
+claude_code_user_home: >-
+  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_env.HOME,
+     (claude_code_username == 'root') | ternary('/root', '/home/' + claude_code_username)) }}
+
+# Configuration directory for Claude Code
+claude_code_config_dir: "{{ claude_code_user_home }}/.claude"
+
+# Whether to install Claude Code CLI
+claude_code_install: true
+
+# Whether to manage Claude Code settings
+claude_code_manage_settings: true
+
+# Whether to backup existing settings before overwriting
+claude_code_backup_settings: true
+
+# Simple hooks - easy YAML configuration
+claude_code_simple_hooks:
+  - name: "Require fabric for commits"
+    command_pattern: '^git\s+commit\s'
+    exclude_pattern: "cat <<'EOF'"
+    action: block
+    message: |
+      ❌ BLOCKED: Use fabric for commit messages with heredoc format.
+
+      ✅ Required format:
+      git commit -m "$(cat <<'EOF'
+      [paste fabric output EXACTLY as-is - no additions]
+      EOF
+      )"
+
+      Generate message: git diff --staged | fabric --pattern commit
+
+      ⚠️  DO NOT add emojis, co-author tags, or any other text.
+
+  - name: "Require fabric for PRs"
+    command_contains: 'gh pr create'
+    exclude_pattern: "cat <<'EOF'"
+    action: block
+    message: |
+      ❌ BLOCKED: Use fabric for PR descriptions with heredoc format.
+
+      ✅ Required format:
+      gh pr create --title "..." --body "$(cat <<'EOF'
+      [paste fabric output EXACTLY as-is - no additions]
+      EOF
+      )"
+
+      Generate description: git diff main...HEAD | fabric --pattern pr
+
+      ⚠️  DO NOT add emojis, generated-by tags, or any other text.
+
+# Advanced hooks - custom Python/shell scripts
+claude_code_advanced_hooks: []
+
+# Additional settings (optional)
+claude_code_additional_settings:
+  alwaysThinkingEnabled: true

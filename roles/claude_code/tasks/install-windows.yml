@@ -1,0 +1,41 @@
+---
+- name: Check if already installed
+  ansible.windows.win_command: where claude
+  register: claude_code_check
+  changed_when: false
+  failed_when: false
+
+- name: Check if npm is available
+  ansible.windows.win_command: where npm
+  register: claude_code_npm_check
+  changed_when: false
+  failed_when: false
+  when: claude_code_check.rc != 0
+
+- name: Install via npm
+  ansible.windows.win_shell: npm install -g @anthropic-ai/claude-code
+  when:
+    - claude_code_check.rc != 0
+    - claude_code_npm_check.rc == 0
+  register: claude_code_npm_install
+  changed_when: "'added' in claude_code_npm_install.stdout"
+
+- name: Install via PowerShell (fallback)
+  ansible.windows.win_shell: |
+    irm https://claude.ai/install.ps1 | iex
+  when:
+    - claude_code_check.rc != 0
+    - claude_code_npm_check.rc != 0
+  register: claude_code_ps_install
+  changed_when: "'Successfully installed' in claude_code_ps_install.stdout"
+
+- name: Verify installation
+  ansible.windows.win_command: claude --version
+  register: claude_code_version
+  changed_when: false
+  failed_when: false
+
+- name: Display version
+  ansible.builtin.debug:
+    msg: "Claude Code installed: {{ claude_code_version.stdout }}"
+  when: claude_code_version.rc == 0

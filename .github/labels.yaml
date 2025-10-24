@@ -66,6 +66,21 @@
   description: >-
     Changes made to asdf role
 
+- name: role/claude_code
+  color: "6B5B95" # Purple Gray
+  description: >-
+    Changes made to claude_code role
+
+- name: role/fabric
+  color: "88B04B" # Greenery
+  description: >-
+    Changes made to fabric role
+
+- name: role/go_task
+  color: "00ADD8" # Go Cyan
+  description: >-
+    Changes made to go_task role
+
 - name: role/logging
   color: "9933CC" # Purple
   description: >-
