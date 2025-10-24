@@ -1,0 +1,161 @@
+---
+# Claude Code Hook Examples
+#
+# This file contains examples of various hook configurations
+# Copy and adapt these examples to your needs
+
+# ==============================================================================
+# SIMPLE HOOKS - Recommended for most use cases
+# ==============================================================================
+
+# Example 1: Notification hook (doesn't block, just notifies)
+simple_notification:
+  - name: "Test notification"
+    event: PreToolUse
+    tool: Bash
+    action: notify
+    message: "🔔 This is a test notification"
+
+# Example 2: Block specific commands
+block_dangerous_commands:
+  - name: "Block dangerous rm commands"
+    event: PreToolUse
+    tool: Bash
+    command_contains: "rm -rf /"
+    action: block
+    message: |
+      ❌ BLOCKED: Dangerous rm command detected!
+      This could delete your entire filesystem.
+
+# Example 3: Require specific tool usage (regex pattern)
+require_tool_usage:
+  - name: "Require linting before commit"
+    event: PreToolUse
+    tool: Bash
+    command_pattern: 'git\s+commit'
+    exclude_pattern: 'lint'
+    action: block
+    message: |
+      ❌ BLOCKED: Run linting first!
+
+      ✅ Run these commands:
+         npm run lint
+         git commit -m "your message"
+
+# Example 4: Multiple simple hooks together
+git_workflow_hooks:
+  - name: "Require fabric for commits"
+    event: PreToolUse
+    tool: Bash
+    command_pattern: 'git\s+commit.*-m'
+    exclude_pattern: 'fabric'
+    action: block
+    message: |
+      ❌ BLOCKED: Use fabric for commit messages
+
+      ✅ Generate commit message:
+         git diff --staged | fabric --pattern commit
+
+  - name: "Require fabric for PRs"
+    event: PreToolUse
+    tool: Bash
+    command_contains: 'gh pr create'
+    action: block
+    message: |
+      ❌ BLOCKED: Use fabric for PR descriptions
+
+      ✅ Generate PR description:
+         git diff main...HEAD | fabric --pattern commit
+
+  - name: "Warn about force push to main"
+    event: PreToolUse
+    tool: Bash
+    command_pattern: 'git\s+push.*--force.*main'
+    action: block
+    message: |
+      ❌ BLOCKED: Force push to main is not allowed!
+
+# Example 5: Check for required files
+check_required_files:
+  - name: "Require tests before commit"
+    event: PreToolUse
+    tool: Bash
+    command_pattern: 'git\s+commit'
+    action: notify
+    message: |
+      ⚠️  Remember to run tests before committing:
+         npm test
+
+# ==============================================================================
+# ADVANCED HOOKS - For custom logic
+# ==============================================================================
+
+# Example 6: Custom Python script
+custom_python_hook:
+  - event: PreToolUse
+    tool: Bash
+    type: command
+    command: "python3 ~/.claude/hooks/custom_check.py"
+
+# Example 7: Complex inline Python logic
+complex_validation:
+  - event: PreToolUse
+    tool: Bash
+    type: command
+    command: |
+      python3 -c "
+      import json, sys, re, os
+
+      # Read tool input
+      data = json.load(sys.stdin)
+      cmd = data.get('tool_input', {}).get('command', '')
+
+      # Custom logic
+      if 'git push' in cmd and '--force' in cmd:
+          # Check if current branch is protected
+          import subprocess
+          try:
+              branch = subprocess.check_output(['git', 'branch', '--show-current'], text=True).strip()
+              if branch in ['main', 'master', 'production']:
+                  sys.stderr.write(f'❌ BLOCKED: Cannot force push to {branch}\\n')
+                  sys.exit(2)
+          except:
+              pass
+
+      sys.exit(0)
+      "
+
+# Example 8: Shell script hook
+shell_script_hook:
+  - event: PreToolUse
+    tool: Bash
+    type: command
+    command: "bash ~/.claude/hooks/validate_command.sh"
+
+# Example 9: Check multiple conditions
+multi_condition_hook:
+  - event: PreToolUse
+    tool: Bash
+    type: command
+    command: |
+      python3 -c "
+      import json, sys, re
+
+      data = json.load(sys.stdin)
+      cmd = data.get('tool_input', {}).get('command', '')
+
+      # Check multiple patterns
+      checks = [
+          (r'rm\s+-rf\s+/', 'Cannot delete root directory'),
+          (r'chmod\s+777', 'Avoid using 777 permissions'),
+          (r'sudo\s+rm', 'Be careful with sudo rm'),
+      ]
+
+      for pattern, message in checks:
+          if re.search(pattern, cmd):
+              sys.stderr.write(f'⚠️  WARNING: {message}\\n')
+              # Change sys.exit(2) to block instead of warning
+              sys.exit(0)
+
+      sys.exit(0)
+      "

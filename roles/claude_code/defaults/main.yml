@@ -17,26 +17,25 @@ claude_code_manage_settings: true
 # Whether to backup existing settings before overwriting
 claude_code_backup_settings: true
 
-# Claude Code hooks configuration
-# Hooks allow you to run commands in response to Claude Code events
-# See: https://docs.claude.com/en/docs/claude-code/hooks
-claude_code_hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: "command"
-          command: "python3 -c \"import sys; sys.stderr.write('🔔 HOOK TEST: Hooks system is working!\\n'); sys.exit(0)\""
-        - type: "command"
-          command: "python3 -c \"import json, sys, re; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command',''); is_git_commit=bool(re.search(r'git\\\\s+commit.*-m', cmd)) and 'fabric' not in cmd; msg='❌ BLOCKED: Do not use git commit -m directly.\\\\n\\\\n✅ Use fabric for commit messages:\\\\n   git diff --staged | fabric --pattern commit\\\\n\\\\nThen commit with:\\\\n   git commit -m \\\\\"$(git diff --staged | fabric --pattern commit)\\\\\"' if is_git_commit else ''; sys.stderr.write(msg + '\\\\n') if msg else None; sys.exit(2 if msg else 0)\""
-        - type: "command"
-          command: "python3 -c \"import json, sys; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command',''); is_pr_create='gh pr create' in cmd; msg='❌ BLOCKED: Generate PR description first.\\\\n\\\\n✅ Use fabric for PR descriptions:\\\\n   git diff main...HEAD | fabric --pattern commit' if is_pr_create else ''; sys.stderr.write(msg + '\\\\n') if msg else None; sys.exit(2 if msg else 0)\""
+# Simple hooks - easy YAML configuration
+claude_code_simple_hooks:
+  - name: "Hook test"
+    action: notify
+    message: "🔔 Hooks working!"
 
-# Additional Claude Code settings
-# These can include any valid Claude Code configuration options
+  - name: "Require fabric for commits"
+    command_pattern: 'git\s+commit.*-m'
+    exclude_pattern: 'fabric'
+    action: block
+    message: "Use fabric for commit messages"
+
+  - name: "Require fabric for PRs"
+    command_contains: 'gh pr create'
+    action: block
+    message: "Use fabric for PR descriptions"
+
+# Advanced hooks - custom Python/shell scripts
+claude_code_advanced_hooks: []
+
+# Additional settings (optional)
 claude_code_additional_settings: {}
-
-# Example additional settings:
-# claude_code_additional_settings:
-#   editor: "vim"
-#   theme: "dark"
-#   max_tokens: 4096

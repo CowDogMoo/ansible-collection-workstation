@@ -21,7 +21,7 @@ Tests are executed on multiple platforms:
 
 ### 2. Configuration Directory
 
-- ✅ Config directory (`~/.config/claude`) is created
+- ✅ Config directory (`~/.claude`) is created
 - ✅ Directory has correct permissions (0755)
 - ✅ Directory has correct ownership
 
@@ -32,19 +32,36 @@ Tests are executed on multiple platforms:
 - ✅ File has correct ownership
 - ✅ Settings contain valid JSON
 
-### 4. Hooks Configuration
+### 4. Simple Hooks Configuration
 
-- ✅ Hooks array is present in settings
-- ✅ All hooks have required fields (name, event, matchers, command)
-- ✅ Custom test hook is properly configured
-- ✅ Matchers contain tool and pattern
+- ✅ Simple hooks are converted to proper Claude Code format
+- ✅ `command_contains` pattern matching works
+- ✅ `command_pattern` regex matching works
+- ✅ `exclude_pattern` filtering works
+- ✅ `action` (notify/block) is correctly converted to exit codes
+- ✅ Messages are properly embedded in Python commands
+- ✅ All hooks have correct structure (matcher, hooks array)
 
-### 5. Backup Functionality
+### 5. Advanced Hooks Configuration
+
+- ✅ Advanced hooks are preserved as-is
+- ✅ Custom Python commands are included correctly
+- ✅ Mixed simple and advanced hooks work together
+- ✅ Hooks are properly grouped by event and tool
+
+### 6. Edge Cases
+
+- ✅ Empty hooks configuration (no hooks at all)
+- ✅ Simple hooks only (no advanced hooks)
+- ✅ Advanced hooks only (no simple hooks)
+- ✅ Mixed hooks (both simple and advanced)
+
+### 7. Backup Functionality
 
 - ✅ Backup files are created when settings exist
 - ✅ Backups use timestamped naming
 
-### 6. Idempotency
+### 8. Idempotency
 
 - ✅ Role runs twice without changes on second run
 - ✅ Demonstrates proper Ansible idempotency
@@ -84,11 +101,24 @@ These are required for Claude Code CLI installation via npm.
 All tests should pass, demonstrating that:
 
 1. Claude Code CLI is properly installed on both Ubuntu and Kali
-2. Configuration is correctly generated and placed
-3. Hooks are properly configured in settings.json
-4. Files have correct permissions and ownership
-5. The role is fully idempotent
-6. Backups are created when appropriate
+2. Configuration is correctly generated in `~/.claude/settings.json`
+3. Simple hooks are converted to Claude Code JSON format correctly
+4. Advanced hooks are preserved and mixed with simple hooks
+5. All hook patterns (contains, regex, exclude) work correctly
+6. Edge cases (empty, simple-only, advanced-only) are handled
+7. Files have correct permissions and ownership
+8. The role is fully idempotent
+9. Backups are created when appropriate
+
+## Hook Testing Details
+
+Tests verify simple hooks are converted to Python commands with:
+
+- Proper `hooks.PreToolUse` JSON structure
+- Correct `matcher` field
+- Pattern matching logic embedded
+- Messages properly escaped
+- Correct exit codes (0=notify, 2=block)
 
 ## Troubleshooting
 

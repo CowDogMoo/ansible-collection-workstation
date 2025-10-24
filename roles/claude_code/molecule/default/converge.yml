@@ -59,20 +59,37 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    - name: Include role under test (first run)
+    - name: Include role under test (first run - simple hooks)
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.claude_code
       vars:
         claude_code_username: "{{ container_user }}"
         claude_code_user_home: "{{ container_home }}"
-        claude_code_config_dir: "{{ container_home }}/.config/claude"
-        claude_code_hooks:
-          - name: "test-hook"
-            event: "PreToolUse"
-            matchers:
-              - tool: "Bash"
-                pattern: "test"
-            command: "echo 'Test hook triggered' >&2"
+        claude_code_config_dir: "{{ container_home }}/.claude"
+        claude_code_simple_hooks:
+          - name: "Test notification hook"
+            event: PreToolUse
+            tool: Bash
+            action: notify
+            message: "Test hook triggered"
+          - name: "Block dangerous rm"
+            event: PreToolUse
+            tool: Bash
+            command_contains: "rm -rf /"
+            action: block
+            message: "Dangerous command blocked"
+          - name: "Pattern match git commit"
+            event: PreToolUse
+            tool: Bash
+            command_pattern: 'git\s+commit.*-m'
+            exclude_pattern: 'safe'
+            action: block
+            message: "Use safe commit process"
+        claude_code_advanced_hooks:
+          - event: PreToolUse
+            tool: Bash
+            type: command
+            command: "python3 -c \"import json, sys; sys.exit(0)\""
 
     - name: Include role under test (second run - idempotency test)
       ansible.builtin.include_role:
@@ -80,14 +97,31 @@
       vars:
         claude_code_username: "{{ container_user }}"
         claude_code_user_home: "{{ container_home }}"
-        claude_code_config_dir: "{{ container_home }}/.config/claude"
-        claude_code_hooks:
-          - name: "test-hook"
-            event: "PreToolUse"
-            matchers:
-              - tool: "Bash"
-                pattern: "test"
-            command: "echo 'Test hook triggered' >&2"
+        claude_code_config_dir: "{{ container_home }}/.claude"
+        claude_code_simple_hooks:
+          - name: "Test notification hook"
+            event: PreToolUse
+            tool: Bash
+            action: notify
+            message: "Test hook triggered"
+          - name: "Block dangerous rm"
+            event: PreToolUse
+            tool: Bash
+            command_contains: "rm -rf /"
+            action: block
+            message: "Dangerous command blocked"
+          - name: "Pattern match git commit"
+            event: PreToolUse
+            tool: Bash
+            command_pattern: 'git\s+commit.*-m'
+            exclude_pattern: 'safe'
+            action: block
+            message: "Use safe commit process"
+        claude_code_advanced_hooks:
+          - event: PreToolUse
+            tool: Bash
+            type: command
+            command: "python3 -c \"import json, sys; sys.exit(0)\""
       register: second_run
 
     - name: Assert second run is idempotent
@@ -96,3 +130,40 @@
           - second_run is not changed
         fail_msg: "Second run should not report changes (idempotency failed)"
         success_msg: "Role is idempotent"
+
+    - name: Test with empty hooks (should create settings without hooks)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.claude_code
+      vars:
+        claude_code_username: "{{ container_user }}"
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.claude-empty"
+        claude_code_simple_hooks: []
+        claude_code_advanced_hooks: []
+
+    - name: Test with only simple hooks
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.claude_code
+      vars:
+        claude_code_username: "{{ container_user }}"
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.claude-simple"
+        claude_code_simple_hooks:
+          - name: "Simple test"
+            action: notify
+            message: "Simple hook only"
+        claude_code_advanced_hooks: []
+
+    - name: Test with only advanced hooks
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.claude_code
+      vars:
+        claude_code_username: "{{ container_user }}"
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.claude-advanced"
+        claude_code_simple_hooks: []
+        claude_code_advanced_hooks:
+          - event: PreToolUse
+            tool: Bash
+            type: command
+            command: "echo 'Advanced hook' >&2"

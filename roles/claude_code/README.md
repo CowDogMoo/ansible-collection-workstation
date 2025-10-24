@@ -30,7 +30,7 @@ claude_code_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('s
 claude_code_user_home: "{{ ... }}"
 
 # Configuration directory for Claude Code
-claude_code_config_dir: "{{ claude_code_user_home }}/.config/claude"
+claude_code_config_dir: "{{ claude_code_user_home }}/.claude"
 
 # Whether to install Claude Code CLI
 claude_code_install: true
@@ -41,29 +41,43 @@ claude_code_manage_settings: true
 # Whether to backup existing settings before overwriting
 claude_code_backup_settings: true
 
-# Claude Code hooks configuration
-claude_code_hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: "command"
-          command: "python3 -c \"import sys; sys.stderr.write('🔔 HOOK TEST: Hooks system is working!\\n'); sys.exit(0)\""
-        - type: "command"
-          command: "python3 -c \"import json, sys, re; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command',''); is_git_commit=bool(re.search(r'git\\\\s+commit.*-m', cmd)) and 'fabric' not in cmd; msg='❌ BLOCKED: Do not use git commit -m directly.\\\\n\\\\n✅ Use fabric for commit messages:\\\\n   git diff --staged | fabric --pattern commit\\\\n\\\\nThen commit with:\\\\n   git commit -m \\\\\"$(git diff --staged | fabric --pattern commit)\\\\\"' if is_git_commit else ''; sys.stderr.write(msg + '\\\\n') if msg else None; sys.exit(2 if msg else 0)\""
-        - type: "command"
-          command: "python3 -c \"import json, sys; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command',''); is_pr_create='gh pr create' in cmd; msg='❌ BLOCKED: Generate PR description first.\\\\n\\\\n✅ Use fabric for PR descriptions:\\\\n   git diff main...HEAD | fabric --pattern commit' if is_pr_create else ''; sys.stderr.write(msg + '\\\\n') if msg else None; sys.exit(2 if msg else 0)\""
+# Simple hooks - easy to configure, no coding required
+claude_code_simple_hooks:
+  - name: "Hook test notification"
+    action: notify
+    message: "🔔 Hooks working!"
+
+  - name: "Require fabric for git commits"
+    command_pattern: 'git\s+commit.*-m'
+    exclude_pattern: 'fabric'
+    action: block
+    message: "Use fabric for commit messages"
+
+  - name: "Require fabric for PRs"
+    command_contains: 'gh pr create'
+    action: block
+    message: "Use fabric for PR descriptions"
+
+# Advanced hooks - for custom Python/shell scripts
+claude_code_advanced_hooks: []
 
 # Additional Claude Code settings
 claude_code_additional_settings: {}
 ```
 
-## Hook Events
+### Hook Configuration
 
-Claude Code supports multiple hook events:
+**📖 [Complete Documentation](docs/HOOKS_GUIDE.md)** | **[Examples](files/hook_examples.yml)** | **[Python Helpers](files/hook_helpers.py)**
 
-- `UserPromptSubmit` - When user submits a prompt before Claude processes it
-- `PreToolUse` - Before any tool execution (can block tool execution)
-- `PostToolUse` - After successful tool completion
+**Simple Hooks** - No coding required:
+
+- `action`: `notify` or `block`
+- `message`: Message to display
+- `command_pattern`: Regex (optional)
+- `command_contains`: String match (optional)
+- `exclude_pattern`: Exclusion filter (optional)
+
+**Advanced Hooks** - Custom Python/shell scripts for complex logic
 
 ## Dependencies
 
@@ -71,65 +85,50 @@ None.
 
 ## Example Playbook
 
-### Basic usage with default hooks
+### Basic usage (default hooks)
 
 ```yaml
 - hosts: localhost
   roles:
-    - role: cowdogmoo.workstation.claude_code
+    - cowdogmoo.workstation.claude_code
 ```
 
-### Custom hooks configuration
+### Custom hooks
 
 ```yaml
 - hosts: localhost
   roles:
-    - role: cowdogmoo.workstation.claude_code
+    - cowdogmoo.workstation.claude_code
       vars:
-        claude_code_hooks:
-          PreToolUse:
-            - matcher: "Bash"
-              hooks:
-                - type: "command"
-                  command: "python3 -c \"import json, sys; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command',''); is_lint='git commit' in cmd; msg='⚠️  Run linters before committing' if is_lint else ''; sys.stderr.write(msg + '\\\\n') if msg else None; sys.exit(0)\""
-                - type: "command"
-                  command: "python3 -c \"import json, sys; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command',''); is_dangerous='rm -rf /' in cmd; msg='❌ BLOCKED: Dangerous rm command' if is_dangerous else ''; sys.stderr.write(msg + '\\\\n') if msg else None; sys.exit(2 if msg else 0)\""
+        claude_code_simple_hooks:
+          - name: "Block dangerous rm"
+            command_contains: "rm -rf /"
+            action: block
+            message: "Dangerous command blocked!"
+
+          - name: "Require code review"
+            command_pattern: 'git\s+push.*main'
+            action: block
+            message: "Direct push to main not allowed"
 ```
 
-### With additional settings
+### Disable default hooks
 
 ```yaml
 - hosts: localhost
   roles:
-    - role: cowdogmoo.workstation.claude_code
+    - cowdogmoo.workstation.claude_code
       vars:
-        claude_code_hooks: []
-        claude_code_additional_settings:
-          maxTokens: 8192
-          model: "claude-sonnet-4.5"
+        claude_code_simple_hooks: []
+        claude_code_advanced_hooks: []
 ```
 
-## Integration with Fabric
+## Features
 
-The default hooks block direct `git commit -m` and `gh pr create` commands, requiring you to use Fabric to generate messages first.
-
-Requirements for default hooks:
-
-1. Install Fabric using the `cowdogmoo.workstation.fabric` role
-2. Fabric's `commit` pattern (comes with Fabric by default)
-3. Hooks will block commits/PRs until you generate messages with Fabric
-
-## File Locations
-
-- **User settings**: `~/.claude/settings.json` - Applies to all projects
-- **Project settings**: `.claude/settings.json` - Version-controlled team settings
-- **Local settings**: `.claude/settings.local.json` - Personal preferences
-
-This role manages the user-level settings by default.
-
-## Backup
-
-When `claude_code_backup_settings` is enabled (default), the role will automatically create a timestamped backup of your existing settings only when changes are made. This ensures idempotency - backups are only created when the content actually changes. Backups are stored in the same directory with a timestamp suffix.
+- **Fabric Integration**: Default hooks enforce using Fabric for git commits and PR descriptions
+- **Automatic Backups**: Settings are backed up when changed (timestamps preserved)
+- **Idempotent**: Safe to run multiple times without side effects
+- **Multi-platform**: Works on macOS, Linux, and Windows
 
 ## License
 

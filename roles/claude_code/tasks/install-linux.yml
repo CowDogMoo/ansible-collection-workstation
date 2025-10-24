@@ -1,7 +1,7 @@
 ---
-- name: Check if Claude Code is already installed (Linux)
+- name: Check if already installed
   ansible.builtin.command: which claude
-  register: claude_code_linux_check
+  register: claude_code_check
   changed_when: false
   failed_when: false
 
@@ -10,19 +10,19 @@
   register: claude_code_npm_check
   changed_when: false
   failed_when: false
-  when: claude_code_linux_check.rc != 0
+  when: claude_code_check.rc != 0
 
-- name: Install Claude Code via npm (Linux)
+- name: Install via npm
   community.general.npm:
     name: "@anthropic-ai/claude-code"
     global: true
     state: present
   become: true
   when:
-    - claude_code_linux_check.rc != 0
+    - claude_code_check.rc != 0
     - claude_code_npm_check.rc == 0
 
-- name: Install Claude Code via install script (Linux - fallback)
+- name: Install via script (fallback)
   ansible.builtin.shell: |
     set -o pipefail
     curl -fsSL https://claude.ai/install.sh | bash
@@ -33,12 +33,12 @@
   become: true
   become_user: "{{ claude_code_username }}"
   when:
-    - claude_code_linux_check.rc != 0
+    - claude_code_check.rc != 0
     - claude_code_npm_check.rc != 0
   register: claude_code_script_install
   changed_when: "'Successfully installed' in claude_code_script_install.stdout"
 
-- name: Verify Claude Code installation (Linux)
+- name: Verify installation
   ansible.builtin.command: claude --version
   register: claude_code_version
   changed_when: false
@@ -46,7 +46,7 @@
   become: true
   become_user: "{{ claude_code_username }}"
 
-- name: Display Claude Code version
+- name: Display version
   ansible.builtin.debug:
     msg: "Claude Code installed: {{ claude_code_version.stdout }}"
   when: claude_code_version.rc == 0

@@ -55,11 +55,10 @@
   when: claude_code_manage_settings | bool
   register: claude_code_settings_result
 
-- name: Display Claude Code configuration status
+- name: Display configuration status
   ansible.builtin.debug:
     msg: >-
-      Claude Code settings have been configured at {{ claude_code_config_dir }}/settings.json.
-      {% if claude_code_settings_result.backup_file is defined %}
-      A backup of your previous settings was created at {{ claude_code_settings_result.backup_file }}.
-      {% endif %}
-      Configured {{ claude_code_hooks | length }} hook(s).
+      Settings: {{ claude_code_config_dir }}/settings.json |
+      Hooks: {{ (claude_code_simple_hooks | length) + (claude_code_advanced_hooks | length) }}
+      ({{ claude_code_simple_hooks | length }} simple, {{ claude_code_advanced_hooks | length }} advanced)
+      {% if claude_code_settings_result.backup_file is defined %}| Backup: {{ claude_code_settings_result.backup_file }}{% endif %}

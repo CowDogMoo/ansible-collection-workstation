@@ -1,23 +1,23 @@
 ---
-- name: Check if Claude Code is already installed (macOS)
+- name: Check if already installed
   ansible.builtin.command: which claude
-  register: claude_code_macos_check
+  register: claude_code_check
   changed_when: false
   failed_when: false
 
-- name: Install Claude Code via Homebrew (macOS)
+- name: Install via Homebrew
   community.general.homebrew_cask:
     name: claude-code
     state: present
-  when: claude_code_macos_check.rc != 0
+  when: claude_code_check.rc != 0
 
-- name: Verify Claude Code installation (macOS)
+- name: Verify installation
   ansible.builtin.command: claude --version
   register: claude_code_version
   changed_when: false
   failed_when: false
 
-- name: Display Claude Code version
+- name: Display version
   ansible.builtin.debug:
     msg: "Claude Code installed: {{ claude_code_version.stdout }}"
   when: claude_code_version.rc == 0

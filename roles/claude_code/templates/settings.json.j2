@@ -1,16 +1,50 @@
+{#- Macro to convert simple hooks to Python command -#}
+{% macro simple_hook_to_python(hook) -%}
+python3 -c "import json, sys, re; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command','');
+{%- if hook.command_pattern is defined %}
+match = bool(re.search(r'{{ hook.command_pattern }}', cmd))
+{%- if hook.exclude_pattern is defined %} and '{{ hook.exclude_pattern }}' not in cmd{% endif -%};
+{%- elif hook.command_contains is defined %}
+match = '{{ hook.command_contains }}' in cmd;
+{%- else %}
+match = True;
+{%- endif %}
+msg = '''{{ hook.message | replace("'", "\\'") | replace("\n", "\\n") }}''' if match else '';
+sys.stderr.write(msg + '\\n') if msg else None;
+sys.exit({% if hook.action == 'block' %}2{% else %}0{% endif %} if msg else 0)"
+{%- endmacro -%}
+
+{#- Group hooks by event and tool -#}
+{% set hooks_by_event = {} %}
+{% for hook in claude_code_simple_hooks + claude_code_advanced_hooks %}
+  {% set event = hook.event | default('PreToolUse') %}
+  {% set tool = hook.tool | default('Bash') %}
+  {% if event not in hooks_by_event %}
+    {% set _ = hooks_by_event.update({event: {}}) %}
+  {% endif %}
+  {% if tool not in hooks_by_event[event] %}
+    {% set _ = hooks_by_event[event].update({tool: []}) %}
+  {% endif %}
+  {% set _ = hooks_by_event[event][tool].append({
+    'type': hook.type | default('command'),
+    'command': hook.command if 'command' in hook else simple_hook_to_python(hook)
+  }) %}
+{% endfor %}
+
+{#- Generate hooks JSON -#}
 {
-{% if claude_code_hooks | length > 0 %}
+{% if hooks_by_event | length > 0 %}
   "hooks": {
-{% for event, matchers in claude_code_hooks.items() %}
+{% for event, tools in hooks_by_event.items() %}
     "{{ event }}": [
-{% for matcher_group in matchers %}
+{% for tool, hook_list in tools.items() %}
       {
-        "matcher": "{{ matcher_group.matcher }}",
+        "matcher": "{{ tool }}",
         "hooks": [
-{% for hook in matcher_group.hooks %}
+{% for hook_item in hook_list %}
           {
-            "type": "{{ hook.type }}",
-            "command": {{ hook.command | to_json }}
+            "type": "{{ hook_item.type }}",
+            "command": {{ hook_item.command | to_json }}
           }{% if not loop.last %},{% endif %}
 
 {% endfor %}
