@@ -18,44 +18,14 @@ claude_code_manage_settings: true
 claude_code_backup_settings: true
 
 # Simple hooks - easy YAML configuration
-claude_code_simple_hooks:
-  - name: "Require fabric for commits"
-    command_pattern: '^git\s+commit\s'
-    exclude_pattern: "cat <<'EOF'"
-    action: block
-    message: |
-      ❌ BLOCKED: Use fabric for commit messages with heredoc format.
-
-      ✅ Required format:
-      git commit -m "$(cat <<'EOF'
-      [paste fabric output EXACTLY as-is - no additions]
-      EOF
-      )"
-
-      Generate message: git diff --staged | fabric --pattern commit
-
-      ⚠️  DO NOT add emojis, co-author tags, or any other text.
-
-  - name: "Require fabric for PRs"
-    command_contains: 'gh pr create'
-    exclude_pattern: "cat <<'EOF'"
-    action: block
-    message: |
-      ❌ BLOCKED: Use fabric for PR descriptions with heredoc format.
-
-      ✅ Required format:
-      gh pr create --title "..." --body "$(cat <<'EOF'
-      [paste fabric output EXACTLY as-is - no additions]
-      EOF
-      )"
-
-      Generate description: git diff main...HEAD | fabric --pattern pr
-
-      ⚠️  DO NOT add emojis, generated-by tags, or any other text.
+claude_code_simple_hooks: []
 
 # Advanced hooks - custom Python/shell scripts
-claude_code_advanced_hooks: []
+claude_code_advanced_hooks:
+  - event: PreToolUse
+    tool: Bash
+    type: command
+    command: 'python3 -c "import json, sys; data=json.load(sys.stdin); cmd=data.get(''tool_input'',{}).get(''command'',''''); forbidden=[''🤖'',''Generated with'',''Co-Authored-By: Claude'',''claude.com/claude-code'']; msg=''❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff --staged | fabric --pattern commit'' if ''git commit'' in cmd and ''-m'' in cmd and any(f in cmd for f in forbidden) else ''❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff main...HEAD | fabric --pattern pr'' if ''gh pr create'' in cmd and ''--body'' in cmd and any(f in cmd for f in forbidden) else ''''; sys.stderr.write(msg) if msg else None; sys.exit(2 if msg else 0)"'
 
 # Additional settings (optional)
-claude_code_additional_settings:
-  alwaysThinkingEnabled: true
+claude_code_additional_settings: {}
