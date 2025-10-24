@@ -145,6 +145,9 @@
       role: cowdogmoo.workstation.fabric
       # For debugging
       # role: ../../roles/fabric
+      vars:
+        # Use script install method since Go from asdf may not be in PATH yet
+        fabric_install_method: "script"
 
     - name: Install and configure Claude Code CLI
       role: cowdogmoo.workstation.claude_code

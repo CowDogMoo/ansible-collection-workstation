@@ -55,7 +55,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 
 ### install-script.yml
 
-- **Check if fabric is already installed** (ansible.builtin.command)
+- **Check if fabric is already installed** (ansible.builtin.stat)
 - **Install Fabric via official install script** (ansible.builtin.shell) - Conditional
 - **Verify fabric installation** (ansible.builtin.command)
 - **Display installed version** (ansible.builtin.debug) - Conditional

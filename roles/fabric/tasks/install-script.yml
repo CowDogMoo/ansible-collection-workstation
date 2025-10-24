@@ -1,9 +1,10 @@
 ---
 - name: Check if fabric is already installed
-  ansible.builtin.command: which fabric
+  ansible.builtin.stat:
+    path: "{{ fabric_user_home }}/.local/bin/fabric"
   register: fabric_check_script
-  changed_when: false
-  failed_when: false
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ fabric_username }}"
 
 - name: Install Fabric via official install script
   ansible.builtin.shell: |
@@ -15,9 +16,9 @@
     HOME: "{{ fabric_user_home }}"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ fabric_username }}"
-  when: fabric_check_script.rc != 0
+  when: not fabric_check_script.stat.exists
   register: fabric_script_install
-  changed_when: "'Successfully installed' in fabric_script_install.stdout or fabric_script_install.rc == 0"
+  changed_when: fabric_script_install.rc == 0
 
 - name: Verify fabric installation
   ansible.builtin.command: fabric --version
