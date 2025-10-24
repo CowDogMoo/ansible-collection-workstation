@@ -19,12 +19,8 @@ claude_code_backup_settings: true
 
 # Simple hooks - easy YAML configuration
 claude_code_simple_hooks:
-  - name: "Hook test"
-    action: notify
-    message: "🔔 Hooks working!"
-
   - name: "Require fabric for commits"
-    command_pattern: 'git\s+commit'
+    command_pattern: '^git\s+commit\s'
     exclude_pattern: "cat <<'EOF'"
     action: block
     message: |

@@ -3,15 +3,14 @@
 python3 -c "import json, sys, re; data=json.load(sys.stdin); cmd=data.get('tool_input',{}).get('command','');
 {%- if hook.command_pattern is defined %}
 match = bool(re.search(r'{{ hook.command_pattern }}', cmd))
-{%- if hook.exclude_pattern is defined %} and '{{ hook.exclude_pattern }}' not in cmd{% endif -%};
+{%- if hook.exclude_pattern is defined %} and \"{{ hook.exclude_pattern }}\" not in cmd{% endif -%};
 {%- elif hook.command_contains is defined %}
-match = '{{ hook.command_contains }}' in cmd;
+match = \"{{ hook.command_contains }}\" in cmd;
 {%- else %}
 match = True;
 {%- endif %}
 msg = '''{{ hook.message | replace("'", "\\'") | replace("\n", "\\n") }}''' if match else '';
-sys.stderr.write(msg + '\\n') if msg else None;
-sys.exit({% if hook.action == 'block' %}2{% else %}0{% endif %} if msg else 0)"
+sys.stderr.write(msg + '\\n') if msg else None;sys.exit({% if hook.action == 'block' %}2 if msg else 0{% else %}0{% endif %})"
 {%- endmacro -%}
 
 {#- Group hooks by event and tool -#}
