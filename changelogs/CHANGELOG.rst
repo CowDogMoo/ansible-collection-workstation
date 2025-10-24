@@ -1,8 +1,70 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.0.8 Release Notes
+CowDogMoo Workstation Ansible Collection 2.1.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.1.0
+======
+
+Release Summary
+---------------
+
+Major feature release adding Fabric and Claude Code AI development tool roles, Grafana Alloy log shipping integration, enhanced ASDF plugin management, and improved log rotation flexibility. Updated numerous dependencies to their latest versions.
+
+Added
+-----
+
+- Added GitHub token support improvements in go_task role
+- Added Grafana Alloy log shipping to Loki with new Grafana role dependencies
+- Added alloy_version variable to workstation playbook for version control
+- Added claude_code role for installing and managing Claude Code CLI with hooks and settings
+- Added fabric role for installing and managing Fabric AI framework
+- Added flexible simple/advanced hooks system for Claude Code with comprehensive documentation
+- Added labeler and workflow support for claude_code, fabric, and go_task roles
+
+Changed
+-------
+
+- Enhanced commit and PR hooks to enforce fabric heredoc usage
+- Improved fabric install script idempotency and user context handling
+- Improved hook pattern matching and command evaluation logic for Claude Code
+- Improved log rotation flexibility and reliability with better variable naming
+- Increased max parallel jobs in molecule workflow to 4
+- Set become for Grafana Alloy role on non-Darwin systems
+- Updated ASDF to version 0.18.0 with improved plugin version handling
+- Updated Grafana collection dependency and install configuration
+- Updated actions/cache to v4.3.0
+- Updated actions/create-github-app-token to v2.1.4
+- Updated actions/labeler to v6
+- Updated actions/setup-go to v6 in pre-commit workflow
+- Updated actions/setup-python to v6
+- Updated ansible-core from 2.19.3 to 2.20.0rc2 (required for Python 3.14 compatibility)
+- Updated ansible/ansible-lint from v25.8.2 to v25.9.2
+- Updated community.docker from 4.7.0 to 4.8.0
+- Updated community.general from 11.2.1 to 11.3.0
+- Updated golang from 1.25.1 to 1.25.3
+- Updated grafana.grafana to v6.0.5
+- Updated helm from 3.18.6 to 3.19.0
+- Updated kubectl from 1.34.0 to 1.34.1
+- Updated molecule to v25.9.0
+- Updated packer from 1.14.1 to 1.14.2
+- Updated python from 3.13.7 to 3.14.0
+- Updated renovatebot/github-action to v43.0.18
+- Updated ruby from 3.4.5 to 3.4.7
+
+Removed
+-------
+
+- Removed commented-out collection install command from molecule workflow
+- Removed markdownlint configuration file
+- Removed unused claude_code_simple_hooks.2 variable from documentation
+
+Fixed
+-----
+
+- Fixed logrotate template to use correct variable names
+- Fixed systemd task robustness for handling missing status keys
 
 v2.0.8
 ======
