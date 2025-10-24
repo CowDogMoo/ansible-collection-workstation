@@ -54,6 +54,18 @@ role/asdf:
   - changed-files:
       - any-glob-to-any-file: "roles/asdf/**/*"
 
+role/claude_code:
+  - changed-files:
+      - any-glob-to-any-file: "roles/claude_code/**/*"
+
+role/fabric:
+  - changed-files:
+      - any-glob-to-any-file: "roles/fabric/**/*"
+
+role/go_task:
+  - changed-files:
+      - any-glob-to-any-file: "roles/go_task/**/*"
+
 role/logging:
   - changed-files:
       - any-glob-to-any-file: "roles/logging/**/*"
