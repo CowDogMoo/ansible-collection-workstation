@@ -54,6 +54,10 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   when: fabric_init_directories | bool
 
+- name: Manage custom patterns from git repository
+  ansible.builtin.include_tasks: manage-custom-patterns.yml
+  when: fabric_install_custom_patterns | bool
+
 - name: Display fabric installation status
   ansible.builtin.debug:
     msg: >-

@@ -53,3 +53,16 @@
               - second_run is not changed
             fail_msg: "Second run should not report changes (idempotency failed)"
             success_msg: "Role is idempotent"
+
+        - name: Test with custom patterns enabled (first time)
+          ansible.builtin.include_role:
+            name: cowdogmoo.workstation.fabric
+          vars:
+            fabric_username: "{{ container_user }}"
+            fabric_user_home: "{{ container_home }}"
+            fabric_init_directories: true
+            fabric_install_custom_patterns: true
+            fabric_custom_patterns_repo: "https://github.com/CowDogMoo/fabric-patterns-hub"
+            fabric_custom_patterns_version: "main"
+            fabric_custom_patterns_subdir: "patterns"
+            fabric_update_custom_patterns: false

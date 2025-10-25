@@ -1,0 +1,79 @@
+---
+- name: Check if custom patterns marker file exists
+  when: fabric_install_custom_patterns | bool
+  ansible.builtin.stat:
+    path: "{{ fabric_config_dir }}/.custom-patterns-installed"
+  register: fabric_custom_patterns_marker
+
+- name: Determine if custom patterns should be installed or updated
+  ansible.builtin.set_fact:
+    fabric_should_install_patterns: >-
+      {{ fabric_install_custom_patterns | bool and
+         (not fabric_custom_patterns_marker.stat.exists or
+          fabric_update_custom_patterns | bool) }}
+
+- name: Install or update custom patterns
+  when: fabric_should_install_patterns | bool
+  block:
+    - name: Ensure git is installed
+      ansible.builtin.package:
+        name: git
+        state: present
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+    - name: Create temporary directory for custom patterns repository
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: fabric-custom-patterns
+      register: fabric_custom_patterns_temp
+
+    - name: Clone custom patterns repository
+      ansible.builtin.git:
+        repo: "{{ fabric_custom_patterns_repo }}"
+        dest: "{{ fabric_custom_patterns_temp.path }}"
+        version: "{{ fabric_custom_patterns_version }}"
+        force: true
+
+    - name: Find all custom pattern directories
+      ansible.builtin.find:
+        paths: "{{ fabric_custom_patterns_temp.path }}/{{ fabric_custom_patterns_subdir }}"
+        file_type: directory
+        recurse: false
+      register: fabric_custom_pattern_dirs
+
+    - name: Copy custom patterns to fabric patterns directory
+      ansible.builtin.copy:
+        src: "{{ item.path }}/"
+        dest: "{{ fabric_config_dir }}/patterns/{{ item.path | basename }}/"
+        owner: "{{ fabric_username }}"
+        group: "{{ fabric_usergroup }}"
+        mode: "0755"
+        remote_src: true
+      loop: "{{ fabric_custom_pattern_dirs.files }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+    - name: Create marker file to track installation
+      ansible.builtin.copy:
+        content: |
+          # Custom patterns installed from {{ fabric_custom_patterns_repo }}
+          # Version: {{ fabric_custom_patterns_version }}
+          # Installed at: {{ ansible_date_time.iso8601 }}
+        dest: "{{ fabric_config_dir }}/.custom-patterns-installed"
+        owner: "{{ fabric_username }}"
+        group: "{{ fabric_usergroup }}"
+        mode: "0644"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+    - name: Clean up temporary directory
+      ansible.builtin.file:
+        path: "{{ fabric_custom_patterns_temp.path }}"
+        state: absent
+      when: fabric_custom_patterns_temp.path is defined
+
+    - name: Display custom patterns installation status
+      ansible.builtin.debug:
+        msg: >-
+          Custom patterns installed from {{ fabric_custom_patterns_repo }}.
+          Patterns location: {{ fabric_config_dir }}/patterns/
+          Installed patterns: {{ fabric_custom_pattern_dirs.files | map(attribute='path') | map('basename') | list | join(', ') }}
+      when: fabric_custom_pattern_dirs.matched > 0
