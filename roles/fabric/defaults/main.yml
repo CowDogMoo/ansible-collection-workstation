@@ -28,3 +28,10 @@ fabric_run_setup: false
 
 # Whether to initialize fabric directories
 fabric_init_directories: true
+
+# Custom patterns configuration
+fabric_install_custom_patterns: false  # Whether to install custom patterns from a git repository
+fabric_custom_patterns_repo: "https://github.com/CowDogMoo/fabric-patterns-hub"  # Git repository URL containing custom patterns
+fabric_custom_patterns_version: "main"  # Git repository version (branch, tag, or commit hash)
+fabric_custom_patterns_subdir: "patterns"  # Subdirectory within the repo containing patterns (relative to repo root)
+fabric_update_custom_patterns: false  # Whether to update custom patterns on subsequent runs (set to false for idempotence)

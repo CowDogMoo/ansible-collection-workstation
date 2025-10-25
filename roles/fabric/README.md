@@ -24,6 +24,11 @@ Installs and configures Daniel Miessler's Fabric AI framework
 | `fabric_config_dir` | str | `{{ fabric_user_home }}/.config/fabric` | No description |
 | `fabric_run_setup` | bool | `False` | No description |
 | `fabric_init_directories` | bool | `True` | No description |
+| `fabric_install_custom_patterns` | bool | `False` | No description |
+| `fabric_custom_patterns_repo` | str | `https://github.com/CowDogMoo/fabric-patterns-hub` | No description |
+| `fabric_custom_patterns_version` | str | `main` | No description |
+| `fabric_custom_patterns_subdir` | str | `patterns` | No description |
+| `fabric_update_custom_patterns` | bool | `False` | No description |
 
 ## Tasks
 
@@ -72,7 +77,22 @@ Installs and configures Daniel Miessler's Fabric AI framework
 - **Install Fabric via npm** (ansible.builtin.include_tasks) - Conditional
 - **Create fabric configuration directory** (ansible.builtin.file) - Conditional
 - **Create fabric patterns directory** (ansible.builtin.file) - Conditional
+- **Manage custom patterns from git repository** (ansible.builtin.include_tasks) - Conditional
 - **Display fabric installation status** (ansible.builtin.debug)
+
+### manage-custom-patterns.yml
+
+- **Check if custom patterns marker file exists** (ansible.builtin.stat) - Conditional
+- **Determine if custom patterns should be installed or updated** (ansible.builtin.set_fact)
+- **Install or update custom patterns** (block) - Conditional
+- **Ensure git is installed** (ansible.builtin.package)
+- **Create temporary directory for custom patterns repository** (ansible.builtin.tempfile)
+- **Clone custom patterns repository** (ansible.builtin.git)
+- **Find all custom pattern directories** (ansible.builtin.find)
+- **Copy custom patterns to fabric patterns directory** (ansible.builtin.copy)
+- **Create marker file to track installation** (ansible.builtin.copy)
+- **Clean up temporary directory** (ansible.builtin.file) - Conditional
+- **Display custom patterns installation status** (ansible.builtin.debug) - Conditional
 
 ## Example Playbook
 
