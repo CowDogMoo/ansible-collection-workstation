@@ -10,3 +10,4 @@ changelogs/.plugin-cache.yaml
 *.tar.gz
 *.log
 .tool-versions
+.backups
