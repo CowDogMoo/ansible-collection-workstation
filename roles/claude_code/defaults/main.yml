@@ -46,23 +46,6 @@ claude_code_advanced_hooks:
           sys.exit(2)
       sys.exit(0)
       "
-  # Hook 2: Require fabric for all PR creation
-  - event: PreToolUse
-    tool: Bash
-    type: command
-    command: |
-      python3 -c "
-      import json, sys
-
-      data = json.load(sys.stdin)
-      cmd = data.get('tool_input', {}).get('command', '')
-
-      if 'gh pr create' in cmd:
-          msg = '❌ BLOCKED: Must use fabric to generate PR content\\n\\n✅ Required workflow:\\n   1. Generate PR content: git diff main...HEAD | fabric --pattern pr\\n   2. Parse the fabric output to extract title and body\\n   3. Use extracted content: gh pr create --title \"...\" --body \"...\"\\n\\nExample:\\n   pr_content=$(git diff main...HEAD | fabric --pattern pr)\\n   # Parse pr_content to get title and body, then use in gh pr create'
-          sys.stderr.write(msg + '\n')
-          sys.exit(2)
-      sys.exit(0)
-      "
 
 # Additional settings (optional)
 claude_code_additional_settings: {}
