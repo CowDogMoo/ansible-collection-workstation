@@ -182,17 +182,17 @@
         fail_msg: "Matcher is not set to Bash"
         success_msg: "Matcher is correctly set to Bash"
 
-    - name: Check if backup was created (if settings existed before)
+    - name: Check if backup was created in /tmp (if settings existed before)
       ansible.builtin.find:
-        paths: "{{ claude_code_config_dir }}"
-        patterns: "settings.json.backup.*"
+        paths: "/tmp"
+        patterns: "settings.json.*.backup"
       register: backup_files
       become: true
       become_user: "{{ container_user }}"
 
     - name: Display backup status
       ansible.builtin.debug:
-        msg: "Found {{ backup_files.matched }} backup file(s)"
+        msg: "Found {{ backup_files.matched }} backup file(s) in /tmp"
 
     - name: Verify file ownership
       ansible.builtin.stat:
