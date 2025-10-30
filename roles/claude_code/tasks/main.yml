@@ -43,11 +43,19 @@
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
-- name: Check if Claude Code settings.json exists
-  ansible.builtin.stat:
-    path: "{{ claude_code_config_dir }}/settings.json"
-  register: claude_code_settings_stat
+- name: Check if settings.json will change (dry-run)
+  ansible.builtin.template:
+    src: settings.json.j2
+    dest: "{{ claude_code_config_dir }}/settings.json"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0644"
+  check_mode: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   when: claude_code_manage_settings | bool
+  register: claude_code_settings_check
+  changed_when: false
+  diff: false
 
 - name: Create backup of existing settings.json in /tmp
   ansible.builtin.copy:
@@ -61,7 +69,7 @@
   when:
     - claude_code_manage_settings | bool
     - claude_code_backup_settings | bool
-    - claude_code_settings_stat.stat.exists
+    - claude_code_settings_check is changed
   register: claude_code_backup_result
 
 - name: Generate Claude Code settings.json
