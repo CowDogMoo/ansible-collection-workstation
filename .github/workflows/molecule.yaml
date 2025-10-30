@@ -54,6 +54,113 @@ permissions:
   pull-requests: write
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      roles: ${{ steps.filter.outputs.roles }}
+      playbooks: ${{ steps.filter.outputs.playbooks }}
+      roles_json: ${{ steps.generate-matrix.outputs.roles_json }}
+      playbooks_json: ${{ steps.generate-matrix.outputs.playbooks_json }}
+      test_all: ${{ steps.check-event.outputs.test_all }}
+    steps:
+      - name: Set up git repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          path: ${{ env.COLLECTION_PATH }}
+          fetch-depth: 0
+
+      - name: Check event type
+        id: check-event
+        run: |
+          # Test all on: push to main, schedule, workflow_dispatch without specific inputs, merge_group
+          if [[ "${{ github.event_name }}" == "push" ]] || \
+             [[ "${{ github.event_name }}" == "schedule" ]] || \
+             [[ "${{ github.event_name }}" == "merge_group" ]] || \
+             [[ "${{ github.event_name }}" == "workflow_dispatch" && -z "${{ env.ROLE }}" && -z "${{ env.PLAYBOOK }}" ]]; then
+            echo "test_all=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "test_all=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect changed files
+        id: filter
+        if: steps.check-event.outputs.test_all == 'false'
+        working-directory: ${{ env.COLLECTION_PATH }}
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="origin/main"
+            HEAD="HEAD"
+          fi
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE"..."$HEAD")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Extract changed roles
+          ROLES=$(echo "$CHANGED_FILES" | grep '^roles/' | cut -d'/' -f2 | sort -u | tr '\n' ' ')
+          echo "roles=$ROLES" >> "$GITHUB_OUTPUT"
+          echo "Changed roles: $ROLES"
+
+          # Extract changed playbooks
+          PLAYBOOKS=$(echo "$CHANGED_FILES" | grep '^playbooks/' | cut -d'/' -f2 | sort -u | tr '\n' ' ')
+          echo "playbooks=$PLAYBOOKS" >> "$GITHUB_OUTPUT"
+          echo "Changed playbooks: $PLAYBOOKS"
+
+      - name: Generate test matrix
+        id: generate-matrix
+        working-directory: ${{ env.COLLECTION_PATH }}
+        run: |
+          if [[ "${{ steps.check-event.outputs.test_all }}" == "true" ]]; then
+            # Test all roles and playbooks
+            ROLES_JSON='[
+              {"name": "Role Test - asdf", "path": "roles/asdf"},
+              {"name": "Role Test - claude_code", "path": "roles/claude_code"},
+              {"name": "Role Test - fabric", "path": "roles/fabric"},
+              {"name": "Role Test - go_task", "path": "roles/go_task"},
+              {"name": "Role Test - logging", "path": "roles/logging"},
+              {"name": "Role Test - package_management", "path": "roles/package_management"},
+              {"name": "Role Test - user_setup", "path": "roles/user_setup"},
+              {"name": "Role Test - vnc_setup", "path": "roles/vnc_setup"},
+              {"name": "Role Test - zsh_setup", "path": "roles/zsh_setup"}
+            ]'
+            PLAYBOOKS_JSON='[
+              {"name": "Playbook Test - workstation", "path": "playbooks/workstation"},
+              {"name": "Playbook Test - vnc_box", "path": "playbooks/vnc_box"}
+            ]'
+          else
+            # Test only changed roles
+            ROLES="${{ steps.filter.outputs.roles }}"
+            ROLES_JSON="[]"
+            if [[ -n "$ROLES" ]]; then
+              ROLES_JSON="["
+              FIRST=true
+              for role in $ROLES; do
+                if [[ "$FIRST" == "true" ]]; then
+                  FIRST=false
+                else
+                  ROLES_JSON+=","
+                fi
+                ROLES_JSON+="{\"name\": \"Role Test - ${role}\", \"path\": \"roles/${role}\"}"
+              done
+              ROLES_JSON+="]"
+            fi
+
+            # Always test all playbooks
+            PLAYBOOKS_JSON='[
+              {"name": "Playbook Test - workstation", "path": "playbooks/workstation"},
+              {"name": "Playbook Test - vnc_box", "path": "playbooks/vnc_box"}
+            ]'
+          fi
+
+          echo "roles_json=$ROLES_JSON" >> "$GITHUB_OUTPUT"
+          echo "playbooks_json=$PLAYBOOKS_JSON" >> "$GITHUB_OUTPUT"
+          echo "Roles to test: $ROLES_JSON"
+          echo "Playbooks to test: $PLAYBOOKS_JSON"
+
   validate-inputs:
     runs-on: ubuntu-latest
     steps:
@@ -282,7 +389,7 @@ jobs:
           fi
 
   full_test:
-    needs: validate-inputs
+    needs: [validate-inputs, detect-changes]
     if: ${{ github.event.inputs.ROLE == '' && github.event.inputs.PLAYBOOK == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -290,29 +397,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        include:
-          - name: "Role Test - asdf"
-            path: "roles/asdf"
-          - name: "Role Test - claude_code"
-            path: "roles/claude_code"
-          - name: "Role Test - fabric"
-            path: "roles/fabric"
-          - name: "Role Test - go_task"
-            path: "roles/go_task"
-          - name: "Role Test - logging"
-            path: "roles/logging"
-          - name: "Role Test - package_management"
-            path: "roles/package_management"
-          - name: "Role Test - user_setup"
-            path: "roles/user_setup"
-          - name: "Role Test - vnc_setup"
-            path: "roles/vnc_setup"
-          - name: "Role Test - zsh_setup"
-            path: "roles/zsh_setup"
-          - name: "Playbook Test - workstation"
-            path: "playbooks/workstation"
-          - name: "Playbook Test - vnc_box"
-            path: "playbooks/vnc_box"
+        include: ${{ fromJson(format('[{0}{1}{2}]', needs.detect-changes.outputs.roles_json == '[]' && '' || needs.detect-changes.outputs.roles_json, needs.detect-changes.outputs.roles_json == '[]' || needs.detect-changes.outputs.playbooks_json == '[]' && '' || ',', needs.detect-changes.outputs.playbooks_json)) }}
 
     steps:
       - name: Install Act dependencies
