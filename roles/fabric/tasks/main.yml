@@ -1,4 +1,5 @@
 ---
+# Test comment to verify intelligent workflow only tests fabric role
 - name: Set fabric username for Kali systems
   ansible.builtin.set_fact:
     fabric_username: "kali"
