@@ -43,6 +43,27 @@
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
+- name: Check if Claude Code settings.json exists
+  ansible.builtin.stat:
+    path: "{{ claude_code_config_dir }}/settings.json"
+  register: claude_code_settings_stat
+  when: claude_code_manage_settings | bool
+
+- name: Create backup of existing settings.json in /tmp
+  ansible.builtin.copy:
+    src: "{{ claude_code_config_dir }}/settings.json"
+    dest: "/tmp/settings.json.{{ ansible_date_time.iso8601_basic_short }}.backup"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0644"
+    remote_src: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when:
+    - claude_code_manage_settings | bool
+    - claude_code_backup_settings | bool
+    - claude_code_settings_stat.stat.exists
+  register: claude_code_backup_result
+
 - name: Generate Claude Code settings.json
   ansible.builtin.template:
     src: settings.json.j2
@@ -50,7 +71,6 @@
     owner: "{{ claude_code_username }}"
     group: "{{ claude_code_usergroup }}"
     mode: "0644"
-    backup: "{{ claude_code_backup_settings | bool }}"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   when: claude_code_manage_settings | bool
   register: claude_code_settings_result
@@ -61,4 +81,4 @@
       Settings: {{ claude_code_config_dir }}/settings.json |
       Hooks: {{ (claude_code_simple_hooks | length) + (claude_code_advanced_hooks | length) }}
       ({{ claude_code_simple_hooks | length }} simple, {{ claude_code_advanced_hooks | length }} advanced)
-      {% if claude_code_settings_result.backup_file is defined %}| Backup: {{ claude_code_settings_result.backup_file }}{% endif %}
+      {% if claude_code_backup_result.dest is defined %}| Backup: {{ claude_code_backup_result.dest }}{% endif %}
