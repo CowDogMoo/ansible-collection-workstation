@@ -116,21 +116,8 @@ jobs:
         run: |
           if [[ "${{ steps.check-event.outputs.test_all }}" == "true" ]]; then
             # Test all roles and playbooks
-            ROLES_JSON='[
-              {"name": "Role Test - asdf", "path": "roles/asdf"},
-              {"name": "Role Test - claude_code", "path": "roles/claude_code"},
-              {"name": "Role Test - fabric", "path": "roles/fabric"},
-              {"name": "Role Test - go_task", "path": "roles/go_task"},
-              {"name": "Role Test - logging", "path": "roles/logging"},
-              {"name": "Role Test - package_management", "path": "roles/package_management"},
-              {"name": "Role Test - user_setup", "path": "roles/user_setup"},
-              {"name": "Role Test - vnc_setup", "path": "roles/vnc_setup"},
-              {"name": "Role Test - zsh_setup", "path": "roles/zsh_setup"}
-            ]'
-            PLAYBOOKS_JSON='[
-              {"name": "Playbook Test - workstation", "path": "playbooks/workstation"},
-              {"name": "Playbook Test - vnc_box", "path": "playbooks/vnc_box"}
-            ]'
+            ROLES_JSON='[{"name":"Role Test - asdf","path":"roles/asdf"},{"name":"Role Test - claude_code","path":"roles/claude_code"},{"name":"Role Test - fabric","path":"roles/fabric"},{"name":"Role Test - go_task","path":"roles/go_task"},{"name":"Role Test - logging","path":"roles/logging"},{"name":"Role Test - package_management","path":"roles/package_management"},{"name":"Role Test - user_setup","path":"roles/user_setup"},{"name":"Role Test - vnc_setup","path":"roles/vnc_setup"},{"name":"Role Test - zsh_setup","path":"roles/zsh_setup"}]'
+            PLAYBOOKS_JSON='[{"name":"Playbook Test - workstation","path":"playbooks/workstation"},{"name":"Playbook Test - vnc_box","path":"playbooks/vnc_box"}]'
           else
             # Test only changed roles
             ROLES="${{ steps.filter.outputs.roles }}"
@@ -144,16 +131,13 @@ jobs:
                 else
                   ROLES_JSON+=","
                 fi
-                ROLES_JSON+="{\"name\": \"Role Test - ${role}\", \"path\": \"roles/${role}\"}"
+                ROLES_JSON+="{\"name\":\"Role Test - ${role}\",\"path\":\"roles/${role}\"}"
               done
               ROLES_JSON+="]"
             fi
 
             # Always test all playbooks
-            PLAYBOOKS_JSON='[
-              {"name": "Playbook Test - workstation", "path": "playbooks/workstation"},
-              {"name": "Playbook Test - vnc_box", "path": "playbooks/vnc_box"}
-            ]'
+            PLAYBOOKS_JSON='[{"name":"Playbook Test - workstation","path":"playbooks/workstation"},{"name":"Playbook Test - vnc_box","path":"playbooks/vnc_box"}]'
           fi
 
           echo "roles_json=$ROLES_JSON" >> "$GITHUB_OUTPUT"
