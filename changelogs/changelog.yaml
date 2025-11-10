@@ -712,3 +712,21 @@ releases:
     fragments:
     - 2.1.0.yaml
     release_date: '2025-10-23'
+  2.1.1:
+    changes:
+      added:
+      - Added advanced pretool hooks to enforce fabric-based PR creation
+      - Added explicit backup and verification for settings.json management
+      - Added release automation and changelog generation tasks to Taskfile
+      - Added support for installing custom patterns from git repository
+      changed:
+      - Migrated to advanced pre-commit/pr content blocking hooks
+      fixed:
+      - Fixed issue with cached cc file
+      - claude_code - Fixed Python syntax in advanced hooks
+      release_summary: This release introduces enhanced automation for release management,
+        improved backup and verification features, and support for installing custom
+        patterns from git repositories.
+    fragments:
+    - 2.1.1.yaml
+    release_date: '2025-11-10'
