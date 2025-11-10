@@ -1,8 +1,35 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.1.0 Release Notes
+CowDogMoo Workstation Ansible Collection 2.1.1 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.1.1
+======
+
+Release Summary
+---------------
+
+This release introduces enhanced automation for release management, improved backup and verification features, and support for installing custom patterns from git repositories.
+
+Added
+-----
+
+- Added advanced pretool hooks to enforce fabric-based PR creation
+- Added explicit backup and verification for settings.json management
+- Added release automation and changelog generation tasks to Taskfile
+- Added support for installing custom patterns from git repository
+
+Changed
+-------
+
+- Migrated to advanced pre-commit/pr content blocking hooks
+
+Fixed
+-----
+
+- Fixed issue with cached cc file
+- claude_code - Fixed Python syntax in advanced hooks
 
 v2.1.0
 ======

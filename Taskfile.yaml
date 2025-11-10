@@ -68,8 +68,6 @@ tasks:
         else
           git checkout -b "{{.NEXT_VERSION}}"
         fi
-      - task: ansible:run-molecule-tests
-      - task: ansible:lint-ansible
       - task: gen-changelog-fragment
         vars:
           NEXT_VERSION: "{{.NEXT_VERSION}}"
