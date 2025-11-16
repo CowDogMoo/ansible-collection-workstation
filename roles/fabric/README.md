@@ -15,8 +15,8 @@ Installs and configures Daniel Miessler's Fabric AI framework
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `fabric_username` | str | `{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}` | No description |
-| `fabric_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', fabric_username) }}` | No description |
+| `fabric_username` | str | `{{ ansible_facts['user_id'] \| default(ansible_facts['user']) }}` | No description |
+| `fabric_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') \| ternary('staff', fabric_username) }}` | No description |
 | `fabric_user_home` | str | `<multiline value: folded_strip>` | No description |
 | `fabric_install` | bool | `True` | No description |
 | `fabric_install_method` | str | `go_install` | No description |

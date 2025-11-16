@@ -19,10 +19,10 @@ Install asdf
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `asdf_username` | str | `{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}` | No description |
-| `asdf_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', asdf_username) }}` | No description |
+| `asdf_username` | str | `{{ ansible_facts['user_id'] \| default(ansible_facts['user']) }}` | No description |
+| `asdf_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') \| ternary('staff', asdf_username) }}` | No description |
 | `asdf_user_home` | str | `<multiline value: folded_strip>` | No description |
-| `asdf_bin_dir` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('/usr/local/bin', '/usr/local/bin') }}` | No description |
+| `asdf_bin_dir` | str | `{{ (ansible_facts['os_family'] == 'Darwin') \| ternary('/usr/local/bin', '/usr/local/bin') }}` | No description |
 | `asdf_data_dir` | str | `{{ asdf_user_home }}/.asdf` | No description |
 | `asdf_shells` | list | `[]` | No description |
 | `asdf_shells.0` | str | `/usr/bin/zsh` | No description |
