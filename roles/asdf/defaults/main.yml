@@ -1,8 +1,8 @@
 ---
-asdf_username: "{{ ansible_user_id | default(ansible_user) }}"
+asdf_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}"
 asdf_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', asdf_username) }}"
 asdf_user_home: >-
-  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_env.HOME,
+  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_facts['env']['HOME'],
      (asdf_username == 'root') | ternary('/root', '/home/' + asdf_username)) }}
 
 asdf_bin_dir: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('/usr/local/bin', '/usr/local/bin') }}"
@@ -14,7 +14,7 @@ asdf_shells:
   - "/usr/bin/bash"
   - "/bin/bash"
 
-asdf_shell: "{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/bin/bash' }}"
+asdf_shell: "{{ '/bin/zsh' if ansible_facts['distribution'] == 'MacOSX' else '/bin/bash' }}"
 
 asdf_plugins:
   # renovate: datasource=github-tags depName=golang packageName=golang/go extractVersion=^go(?<version>.*)$

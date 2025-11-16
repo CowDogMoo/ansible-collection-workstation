@@ -1,7 +1,7 @@
 ---
-zsh_setup_username: "{{ ansible_user_id | default(ansible_user) | default(ansible_distribution | lower) }}"
-zsh_setup_usergroup: "{{ 'staff' if ansible_os_family == 'Darwin' else 'Administrators' if ansible_os_family == 'Windows' else zsh_setup_username }}"
-zsh_setup_shell: "{{ 'powershell' if ansible_os_family == 'Windows' else (ansible_env.SHELL | default('/bin/bash')).strip() | regex_replace('\n', '') }}"
+zsh_setup_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) | default(ansible_facts['distribution'] | lower) }}"
+zsh_setup_usergroup: "{{ 'staff' if ansible_facts['os_family'] == 'Darwin' else 'Administrators' if ansible_facts['os_family'] == 'Windows' else zsh_setup_username }}"
+zsh_setup_shell: "{{ 'powershell' if ansible_facts['os_family'] == 'Windows' else (ansible_facts['env']['SHELL'] | default('/bin/bash')).strip() | regex_replace('\n', '') }}"
 zsh_setup_theme: "af-magic"
 zsh_setup_plugins:
   - asdf

@@ -15,7 +15,7 @@ Manages Claude Code CLI configuration including hooks and settings
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `claude_code_username` | str | `{{ ansible_user_id | default(ansible_user) }}` | No description |
+| `claude_code_username` | str | `{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}` | No description |
 | `claude_code_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', claude_code_username) }}` | No description |
 | `claude_code_user_home` | str | `<multiline value: folded_strip>` | No description |
 | `claude_code_config_dir` | str | `{{ claude_code_user_home }}/.claude` | No description |

@@ -19,7 +19,7 @@ Install asdf
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `asdf_username` | str | `{{ ansible_user_id | default(ansible_user) }}` | No description |
+| `asdf_username` | str | `{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}` | No description |
 | `asdf_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', asdf_username) }}` | No description |
 | `asdf_user_home` | str | `<multiline value: folded_strip>` | No description |
 | `asdf_bin_dir` | str | `{{ (ansible_facts['os_family'] == 'Darwin') | ternary('/usr/local/bin', '/usr/local/bin') }}` | No description |
@@ -29,7 +29,7 @@ Install asdf
 | `asdf_shells.1` | str | `/bin/zsh` | No description |
 | `asdf_shells.2` | str | `/usr/bin/bash` | No description |
 | `asdf_shells.3` | str | `/bin/bash` | No description |
-| `asdf_shell` | str | `{{ '/bin/zsh' if ansible_distribution == 'MacOSX' else '/bin/bash' }}` | No description |
+| `asdf_shell` | str | `{{ '/bin/zsh' if ansible_facts['distribution'] == 'MacOSX' else '/bin/bash' }}` | No description |
 | `asdf_plugins` | list | `[]` | No description |
 | `asdf_plugins.0` | dict | `{}` | No description |
 | `asdf_plugins.1` | dict | `{}` | No description |
@@ -44,8 +44,8 @@ Install asdf
 | Variable | Type | Value | Description |
 |----------|------|-------|-------------|
 | `asdf_version` | str | `0.18.0` | No description |
-| `asdf_arch` | str | `{{ 'arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'amd64' if ansible_architecture == 'x86_64' else '386' }}` | No description |
-| `asdf_os` | str | `{{ 'darwin' if ansible_system == 'Darwin' else 'linux' }}` | No description |
+| `asdf_arch` | str | `{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'amd64' if ansible_facts['architecture'] == 'x86_64' else '386' }}` | No description |
+| `asdf_os` | str | `{{ 'darwin' if ansible_facts['system'] == 'Darwin' else 'linux' }}` | No description |
 | `asdf_download_url` | str | `https://github.com/asdf-vm/asdf/releases/download/v{{ asdf_version }}/asdf-v{{ asdf_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz` | No description |
 | `asdf_checksum_url` | str | `{{ asdf_download_url }}.md5` | No description |
 
