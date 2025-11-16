@@ -21,8 +21,7 @@ Installs and configures zsh with oh-my-zsh.
 |----------|------|---------|-------------|
 | `zsh_setup_username` | str | `{{ ansible_facts['user_id'] | default(ansible_facts['user']) | default(ansible_facts['distribution'] | lower) }}` | No description |
 | `zsh_setup_usergroup` | str | `{{ 'staff' if ansible_facts['os_family'] == 'Darwin' else 'Administrators' if ansible_facts['os_family'] == 'Windows' else zsh_setup_username }}` | No description |
-| `zsh_setup_shell` | str | `{{ 'powershell' if ansible_facts['os_family'] == 'Windows' else ((ansible_facts['env']['SHELL'] \| default('/bin/bash')).strip() | regex_replace('
-', '') }}` | No description |
+| `zsh_setup_shell` | str | `{{ 'powershell' if ansible_facts['os_family'] == 'Windows' else (ansible_facts['env']['SHELL'] \| default('/bin/bash')).strip() \| regex_replace('\n', '') }}` | No description |
 | `zsh_setup_theme` | str | `af-magic` | No description |
 | `zsh_setup_plugins` | list | `[]` | No description |
 | `zsh_setup_plugins.0` | str | `asdf` | No description |
