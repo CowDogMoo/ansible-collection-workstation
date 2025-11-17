@@ -28,9 +28,9 @@ Provides flexible logging directories and log rotation for any application or se
 |----------|------|-------|-------------|
 | `logging_logrotate_binary_darwin` | str | `/opt/homebrew/sbin/logrotate` | No description |
 | `logging_logrotate_binary_linux` | str | `/usr/sbin/logrotate` | No description |
-| `logging_logrotate_config_dir_darwin` | str | `{{ ansible_env.HOME }}/.config/logrotate.d` | No description |
+| `logging_logrotate_config_dir_darwin` | str | `{{ ansible_facts['env']['HOME'] }}/.config/logrotate.d` | No description |
 | `logging_logrotate_config_dir_linux` | str | `/etc/logrotate.d` | No description |
-| `logging_logrotate_state_file` | str | `{{ ansible_env.HOME + '/.config/logrotate.state' if ansible_os_family == 'Darwin' else '/var/lib/logrotate/status' }}` | No description |
+| `logging_logrotate_state_file` | str | `{{ ansible_facts['env']['HOME'] + '/.config/logrotate.state' if ansible_facts['os_family'] == 'Darwin' else '/var/lib/logrotate/status' }}` | No description |
 
 ## Tasks
 

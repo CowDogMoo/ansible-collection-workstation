@@ -2,7 +2,7 @@
 - name: Set default username for Kali systems
   ansible.builtin.set_fact:
     asdf_username: "kali"
-  when: ansible_distribution_release == "kali-rolling" and asdf_username is not defined
+  when: ansible_facts['distribution_release'] == "kali-rolling" and asdf_username is not defined
 
 - name: Reapply external asdf_plugins variable if provided
   ansible.builtin.set_fact:
@@ -87,7 +87,7 @@
 
 - name: Install libyaml from source
   ansible.builtin.include_tasks: install_libyaml.yml
-  when: ansible_distribution == 'Rocky'
+  when: ansible_facts['distribution'] == 'Rocky'
 
 - name: Set common ASDF environment variables
   ansible.builtin.set_fact:

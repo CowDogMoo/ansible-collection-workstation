@@ -2,7 +2,7 @@
 - name: Set claude_code username for Kali systems
   ansible.builtin.set_fact:
     claude_code_username: "kali"
-  when: ansible_distribution_release == "kali-rolling" and claude_code_username is not defined
+  when: ansible_facts['distribution_release'] == "kali-rolling" and claude_code_username is not defined
 
 - name: Ensure claude_code user home directory exists
   ansible.builtin.stat:

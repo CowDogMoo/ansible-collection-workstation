@@ -69,10 +69,10 @@
         path: "{{ go_task_install_dir }}"
         state: directory
         mode: '0755'
-      when: ansible_os_family != 'Darwin'
+      when: ansible_facts['os_family'] != 'Darwin'
 
     - name: Install go-task binary
-      become: "{{ ansible_os_family != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       ansible.builtin.copy:
         src: "{{ go_task_temp_dir.path }}/task"
         dest: "{{ go_task_install_dir }}/task"

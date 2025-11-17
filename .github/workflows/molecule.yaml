@@ -60,6 +60,7 @@ jobs:
       roles: ${{ steps.filter.outputs.roles }}
       playbooks: ${{ steps.filter.outputs.playbooks }}
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      max_parallel: ${{ steps.generate-matrix.outputs.max_parallel }}
       test_all: ${{ steps.check-event.outputs.test_all }}
     steps:
       - name: Set up git repository
@@ -143,6 +144,18 @@ jobs:
 
           echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
           echo "Matrix to test: $MATRIX_JSON"
+
+          # Calculate dynamic max-parallel based on matrix size
+          # Algorithm: 60% of matrix size, minimum 4, maximum 12
+          MATRIX_COUNT=$(echo "$MATRIX_JSON" | jq '. | length')
+          MAX_PARALLEL=$(( (MATRIX_COUNT * 60) / 100 ))
+          # Enforce minimum of 4
+          [[ $MAX_PARALLEL -lt 4 ]] && MAX_PARALLEL=4
+          # Enforce maximum of 12
+          [[ $MAX_PARALLEL -gt 12 ]] && MAX_PARALLEL=12
+
+          echo "max_parallel=$MAX_PARALLEL" >> "$GITHUB_OUTPUT"
+          echo "Calculated max-parallel: $MAX_PARALLEL (based on $MATRIX_COUNT tests)"
 
   validate-inputs:
     runs-on: ubuntu-latest
@@ -378,7 +391,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: ${{ fromJson(needs.detect-changes.outputs.max_parallel) }}
       matrix:
         include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
 

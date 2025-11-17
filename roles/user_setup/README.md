@@ -19,8 +19,8 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `user_setup_default_username` | str | `{{ ansible_distribution | lower }}` | No description |
-| `user_setup_default_group` | str | `{{ ansible_distribution | lower }}` | No description |
+| `user_setup_default_username` | str | `{{ ansible_facts['distribution'] \| lower }}` | No description |
+| `user_setup_default_group` | str | `{{ ansible_facts['distribution'] \| lower }}` | No description |
 | `user_setup_default_users` | list | `[]` | No description |
 | `user_setup_default_users.0` | dict | `{}` | No description |
 

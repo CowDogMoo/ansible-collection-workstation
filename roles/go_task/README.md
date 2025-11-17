@@ -19,7 +19,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 | `go_task_install_dir` | str | `/usr/local/bin` | No description |
 | `go_task_windows_install_dir` | str | `C:\\Program Files\\task` | No description |
 | `go_task_windows_add_to_path` | bool | `True` | No description |
-| `go_task_github_token` | str | `{{ lookup('env', 'GITHUB_TOKEN') | default('') }}` | No description |
+| `go_task_github_token` | str | `{{ lookup('env', 'GITHUB_TOKEN') \| default('') }}` | No description |
 | `go_task_arch_map` | dict | `{}` | No description |
 | `go_task_arch_map.x86_64` | str | `amd64` | No description |
 | `go_task_arch_map.aarch64` | str | `arm64` | No description |

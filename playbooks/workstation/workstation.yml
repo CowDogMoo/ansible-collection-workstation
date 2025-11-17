@@ -11,12 +11,12 @@
         logging_directories:
           - path: "~/ansible-logs"
             mode: "0755"
-            owner: "{{ ansible_user_id }}"
-            group: "{{ ansible_user_gid | default(ansible_user_id) }}"
+            owner: "{{ ansible_facts['user_id'] }}"
+            group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
           - path: "~/ansible-logs/hosts"  # For log_plays callback
             mode: "0755"
-            owner: "{{ ansible_user_id }}"
-            group: "{{ ansible_user_gid | default(ansible_user_id) }}"
+            owner: "{{ ansible_facts['user_id'] }}"
+            group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
 
         logging_rotation_configs:
           - name: "ansible-hosts"
@@ -31,18 +31,18 @@
             maxsize: "100M"
             copytruncate: true
             delaycompress: true
-            owner: "{{ ansible_user_id }}"
-            group: "{{ ansible_user_gid | default(ansible_user_id) }}"
+            owner: "{{ ansible_facts['user_id'] }}"
+            group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
 
         # Optional: Override default LaunchAgent settings for macOS
         logging_launchagent_label: "com.ansible.logrotate"
-        logging_logrotate_log_path: "{{ ansible_env.HOME }}/ansible-logs/logrotate"
+        logging_logrotate_log_path: "{{ ansible_facts['env']['HOME'] }}/ansible-logs/logrotate"
 
     # Install and configure Alloy for log shipping to Loki
     # This should come after logging setup to ensure directories exist
     - name: Install and configure Grafana Alloy
       role: grafana.grafana.alloy
-      become: "{{ ansible_os_family != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       vars:
         # Alloy configuration for log collection and shipping to Loki
         alloy_config: |
