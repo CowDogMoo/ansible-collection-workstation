@@ -2,14 +2,14 @@
 - name: Detect shell and set profile
   block:
     - name: Check if shell exists
-      ansible.builtin.command: "which {{ asdf_enriched_user.shell | default(ansible_env.SHELL | default('/bin/bash')) }}"
+      ansible.builtin.command: "which {{ asdf_enriched_user.shell | default(ansible_facts['env']['SHELL'] | default('/bin/bash')) }}"
       register: asdf_shell_path
       ignore_errors: true
       changed_when: false
 
     - name: Set detected shell fact
       ansible.builtin.set_fact:
-        asdf_detected_shell: "{{ asdf_shell_path.stdout if asdf_shell_path.stdout != '' else (ansible_env.SHELL | default('/bin/bash')) }}"
+        asdf_detected_shell: "{{ asdf_shell_path.stdout if asdf_shell_path.stdout != '' else (ansible_facts['env']['SHELL'] | default('/bin/bash')) }}"
 
 - name: Update shell profile for the user
   ansible.builtin.blockinfile:

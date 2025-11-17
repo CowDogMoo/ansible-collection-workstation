@@ -1,8 +1,8 @@
 ---
 - name: Set OS-specific facts
   ansible.builtin.set_fact:
-    logging_is_macos: "{{ ansible_os_family == 'Darwin' }}"
-    logging_is_linux: "{{ ansible_os_family in ['Debian', 'RedHat'] }}"
+    logging_is_macos: "{{ ansible_facts['os_family'] == 'Darwin' }}"
+    logging_is_linux: "{{ ansible_facts['os_family'] in ['Debian', 'RedHat'] }}"
 
 - name: Set logrotate paths based on OS
   ansible.builtin.set_fact:
@@ -30,7 +30,7 @@
   become: true
   when:
     - logging_is_linux
-    - ansible_os_family == "Debian"
+    - ansible_facts['os_family'] == "Debian"
 
 - name: Install logrotate on Linux (RedHat-based)
   ansible.builtin.dnf:
@@ -39,15 +39,15 @@
   become: true
   when:
     - logging_is_linux
-    - ansible_os_family == "RedHat"
+    - ansible_facts['os_family'] == "RedHat"
 
 - name: Ensure logging directories exist
   ansible.builtin.file:
     path: "{{ item.path | expanduser }}"
     state: directory
     mode: "{{ item.mode | default('0755') }}"
-    owner: "{{ item.owner | default(ansible_user_id) }}"
-    group: "{{ item.group | default(ansible_user_gid | default(ansible_user_id)) }}"
+    owner: "{{ item.owner | default(ansible_facts['user_id']) }}"
+    group: "{{ item.group | default(ansible_facts['user_gid'] | default(ansible_facts['user_id'])) }}"
   loop: "{{ logging_directories }}"
   become: "{{ logging_is_linux and item.path.startswith('/var') | default(false) }}"
   when: logging_directories | length > 0
@@ -102,7 +102,7 @@
 
 - name: Create LaunchAgent directory on macOS
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/Library/LaunchAgents"
+    path: "{{ ansible_facts['env']['HOME'] }}/Library/LaunchAgents"
     state: directory
     mode: "0755"
   when:
@@ -112,7 +112,7 @@
 - name: Create LaunchAgent for logrotate on macOS
   ansible.builtin.template:
     src: com.logging.logrotate.plist.j2
-    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist"
+    dest: "{{ ansible_facts['env']['HOME'] }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist"
     mode: "0644"
   when:
     - logging_is_macos
@@ -120,7 +120,7 @@
 
 - name: Unload existing LaunchAgent if present
   ansible.builtin.command:
-    cmd: launchctl unload {{ ansible_env.HOME }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist
+    cmd: launchctl unload {{ ansible_facts['env']['HOME'] }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist
   when:
     - logging_is_macos
     - logging_rotation_configs | length > 0
@@ -129,7 +129,7 @@
 
 - name: Load LaunchAgent for logrotate on macOS
   ansible.builtin.command:
-    cmd: launchctl load -w {{ ansible_env.HOME }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist
+    cmd: launchctl load -w {{ ansible_facts['env']['HOME'] }}/Library/LaunchAgents/{{ logging_launchagent_label }}.plist
   when:
     - logging_is_macos
     - logging_rotation_configs | length > 0
