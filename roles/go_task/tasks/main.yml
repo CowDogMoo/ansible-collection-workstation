@@ -83,5 +83,5 @@
 - name: Install go-task on Windows systems
   ansible.builtin.include_tasks: install-windows.yml
   when:
-    - ansible_os_family == 'Windows'
+    - ansible_facts['os_family'] == 'Windows'
     - go_task_needs_install
