@@ -31,7 +31,7 @@ asdf_plugins:
     scope: "global"
   # renovate: datasource=github-releases depName=helm packageName=helm/helm extractVersion=^v(?<version>.*)$
   - name: helm
-    version: "3.19.2"
+    version: "4.0.0"
     scope: "global"
   # renovate: datasource=github-tags depName=kubectl packageName=kubernetes/kubernetes extractVersion=^v(?<version>.*)$
   - name: kubectl
