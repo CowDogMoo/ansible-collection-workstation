@@ -19,25 +19,25 @@ Install asdf
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `asdf_username` | str | `{{ ansible_facts['user_id'] \| default(ansible_facts['user']) }}` | No description |
-| `asdf_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') \| ternary('staff', asdf_username) }}` | No description |
-| `asdf_user_home` | str | `<multiline value: folded_strip>` | No description |
-| `asdf_bin_dir` | str | `{{ (ansible_facts['os_family'] == 'Darwin') \| ternary('/usr/local/bin', '/usr/local/bin') }}` | No description |
-| `asdf_data_dir` | str | `{{ asdf_user_home }}/.asdf` | No description |
-| `asdf_shells` | list | `[]` | No description |
-| `asdf_shells.0` | str | `/usr/bin/zsh` | No description |
-| `asdf_shells.1` | str | `/bin/zsh` | No description |
-| `asdf_shells.2` | str | `/usr/bin/bash` | No description |
-| `asdf_shells.3` | str | `/bin/bash` | No description |
-| `asdf_shell` | str | `{{ '/bin/zsh' if ansible_facts['distribution'] == 'MacOSX' else '/bin/bash' }}` | No description |
-| `asdf_plugins` | list | `[]` | No description |
-| `asdf_plugins.0` | dict | `{}` | No description |
-| `asdf_plugins.1` | dict | `{}` | No description |
-| `asdf_plugins.2` | dict | `{}` | No description |
-| `asdf_plugins.3` | dict | `{}` | No description |
-| `asdf_plugins.4` | dict | `{}` | No description |
-| `asdf_plugins.5` | dict | `{}` | No description |
-| `asdf_plugins.6` | dict | `{}` | No description |
+| `asdf_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
+| `asdf_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', asdf_username) }}</code> | No description |
+| `asdf_user_home` | str | <code><multiline value: folded_strip></code> | No description |
+| `asdf_bin_dir` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('/usr/local/bin', '/usr/local/bin') }}</code> | No description |
+| `asdf_data_dir` | str | <code>{{ asdf_user_home }}/.asdf</code> | No description |
+| `asdf_shells` | list | <code>&#91;&#93;</code> | No description |
+| `asdf_shells.0` | str | <code>/usr/bin/zsh</code> | No description |
+| `asdf_shells.1` | str | <code>/bin/zsh</code> | No description |
+| `asdf_shells.2` | str | <code>/usr/bin/bash</code> | No description |
+| `asdf_shells.3` | str | <code>/bin/bash</code> | No description |
+| `asdf_shell` | str | <code>{{ '/bin/zsh' if ansible_facts&#91;'distribution'&#93; == 'MacOSX' else '/bin/bash' }}</code> | No description |
+| `asdf_plugins` | list | <code>&#91;&#93;</code> | No description |
+| `asdf_plugins.0` | dict | <code>{}</code> | No description |
+| `asdf_plugins.1` | dict | <code>{}</code> | No description |
+| `asdf_plugins.2` | dict | <code>{}</code> | No description |
+| `asdf_plugins.3` | dict | <code>{}</code> | No description |
+| `asdf_plugins.4` | dict | <code>{}</code> | No description |
+| `asdf_plugins.5` | dict | <code>{}</code> | No description |
+| `asdf_plugins.6` | dict | <code>{}</code> | No description |
 
 ### Role Variables (main.yml)
 

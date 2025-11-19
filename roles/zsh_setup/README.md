@@ -19,18 +19,18 @@ Installs and configures zsh with oh-my-zsh.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `zsh_setup_username` | str | `{{ ansible_facts['user_id'] \| default(ansible_facts['user']) \| default(ansible_facts['distribution'] \| lower) }}` | No description |
-| `zsh_setup_usergroup` | str | `{{ 'staff' if ansible_facts['os_family'] == 'Darwin' else 'Administrators' if ansible_facts['os_family'] == 'Windows' else zsh_setup_username }}` | No description |
-| `zsh_setup_shell` | str | `{{ 'powershell' if ansible_facts['os_family'] == 'Windows' else (ansible_facts['env']['SHELL'] \| default('/bin/bash')).strip() \| regex_replace('\n', '') }}` | No description |
-| `zsh_setup_theme` | str | `af-magic` | No description |
-| `zsh_setup_plugins` | list | `[]` | No description |
-| `zsh_setup_plugins.0` | str | `asdf` | No description |
-| `zsh_setup_plugins.1` | str | `aws` | No description |
-| `zsh_setup_plugins.2` | str | `git` | No description |
-| `zsh_setup_plugins.3` | str | `docker` | No description |
-| `zsh_setup_plugins.4` | str | `helm` | No description |
-| `zsh_setup_plugins.5` | str | `kubectl` | No description |
-| `zsh_setup_plugins.6` | str | `zsh-completions` | No description |
+| `zsh_setup_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) &#124; default(ansible_facts&#91;'distribution'&#93; &#124; lower) }}</code> | No description |
+| `zsh_setup_usergroup` | str | <code>{{ 'staff' if ansible_facts&#91;'os_family'&#93; == 'Darwin' else 'Administrators' if ansible_facts&#91;'os_family'&#93; == 'Windows' else zsh_setup_username }}</code> | No description |
+| `zsh_setup_shell` | str | <code>{{ 'powershell' if ansible_facts&#91;'os_family'&#93; == 'Windows' else (ansible_facts&#91;'env'&#93;&#91;'SHELL'&#93; &#124; default('/bin/bash')).strip() &#124; regex_replace('\n', '') }}</code> | No description |
+| `zsh_setup_theme` | str | <code>af-magic</code> | No description |
+| `zsh_setup_plugins` | list | <code>&#91;&#93;</code> | No description |
+| `zsh_setup_plugins.0` | str | <code>asdf</code> | No description |
+| `zsh_setup_plugins.1` | str | <code>aws</code> | No description |
+| `zsh_setup_plugins.2` | str | <code>git</code> | No description |
+| `zsh_setup_plugins.3` | str | <code>docker</code> | No description |
+| `zsh_setup_plugins.4` | str | <code>helm</code> | No description |
+| `zsh_setup_plugins.5` | str | <code>kubectl</code> | No description |
+| `zsh_setup_plugins.6` | str | <code>zsh-completions</code> | No description |
 
 ### Role Variables (main.yml)
 

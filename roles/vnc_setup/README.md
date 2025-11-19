@@ -19,14 +19,14 @@ Provides logging directories and log rotation for other roles.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `vnc_setup_client_options` | str | `-geometry 1920x1080` | No description |
-| `vnc_setup_depth` | str | `24` | No description |
-| `vnc_setup_systemd` | bool | `True` | No description |
-| `vnc_setup_users` | list | `[]` | No description |
-| `vnc_setup_users.0` | dict | `{}` | No description |
-| `vnc_setup_default_username` | str | `{{ ansible_distribution \| lower }}` | No description |
-| `vnc_setup_vncpwd_clone_path` | str | `/tmp/vncpwd` | No description |
-| `vnc_setup_vncpwd_path` | str | `/usr/local/bin/vncpwd` | No description |
+| `vnc_setup_client_options` | str | <code>-geometry 1920x1080</code> | No description |
+| `vnc_setup_depth` | str | <code>24</code> | No description |
+| `vnc_setup_systemd` | bool | <code>True</code> | No description |
+| `vnc_setup_users` | list | <code>&#91;&#93;</code> | No description |
+| `vnc_setup_users.0` | dict | <code>{}</code> | No description |
+| `vnc_setup_default_username` | str | <code>{{ ansible_distribution &#124; lower }}</code> | No description |
+| `vnc_setup_vncpwd_clone_path` | str | <code>/tmp/vncpwd</code> | No description |
+| `vnc_setup_vncpwd_path` | str | <code>/usr/local/bin/vncpwd</code> | No description |
 
 ### Role Variables (main.yml)
 

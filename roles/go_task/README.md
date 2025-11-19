@@ -15,21 +15,21 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `go_task_version` | str | `latest` | No description |
-| `go_task_install_dir` | str | `/usr/local/bin` | No description |
-| `go_task_windows_install_dir` | str | `C:\\Program Files\\task` | No description |
-| `go_task_windows_add_to_path` | bool | `True` | No description |
-| `go_task_github_token` | str | `{{ lookup('env', 'GITHUB_TOKEN') \| default('') }}` | No description |
-| `go_task_arch_map` | dict | `{}` | No description |
-| `go_task_arch_map.x86_64` | str | `amd64` | No description |
-| `go_task_arch_map.aarch64` | str | `arm64` | No description |
-| `go_task_arch_map.armv7l` | str | `arm` | No description |
-| `go_task_arch_map.i386` | int | `386` | No description |
-| `go_task_arch_map.i686` | int | `386` | No description |
-| `go_task_os_map` | dict | `{}` | No description |
-| `go_task_os_map.Linux` | str | `linux` | No description |
-| `go_task_os_map.Darwin` | str | `darwin` | No description |
-| `go_task_os_map.Windows` | str | `windows` | No description |
+| `go_task_version` | str | <code>latest</code> | No description |
+| `go_task_install_dir` | str | <code>/usr/local/bin</code> | No description |
+| `go_task_windows_install_dir` | str | <code>C:\\Program Files\\task</code> | No description |
+| `go_task_windows_add_to_path` | bool | <code>True</code> | No description |
+| `go_task_github_token` | str | <code>{{ lookup('env', 'GITHUB_TOKEN') &#124; default('') }}</code> | No description |
+| `go_task_arch_map` | dict | <code>{}</code> | No description |
+| `go_task_arch_map.x86_64` | str | <code>amd64</code> | No description |
+| `go_task_arch_map.aarch64` | str | <code>arm64</code> | No description |
+| `go_task_arch_map.armv7l` | str | <code>arm</code> | No description |
+| `go_task_arch_map.i386` | int | <code>386</code> | No description |
+| `go_task_arch_map.i686` | int | <code>386</code> | No description |
+| `go_task_os_map` | dict | <code>{}</code> | No description |
+| `go_task_os_map.Linux` | str | <code>linux</code> | No description |
+| `go_task_os_map.Darwin` | str | <code>darwin</code> | No description |
+| `go_task_os_map.Windows` | str | <code>windows</code> | No description |
 
 ### Role Variables (main.yml)
 

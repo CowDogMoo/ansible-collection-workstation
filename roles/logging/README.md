@@ -15,12 +15,12 @@ Provides flexible logging directories and log rotation for any application or se
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `logging_directories` | list | `[]` | No description |
-| `logging_rotation_configs` | list | `[]` | No description |
-| `logging_launchagent_label` | str | `com.logging.logrotate` | No description |
-| `logging_launchagent_hour` | int | `3` | No description |
-| `logging_launchagent_minute` | int | `0` | No description |
-| `logging_logrotate_log_path` | str | `{{ ansible_env.HOME }}/logs/logrotate` | No description |
+| `logging_directories` | list | <code>&#91;&#93;</code> | No description |
+| `logging_rotation_configs` | list | <code>&#91;&#93;</code> | No description |
+| `logging_launchagent_label` | str | <code>com.logging.logrotate</code> | No description |
+| `logging_launchagent_hour` | int | <code>3</code> | No description |
+| `logging_launchagent_minute` | int | <code>0</code> | No description |
+| `logging_logrotate_log_path` | str | <code>{{ ansible_env.HOME }}/logs/logrotate</code> | No description |
 
 ### Role Variables (main.yml)
 

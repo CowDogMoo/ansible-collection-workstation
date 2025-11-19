@@ -15,20 +15,20 @@ Installs and configures Daniel Miessler's Fabric AI framework
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `fabric_username` | str | `{{ ansible_facts['user_id'] \| default(ansible_facts['user']) }}` | No description |
-| `fabric_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') \| ternary('staff', fabric_username) }}` | No description |
-| `fabric_user_home` | str | `<multiline value: folded_strip>` | No description |
-| `fabric_install` | bool | `True` | No description |
-| `fabric_install_method` | str | `go_install` | No description |
-| `fabric_go_package` | str | `github.com/danielmiessler/fabric/cmd/fabric@latest` | No description |
-| `fabric_config_dir` | str | `{{ fabric_user_home }}/.config/fabric` | No description |
-| `fabric_run_setup` | bool | `False` | No description |
-| `fabric_init_directories` | bool | `True` | No description |
-| `fabric_install_custom_patterns` | bool | `False` | No description |
-| `fabric_custom_patterns_repo` | str | `https://github.com/CowDogMoo/fabric-patterns-hub` | No description |
-| `fabric_custom_patterns_version` | str | `main` | No description |
-| `fabric_custom_patterns_subdir` | str | `patterns` | No description |
-| `fabric_update_custom_patterns` | bool | `False` | No description |
+| `fabric_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
+| `fabric_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', fabric_username) }}</code> | No description |
+| `fabric_user_home` | str | <code><multiline value: folded_strip></code> | No description |
+| `fabric_install` | bool | <code>True</code> | No description |
+| `fabric_install_method` | str | <code>go_install</code> | No description |
+| `fabric_go_package` | str | <code>github.com/danielmiessler/fabric/cmd/fabric@latest</code> | No description |
+| `fabric_config_dir` | str | <code>{{ fabric_user_home }}/.config/fabric</code> | No description |
+| `fabric_run_setup` | bool | <code>False</code> | No description |
+| `fabric_init_directories` | bool | <code>True</code> | No description |
+| `fabric_install_custom_patterns` | bool | <code>False</code> | No description |
+| `fabric_custom_patterns_repo` | str | <code>https://github.com/CowDogMoo/fabric-patterns-hub</code> | No description |
+| `fabric_custom_patterns_version` | str | <code>main</code> | No description |
+| `fabric_custom_patterns_subdir` | str | <code>patterns</code> | No description |
+| `fabric_update_custom_patterns` | bool | <code>False</code> | No description |
 
 ## Tasks
 

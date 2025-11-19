@@ -19,10 +19,10 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `user_setup_default_username` | str | `{{ ansible_facts['distribution'] \| lower }}` | No description |
-| `user_setup_default_group` | str | `{{ ansible_facts['distribution'] \| lower }}` | No description |
-| `user_setup_default_users` | list | `[]` | No description |
-| `user_setup_default_users.0` | dict | `{}` | No description |
+| `user_setup_default_username` | str | <code>{{ ansible_facts&#91;'distribution'&#93; &#124; lower }}</code> | No description |
+| `user_setup_default_group` | str | <code>{{ ansible_facts&#91;'distribution'&#93; &#124; lower }}</code> | No description |
+| `user_setup_default_users` | list | <code>&#91;&#93;</code> | No description |
+| `user_setup_default_users.0` | dict | <code>{}</code> | No description |
 
 ### Role Variables (main.yml)
 

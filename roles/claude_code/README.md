@@ -15,17 +15,17 @@ Manages Claude Code CLI configuration including hooks and settings
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `claude_code_username` | str | `{{ ansible_facts['user_id'] \| default(ansible_facts['user']) }}` | No description |
-| `claude_code_usergroup` | str | `{{ (ansible_facts['os_family'] == 'Darwin') \| ternary('staff', claude_code_username) }}` | No description |
-| `claude_code_user_home` | str | `<multiline value: folded_strip>` | No description |
-| `claude_code_config_dir` | str | `{{ claude_code_user_home }}/.claude` | No description |
-| `claude_code_install` | bool | `True` | No description |
-| `claude_code_manage_settings` | bool | `True` | No description |
-| `claude_code_backup_settings` | bool | `True` | No description |
-| `claude_code_simple_hooks` | list | `[]` | No description |
-| `claude_code_advanced_hooks` | list | `[]` | No description |
-| `claude_code_advanced_hooks.0` | dict | `{}` | No description |
-| `claude_code_additional_settings` | dict | `{}` | No description |
+| `claude_code_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
+| `claude_code_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', claude_code_username) }}</code> | No description |
+| `claude_code_user_home` | str | <code><multiline value: folded_strip></code> | No description |
+| `claude_code_config_dir` | str | <code>{{ claude_code_user_home }}/.claude</code> | No description |
+| `claude_code_install` | bool | <code>True</code> | No description |
+| `claude_code_manage_settings` | bool | <code>True</code> | No description |
+| `claude_code_backup_settings` | bool | <code>True</code> | No description |
+| `claude_code_simple_hooks` | list | <code>&#91;&#93;</code> | No description |
+| `claude_code_advanced_hooks` | list | <code>&#91;&#93;</code> | No description |
+| `claude_code_advanced_hooks.0` | dict | <code>{}</code> | No description |
+| `claude_code_additional_settings` | dict | <code>{}</code> | No description |
 
 ## Tasks
 
