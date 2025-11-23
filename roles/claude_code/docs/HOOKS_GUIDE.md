@@ -31,7 +31,7 @@ claude_code_simple_hooks:
 ### Fields Reference
 
 | Field | Required | Options | Description |
-|-------|----------|---------|-------------|
+| ------- | ---------- | --------- | ------------- |
 | `name` | No | any string | Descriptive name for the hook |
 | `event` | No | `PreToolUse`, `PostToolUse`, `UserPromptSubmit` | When to trigger (default: `PreToolUse`) |
 | `tool` | No | `Bash`, `Edit`, `Write`, `Read`, etc. | Which tool to watch (default: `Bash`) |
