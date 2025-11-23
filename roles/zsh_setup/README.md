@@ -18,7 +18,7 @@ Installs and configures zsh with oh-my-zsh.
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-|----------|------|---------|-------------|
+| ---------- | ------ | --------- | ------------- |
 | `zsh_setup_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) &#124; default(ansible_facts&#91;'distribution'&#93; &#124; lower) }}</code> | No description |
 | `zsh_setup_usergroup` | str | <code>{{ 'staff' if ansible_facts&#91;'os_family'&#93; == 'Darwin' else 'Administrators' if ansible_facts&#91;'os_family'&#93; == 'Windows' else zsh_setup_username }}</code> | No description |
 | `zsh_setup_shell` | str | <code>{{ 'powershell' if ansible_facts&#91;'os_family'&#93; == 'Windows' else (ansible_facts&#91;'env'&#93;&#91;'SHELL'&#93; &#124; default('/bin/bash')).strip() &#124; regex_replace('\n', '') }}</code> | No description |
@@ -35,7 +35,7 @@ Installs and configures zsh with oh-my-zsh.
 ### Role Variables (main.yml)
 
 | Variable | Type | Value | Description |
-|----------|------|-------|-------------|
+| ---------- | ------ | ------- | ------------- |
 | `zsh_setup_common_install_packages` | list | `[]` | No description |
 | `zsh_setup_common_install_packages.0` | str | `zsh` | No description |
 | `zsh_setup_common_install_packages.1` | str | `zsh-autosuggestions` | No description |
