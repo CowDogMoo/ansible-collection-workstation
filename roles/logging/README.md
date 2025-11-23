@@ -14,7 +14,7 @@ Provides flexible logging directories and log rotation for any application or se
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-|----------|------|---------|-------------|
+| ---------- | ------ | --------- | ------------- |
 | `logging_directories` | list | <code>&#91;&#93;</code> | No description |
 | `logging_rotation_configs` | list | <code>&#91;&#93;</code> | No description |
 | `logging_launchagent_label` | str | <code>com.logging.logrotate</code> | No description |
@@ -25,7 +25,7 @@ Provides flexible logging directories and log rotation for any application or se
 ### Role Variables (main.yml)
 
 | Variable | Type | Value | Description |
-|----------|------|-------|-------------|
+| ---------- | ------ | ------- | ------------- |
 | `logging_logrotate_binary_darwin` | str | `/opt/homebrew/sbin/logrotate` | No description |
 | `logging_logrotate_binary_linux` | str | `/usr/sbin/logrotate` | No description |
 | `logging_logrotate_config_dir_darwin` | str | `{{ ansible_facts['env']['HOME'] }}/.config/logrotate.d` | No description |
