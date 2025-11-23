@@ -18,7 +18,7 @@ Provides logging directories and log rotation for other roles.
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-|----------|------|---------|-------------|
+| ---------- | ------ | --------- | ------------- |
 | `vnc_setup_client_options` | str | <code>-geometry 1920x1080</code> | No description |
 | `vnc_setup_depth` | str | <code>24</code> | No description |
 | `vnc_setup_systemd` | bool | <code>True</code> | No description |
@@ -31,7 +31,7 @@ Provides logging directories and log rotation for other roles.
 ### Role Variables (main.yml)
 
 | Variable | Type | Value | Description |
-|----------|------|-------|-------------|
+| ---------- | ------ | ------- | ------------- |
 | `vnc_setup_common_install_packages` | list | `[]` | No description |
 | `vnc_setup_common_install_packages.0` | str | `dbus-x11` | No description |
 | `vnc_setup_debian_specific_packages` | list | `[]` | No description |
