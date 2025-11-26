@@ -8,7 +8,7 @@
       community.docker.docker_container:
         name: "{{ item.name }}"
         state: absent
-      register: server
+      register: fabric_destroy_server
       loop: "{{ molecule_yml.platforms }}"
       async: 7200
       poll: 0
@@ -16,7 +16,7 @@
     - name: Wait for instance(s) deletion to complete
       ansible.builtin.async_status:
         jid: "{{ item.ansible_job_id }}"
-      register: docker_jobs
-      until: docker_jobs.finished
+      register: fabric_destroy_docker_jobs
+      until: fabric_destroy_docker_jobs.finished
       retries: 300
-      loop: "{{ server.results }}"
+      loop: "{{ fabric_destroy_server.results }}"

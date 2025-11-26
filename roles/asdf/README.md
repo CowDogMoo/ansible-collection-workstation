@@ -11,6 +11,7 @@ Install asdf
 
 ## Dependencies
 
+
 - cowdogmoo.workstation.package_management
 
 ## Role Variables
@@ -18,7 +19,7 @@ Install asdf
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-| ---------- | ------ | --------- | ------------- |
+| -------- | ---- | ------- | ----------- |
 | `asdf_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
 | `asdf_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', asdf_username) }}</code> | No description |
 | `asdf_user_home` | str | <code><multiline value: folded_strip></code> | No description |
@@ -42,7 +43,7 @@ Install asdf
 ### Role Variables (main.yml)
 
 | Variable | Type | Value | Description |
-| ---------- | ------ | ------- | ------------- |
+| -------- | ---- | ----- | ----------- |
 | `asdf_version` | str | `0.18.0` | No description |
 | `asdf_arch` | str | `{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'amd64' if ansible_facts['architecture'] == 'x86_64' else '386' }}` | No description |
 | `asdf_os` | str | `{{ 'darwin' if ansible_facts['system'] == 'Darwin' else 'linux' }}` | No description |
@@ -53,9 +54,11 @@ Install asdf
 
 ### ensure_directory_exists.yml
 
+
 - **Ensure directory exists** (ansible.builtin.file)
 
 ### install_libyaml.yml
+
 
 - **Check if libyaml is installed** (ansible.builtin.command)
 - **Download, extract, compile, and install libyaml** (block) - Conditional
@@ -64,6 +67,7 @@ Install asdf
 - **Compile and install libyaml** (ansible.builtin.shell)
 
 ### main.yml
+
 
 - **Set default username for Kali systems** (ansible.builtin.set_fact) - Conditional
 - **Reapply external asdf_plugins variable if provided** (ansible.builtin.set_fact) - Conditional
@@ -89,6 +93,7 @@ Install asdf
 
 ### update_shell_profile.yml
 
+
 - **Detect shell and set profile** (block)
 - **Check if shell exists** (ansible.builtin.command)
 - **Set detected shell fact** (ansible.builtin.set_fact)
@@ -109,6 +114,7 @@ Install asdf
 - **License**: MIT
 
 ## Platforms
+
 
 - Ubuntu: all
 - macOS: all

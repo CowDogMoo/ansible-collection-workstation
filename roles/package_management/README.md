@@ -14,7 +14,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-| ---------- | ------ | --------- | ------------- |
+| -------- | ---- | ------- | ----------- |
 | `package_management_common_install_packages` | list | <code>&#91;&#93;</code> | No description |
 | `package_management_common_install_packages.0` | str | <code>autoconf</code> | No description |
 | `package_management_common_install_packages.1` | str | <code>bash</code> | No description |
@@ -73,6 +73,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 
 ### main.yml
 
+
 - **Set DEBIAN_FRONTEND to noninteractive** (ansible.builtin.lineinfile) - Conditional
 - **Install Kali Linux archive keyring** (ansible.builtin.get_url) - Conditional
 - **Install packages** (ansible.builtin.package) - Conditional
@@ -92,6 +93,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 - **License**: MIT
 
 ## Platforms
+
 
 - Ubuntu: all
 - Debian: all
