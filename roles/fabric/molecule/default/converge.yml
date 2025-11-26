@@ -5,7 +5,7 @@
     container_user: "{{ ansible_distribution | lower }}"
     container_home: "/home/{{ container_user }}"
   tasks:
-    - name: Set home directory fact
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         ansible_env:
           HOME: "{{ container_home }}"
@@ -45,12 +45,12 @@
             fabric_username: "{{ container_user }}"
             fabric_user_home: "{{ container_home }}"
             fabric_init_directories: true
-          register: second_run
+          register: fabric_second_run
 
         - name: Assert second run is idempotent
           ansible.builtin.assert:
             that:
-              - second_run is not changed
+              - fabric_second_run is not changed
             fail_msg: "Second run should not report changes (idempotency failed)"
             success_msg: "Role is idempotent"
 

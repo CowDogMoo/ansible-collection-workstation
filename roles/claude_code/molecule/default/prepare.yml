@@ -13,7 +13,7 @@
         create_home: true
       become: true
 
-    - name: Set home directory fact
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         ansible_env:
           HOME: "{{ container_home }}"
