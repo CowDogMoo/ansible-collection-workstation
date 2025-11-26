@@ -123,7 +123,7 @@
         path: "/home/{{ item.username }}/.config/systemd/user"
       with_items: "{{ vnc_setup_users }}"
       register: vnc_setup_systemd_user_dirs
-      when: is_systemd_present | bool and vnc_setup_systemd | bool
+      when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool
 
     - name: Assert systemd user directories exist
       ansible.builtin.assert:
@@ -132,14 +132,14 @@
           - item.stat.isdir
         msg: "Systemd user directory for {{ item.item.username }} does not exist"
       with_items: "{{ vnc_setup_systemd_user_dirs.results }}"
-      when: is_systemd_present | bool and vnc_setup_systemd | bool and systemd_user_dirs is defined
+      when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool and vnc_setup_systemd_user_dirs is defined
 
     - name: Check VNC systemd service files
       ansible.builtin.stat:
         path: "/home/{{ item.username }}/.config/systemd/user/vncserver.service"
       with_items: "{{ vnc_setup_users }}"
-      register: vnc_setup_vnc_systemd_service
-      when: is_systemd_present | bool and vnc_setup_systemd | bool
+      register: vnc_setup_vnc_setup_vnc_systemd_service
+      when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool
 
     - name: Assert VNC systemd service files exist
       ansible.builtin.assert:
@@ -149,8 +149,8 @@
           - item.stat.mode == '0744'
           - item.stat.pw_name == item.item.username
         msg: "VNC systemd service file for {{ item.item.username }} does not exist or has incorrect permissions"
-      with_items: "{{ vnc_systemd_service.results }}"
-      when: is_systemd_present | bool and vnc_setup_systemd | bool and vnc_systemd_service is defined
+      with_items: "{{ vnc_setup_vnc_systemd_service.results }}"
+      when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool and vnc_setup_vnc_systemd_service is defined
 
     # Shell Configuration Checks
     - name: Check if profile.d start_vnc script exists
@@ -171,7 +171,7 @@
       ansible.builtin.stat:
         path: "/etc/profile.d/xdg_runtime_dir.sh"
       register: vnc_setup_xdg_runtime_script
-      when: is_systemd_present | bool and vnc_setup_systemd | bool
+      when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool
 
     - name: Assert XDG_RUNTIME_DIR script exists
       ansible.builtin.assert:
@@ -180,7 +180,7 @@
           - vnc_setup_xdg_runtime_script.stat.isreg
           - vnc_setup_xdg_runtime_script.stat.executable
         msg: "XDG_RUNTIME_DIR script does not exist or is not executable"
-      when: is_systemd_present | bool and vnc_setup_systemd | bool and xdg_runtime_script is defined
+      when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool and vnc_setup_xdg_runtime_script is defined
 
     # Process Verification (moved from service.yml)
     - name: Get uids of users

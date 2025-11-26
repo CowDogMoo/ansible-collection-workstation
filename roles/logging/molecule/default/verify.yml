@@ -41,7 +41,7 @@
     - name: Check logrotate binary exists (Linux)
       ansible.builtin.command:
         cmd: which logrotate
-      register: logging_logging_logrotate_which
+      register: logging_logrotate_which
       changed_when: false
       failed_when: false
 
@@ -55,7 +55,7 @@
     - name: Validate logrotate configuration syntax
       ansible.builtin.command:
         cmd: logrotate -d /etc/logrotate.d/{{ logging_test_rotation_config.name }}
-      register: logging_logging_logrotate_debug
+      register: logging_logrotate_debug
       changed_when: false
       failed_when: false
 
