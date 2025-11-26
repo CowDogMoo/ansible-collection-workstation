@@ -14,7 +14,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-| ---------- | ------ | --------- | ------------- |
+| -------- | ---- | ------- | ----------- |
 | `go_task_version` | str | <code>latest</code> | No description |
 | `go_task_install_dir` | str | <code>/usr/local/bin</code> | No description |
 | `go_task_windows_install_dir` | str | <code>C:\\Program Files\\task</code> | No description |
@@ -34,7 +34,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 ### Role Variables (main.yml)
 
 | Variable | Type | Value | Description |
-| ---------- | ------ | ------- | ------------- |
+| -------- | ---- | ----- | ----------- |
 | `go_task_github_api_url` | str | `https://api.github.com/repos/go-task/task/releases` | No description |
 | `go_task_download_base_url` | str | `https://github.com/go-task/task/releases/download` | No description |
 | `go_task_checksums_file` | str | `task_checksums.txt` | No description |
@@ -42,6 +42,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 ## Tasks
 
 ### install-unix.yml
+
 
 - **Set download filename for Unix-like systems** (ansible.builtin.set_fact)
 - **Check if go-task is already installed** (ansible.builtin.stat)
@@ -58,6 +59,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 
 ### install-windows.yml
 
+
 - **Set download filename for Windows** (ansible.builtin.set_fact)
 - **Create installation directory** (ansible.windows.win_file)
 - **Download go-task for Windows** (ansible.windows.win_get_url)
@@ -66,6 +68,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 - **Add go-task to PATH** (ansible.windows.win_path) - Conditional
 
 ### main.yml
+
 
 - **Include OS-specific variables** (ansible.builtin.include_vars)
 - **Determine system architecture** (ansible.builtin.set_fact)
@@ -96,6 +99,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 - **License**: MIT
 
 ## Platforms
+
 
 - Ubuntu: all
 - Debian: all

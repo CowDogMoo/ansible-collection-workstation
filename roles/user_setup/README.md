@@ -11,6 +11,7 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 
 ## Dependencies
 
+
 - cowdogmoo.workstation.package_management
 
 ## Role Variables
@@ -18,7 +19,7 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-| ---------- | ------ | --------- | ------------- |
+| -------- | ---- | ------- | ----------- |
 | `user_setup_default_username` | str | <code>{{ ansible_facts&#91;'distribution'&#93; &#124; lower }}</code> | No description |
 | `user_setup_default_group` | str | <code>{{ ansible_facts&#91;'distribution'&#93; &#124; lower }}</code> | No description |
 | `user_setup_default_users` | list | <code>&#91;&#93;</code> | No description |
@@ -27,7 +28,7 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 ### Role Variables (main.yml)
 
 | Variable | Type | Value | Description |
-| ---------- | ------ | ------- | ------------- |
+| -------- | ---- | ----- | ----------- |
 | `user_setup_install_packages` | list | `[]` | No description |
 | `user_setup_install_packages.0` | str | `bash` | No description |
 | `user_setup_install_packages.1` | str | `sudo` | No description |
@@ -35,6 +36,7 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 ## Tasks
 
 ### main.yml
+
 
 - **Gather available local users** (ansible.builtin.getent) - Conditional
 - **Gather available local users on macOS** (cowdogmoo.workstation.getent_passwd) - Conditional
@@ -64,6 +66,7 @@ Sets up user accounts with optional sudo privileges for Unix-like and Windows sy
 - **License**: MIT
 
 ## Platforms
+
 
 - Ubuntu: all
 - Kali: all

@@ -11,6 +11,7 @@ Provides logging directories and log rotation for other roles.
 
 ## Dependencies
 
+
 - cowdogmoo.workstation.user_setup
 
 ## Role Variables
@@ -18,7 +19,7 @@ Provides logging directories and log rotation for other roles.
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-| ---------- | ------ | --------- | ------------- |
+| -------- | ---- | ------- | ----------- |
 | `vnc_setup_client_options` | str | <code>-geometry 1920x1080</code> | No description |
 | `vnc_setup_depth` | str | <code>24</code> | No description |
 | `vnc_setup_systemd` | bool | <code>True</code> | No description |
@@ -31,7 +32,7 @@ Provides logging directories and log rotation for other roles.
 ### Role Variables (main.yml)
 
 | Variable | Type | Value | Description |
-| ---------- | ------ | ------- | ------------- |
+| -------- | ---- | ----- | ----------- |
 | `vnc_setup_common_install_packages` | list | `[]` | No description |
 | `vnc_setup_common_install_packages.0` | str | `dbus-x11` | No description |
 | `vnc_setup_debian_specific_packages` | list | `[]` | No description |
@@ -48,6 +49,7 @@ Provides logging directories and log rotation for other roles.
 
 ### cleanup.yml
 
+
 - **Check if VNC needs to be restarted** (ansible.builtin.set_fact)
 - **Attempt to stop VNC using vncserver -kill** (ansible.builtin.shell) - Conditional
 - **Get running VNC processes for users** (ansible.builtin.command) - Conditional
@@ -60,11 +62,13 @@ Provides logging directories and log rotation for other roles.
 
 ### get_uids.yml
 
+
 - **Get uids of users** (ansible.builtin.command) - Conditional
 - **Create uid_results from uids** (ansible.builtin.set_fact) - Conditional
 - **Merge uids into vnc_setup_users** (cowdogmoo.workstation.merge_list_dicts_into_list) - Conditional
 
 ### main.yml
+
 
 - **Install vncpwd** (ansible.builtin.import_tasks)
 - **Install required packages for vnc** (ansible.builtin.include_role)
@@ -80,6 +84,7 @@ Provides logging directories and log rotation for other roles.
 
 ### password_config.yml
 
+
 - **Generate random passwords for vnc_setup_users with vnc_pw.py** (cowdogmoo.workstation.vnc_pw)
 - **Update vnc_setup_users with the random generated passwords** (ansible.builtin.set_fact)
 - **Process VNC passwords** (block)
@@ -89,6 +94,7 @@ Provides logging directories and log rotation for other roles.
 
 ### service.yml
 
+
 - **Clean up existing VNC sessions** (ansible.builtin.import_tasks) - Conditional
 - **Start VNC directly when systemd failed or is unavailable** (block) - Conditional
 - **Check if VNC is already running for each user (broader check)** (ansible.builtin.shell)
@@ -97,11 +103,13 @@ Provides logging directories and log rotation for other roles.
 
 ### shell_config.yml
 
+
 - **Check if zshrc file exists** (ansible.builtin.stat)
 - **Ensure zsh sources /etc/profile.d scripts** (ansible.builtin.lineinfile)
 - **Create docker-entrypoint.sh** (ansible.builtin.template)
 
 ### systemd.yml
+
 
 - **Clean up existing VNC sessions** (ansible.builtin.import_tasks)
 - **Ensure required systemd services are running** (ansible.builtin.service)
@@ -125,10 +133,12 @@ Provides logging directories and log rotation for other roles.
 
 ### user_config.yml
 
+
 - **Create .vnc directories for all users** (ansible.builtin.file)
 - **Create xstartup file for VNC** (ansible.builtin.template)
 
 ### vncpwd.yml
+
 
 - **Clone repo** (ansible.builtin.git)
 - **Build vncpwd** (community.general.make)
@@ -150,6 +160,7 @@ Provides logging directories and log rotation for other roles.
 - **License**: MIT
 
 ## Platforms
+
 
 - Ubuntu: all
 - Kali: all

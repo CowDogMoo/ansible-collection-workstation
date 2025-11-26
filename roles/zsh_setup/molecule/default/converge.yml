@@ -13,9 +13,9 @@
       become: true
       when: user_check.failed is defined and user_check.failed
 
-    - name: Set home directory fact
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
-        ansible_env:
+        zsh_setup_ansible_env:
           HOME: "{{ container_home }}"
 
     - name: Include default variables
