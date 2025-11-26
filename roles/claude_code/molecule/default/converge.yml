@@ -5,7 +5,7 @@
     container_user: "{{ ansible_facts['distribution'] | lower }}"
     container_home: "/home/{{ container_user }}"
   tasks:
-    - name: Set home directory fact
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         ansible_env:
           HOME: "{{ container_home }}"
@@ -122,12 +122,12 @@
             tool: Bash
             type: command
             command: "python3 -c \"import json, sys; sys.exit(0)\""
-      register: second_run
+      register: claude_code_second_run
 
     - name: Assert second run is idempotent
       ansible.builtin.assert:
         that:
-          - second_run is not changed
+          - claude_code_second_run is not changed
         fail_msg: "Second run should not report changes (idempotency failed)"
         success_msg: "Role is idempotent"
 
