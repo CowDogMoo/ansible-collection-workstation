@@ -14,7 +14,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-| ---------- | ------ | --------- | ------------- |
+| -------- | ---- | ------- | ----------- |
 | `fabric_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
 | `fabric_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', fabric_username) }}</code> | No description |
 | `fabric_user_home` | str | <code><multiline value: folded_strip></code> | No description |
@@ -34,6 +34,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 
 ### install-go.yml
 
+
 - **Check if fabric is already installed** (ansible.builtin.command)
 - **Check if Go is available** (ansible.builtin.command) - Conditional
 - **Fail if Go is not available** (ansible.builtin.fail) - Conditional
@@ -43,6 +44,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 
 ### install-homebrew.yml
 
+
 - **Check if running on macOS** (ansible.builtin.fail) - Conditional
 - **Check if fabric is already installed** (ansible.builtin.command)
 - **Install Fabric via Homebrew** (community.general.homebrew) - Conditional
@@ -50,6 +52,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 - **Display installed version** (ansible.builtin.debug)
 
 ### install-npm.yml
+
 
 - **Check if fabric is already installed** (ansible.builtin.command)
 - **Check if npm is available** (ansible.builtin.command) - Conditional
@@ -60,12 +63,14 @@ Installs and configures Daniel Miessler's Fabric AI framework
 
 ### install-script.yml
 
+
 - **Check if fabric is already installed** (ansible.builtin.stat)
 - **Install Fabric via official install script** (ansible.builtin.shell) - Conditional
 - **Verify fabric installation** (ansible.builtin.command)
 - **Display installed version** (ansible.builtin.debug) - Conditional
 
 ### main.yml
+
 
 - **Set fabric username for Kali systems** (ansible.builtin.set_fact) - Conditional
 - **Ensure fabric user home directory exists** (ansible.builtin.stat)
@@ -81,6 +86,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 - **Display fabric installation status** (ansible.builtin.debug)
 
 ### manage-custom-patterns.yml
+
 
 - **Check if custom patterns marker file exists** (ansible.builtin.stat) - Conditional
 - **Determine if custom patterns should be installed or updated** (ansible.builtin.set_fact)
@@ -109,6 +115,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 - **License**: MIT
 
 ## Platforms
+
 
 - Ubuntu: focal, jammy
 - Debian: bullseye, bookworm

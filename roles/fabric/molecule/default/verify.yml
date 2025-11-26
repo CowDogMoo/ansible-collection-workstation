@@ -70,23 +70,23 @@
         - name: Check for commit pattern
           ansible.builtin.stat:
             path: "{{ fabric_config_dir }}/patterns/commit/system.md"
-          register: commit_pattern_stat
+          register: fabric_commit_pattern_stat
           become: true
           become_user: "{{ container_user }}"
 
         - name: Check for pr pattern
           ansible.builtin.stat:
             path: "{{ fabric_config_dir }}/patterns/pr/system.md"
-          register: pr_pattern_stat
+          register: fabric_pr_pattern_stat
           become: true
           become_user: "{{ container_user }}"
 
         - name: Assert custom patterns are installed
           ansible.builtin.assert:
             that:
-              - commit_pattern_stat.stat.exists
-              - commit_pattern_stat.stat.isreg
-              - pr_pattern_stat.stat.exists
-              - pr_pattern_stat.stat.isreg
+              - fabric_commit_pattern_stat.stat.exists
+              - fabric_commit_pattern_stat.stat.isreg
+              - fabric_pr_pattern_stat.stat.exists
+              - fabric_pr_pattern_stat.stat.isreg
             fail_msg: "Custom patterns are not installed correctly"
             success_msg: "Custom patterns (commit, pr) are installed"
