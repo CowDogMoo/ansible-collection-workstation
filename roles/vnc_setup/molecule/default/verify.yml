@@ -138,7 +138,7 @@
       ansible.builtin.stat:
         path: "/home/{{ item.username }}/.config/systemd/user/vncserver.service"
       with_items: "{{ vnc_setup_users }}"
-      register: vnc_setup_vnc_setup_vnc_systemd_service
+      register: vnc_setup_vnc_systemd_service
       when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool
 
     - name: Assert VNC systemd service files exist
@@ -207,7 +207,7 @@
         that:
           - item.stdout != ""
         msg: "VNC process for {{ item.item.username }} (display :{{ item.item.vnc_num }}) is not running"
-      loop: "{{ vnc_processes.results }}"
+      loop: "{{ vnc_setup_vnc_processes.results }}"
 
     # Port Checks (moved from service.yml)
     - name: Check VNC ports
@@ -225,12 +225,12 @@
         that:
           - not item.failed
         msg: "VNC port {{ 5900 + item.item.vnc_num }} for {{ item.item.username }} is not listening"
-      loop: "{{ port_check.results }}"
+      loop: "{{ vnc_setup_port_check.results }}"
 
     # Final Summary
     - name: Display VNC service status summary
       ansible.builtin.debug:
         msg: "✓ VNC setup verification completed successfully for all users"
       when:
-        - vnc_processes.results | selectattr('stdout', 'eq', '') | list | length == 0
-        - port_check.results | selectattr('failed', 'defined') | selectattr('failed', 'eq', true) | list | length == 0
+        - vnc_setup_vnc_processes.results | selectattr('stdout', 'eq', '') | list | length == 0
+        - vnc_setup_port_check.results | selectattr('failed', 'defined') | selectattr('failed', 'eq', true) | list | length == 0
