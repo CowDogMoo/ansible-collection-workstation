@@ -13,9 +13,9 @@
 
     - name: Check user exists
       ansible.builtin.command: "id -un {{ item.username | trim }}"
-      register: user_check
+      register: user_setup_user_check
       changed_when: false
-      failed_when: user_check.rc != 0
+      failed_when: user_setup_user_check.rc != 0
       loop: "{{ user_setup_default_users }}"
       loop_control:
         label: "{{ item.username | trim }}"
@@ -23,9 +23,9 @@
     - name: Check user is in sudoers.d
       ansible.builtin.stat:
         path: "/etc/sudoers.d/{{ item.username | trim }}"
-      register: sudoers_file_check
+      register: user_setup_sudoers_file_check
       changed_when: false
-      failed_when: not sudoers_file_check.stat.exists
+      failed_when: not user_setup_sudoers_file_check.stat.exists
       loop: "{{ user_setup_default_users }}"
       when: item.sudo
       loop_control:
@@ -34,7 +34,7 @@
     - name: Assert user creation
       ansible.builtin.assert:
         that:
-          - item.username | trim in (user_check.results | map(attribute='stdout') | list)
+          - item.username | trim in (user_setup_user_check.results | map(attribute='stdout') | list)
       loop: "{{ user_setup_default_users }}"
       loop_control:
         label: "{{ item.username | trim }}"

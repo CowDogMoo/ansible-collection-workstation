@@ -5,18 +5,18 @@
   tasks:
     - name: Set test variables
       ansible.builtin.set_fact:
-        test_directories:
+        logging_test_directories:
           - path: /var/log/test-app
             mode: "0755"
-        test_rotation_config:
+        logging_test_rotation_config:
           name: test-app
           path: /var/log/test-app/*.log
 
     - name: Check logging directories exist
       ansible.builtin.stat:
         path: "{{ item.path }}"
-      loop: "{{ test_directories }}"
-      register: dir_stats
+      loop: "{{ logging_test_directories }}"
+      register: logging_dir_stats
 
     - name: Assert directories exist with correct permissions
       ansible.builtin.assert:
@@ -25,43 +25,43 @@
           - item.stat.isdir
           - item.stat.mode == item.item.mode
         quiet: true
-      loop: "{{ dir_stats.results }}"
+      loop: "{{ logging_dir_stats.results }}"
 
     - name: Check logrotate configuration file
       ansible.builtin.stat:
-        path: "/etc/logrotate.d/{{ test_rotation_config.name }}"
-      register: logrotate_config
+        path: "/etc/logrotate.d/{{ logging_test_rotation_config.name }}"
+      register: logging_logrotate_config
 
     - name: Assert logrotate configuration exists
       ansible.builtin.assert:
         that:
-          - logrotate_config.stat.exists
-          - logrotate_config.stat.mode == "0644"
+          - logging_logrotate_config.stat.exists
+          - logging_logrotate_config.stat.mode == "0644"
 
     - name: Check logrotate binary exists (Linux)
       ansible.builtin.command:
         cmd: which logrotate
-      register: logrotate_which
+      register: logging_logrotate_which
       changed_when: false
       failed_when: false
 
     - name: Assert logrotate binary exists
       ansible.builtin.assert:
         that:
-          - logrotate_which.rc == 0
+          - logging_logrotate_which.rc == 0
         fail_msg: "Logrotate binary not found"
-        success_msg: "Logrotate binary found at {{ logrotate_which.stdout }}"
+        success_msg: "Logrotate binary found at {{ logging_logrotate_which.stdout }}"
 
     - name: Validate logrotate configuration syntax
       ansible.builtin.command:
-        cmd: logrotate -d /etc/logrotate.d/{{ test_rotation_config.name }}
-      register: logrotate_debug
+        cmd: logrotate -d /etc/logrotate.d/{{ logging_test_rotation_config.name }}
+      register: logging_logrotate_debug
       changed_when: false
       failed_when: false
 
     - name: Assert logrotate configuration is valid
       ansible.builtin.assert:
         that:
-          - logrotate_debug.rc == 0
+          - logging_logrotate_debug.rc == 0
         fail_msg: "Logrotate configuration is invalid"
         success_msg: "Logrotate configuration is valid"

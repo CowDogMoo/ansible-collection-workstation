@@ -9,7 +9,7 @@
       - /bin/bash
       - /bin/zsh
   pre_tasks:
-    - name: Set home directory fact
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         ansible_env:
           HOME: "{{ container_home }}"
@@ -63,8 +63,8 @@
         export PATH="{{ asdf_bin_dir }}:$PATH"
         export ASDF_DATA_DIR="{{ asdf_data_dir }}"
         asdf --version
-      register: asdf_check
-      failed_when: asdf_check.rc != 0
+      register: asdf_version_check
+      failed_when: asdf_version_check.rc != 0
       changed_when: false
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
@@ -93,41 +93,41 @@
     - name: Check contents of .tool-versions
       ansible.builtin.command:
         cmd: "cat {{ asdf_user_home }}/.tool-versions"
-      register: tool_versions_content
+      register: asdf_tool_versions_content
       changed_when: false
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
 
     - name: Extract actual golang version from .tool-versions
       ansible.builtin.set_fact:
-        actual_golang_version: "{{ tool_versions_content.stdout | regex_search('golang\\s+(\\S+)', '\\1') | first }}"
-      when: "'golang' in tool_versions_content.stdout"
+        asdf_actual_golang_version: "{{ asdf_tool_versions_content.stdout | regex_search('golang\\s+(\\S+)', '\\1') | first }}"
+      when: "'golang' in asdf_tool_versions_content.stdout"
 
     - name: Assert .tool-versions content
       ansible.builtin.assert:
         that:
-          - "'golang' in tool_versions_content.stdout"
-          - actual_golang_version is defined
+          - "'golang' in asdf_tool_versions_content.stdout"
+          - asdf_actual_golang_version is defined
         fail_msg: "Golang not found in .tool-versions"
-        success_msg: "Found golang version {{ actual_golang_version }} in .tool-versions"
+        success_msg: "Found golang version {{ asdf_actual_golang_version }} in .tool-versions"
 
     - name: Check shell profile setup
       ansible.builtin.stat:
         path: "{{ asdf_user_home }}/{{ (asdf_available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-      register: shell_profile
+      register: asdf_shell_profile
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
 
     - name: Assert shell profile exists
       ansible.builtin.assert:
         that:
-          - shell_profile.stat.exists
-          - shell_profile.stat.mode == '0644'
+          - asdf_shell_profile.stat.exists
+          - asdf_shell_profile.stat.mode == '0644'
 
     - name: Check shell profile content
       ansible.builtin.command:
         cmd: "cat {{ asdf_user_home }}/{{ (asdf_available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
-      register: profile_content
+      register: asdf_profile_content
       changed_when: false
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
@@ -135,8 +135,8 @@
     - name: Assert shell profile content
       ansible.builtin.assert:
         that:
-          - "'ASDF_DATA_DIR' in profile_content.stdout"
-          - "'shims' in profile_content.stdout"
+          - "'ASDF_DATA_DIR' in asdf_profile_content.stdout"
+          - "'shims' in asdf_profile_content.stdout"
 
     - name: Verify golang is functional
       ansible.builtin.shell: |
@@ -147,8 +147,8 @@
         export PATH="${ASDF_DATA_DIR}/shims:$PATH"
         asdf current golang
         go version
-      register: go_version
-      failed_when: go_version.rc != 0
+      register: asdf_go_version
+      failed_when: asdf_go_version.rc != 0
       changed_when: false
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       become_user: "{{ asdf_username }}"
@@ -160,7 +160,7 @@
     - name: Assert golang version matches
       ansible.builtin.assert:
         that:
-          - actual_golang_version in go_version.stdout
-        fail_msg: "Expected golang version {{ actual_golang_version }} not found in output: {{ go_version.stdout }}"
-        success_msg: "Found expected golang version {{ actual_golang_version }}"
-      when: actual_golang_version is defined
+          - asdf_actual_golang_version in asdf_go_version.stdout
+        fail_msg: "Expected golang version {{ asdf_actual_golang_version }} not found in output: {{ asdf_go_version.stdout }}"
+        success_msg: "Found expected golang version {{ asdf_actual_golang_version }}"
+      when: asdf_actual_golang_version is defined

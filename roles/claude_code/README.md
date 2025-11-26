@@ -14,7 +14,7 @@ Manages Claude Code CLI configuration including hooks and settings
 ### Default Variables (main.yml)
 
 | Variable | Type | Default | Description |
-| ---------- | ------ | --------- | ------------- |
+| -------- | ---- | ------- | ----------- |
 | `claude_code_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
 | `claude_code_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', claude_code_username) }}</code> | No description |
 | `claude_code_user_home` | str | <code><multiline value: folded_strip></code> | No description |
@@ -31,6 +31,7 @@ Manages Claude Code CLI configuration including hooks and settings
 
 ### install-linux.yml
 
+
 - **Check if already installed** (ansible.builtin.command)
 - **Check if npm is available** (ansible.builtin.command) - Conditional
 - **Install via npm** (community.general.npm) - Conditional
@@ -40,12 +41,14 @@ Manages Claude Code CLI configuration including hooks and settings
 
 ### install-macos.yml
 
+
 - **Check if already installed** (ansible.builtin.command)
 - **Install via Homebrew** (community.general.homebrew_cask) - Conditional
 - **Verify installation** (ansible.builtin.command)
 - **Display version** (ansible.builtin.debug) - Conditional
 
 ### install-windows.yml
+
 
 - **Check if already installed** (ansible.windows.win_command)
 - **Check if npm is available** (ansible.windows.win_command) - Conditional
@@ -55,6 +58,7 @@ Manages Claude Code CLI configuration including hooks and settings
 - **Display version** (ansible.builtin.debug) - Conditional
 
 ### main.yml
+
 
 - **Set claude_code username for Kali systems** (ansible.builtin.set_fact) - Conditional
 - **Ensure claude_code user home directory exists** (ansible.builtin.stat)
@@ -83,6 +87,7 @@ Manages Claude Code CLI configuration including hooks and settings
 - **License**: MIT
 
 ## Platforms
+
 
 - Ubuntu: focal, jammy
 - Debian: bullseye, bookworm
