@@ -10,14 +10,14 @@
     # Check that no apt locks remain after role execution
     - name: Verify no apt locks are present
       ansible.builtin.command: lsof /var/lib/dpkg/lock-frontend
-      register: package_management_package_management_apt_lock_post_check
+      register: package_management_apt_lock_post_check
       changed_when: false
       failed_when: package_management_apt_lock_post_check.rc == 0  # Fail if lock is found
       when: ansible_os_family == 'Debian'
 
     - name: Verify no dpkg lock is present
       ansible.builtin.command: lsof /var/lib/dpkg/lock
-      register: package_management_package_management_dpkg_lock_check
+      register: package_management_dpkg_lock_check
       changed_when: false
       failed_when: package_management_dpkg_lock_check.rc == 0  # Fail if lock is found
       when: ansible_os_family == 'Debian'
@@ -26,7 +26,7 @@
       ansible.builtin.package:
         name: "{{ item }}"
         state: present
-      register: package_management_package_management_package_status
+      register: package_management_package_status
       with_items: "{{ package_management_common_install_packages }}"
       failed_when: package_management_package_status is failed
       changed_when: false

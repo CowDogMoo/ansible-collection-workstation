@@ -30,7 +30,7 @@
     - name: Check logrotate configuration file
       ansible.builtin.stat:
         path: "/etc/logrotate.d/{{ logging_test_rotation_config.name }}"
-      register: logging_logging_logrotate_config
+      register: logging_logrotate_config
 
     - name: Assert logrotate configuration exists
       ansible.builtin.assert:

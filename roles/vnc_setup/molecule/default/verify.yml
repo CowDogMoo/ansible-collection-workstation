@@ -44,7 +44,7 @@
       check_mode: true
       register: vnc_setup_package_check
       loop: "{{ vnc_setup_common_install_packages }}"
-      failed_when: package_check.changed
+      failed_when: vnc_setup_package_check.changed
 
     # OS-specific package checks
     - name: Verify Debian-specific packages are installed
@@ -54,7 +54,7 @@
       check_mode: true
       register: vnc_setup_debian_package_check
       loop: "{{ vnc_setup_debian_specific_packages }}"
-      failed_when: debian_package_check.changed
+      failed_when: vnc_setup_debian_package_check.changed
       when: ansible_os_family == "Debian"
 
     - name: Verify RedHat-specific packages are installed
@@ -64,7 +64,7 @@
       check_mode: true
       register: vnc_setup_redhat_package_check
       loop: "{{ vnc_setup_redhat_specific_packages }}"
-      failed_when: redhat_package_check.changed
+      failed_when: vnc_setup_redhat_package_check.changed
       when: ansible_os_family == "RedHat"
 
     # User Configuration Checks

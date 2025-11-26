@@ -127,7 +127,7 @@
     - name: Assert second run is idempotent
       ansible.builtin.assert:
         that:
-          - second_run is not changed
+          - claude_code_second_run is not changed
         fail_msg: "Second run should not report changes (idempotency failed)"
         success_msg: "Role is idempotent"
 
