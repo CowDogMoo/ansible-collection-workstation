@@ -115,7 +115,7 @@
           - item.stat.mode == '0600'
           - item.stat.pw_name == item.item.username
         msg: "Password file for {{ item.item.username }} does not exist or has incorrect permissions"
-      with_items: "{{ passwd_files.results }}"
+      with_items: "{{ vnc_setup_passwd_files.results }}"
 
     # Systemd Configuration Checks (moved from systemd.yml)
     - name: Check VNC systemd user directories
