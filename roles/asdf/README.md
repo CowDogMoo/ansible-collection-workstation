@@ -39,6 +39,7 @@ Install asdf
 | `asdf_plugins.4` | dict | <code>{}</code> | No description |
 | `asdf_plugins.5` | dict | <code>{}</code> | No description |
 | `asdf_plugins.6` | dict | <code>{}</code> | No description |
+| `asdf_plugins.7` | dict | <code>{}</code> | No description |
 
 ### Role Variables (main.yml)
 
