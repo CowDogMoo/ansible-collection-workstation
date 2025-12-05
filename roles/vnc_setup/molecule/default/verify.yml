@@ -55,7 +55,7 @@
       register: vnc_setup_debian_package_check
       loop: "{{ vnc_setup_debian_specific_packages }}"
       failed_when: vnc_setup_debian_package_check.changed
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     - name: Verify RedHat-specific packages are installed
       ansible.builtin.package:
@@ -65,7 +65,7 @@
       register: vnc_setup_redhat_package_check
       loop: "{{ vnc_setup_redhat_specific_packages }}"
       failed_when: vnc_setup_redhat_package_check.changed
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     # User Configuration Checks
     - name: Check user VNC directories

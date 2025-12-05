@@ -61,5 +61,5 @@ package_management_redhat_specific_packages:
 
 package_management_install_packages: >
   {{ package_management_common_install_packages +
-     (package_management_debian_specific_packages if ansible_os_family == 'Debian' else []) +
-     (package_management_redhat_specific_packages if ansible_os_family == 'RedHat' else []) }}
+     (package_management_debian_specific_packages if ansible_facts["os_family"] == 'Debian' else []) +
+     (package_management_redhat_specific_packages if ansible_facts["os_family"] == 'RedHat' else []) }}

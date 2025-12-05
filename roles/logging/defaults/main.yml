@@ -2,16 +2,16 @@
 # Default logging directories
 logging_directories: []
   # Example:
-  # - path: "{{ '~/logs/myapp' if ansible_os_family == 'Darwin' else '/var/log/myapp' }}"
+  # - path: "{{ '~/logs/myapp' if ansible_facts["os_family"] == 'Darwin' else '/var/log/myapp' }}"
   #   mode: "0755"
-  #   owner: "{{ ansible_user_id if ansible_os_family == 'Darwin' else 'root' }}"
-  #   group: "{{ 'staff' if ansible_os_family == 'Darwin' else 'root' }}"
+  #   owner: "{{ ansible_user_id if ansible_facts["os_family"] == 'Darwin' else 'root' }}"
+  #   group: "{{ 'staff' if ansible_facts["os_family"] == 'Darwin' else 'root' }}"
 
 # Default log rotation configurations - supports multiple configs
 logging_rotation_configs: []
   # Example:
   # - name: "myapp"  # Used for config filename
-  #   path: "{{ '~/logs/myapp/*.log' if ansible_os_family == 'Darwin' else '/var/log/myapp/*.log' }}"
+  #   path: "{{ '~/logs/myapp/*.log' if ansible_facts["os_family"] == 'Darwin' else '/var/log/myapp/*.log' }}"
   #   rotate: 30
   #   frequency: "daily"
   #   compress: true
@@ -20,8 +20,8 @@ logging_rotation_configs: []
   #   create: true
   #   dateext: true
   #   maxsize: "100M"
-  #   owner: "{{ ansible_user_id if ansible_os_family == 'Darwin' else 'root' }}"
-  #   group: "{{ 'staff' if ansible_os_family == 'Darwin' else 'root' }}"
+  #   owner: "{{ ansible_user_id if ansible_facts["os_family"] == 'Darwin' else 'root' }}"
+  #   group: "{{ 'staff' if ansible_facts["os_family"] == 'Darwin' else 'root' }}"
 
 # LaunchAgent configuration for macOS
 logging_launchagent_label: "com.logging.logrotate"

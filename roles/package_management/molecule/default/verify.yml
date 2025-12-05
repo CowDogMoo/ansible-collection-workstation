@@ -13,14 +13,14 @@
       register: package_management_apt_lock_post_check
       changed_when: false
       failed_when: package_management_apt_lock_post_check.rc == 0  # Fail if lock is found
-      when: ansible_os_family == 'Debian'
+      when: ansible_facts["os_family"] == 'Debian'
 
     - name: Verify no dpkg lock is present
       ansible.builtin.command: lsof /var/lib/dpkg/lock
       register: package_management_dpkg_lock_check
       changed_when: false
       failed_when: package_management_dpkg_lock_check.rc == 0  # Fail if lock is found
-      when: ansible_os_family == 'Debian'
+      when: ansible_facts["os_family"] == 'Debian'
 
     - name: Check if common packages are installed
       ansible.builtin.package:
@@ -46,6 +46,6 @@
         state: present
       register: package_management_distro_package_status
       with_items: "{{ package_management_install_packages }}"
-      when: ansible_os_family in ['Debian', 'RedHat'] and ansible_distribution != 'Kali'
+      when: ansible_facts["os_family"] in ['Debian', 'RedHat'] and ansible_distribution != 'Kali'
       failed_when: package_management_distro_package_status is failed
       changed_when: false
