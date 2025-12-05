@@ -8,6 +8,7 @@
   ansible.builtin.apt:
     clean: true
   become: true
+  changed_when: false
   failed_when: false
 
 - name: Run apt-get autoclean
@@ -33,6 +34,7 @@
     - /var/cache/apt/pkgcache.bin
     - /var/cache/apt/srcpkgcache.bin
   become: true
+  changed_when: false
   failed_when: false
 
 - name: Remove APT lists
@@ -40,6 +42,7 @@
     path: /var/lib/apt/lists
     state: absent
   become: true
+  changed_when: false
   failed_when: false
 
 - name: Recreate APT lists directory (required for future apt operations)
@@ -48,6 +51,7 @@
     state: directory
     mode: '0755'
   become: true
+  changed_when: false
   failed_when: false
 
 - name: Recreate APT archives directory
@@ -56,6 +60,7 @@
     state: directory
     mode: '0755'
   become: true
+  changed_when: false
   failed_when: false
 
 - name: Remove dpkg status files

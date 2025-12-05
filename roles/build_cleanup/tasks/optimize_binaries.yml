@@ -12,6 +12,7 @@
     mode: preserve
   loop: "{{ build_cleanup_keep_binaries }}"
   become: true
+  changed_when: false
   failed_when: false
 
 - name: Strip debug symbols from binaries
@@ -62,6 +63,7 @@
     state: absent
   loop: "{{ build_cleanup_keep_binaries }}"
   become: true
+  changed_when: false
   failed_when: false
 
 - name: Ensure binary permissions are correct

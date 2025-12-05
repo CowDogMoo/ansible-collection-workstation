@@ -10,6 +10,7 @@
     dest: "{{ build_cleanup_post_script_path }}"
     mode: '0755'
   become: true
+  changed_when: false
 
 - name: Verify script was created
   ansible.builtin.stat:

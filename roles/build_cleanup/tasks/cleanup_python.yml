@@ -24,6 +24,7 @@
     state: absent
   loop: "{{ build_cleanup_pycache_dirs.files }}"
   become: true
+  changed_when: false
   failed_when: false
   when: build_cleanup_pycache_dirs.files is defined
 
