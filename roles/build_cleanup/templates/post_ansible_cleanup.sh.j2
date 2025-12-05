@@ -61,7 +61,7 @@ echo "[4/7] Skipping shell history cleanup (disabled)"
 {% endif %}
 
 # Final apt cleanup (belt and suspenders)
-{% if build_cleanup_final_apt_cleanup | bool and ansible_os_family == "Debian" %}
+{% if build_cleanup_final_apt_cleanup | bool and ansible_facts["os_family"] == "Debian" %}
 echo "[5/7] Final APT cleanup..."
 apt-get clean || true
 rm -rf /var/lib/apt/lists/* || true
@@ -101,7 +101,7 @@ echo "  - Set permissions for {{ build_cleanup_keep_binaries | length }} binarie
 {% if build_cleanup_clear_histories | bool %}
 echo "  - Cleared shell histories"
 {% endif %}
-{% if build_cleanup_final_apt_cleanup | bool and ansible_os_family == "Debian" %}
+{% if build_cleanup_final_apt_cleanup | bool and ansible_facts["os_family"] == "Debian" %}
 echo "  - Ran final APT cleanup"
 {% endif %}
 {% if build_cleanup_final_temp_cleanup | bool %}

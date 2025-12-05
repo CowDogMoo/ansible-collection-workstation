@@ -60,7 +60,7 @@
 
     - name: "Phase 8: APT cleanup"
       ansible.builtin.include_tasks: apt_cleanup.yml
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     - name: "Phase 9: Verify binary restoration"
       ansible.builtin.include_tasks: verify_restore.yml

@@ -14,7 +14,7 @@
   failed_when: false
   register: build_cleanup_apt_packages_removed
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts["os_family"] == "Debian"
     - build_cleanup_packages_debian | length > 0
 
 - name: Remove development packages (RedHat family)
@@ -26,24 +26,24 @@
   failed_when: false
   register: build_cleanup_dnf_packages_removed
   when:
-    - ansible_os_family == "RedHat"
+    - ansible_facts["os_family"] == "RedHat"
     - build_cleanup_packages_redhat | length > 0
 
 - name: Set fact that autoremove has been run
   ansible.builtin.set_fact:
     build_cleanup_autoremove_completed: true
   when: >
-    (ansible_os_family == "Debian" and build_cleanup_apt_packages_removed is defined) or
-    (ansible_os_family == "RedHat" and build_cleanup_dnf_packages_removed is defined)
+    (ansible_facts["os_family"] == "Debian" and build_cleanup_apt_packages_removed is defined) or
+    (ansible_facts["os_family"] == "RedHat" and build_cleanup_dnf_packages_removed is defined)
 
 - name: Display package removal summary
   ansible.builtin.debug:
     msg: |
       Removed development packages:
-      {% if ansible_os_family == "Debian" %}
+      {% if ansible_facts["os_family"] == "Debian" %}
       - {{ build_cleanup_packages_debian | length }} Debian packages
       {% endif %}
-      {% if ansible_os_family == "RedHat" %}
+      {% if ansible_facts["os_family"] == "RedHat" %}
       - {{ build_cleanup_packages_redhat | length }} RedHat packages
       {% endif %}
       - Orphaned dependencies via autoremove

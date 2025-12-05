@@ -82,8 +82,8 @@ build_cleanup_final_sync: true           # Sync filesystem
 # =============================================================================
 
 # Virtualization detection
-build_cleanup_virtualization_type: "{{ ansible_virtualization_type | default('') }}"
+build_cleanup_virtualization_type: "{{ ansible_facts['virtualization_type'] | default('') }}"
 build_cleanup_is_container: "{{ build_cleanup_virtualization_type in ['docker', 'container', 'podman'] }}"
 
 # OS family detection
-build_cleanup_os_family: "{{ ansible_os_family | default('Debian') }}"
+build_cleanup_os_family: "{{ ansible_facts['os_family'] | default('Debian') }}"

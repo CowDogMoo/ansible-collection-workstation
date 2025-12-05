@@ -6,11 +6,14 @@
 
 - name: Find and remove Python cache directories
   ansible.builtin.find:
-    paths:
-      - "{{ build_cleanup_install_path }}"
-      - "{{ build_cleanup_user_home }}"
-      - /root
-      - /usr/local
+    paths: >-
+      {{
+        [
+          build_cleanup_install_path,
+          build_cleanup_user_home,
+          '/root'
+        ] + ([] if build_cleanup_fast_mode | bool else ['/usr/local'])
+      }}
     patterns: "__pycache__"
     file_type: directory
     recurse: true
@@ -30,11 +33,14 @@
 
 - name: Find and remove .pyc and .pyo files
   ansible.builtin.find:
-    paths:
-      - "{{ build_cleanup_install_path }}"
-      - "{{ build_cleanup_user_home }}"
-      - /root
-      - /usr/local
+    paths: >-
+      {{
+        [
+          build_cleanup_install_path,
+          build_cleanup_user_home,
+          '/root'
+        ] + ([] if build_cleanup_fast_mode | bool else ['/usr/local'])
+      }}
     patterns:
       - "*.pyc"
       - "*.pyo"

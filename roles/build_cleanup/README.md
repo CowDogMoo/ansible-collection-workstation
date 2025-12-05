@@ -41,9 +41,9 @@ General-purpose, parameterized cleanup role for build artifact minimization
 | `build_cleanup_final_apt_cleanup` | bool | <code>True</code> | No description |
 | `build_cleanup_final_temp_cleanup` | bool | <code>True</code> | No description |
 | `build_cleanup_final_sync` | bool | <code>True</code> | No description |
-| `build_cleanup_virtualization_type` | str | <code>{{ ansible_virtualization_type &#124; default('') }}</code> | No description |
+| `build_cleanup_virtualization_type` | str | <code>{{ ansible_facts&#91;'virtualization_type'&#93; &#124; default('') }}</code> | No description |
 | `build_cleanup_is_container` | str | <code>{{ build_cleanup_virtualization_type in &#91;'docker', 'container', 'podman'&#93; }}</code> | No description |
-| `build_cleanup_os_family` | str | <code>{{ ansible_os_family &#124; default('Debian') }}</code> | No description |
+| `build_cleanup_os_family` | str | <code>{{ ansible_facts&#91;'os_family'&#93; &#124; default('Debian') }}</code> | No description |
 
 ## Tasks
 

@@ -13,7 +13,7 @@
   become: true
   failed_when: false
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts["os_family"] == "Debian"
     - build_cleanup_container_remove_packages | length > 0
 
 - name: Remove common unnecessary packages in containers (Debian)
@@ -32,7 +32,7 @@
     purge: true
   become: true
   failed_when: false
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: Remove systemd journal logs
   ansible.builtin.file:
@@ -56,8 +56,9 @@
     - /var/cache/apt
     - /var/lib/apt/lists
   become: true
+  changed_when: false
   failed_when: false
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: Remove unnecessary kernel files (containers don't need these)
   ansible.builtin.file:

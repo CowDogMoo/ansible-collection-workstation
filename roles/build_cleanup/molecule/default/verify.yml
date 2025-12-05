@@ -87,7 +87,7 @@
         - build-essential
       changed_when: false
       failed_when: build_cleanup_package_check.stdout | length > 0
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     - name: Verify APT cache was cleaned
       ansible.builtin.find:
@@ -95,7 +95,7 @@
         patterns: "*.deb"
       register: build_cleanup_apt_cache_check
       failed_when: build_cleanup_apt_cache_check.matched > 0
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     - name: Display verification summary
       ansible.builtin.debug:
