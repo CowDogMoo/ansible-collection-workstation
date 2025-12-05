@@ -1,0 +1,87 @@
+---
+# build_cleanup role main tasks
+# ==============================
+# Entry point for the build cleanup role with safety guards
+
+- name: Display cleanup configuration
+  ansible.builtin.debug:
+    msg: |
+      Build Cleanup Role
+      ==================
+      Enabled: {{ build_cleanup_enabled }}
+      Install Path: {{ build_cleanup_install_path }}
+      User Home: {{ build_cleanup_user_home }}
+      Username: {{ build_cleanup_username }}
+      Keep Binaries: {{ build_cleanup_keep_binaries | length }} binaries
+      Protected Packages: {{ build_cleanup_protected_packages | length }} packages
+  when: build_cleanup_enabled | bool
+
+- name: Validate required parameters
+  ansible.builtin.assert:
+    that:
+      - build_cleanup_install_path is defined
+      - build_cleanup_install_path | length > 0
+      - build_cleanup_user_home is defined
+      - build_cleanup_user_home | length > 0
+      - build_cleanup_username is defined
+      - build_cleanup_username | length > 0
+    fail_msg: "Required parameters missing. Please provide install_path, user_home, and username."
+    success_msg: "Required parameters validated successfully."
+  when: build_cleanup_enabled | bool
+
+- name: Execute cleanup phases
+  when: build_cleanup_enabled | bool
+  block:
+    - name: "Phase 1: Protect packages from autoremoval"
+      ansible.builtin.include_tasks: protect_packages.yml
+      when: build_cleanup_protected_packages | length > 0
+
+    - name: "Phase 2: Remove build artifacts"
+      ansible.builtin.include_tasks: remove_artifacts.yml
+
+    - name: "Phase 3: Optimize binaries"
+      ansible.builtin.include_tasks: optimize_binaries.yml
+      when: build_cleanup_keep_binaries | length > 0
+
+    - name: "Phase 4: Remove development packages"
+      ansible.builtin.include_tasks: remove_dev_packages.yml
+      when: build_cleanup_packages_debian | length > 0 or build_cleanup_packages_redhat | length > 0
+
+    - name: "Phase 5: Cleanup Python artifacts"
+      ansible.builtin.include_tasks: cleanup_python.yml
+
+    - name: "Phase 6: Container-specific optimizations"
+      ansible.builtin.include_tasks: container_optimizations.yml
+      when: build_cleanup_is_container | bool
+
+    - name: "Phase 7: Deep cleanup"
+      ansible.builtin.include_tasks: deep_cleanup.yml
+
+    - name: "Phase 8: APT cleanup"
+      ansible.builtin.include_tasks: apt_cleanup.yml
+      when: ansible_os_family == "Debian"
+
+    - name: "Phase 9: Verify binary restoration"
+      ansible.builtin.include_tasks: verify_restore.yml
+      when: build_cleanup_keep_binaries | length > 0
+
+    - name: "Phase 10: Generate post-Ansible cleanup script"
+      ansible.builtin.include_tasks: generate_post_ansible_script.yml
+      when: build_cleanup_generate_post_script | bool
+
+- name: Display cleanup summary
+  ansible.builtin.debug:
+    msg: |
+      Build Cleanup Complete
+      ======================
+      All cleanup phases executed successfully.
+      {% if build_cleanup_generate_post_script | bool %}
+      Post-Ansible script generated at: {{ build_cleanup_post_script_path }}
+      Execute this script in Packer after Ansible provisioner completes.
+      {% endif %}
+  when: build_cleanup_enabled | bool
+
+- name: Cleanup skipped
+  ansible.builtin.debug:
+    msg: "Build cleanup is disabled (build_cleanup_enabled=false). Skipping all cleanup tasks."
+  when: not (build_cleanup_enabled | bool)

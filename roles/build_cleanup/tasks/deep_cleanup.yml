@@ -1,0 +1,179 @@
+---
+# Deep cleanup
+# ============
+# Removes documentation, man pages, locales, and other files that
+# are typically not needed in production/containerized environments.
+
+- name: Remove documentation directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/share/doc
+    - /usr/share/man
+    - /usr/share/info
+    - /usr/share/groff
+    - /usr/share/lintian
+    - /usr/share/linda
+  become: true
+  failed_when: false
+
+- name: Remove locale files (keep only en_US.UTF-8)
+  ansible.builtin.shell: |
+    find /usr/share/locale -mindepth 1 -maxdepth 1 ! -name 'en_US*' -exec rm -rf {} \;
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: Remove i18n files (internationalization)
+  ansible.builtin.shell: |
+    find /usr/share/i18n/locales -mindepth 1 -maxdepth 1 ! -name 'en_US*' -exec rm -rf {} \;
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: Remove unnecessary include files
+  ansible.builtin.file:
+    path: /usr/include
+    state: absent
+  become: true
+  failed_when: false
+
+- name: Remove static libraries
+  ansible.builtin.shell: |
+    find /usr/lib -name "*.a" -delete
+    find /usr/local/lib -name "*.a" -delete 2>/dev/null || true
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: Remove pkg-config files
+  ansible.builtin.shell: |
+    find /usr/lib -name "*.pc" -delete
+    find /usr/local/lib -name "*.pc" -delete 2>/dev/null || true
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: Remove systemd (if configured)
+  when: build_cleanup_handle_systemd | bool
+  block:
+    - name: Remove systemd directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /lib/systemd
+        - /etc/systemd
+      become: true
+      failed_when: false
+
+- name: Remove PostgreSQL (if configured)
+  when: build_cleanup_handle_postgresql | bool
+  block:
+    - name: Stop PostgreSQL service
+      ansible.builtin.systemd:
+        name: postgresql
+        state: stopped
+      become: true
+      failed_when: false
+
+    - name: Remove PostgreSQL data and config
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/postgresql
+        - /etc/postgresql
+        - /var/log/postgresql
+      become: true
+      failed_when: false
+
+- name: Remove Perl (if configured)
+  when: build_cleanup_handle_perl | bool
+  block:
+    - name: Remove Perl packages
+      ansible.builtin.apt:
+        name:
+          - perl
+          - perl-base
+          - perl-modules-*
+        state: absent
+        autoremove: true
+        purge: true
+      become: true
+      failed_when: false
+      when: ansible_os_family == "Debian"
+
+    - name: Remove Perl directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/lib/perl*
+        - /usr/share/perl*
+      become: true
+      failed_when: false
+
+- name: Check for unpacked compilers (if configured)
+  when: build_cleanup_check_unpacked_compilers | bool
+  block:
+    - name: Check for unpacked compiler archives
+      ansible.builtin.find:
+        paths: "{{ build_cleanup_user_home }}"
+        patterns: "{{ item }}*"
+        file_type: directory
+      loop: "{{ build_cleanup_compiler_paths }}"
+      register: build_cleanup_compiler_check
+      become: true
+      failed_when: false
+
+    - name: Remove unpacked compiler directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ build_cleanup_compiler_check.results | selectattr('files', 'defined') | map(attribute='files') | flatten }}"
+      become: true
+      failed_when: false
+      when: build_cleanup_compiler_check.results is defined
+
+- name: Remove misc caches and temporary files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/cache/fontconfig
+    - /var/cache/ldconfig
+    - /var/cache/man
+    - /var/tmp
+  become: true
+  failed_when: false
+
+- name: Recreate var/tmp directory
+  ansible.builtin.file:
+    path: /var/tmp
+    state: directory
+    mode: '1777'
+  become: true
+  failed_when: false
+
+- name: Display deep cleanup summary
+  ansible.builtin.debug:
+    msg: |
+      Deep cleanup complete:
+      - Removed documentation, man pages, and info pages
+      - Kept only en_US locale
+      - Removed include files and static libraries
+      {% if build_cleanup_handle_systemd %}
+      - Removed systemd
+      {% endif %}
+      {% if build_cleanup_handle_postgresql %}
+      - Removed PostgreSQL
+      {% endif %}
+      {% if build_cleanup_handle_perl %}
+      - Removed Perl
+      {% endif %}
+      {% if build_cleanup_check_unpacked_compilers %}
+      - Checked for unpacked compilers
+      {% endif %}
+      - Removed misc caches

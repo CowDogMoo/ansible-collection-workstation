@@ -1,0 +1,86 @@
+---
+# build_cleanup role default variables
+# =====================================
+# General-purpose, parameterized cleanup role for consolidating cleanup logic
+# across multiple roles. Provides container/image minimization capabilities.
+
+# =============================================================================
+# CONTROL FLAGS
+# =============================================================================
+
+# Master enable/disable flag for cleanup - Default OFF for safety
+build_cleanup_enabled: false
+
+# Generate post-Ansible cleanup script for Packer
+build_cleanup_generate_post_script: true
+
+# =============================================================================
+# REQUIRED PARAMETERS (Must be provided by calling role)
+# =============================================================================
+
+# Installation details
+build_cleanup_install_path: ""           # Where software is installed (e.g., /opt/tool)
+build_cleanup_user_home: ""              # User's home directory (e.g., /home/user)
+build_cleanup_username: ""               # Owner of files (e.g., sliver)
+
+# What to keep
+build_cleanup_keep_binaries: []          # List of binary filenames to preserve
+build_cleanup_protected_packages: []     # Packages that must not be removed
+
+# What to remove
+build_cleanup_source_directories: []     # Source directories to delete (e.g., [src, test, docs])
+build_cleanup_paths: []                  # Additional paths to clean up
+build_cleanup_packages_debian: []        # Debian packages to remove
+build_cleanup_packages_redhat: []        # RedHat packages to remove
+
+# =============================================================================
+# OPTIONAL PARAMETERS
+# =============================================================================
+
+# Binary verification
+build_cleanup_binary_version_flag: "version"  # Flag to check binary version
+                                              # Can be: "version", "--version", "-v", etc.
+
+# Additional cleanup paths
+build_cleanup_additional_paths: []       # Extra paths to remove beyond standard cleanup
+
+# Container optimizations
+build_cleanup_container_remove_packages: []  # Container-specific packages to remove
+
+# =============================================================================
+# SPECIAL HANDLING FLAGS
+# =============================================================================
+
+# Compiler checks
+build_cleanup_check_unpacked_compilers: false
+build_cleanup_compiler_paths: []         # e.g., [go, zig]
+
+# Optional component handling
+build_cleanup_handle_postgresql: false   # Enable PostgreSQL-specific logic
+build_cleanup_handle_perl: false         # Enable Perl removal
+build_cleanup_handle_systemd: false      # Enable systemd removal
+
+# Python cleanup
+build_cleanup_python_keep_packages: []   # Additional Python packages to protect
+
+# =============================================================================
+# POST-ANSIBLE SCRIPT CONFIGURATION
+# =============================================================================
+
+# Post-script generation
+build_cleanup_post_script_path: /tmp/post_ansible_cleanup.sh  # Where to place script
+build_cleanup_clear_histories: true      # Clear bash/zsh/wget histories
+build_cleanup_final_apt_cleanup: true    # Run final apt clean
+build_cleanup_final_temp_cleanup: true   # Clear all temp directories
+build_cleanup_final_sync: true           # Sync filesystem
+
+# =============================================================================
+# INTERNAL DEFAULTS (Generally should not be overridden)
+# =============================================================================
+
+# Virtualization detection
+build_cleanup_virtualization_type: "{{ ansible_virtualization_type | default('') }}"
+build_cleanup_is_container: "{{ build_cleanup_virtualization_type in ['docker', 'container', 'podman'] }}"
+
+# OS family detection
+build_cleanup_os_family: "{{ ansible_os_family | default('Debian') }}"

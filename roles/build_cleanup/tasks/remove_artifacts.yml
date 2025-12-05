@@ -1,0 +1,65 @@
+---
+# Remove build artifacts
+# ======================
+# Removes source code directories, build files, and other artifacts
+# that are no longer needed after compilation/installation.
+
+- name: Remove source directories from install path
+  ansible.builtin.file:
+    path: "{{ build_cleanup_install_path }}/{{ item }}"
+    state: absent
+  loop: "{{ build_cleanup_source_directories }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_source_directories | length > 0
+
+- name: Remove specified cleanup paths
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ build_cleanup_paths }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_paths | length > 0
+
+- name: Remove additional cleanup paths
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ build_cleanup_additional_paths }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_additional_paths | length > 0
+
+- name: Remove common build artifacts from user home
+  ansible.builtin.file:
+    path: "{{ build_cleanup_user_home }}/{{ item }}"
+    state: absent
+  loop:
+    - .cache
+    - .cargo
+    - .rustup
+    - go/pkg
+    - go/src
+  become: true
+  failed_when: false
+
+- name: Remove common build artifacts from root
+  ansible.builtin.file:
+    path: "/root/{{ item }}"
+    state: absent
+  loop:
+    - .cache
+    - .cargo
+    - .rustup
+  become: true
+  failed_when: false
+
+- name: Display artifact removal summary
+  ansible.builtin.debug:
+    msg: |
+      Removed:
+      - {{ build_cleanup_source_directories | length }} source directories
+      - {{ build_cleanup_paths | length }} specified paths
+      - {{ build_cleanup_additional_paths | length }} additional paths
+      - Common build artifacts from user home and root

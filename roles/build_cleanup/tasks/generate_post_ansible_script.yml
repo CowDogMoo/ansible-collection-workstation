@@ -1,0 +1,60 @@
+---
+# Generate post-Ansible cleanup script
+# =====================================
+# Creates a shell script that Packer can execute after Ansible provisioner
+# completes to clean up artifacts that Ansible cannot remove while running.
+
+- name: Generate post-Ansible cleanup script
+  ansible.builtin.template:
+    src: post_ansible_cleanup.sh.j2
+    dest: "{{ build_cleanup_post_script_path }}"
+    mode: '0755'
+  become: true
+
+- name: Verify script was created
+  ansible.builtin.stat:
+    path: "{{ build_cleanup_post_script_path }}"
+  register: build_cleanup_post_script_stat
+  become: true
+
+- name: Display script generation success
+  ansible.builtin.debug:
+    msg: |
+      Post-Ansible Cleanup Script Generated
+      ======================================
+      Location: {{ build_cleanup_post_script_path }}
+      Size: {{ build_cleanup_post_script_stat.stat.size | default('unknown') }} bytes
+      Permissions: {{ build_cleanup_post_script_stat.stat.mode | default('unknown') }}
+
+      Packer Integration
+      ==================
+      Add this to your Packer template after the Ansible provisioner:
+
+      provisioner "shell" {
+        inline = [
+          "{{ build_cleanup_post_script_path }}"
+        ]
+      }
+
+      This script will:
+      - Remove Ansible runtime artifacts
+      - Remove Packer temporary files
+      - Set correct binary permissions
+      - Clear shell histories
+      {% if build_cleanup_final_apt_cleanup %}
+      - Run final APT cleanup
+      {% endif %}
+      {% if build_cleanup_final_temp_cleanup %}
+      - Clear all temporary directories
+      {% endif %}
+      {% if build_cleanup_final_sync %}
+      - Sync filesystem
+      {% endif %}
+  when: build_cleanup_post_script_stat.stat.exists
+
+- name: Warning if script generation failed
+  ansible.builtin.debug:
+    msg: |
+      WARNING: Post-Ansible script generation may have failed!
+      Script not found at: {{ build_cleanup_post_script_path }}
+  when: not build_cleanup_post_script_stat.stat.exists

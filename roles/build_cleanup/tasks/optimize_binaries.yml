@@ -1,0 +1,85 @@
+---
+# Optimize binaries
+# =================
+# Strips debug symbols and compresses binaries to reduce size
+# while maintaining functionality.
+
+- name: Backup binaries before optimization
+  ansible.builtin.copy:
+    src: "{{ build_cleanup_install_path }}/{{ item }}"
+    dest: "{{ build_cleanup_install_path }}/{{ item }}.backup"
+    remote_src: true
+    mode: preserve
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  failed_when: false
+
+- name: Strip debug symbols from binaries
+  ansible.builtin.command:
+    cmd: "strip --strip-all {{ build_cleanup_install_path }}/{{ item }}"
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  changed_when: false
+  failed_when: false
+  register: build_cleanup_strip_result
+
+- name: Compress binaries with UPX (if available)
+  ansible.builtin.command:
+    cmd: "upx --best --lzma {{ build_cleanup_install_path }}/{{ item }}"
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  changed_when: false
+  failed_when: false
+  register: build_cleanup_upx_result
+  when: ansible_facts.packages is defined and 'upx' in ansible_facts.packages
+
+- name: Test binaries after optimization
+  ansible.builtin.command:
+    cmd: "{{ build_cleanup_install_path }}/{{ item }} {{ build_cleanup_binary_version_flag }}"
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  become_user: "{{ build_cleanup_username }}"
+  changed_when: false
+  failed_when: false
+  register: build_cleanup_binary_test_result
+
+- name: Restore binaries if optimization broke them
+  ansible.builtin.copy:
+    src: "{{ build_cleanup_install_path }}/{{ item.item }}.backup"
+    dest: "{{ build_cleanup_install_path }}/{{ item.item }}"
+    remote_src: true
+    mode: preserve
+  loop: "{{ build_cleanup_binary_test_result.results }}"
+  become: true
+  when:
+    - item.rc is defined
+    - item.rc != 0
+  failed_when: false
+
+- name: Remove binary backups
+  ansible.builtin.file:
+    path: "{{ build_cleanup_install_path }}/{{ item }}.backup"
+    state: absent
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  failed_when: false
+
+- name: Ensure binary permissions are correct
+  ansible.builtin.file:
+    path: "{{ build_cleanup_install_path }}/{{ item }}"
+    mode: '0755'
+    owner: "{{ build_cleanup_username }}"
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  failed_when: false
+
+- name: Display optimization summary
+  ansible.builtin.debug:
+    msg: |
+      Optimized {{ build_cleanup_keep_binaries | length }} binaries:
+      - Stripped debug symbols
+      {% if build_cleanup_upx_result.results is defined %}
+      - Compressed with UPX
+      {% endif %}
+      - Verified functionality
+      - Set correct permissions

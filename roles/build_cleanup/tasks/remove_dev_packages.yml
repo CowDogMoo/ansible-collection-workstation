@@ -1,0 +1,55 @@
+---
+# Remove development packages
+# ===========================
+# Removes build-time dependencies and development packages that are
+# no longer needed after compilation/installation.
+
+- name: Remove development packages (Debian family)
+  ansible.builtin.apt:
+    name: "{{ build_cleanup_packages_debian }}"
+    state: absent
+    autoremove: true
+    purge: true
+  become: true
+  failed_when: false
+  when:
+    - ansible_os_family == "Debian"
+    - build_cleanup_packages_debian | length > 0
+
+- name: Remove development packages (RedHat family)
+  ansible.builtin.dnf:
+    name: "{{ build_cleanup_packages_redhat }}"
+    state: absent
+    autoremove: true
+  become: true
+  failed_when: false
+  when:
+    - ansible_os_family == "RedHat"
+    - build_cleanup_packages_redhat | length > 0
+
+- name: Run autoremove to clean up orphaned dependencies (Debian)
+  ansible.builtin.apt:
+    autoremove: true
+    purge: true
+  become: true
+  failed_when: false
+  when: ansible_os_family == "Debian"
+
+- name: Run autoremove to clean up orphaned dependencies (RedHat)
+  ansible.builtin.dnf:
+    autoremove: true
+  become: true
+  failed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: Display package removal summary
+  ansible.builtin.debug:
+    msg: |
+      Removed development packages:
+      {% if ansible_os_family == "Debian" %}
+      - {{ build_cleanup_packages_debian | length }} Debian packages
+      {% endif %}
+      {% if ansible_os_family == "RedHat" %}
+      - {{ build_cleanup_packages_redhat | length }} RedHat packages
+      {% endif %}
+      - Orphaned dependencies via autoremove

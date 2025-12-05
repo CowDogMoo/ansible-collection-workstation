@@ -1,0 +1,115 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify source directories were removed
+      ansible.builtin.stat:
+        path: "/opt/testapp/{{ item }}"
+      register: build_cleanup_source_dir_check
+      loop:
+        - src
+        - test
+        - docs
+        - .git
+      failed_when: build_cleanup_source_dir_check.stat.exists
+
+    - name: Verify cleanup paths were removed
+      ansible.builtin.stat:
+        path: /home/testuser/.cargo
+      register: build_cleanup_cargo_check
+      failed_when: build_cleanup_cargo_check.stat.exists
+
+    - name: Verify cache directories were removed
+      ansible.builtin.stat:
+        path: /home/testuser/.cache
+      register: build_cleanup_cache_check
+      failed_when: build_cleanup_cache_check.stat.exists
+
+    - name: Verify binary still exists
+      ansible.builtin.stat:
+        path: /opt/testapp/testapp
+      register: build_cleanup_binary_check
+      failed_when: not build_cleanup_binary_check.stat.exists
+
+    - name: Verify binary is executable
+      ansible.builtin.stat:
+        path: /opt/testapp/testapp
+      register: build_cleanup_binary_exec_check
+      failed_when: not build_cleanup_binary_exec_check.stat.executable
+
+    - name: Verify binary works
+      ansible.builtin.command:
+        cmd: /opt/testapp/testapp
+      register: build_cleanup_binary_test
+      changed_when: false
+      failed_when: build_cleanup_binary_test.rc != 0
+
+    - name: Verify post-Ansible script was generated
+      ansible.builtin.stat:
+        path: /tmp/post_ansible_cleanup.sh
+      register: build_cleanup_post_script_check
+      failed_when: not build_cleanup_post_script_check.stat.exists
+
+    - name: Verify post-Ansible script is executable
+      ansible.builtin.stat:
+        path: /tmp/post_ansible_cleanup.sh
+      register: build_cleanup_post_script_exec_check
+      failed_when: not build_cleanup_post_script_exec_check.stat.executable
+
+    - name: Read post-Ansible script content
+      ansible.builtin.slurp:
+        src: /tmp/post_ansible_cleanup.sh
+      register: build_cleanup_post_script_content
+
+    - name: Verify post-Ansible script contains expected commands
+      ansible.builtin.assert:
+        that:
+          - "'rm -rf /tmp/ansible*' in script_content"
+          - "'rm -rf /tmp/packer*' in script_content"
+          - "'chmod 755 /opt/testapp/testapp' in script_content"
+          - "'sync' in script_content"
+        fail_msg: "Post-Ansible script missing expected commands"
+        success_msg: "Post-Ansible script contains all expected commands"
+      vars:
+        script_content: "{{ build_cleanup_post_script_content.content | b64decode }}"
+
+    - name: Verify build packages were removed (Debian)
+      ansible.builtin.command:
+        cmd: dpkg -l {{ item }}
+      register: build_cleanup_package_check
+      loop:
+        - build-essential
+        - gcc
+        - g++
+      changed_when: false
+      failed_when: build_cleanup_package_check.rc == 0
+      when: ansible_os_family == "Debian"
+
+    - name: Verify APT cache was cleaned
+      ansible.builtin.find:
+        paths: /var/cache/apt/archives
+        patterns: "*.deb"
+      register: build_cleanup_apt_cache_check
+      failed_when: build_cleanup_apt_cache_check.matched > 0
+      when: ansible_os_family == "Debian"
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          Verification Complete
+          ====================
+          ✓ Source directories removed
+          ✓ Cleanup paths removed
+          ✓ Cache directories removed
+          ✓ Binary preserved and executable
+          ✓ Binary functionality verified
+          ✓ Post-Ansible script generated
+          ✓ Post-Ansible script is executable
+          ✓ Post-Ansible script contains expected commands
+          ✓ Build packages removed
+          ✓ APT cache cleaned
+
+          All tests passed!
