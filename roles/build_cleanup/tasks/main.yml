@@ -56,6 +56,7 @@
 
     - name: "Phase 7: Deep cleanup"
       ansible.builtin.include_tasks: deep_cleanup.yml
+      when: not (build_cleanup_fast_mode | bool)
 
     - name: "Phase 8: APT cleanup"
       ansible.builtin.include_tasks: apt_cleanup.yml
@@ -63,7 +64,9 @@
 
     - name: "Phase 9: Verify binary restoration"
       ansible.builtin.include_tasks: verify_restore.yml
-      when: build_cleanup_keep_binaries | length > 0
+      when:
+        - build_cleanup_keep_binaries | length > 0
+        - not (build_cleanup_fast_mode | bool)
 
     - name: "Phase 10: Generate post-Ansible cleanup script"
       ansible.builtin.include_tasks: generate_post_ansible_script.yml

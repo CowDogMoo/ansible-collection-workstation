@@ -12,6 +12,7 @@
     purge: true
   become: true
   failed_when: false
+  register: build_cleanup_apt_packages_removed
   when:
     - ansible_os_family == "Debian"
     - build_cleanup_packages_debian | length > 0
@@ -23,24 +24,17 @@
     autoremove: true
   become: true
   failed_when: false
+  register: build_cleanup_dnf_packages_removed
   when:
     - ansible_os_family == "RedHat"
     - build_cleanup_packages_redhat | length > 0
 
-- name: Run autoremove to clean up orphaned dependencies (Debian)
-  ansible.builtin.apt:
-    autoremove: true
-    purge: true
-  become: true
-  failed_when: false
-  when: ansible_os_family == "Debian"
-
-- name: Run autoremove to clean up orphaned dependencies (RedHat)
-  ansible.builtin.dnf:
-    autoremove: true
-  become: true
-  failed_when: false
-  when: ansible_os_family == "RedHat"
+- name: Set fact that autoremove has been run
+  ansible.builtin.set_fact:
+    build_cleanup_autoremove_completed: true
+  when: >
+    (ansible_os_family == "Debian" and build_cleanup_apt_packages_removed is defined) or
+    (ansible_os_family == "RedHat" and build_cleanup_dnf_packages_removed is defined)
 
 - name: Display package removal summary
   ansible.builtin.debug:

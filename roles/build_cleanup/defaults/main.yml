@@ -11,6 +11,9 @@
 # Master enable/disable flag for cleanup - Default OFF for safety
 build_cleanup_enabled: false
 
+# Fast mode - skips expensive operations for quick testing/iteration
+build_cleanup_fast_mode: false
+
 # Generate post-Ansible cleanup script for Packer
 build_cleanup_generate_post_script: true
 

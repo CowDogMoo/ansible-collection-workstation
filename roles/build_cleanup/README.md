@@ -16,6 +16,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
 | `build_cleanup_enabled` | bool | <code>False</code> | No description |
+| `build_cleanup_fast_mode` | bool | <code>False</code> | No description |
 | `build_cleanup_generate_post_script` | bool | <code>True</code> | No description |
 | `build_cleanup_install_path` | str | <code></code> | No description |
 | `build_cleanup_user_home` | str | <code></code> | No description |
@@ -51,7 +52,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 
 - **Run apt-get clean** (ansible.builtin.apt)
 - **Run apt-get autoclean** (ansible.builtin.apt)
-- **Run apt-get autoremove** (ansible.builtin.apt)
+- **Run apt-get autoremove** (ansible.builtin.apt) - Conditional
 - **Remove APT cache files** (ansible.builtin.file)
 - **Remove APT lists** (ansible.builtin.file)
 - **Recreate APT lists directory (required for future apt operations)** (ansible.builtin.file)
@@ -128,7 +129,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 - **Phase 4: Remove development packages** (ansible.builtin.include_tasks) - Conditional
 - **Phase 5: Cleanup Python artifacts** (ansible.builtin.include_tasks)
 - **Phase 6: Container-specific optimizations** (ansible.builtin.include_tasks) - Conditional
-- **Phase 7: Deep cleanup** (ansible.builtin.include_tasks)
+- **Phase 7: Deep cleanup** (ansible.builtin.include_tasks) - Conditional
 - **Phase 8: APT cleanup** (ansible.builtin.include_tasks) - Conditional
 - **Phase 9: Verify binary restoration** (ansible.builtin.include_tasks) - Conditional
 - **Phase 10: Generate post-Ansible cleanup script** (ansible.builtin.include_tasks) - Conditional
@@ -168,8 +169,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 
 - **Remove development packages (Debian family)** (ansible.builtin.apt) - Conditional
 - **Remove development packages (RedHat family)** (ansible.builtin.dnf) - Conditional
-- **Run autoremove to clean up orphaned dependencies (Debian)** (ansible.builtin.apt) - Conditional
-- **Run autoremove to clean up orphaned dependencies (RedHat)** (ansible.builtin.dnf) - Conditional
+- **Set fact that autoremove has been run** (ansible.builtin.set_fact) - Conditional
 - **Display package removal summary** (ansible.builtin.debug)
 
 ### verify_restore.yml

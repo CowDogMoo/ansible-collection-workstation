@@ -22,6 +22,7 @@
     purge: true
   become: true
   failed_when: false
+  when: not (build_cleanup_autoremove_completed | default(false))
 
 - name: Remove APT cache files
   ansible.builtin.file:

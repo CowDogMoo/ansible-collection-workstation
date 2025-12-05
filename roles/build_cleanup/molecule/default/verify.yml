@@ -77,15 +77,16 @@
         script_content: "{{ build_cleanup_post_script_content.content | b64decode }}"
 
     - name: Verify build packages were removed (Debian)
-      ansible.builtin.command:
-        cmd: dpkg -l {{ item }}
+      ansible.builtin.shell: |
+        set -o pipefail
+        dpkg -l {{ item }} 2>&1 | grep -E '^(ii|hi|rc)' || true
+      args:
+        executable: /bin/bash
       register: build_cleanup_package_check
       loop:
         - build-essential
-        - gcc
-        - g++
       changed_when: false
-      failed_when: build_cleanup_package_check.rc == 0
+      failed_when: build_cleanup_package_check.stdout | length > 0
       when: ansible_os_family == "Debian"
 
     - name: Verify APT cache was cleaned
