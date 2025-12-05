@@ -1,0 +1,87 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  vars:
+    container_user: testuser
+    container_home: /home/testuser
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+    - name: Install build dependencies for testing
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - gcc
+          - g++
+          - make
+          - cmake
+          - git
+          - curl
+          - wget
+          - python3
+          - python3-pip
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Create test user
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+
+    - name: Create test installation directory
+      ansible.builtin.file:
+        path: /opt/testapp
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create fake source directories
+      ansible.builtin.file:
+        path: "/opt/testapp/{{ item }}"
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+      loop:
+        - src
+        - test
+        - docs
+        - .git
+
+    - name: Create test binary
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          echo "Test Application v1.0.0"
+          exit 0
+        dest: /opt/testapp/testapp
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create test cache directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /home/testuser/.cache
+        - /home/testuser/.cargo
+        - /root/.cache
+
+    - name: Create Python cache files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/testapp/src/__pycache__
+        - /home/testuser/.cache/pip
