@@ -65,9 +65,9 @@
 - name: Create verification summary
   ansible.builtin.set_fact:
     build_cleanup_verification_summary:
-      total_binaries: "{{ build_cleanup_keep_binaries | length }}"
-      passed: "{{ build_cleanup_binary_test.results | selectattr('rc', 'equalto', 0) | list | length }}"
-      failed: "{{ build_cleanup_binary_test.results | rejectattr('rc', 'equalto', 0) | list | length }}"
+      total_binaries: "{{ build_cleanup_keep_binaries | length | int }}"
+      passed: "{{ build_cleanup_binary_test.results | selectattr('rc', 'equalto', 0) | list | length | int }}"
+      failed: "{{ build_cleanup_binary_test.results | rejectattr('rc', 'equalto', 0) | list | length | int }}"
 
 - name: Display verification summary
   ansible.builtin.debug:
@@ -78,7 +78,7 @@
       Passed: {{ build_cleanup_verification_summary.passed }}
       Failed: {{ build_cleanup_verification_summary.failed }}
 
-      {% if build_cleanup_verification_summary.failed > 0 %}
+      {% if build_cleanup_verification_summary.failed | int > 0 %}
       WARNING: Some binaries failed verification! Check logs above for details.
       {% else %}
       All binaries verified successfully!
