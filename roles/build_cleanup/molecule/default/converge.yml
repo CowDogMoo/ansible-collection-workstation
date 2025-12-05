@@ -2,6 +2,9 @@
 - name: Converge
   hosts: all
   become: true
+  vars:
+    container_user: testuser
+    container_home: /home/testuser
 
   tasks:
     - name: Update apt cache
@@ -85,7 +88,7 @@
 
     - name: Run build_cleanup role
       ansible.builtin.include_role:
-        name: build_cleanup
+        name: cowdogmoo.workstation.build_cleanup
       vars:
         build_cleanup_enabled: true
         build_cleanup_install_path: /opt/testapp

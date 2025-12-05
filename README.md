@@ -32,7 +32,8 @@ graph TD
     Roles --> R9[logging 🧪]
     Collection --> Playbooks[📚 Playbooks]
     Playbooks --> PB0[workstation 🧪]
-    Playbooks --> PB1[vnc_box 🧪]
+    Playbooks --> PB1[asdf]
+    Playbooks --> PB2[vnc_box 🧪]
 ```
 
 ## Requirements
