@@ -1,0 +1,21 @@
+---
+# Protect packages from autoremoval
+# ==================================
+# Marks essential packages as manually installed to prevent apt autoremove
+# from removing them during cleanup.
+
+- name: Protect packages from autoremoval (Debian family)
+  ansible.builtin.command:
+    cmd: "apt-mark manual {{ item }}"
+  loop: "{{ build_cleanup_protected_packages }}"
+  become: true
+  changed_when: false
+  failed_when: false
+  when:
+    - ansible_facts["os_family"] == "Debian"
+    - build_cleanup_protected_packages | length > 0
+
+- name: Display protected packages
+  ansible.builtin.debug:
+    msg: "Protected {{ build_cleanup_protected_packages | length }} packages from autoremoval"
+  when: build_cleanup_protected_packages | length > 0

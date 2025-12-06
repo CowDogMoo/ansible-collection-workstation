@@ -1,0 +1,97 @@
+---
+# Cleanup Python artifacts
+# ========================
+# Removes Python caches, bytecode, and unnecessary packages while
+# preserving essential Python functionality.
+
+- name: Find and remove Python cache directories
+  ansible.builtin.find:
+    paths: >-
+      {{
+        [
+          build_cleanup_install_path,
+          build_cleanup_user_home,
+          '/root'
+        ] + ([] if build_cleanup_fast_mode | bool else ['/usr/local'])
+      }}
+    patterns: "__pycache__"
+    file_type: directory
+    recurse: true
+  become: true
+  register: build_cleanup_pycache_dirs
+  failed_when: false
+
+- name: Remove Python cache directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ build_cleanup_pycache_dirs.files }}"
+  become: true
+  changed_when: false
+  failed_when: false
+  when: build_cleanup_pycache_dirs.files is defined
+
+- name: Find and remove .pyc and .pyo files
+  ansible.builtin.find:
+    paths: >-
+      {{
+        [
+          build_cleanup_install_path,
+          build_cleanup_user_home,
+          '/root'
+        ] + ([] if build_cleanup_fast_mode | bool else ['/usr/local'])
+      }}
+    patterns:
+      - "*.pyc"
+      - "*.pyo"
+    recurse: true
+  become: true
+  register: build_cleanup_pyc_files
+  failed_when: false
+
+- name: Remove .pyc and .pyo files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ build_cleanup_pyc_files.files }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_pyc_files.files is defined
+
+- name: Remove pip cache
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ build_cleanup_user_home }}/.cache/pip"
+    - /root/.cache/pip
+  become: true
+  failed_when: false
+
+- name: Remove Python test and development packages
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/local/lib/python3/dist-packages/test
+    - /usr/local/lib/python3/dist-packages/tests
+    - /usr/lib/python3/dist-packages/test
+    - /usr/lib/python3/dist-packages/tests
+  become: true
+  failed_when: false
+
+- name: Clean pip cache via command
+  ansible.builtin.command:
+    cmd: pip3 cache purge
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: Display Python cleanup summary
+  ansible.builtin.debug:
+    msg: |
+      Python cleanup complete:
+      - Removed {{ build_cleanup_pycache_dirs.matched | default(0) }} __pycache__ directories
+      - Removed {{ build_cleanup_pyc_files.matched | default(0) }} .pyc/.pyo files
+      - Cleared pip caches
+      - Removed Python test packages

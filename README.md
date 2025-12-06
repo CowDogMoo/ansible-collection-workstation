@@ -26,12 +26,14 @@ graph TD
     Roles --> R3[claude_code 🧪]
     Roles --> R4[vnc_setup 🧪]
     Roles --> R5[package_management 🧪]
-    Roles --> R6[fabric 🧪]
-    Roles --> R7[zsh_setup 🧪]
-    Roles --> R8[logging 🧪]
+    Roles --> R6[build_cleanup 🧪]
+    Roles --> R7[fabric 🧪]
+    Roles --> R8[zsh_setup 🧪]
+    Roles --> R9[logging 🧪]
     Collection --> Playbooks[📚 Playbooks]
     Playbooks --> PB0[workstation 🧪]
-    Playbooks --> PB1[vnc_box 🧪]
+    Playbooks --> PB1[asdf]
+    Playbooks --> PB2[vnc_box 🧪]
 ```
 
 ## Requirements

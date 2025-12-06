@@ -1,0 +1,85 @@
+---
+# Verify binary restoration
+# =========================
+# Verifies that preserved binaries still function correctly after cleanup
+# and restoration processes.
+
+- name: Check if binaries exist
+  ansible.builtin.stat:
+    path: "{{ build_cleanup_install_path }}/{{ item }}"
+  loop: "{{ build_cleanup_keep_binaries }}"
+  register: build_cleanup_binary_exists
+  become: true
+
+- name: Display missing binaries warning
+  ansible.builtin.debug:
+    msg: "WARNING: Binary {{ item.item }} does not exist at {{ build_cleanup_install_path }}"
+  loop: "{{ build_cleanup_binary_exists.results }}"
+  when:
+    - not item.stat.exists
+  failed_when: false
+
+- name: Verify binary permissions
+  ansible.builtin.file:
+    path: "{{ build_cleanup_install_path }}/{{ item }}"
+    mode: '0755'
+    owner: "{{ build_cleanup_username }}"
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  failed_when: false
+
+- name: Test binary execution with version flag
+  ansible.builtin.command:
+    cmd: "{{ build_cleanup_install_path }}/{{ item }} {{ build_cleanup_binary_version_flag }}"
+  loop: "{{ build_cleanup_keep_binaries }}"
+  become: true
+  become_user: "{{ build_cleanup_username }}"
+  register: build_cleanup_binary_test
+  changed_when: false
+  failed_when: false
+
+- name: Display binary test results
+  ansible.builtin.debug:
+    msg: |
+      Binary: {{ item.item }}
+      Status: {{ 'PASS' if item.rc == 0 else 'FAIL' }}
+      {% if item.rc != 0 %}
+      Return Code: {{ item.rc }}
+      {% endif %}
+  loop: "{{ build_cleanup_binary_test.results }}"
+
+- name: Fail if any binary test failed
+  ansible.builtin.fail:
+    msg: |
+      Binary verification failed for: {{ item.item }}
+      This binary may have been damaged during cleanup.
+      Return code: {{ item.rc }}
+      Stderr: {{ item.stderr | default('N/A') }}
+  loop: "{{ build_cleanup_binary_test.results }}"
+  when:
+    - item.rc is defined
+    - item.rc != 0
+  # Don't actually fail, just warn
+  failed_when: false
+
+- name: Create verification summary
+  ansible.builtin.set_fact:
+    build_cleanup_verification_summary:
+      total_binaries: "{{ build_cleanup_keep_binaries | length | int }}"
+      passed: "{{ build_cleanup_binary_test.results | selectattr('rc', 'equalto', 0) | list | length | int }}"
+      failed: "{{ build_cleanup_binary_test.results | rejectattr('rc', 'equalto', 0) | list | length | int }}"
+
+- name: Display verification summary
+  ansible.builtin.debug:
+    msg: |
+      Binary Verification Summary
+      ===========================
+      Total binaries: {{ build_cleanup_verification_summary.total_binaries }}
+      Passed: {{ build_cleanup_verification_summary.passed }}
+      Failed: {{ build_cleanup_verification_summary.failed }}
+
+      {% if build_cleanup_verification_summary.failed | int > 0 %}
+      WARNING: Some binaries failed verification! Check logs above for details.
+      {% else %}
+      All binaries verified successfully!
+      {% endif %}

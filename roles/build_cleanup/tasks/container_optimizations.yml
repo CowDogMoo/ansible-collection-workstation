@@ -1,0 +1,87 @@
+---
+# Container-specific optimizations
+# =================================
+# Removes packages and files that are unnecessary in containerized environments
+# to reduce image size.
+
+- name: Remove container-specific unnecessary packages (Debian)
+  ansible.builtin.apt:
+    name: "{{ build_cleanup_container_remove_packages }}"
+    state: absent
+    autoremove: true
+    purge: true
+  become: true
+  failed_when: false
+  when:
+    - ansible_facts["os_family"] == "Debian"
+    - build_cleanup_container_remove_packages | length > 0
+
+- name: Remove common unnecessary packages in containers (Debian)
+  ansible.builtin.apt:
+    name:
+      - ubuntu-advantage-tools
+      - landscape-common
+      - snapd
+      - cloud-init
+      - cloud-guest-utils
+      - cloud-initramfs-copymods
+      - cloud-initramfs-dyn-netconf
+      - popularity-contest
+    state: absent
+    autoremove: true
+    purge: true
+  become: true
+  failed_when: false
+  when: ansible_facts["os_family"] == "Debian"
+
+- name: Remove systemd journal logs
+  ansible.builtin.file:
+    path: /var/log/journal
+    state: absent
+  become: true
+  failed_when: false
+
+- name: Truncate log files instead of deleting
+  ansible.builtin.shell: |
+    find /var/log -type f -name "*.log" -exec truncate -s 0 {} \;
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: Remove apt cache and lists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/cache/apt
+    - /var/lib/apt/lists
+  become: true
+  changed_when: false
+  failed_when: false
+  when: ansible_facts["os_family"] == "Debian"
+
+- name: Remove unnecessary kernel files (containers don't need these)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /boot
+    - /lib/modules
+  become: true
+  failed_when: false
+
+- name: Remove firmware (not needed in containers)
+  ansible.builtin.file:
+    path: /lib/firmware
+    state: absent
+  become: true
+  failed_when: false
+
+- name: Display container optimization summary
+  ansible.builtin.debug:
+    msg: |
+      Container optimizations complete:
+      - Removed {{ build_cleanup_container_remove_packages | length }} container-specific packages
+      - Removed common unnecessary packages (cloud-init, snapd, etc.)
+      - Cleared journal logs and truncated log files
+      - Removed kernel files and firmware
