@@ -2,9 +2,86 @@
 - name: Install asdf version manager
   hosts: all
   become: false
-  tasks:
-    - name: Install asdf without plugins
-      ansible.builtin.include_role:
-        name: asdf
+  vars:
+    asdf_cleanup: true
+  roles:
+    - name: Install asdf version manager
+      role: cowdogmoo.workstation.asdf
       vars:
         asdf_plugins: [] # Don't install any plugins by default
+
+    - name: Cleanup asdf build artifacts
+      role: cowdogmoo.workstation.build_cleanup
+      vars:
+        build_cleanup_enabled: "{{ asdf_cleanup }}"
+        build_cleanup_install_path: /usr/local/bin
+        build_cleanup_user_home: "{{ asdf_user_home | default('/home/' + (asdf_username | default(ansible_facts['user_id']))) }}"
+        build_cleanup_username: "{{ asdf_username | default(ansible_facts['user_id']) }}"
+        build_cleanup_keep_binaries:
+          - asdf
+        build_cleanup_protected_packages:
+          # Core runtime packages that asdf and plugins need
+          - ca-certificates
+          - curl
+          - git
+          - sudo
+          - unzip
+          - libssl3
+          - openssl
+          - zlib1g
+          # Keep core Python3 runtime (but remove dev packages)
+          - python3
+          - python3-minimal
+          - libpython3-stdlib
+        build_cleanup_source_directories:
+          - yaml-0.2.5
+        build_cleanup_paths:
+          - /tmp/asdf-*
+          - /tmp/yaml-*
+          - /tmp/install_asdf_plugins
+          - "{{ asdf_user_home | default('/home/' + (asdf_username | default(ansible_facts['user_id']))) }}/.cache"
+          - "{{ asdf_user_home | default('/home/' + (asdf_username | default(ansible_facts['user_id']))) }}/.local"
+          - /root/.cache
+          - /root/.local
+          - /tmp/*
+          - /var/tmp/*
+          - /var/cache/debconf
+          - /var/cache/apt/*
+          - /usr/include
+          - /usr/share/doc
+          - /usr/share/man
+          - /usr/share/info
+        build_cleanup_packages_debian:
+          # Build tools and compilers
+          - build-essential
+          - gcc
+          - gcc-*
+          - g++
+          - g++-*
+          - cpp
+          - cpp-*
+          - make
+          - automake
+          - autoconf
+          - libtool
+          - cmake
+          - dpkg-dev
+          # Python development packages (keep core python3)
+          - python3-dev
+          - python3-pip
+          - python3-setuptools
+          - python3-wheel
+          - python3-distutils
+          - python3-lib2to3
+          # Documentation and man pages
+          - manpages
+          - manpages-dev
+        build_cleanup_container_remove_packages:
+          # Graphics and LLVM libraries not needed for asdf
+          - "libllvm*"
+          - "llvm*"
+          - "libgl*"
+          - "mesa*"
+        build_cleanup_handle_perl: true
+        build_cleanup_handle_systemd: false
+        build_cleanup_generate_post_script: true
