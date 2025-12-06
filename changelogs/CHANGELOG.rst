@@ -1,8 +1,37 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.1.1 Release Notes
+CowDogMoo Workstation Ansible Collection 2.2.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.2.0
+======
+
+Release Summary
+---------------
+
+This release introduces new artifact cleanup capabilities, enhances asdf plugin management, and includes multiple bugfixes and standardizations across roles.
+
+Added
+-----
+
+- asdf role - Added nodejs plugin to default asdf plugins list
+- build_cleanup role - Added parameterized build cleanup role for artifact and image minimization
+- playbook - Added automated asdf build artifact cleanup
+
+Changed
+-------
+
+- all roles - Replaced deprecated ansible_* variables with ansible_facts references
+- all roles - Standardized OS family detection using ansible_facts
+- all roles - Standardized variable naming for molecule and test playbooks
+
+Fixed
+-----
+
+- all roles - Fixed alignment issues with other roles
+- docsible - Prevented incorrect directory context in docsible hook script
+- pre-commit - Simplified prettier hook script and corrected pre-commit config entry
 
 v2.1.1
 ======
