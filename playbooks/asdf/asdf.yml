@@ -3,7 +3,7 @@
   hosts: all
   become: false
   vars:
-    asdf_cleanup: true
+    asdf_cleanup: false
   roles:
     - name: Install asdf version manager
       role: cowdogmoo.workstation.asdf
