@@ -94,6 +94,17 @@ an open-source AI framework for augmenting humans using AI.
 Installs and manages [Claude Code](https://docs.claude.com/en/docs/claude-code)
 CLI, including installation, configuration, hooks, and settings.
 
+### Go Task
+
+Installs and configures [go-task](https://taskfile.dev/), a task runner and
+build tool written in Go, providing a simpler alternative to Make.
+
+### Build Cleanup
+
+A general-purpose, parameterized cleanup role for build artifact minimization.
+Optimizes container images and build environments by removing unnecessary files,
+caches, and temporary artifacts.
+
 ## Usage
 
 Include the roles from this collection in your playbook. Here's an example:
