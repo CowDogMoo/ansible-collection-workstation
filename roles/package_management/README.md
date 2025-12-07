@@ -48,8 +48,8 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 | `package_management_debian_specific_packages.5` | str | <code>libffi-dev</code> | No description |
 | `package_management_debian_specific_packages.6` | str | <code>libgdbm-dev</code> | No description |
 | `package_management_debian_specific_packages.7` | str | <code>libgdbm6</code> | No description |
-| `package_management_debian_specific_packages.8` | str | <code>libncurses5-dev</code> | No description |
-| `package_management_debian_specific_packages.9` | str | <code>libreadline6-dev</code> | No description |
+| `package_management_debian_specific_packages.8` | str | <code>libncurses-dev</code> | No description |
+| `package_management_debian_specific_packages.9` | str | <code>libreadline-dev</code> | No description |
 | `package_management_debian_specific_packages.10` | str | <code>libssl-dev</code> | No description |
 | `package_management_debian_specific_packages.11` | str | <code>libyaml-dev</code> | No description |
 | `package_management_debian_specific_packages.12` | str | <code>locales</code> | No description |
