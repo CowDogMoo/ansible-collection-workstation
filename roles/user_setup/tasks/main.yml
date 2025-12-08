@@ -96,7 +96,7 @@
   ansible.builtin.copy:
     dest: "/etc/sudoers.d/{{ user.username | trim }}"
     content: "{{ user.username | trim }} ALL=(ALL:ALL) NOPASSWD:ALL\n"
-    validate: "visudo -cf %s"
+    validate: "/usr/sbin/visudo -cf %s"
     mode: "0440"
   when:
     - ansible_facts['os_family'] not in ['Darwin', 'Windows']
