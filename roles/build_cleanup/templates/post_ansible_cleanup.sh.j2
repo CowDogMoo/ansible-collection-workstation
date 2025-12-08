@@ -20,11 +20,20 @@ echo "========================================"
 echo ""
 
 # Remove Ansible runtime artifacts (Ansible can't delete itself)
-echo "[1/7] Removing Ansible artifacts..."
+echo "[1/7] Removing Ansible artifacts and packages..."
 rm -rf {{ build_cleanup_user_home }}/.ansible || true
 rm -rf /root/.ansible || true
 rm -rf /tmp/ansible* || true
-echo "  ✓ Ansible artifacts removed"
+
+# Remove ansible package now that playbook execution is complete
+{% if ansible_facts["os_family"] == "Debian" %}
+apt-get remove -y ansible ansible-core python3-pip 2>/dev/null || true
+apt-get autoremove -y 2>/dev/null || true
+{% elif ansible_facts["os_family"] == "RedHat" %}
+yum remove -y ansible python3-pip 2>/dev/null || true
+yum autoremove -y 2>/dev/null || true
+{% endif %}
+echo "  ✓ Ansible artifacts and packages removed"
 
 # Remove Packer temporary files
 echo "[2/7] Removing Packer artifacts..."
