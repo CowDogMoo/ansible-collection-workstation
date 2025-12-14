@@ -52,6 +52,30 @@
       ],
     },
     {
+      description: 'Auto-merge pre-commit hooks',
+      matchManagers: [
+        'pre-commit',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    },
+    {
+      description: 'Auto-merge pip dependencies',
+      matchManagers: [
+        'pip_requirements',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    },
+    {
       description: 'Group Ansible Galaxy dependencies',
       matchManagers: [
         'ansible-galaxy',
