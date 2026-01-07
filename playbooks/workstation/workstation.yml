@@ -44,6 +44,11 @@
       role: grafana.grafana.alloy
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       vars:
+        # Workaround for undefined variable warning on macOS
+        # This variable is only used on Linux (RedHat/Debian/Suse), but
+        # the task name tries to template it on all platforms
+        __alloy_env_file: "/dev/null"
+
         # Alloy configuration for log collection and shipping to Loki
         alloy_config: |
           // Enable debug logging to help troubleshoot
