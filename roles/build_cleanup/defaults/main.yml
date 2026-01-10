@@ -14,6 +14,9 @@ build_cleanup_enabled: false
 # Fast mode - skips expensive operations for quick testing/iteration
 build_cleanup_fast_mode: false
 
+# Preserve include files (/usr/include) - needed for base images that other images build on
+build_cleanup_preserve_includes: false
+
 # Generate post-Ansible cleanup script for Packer
 build_cleanup_generate_post_script: true
 

@@ -1,0 +1,74 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify /usr/include was removed (default behavior)
+      ansible.builtin.stat:
+        path: /usr/include
+      register: build_cleanup_include_check
+      failed_when: build_cleanup_include_check.stat.exists
+
+    - name: Verify source directories were removed
+      ansible.builtin.stat:
+        path: "/opt/testapp/{{ item }}"
+      register: build_cleanup_source_dir_check
+      loop:
+        - src
+        - test
+        - docs
+        - .git
+      failed_when: build_cleanup_source_dir_check.stat.exists
+
+    - name: Verify cleanup paths were removed
+      ansible.builtin.stat:
+        path: /home/testuser/.cargo
+      register: build_cleanup_cargo_check
+      failed_when: build_cleanup_cargo_check.stat.exists
+
+    - name: Verify cache directories were removed
+      ansible.builtin.stat:
+        path: /home/testuser/.cache
+      register: build_cleanup_cache_check
+      failed_when: build_cleanup_cache_check.stat.exists
+
+    - name: Verify binary still exists
+      ansible.builtin.stat:
+        path: /opt/testapp/testapp
+      register: build_cleanup_binary_check
+      failed_when: not build_cleanup_binary_check.stat.exists
+
+    - name: Verify binary is executable
+      ansible.builtin.stat:
+        path: /opt/testapp/testapp
+      register: build_cleanup_binary_exec_check
+      failed_when: not build_cleanup_binary_exec_check.stat.executable
+
+    - name: Verify binary works
+      ansible.builtin.command:
+        cmd: /opt/testapp/testapp
+      register: build_cleanup_binary_test
+      changed_when: false
+      failed_when: build_cleanup_binary_test.rc != 0
+
+    - name: Verify post-Ansible script was generated
+      ansible.builtin.stat:
+        path: /tmp/post_ansible_cleanup.sh
+      register: build_cleanup_post_script_check
+      failed_when: not build_cleanup_post_script_check.stat.exists
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          Deep Cleanup Verification Complete
+          ===================================
+          /usr/include removed: YES (default behavior)
+          Source directories removed: YES
+          Cleanup paths removed: YES
+          Cache directories removed: YES
+          Binary preserved and executable: YES
+          Post-Ansible script generated: YES
+
+          All deep cleanup tests passed!

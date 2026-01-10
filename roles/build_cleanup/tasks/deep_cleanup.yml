@@ -38,6 +38,7 @@
     state: absent
   become: true
   failed_when: false
+  when: not (build_cleanup_preserve_includes | default(false) | bool)
 
 - name: Remove static libraries
   ansible.builtin.shell: |

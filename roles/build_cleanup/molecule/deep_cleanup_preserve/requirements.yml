@@ -1,0 +1,4 @@
+---
+# Molecule test requirements
+# No external collections required for this role
+collections: []

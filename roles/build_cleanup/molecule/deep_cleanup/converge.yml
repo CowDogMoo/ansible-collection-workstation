@@ -1,0 +1,33 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Run build_cleanup role (deep cleanup, includes removed)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.build_cleanup
+      vars:
+        build_cleanup_enabled: true
+        build_cleanup_fast_mode: false
+        build_cleanup_preserve_includes: false
+        build_cleanup_install_path: /opt/testapp
+        build_cleanup_user_home: /home/testuser
+        build_cleanup_username: testuser
+        build_cleanup_keep_binaries:
+          - testapp
+        build_cleanup_protected_packages:
+          - libc6
+          - libssl3
+        build_cleanup_source_directories:
+          - src
+          - test
+          - docs
+          - .git
+        build_cleanup_paths:
+          - /home/testuser/.cargo
+        build_cleanup_packages_debian:
+          - build-essential
+        build_cleanup_binary_version_flag: ""
+        build_cleanup_generate_post_script: true
+        build_cleanup_post_script_path: /tmp/post_ansible_cleanup.sh

@@ -1,0 +1,98 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  vars:
+    container_user: testuser
+    container_home: /home/testuser
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Install build dependencies for testing
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - gcc
+          - g++
+          - make
+          - git
+          - python3
+          - python3-dev
+        state: present
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Ensure /usr/include exists with test headers
+      ansible.builtin.file:
+        path: /usr/include/test
+        state: directory
+        mode: '0755'
+
+    - name: Create test header file
+      ansible.builtin.copy:
+        content: |
+          /* Test header for molecule verification */
+          #ifndef TEST_H
+          #define TEST_H
+          int test_function(void);
+          #endif
+        dest: /usr/include/test/test.h
+        mode: '0644'
+
+    - name: Verify /usr/include exists before cleanup
+      ansible.builtin.stat:
+        path: /usr/include
+      register: build_cleanup_include_before
+      failed_when: not build_cleanup_include_before.stat.exists
+
+    - name: Create test user
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+
+    - name: Create test installation directory
+      ansible.builtin.file:
+        path: /opt/testapp
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create fake source directories
+      ansible.builtin.file:
+        path: "/opt/testapp/{{ item }}"
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+      loop:
+        - src
+        - test
+        - docs
+        - .git
+
+    - name: Create test binary
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          echo "Test Application v1.0.0"
+          exit 0
+        dest: /opt/testapp/testapp
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create test cache directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /home/testuser/.cache
+        - /home/testuser/.cargo
+        - /root/.cache
