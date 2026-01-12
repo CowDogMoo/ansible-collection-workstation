@@ -1,2 +1,2 @@
-[all]
-localhost ansible_connection=local
+[workstation]
+ouroboros ansible_connection=local

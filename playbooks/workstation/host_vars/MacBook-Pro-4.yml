@@ -25,11 +25,11 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 2: Sound notification when Claude finishes a task (use different sound for work)
+  # Hook 2: Sound notification when Claude finishes a task
   - event: Stop
     tool: ""
     type: command
-    command: "afplay \"$HOME/path-to-work-sound.mp3\""  # Change this path
+    command: "afplay \"$HOME/Jobs Done.mp3\""
 
   # Hook 3: Sound notification when Claude needs input
   - event: Notification

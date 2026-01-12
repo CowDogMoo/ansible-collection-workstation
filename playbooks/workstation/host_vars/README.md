@@ -19,7 +19,7 @@ Ansible automatically loads variables from files matching the hostname:
 
 2. Create a file named `{hostname}.yml` in this directory
 
-3. Copy the content from `work-machine-hostname.yml.example` and customize
+3. Copy the content from `MacBook-Pro-4.yml` or `ouroboros.yml` as a template and customize
 
 4. Run your dotfiles installer:
 
