@@ -5,3 +5,7 @@
 
 - name: Run the workstation playbook
   ansible.builtin.import_playbook: ../../workstation.yml
+  vars:
+    # Disable custom fabric patterns for CI testing
+    # The ~/cowdogmoo/fabric-patterns-hub directory doesn't exist in CI
+    fabric_install_custom_patterns: false
