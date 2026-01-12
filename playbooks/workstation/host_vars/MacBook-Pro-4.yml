@@ -1,26 +1,4 @@
 ---
-claude_code_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}"
-claude_code_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', claude_code_username) }}"
-claude_code_user_home: >-
-  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_facts['env']['HOME'],
-     (claude_code_username == 'root') | ternary('/root', '/home/' + claude_code_username)) }}
-
-# Configuration directory for Claude Code
-claude_code_config_dir: "{{ claude_code_user_home }}/.claude"
-
-# Whether to install Claude Code CLI
-claude_code_install: true
-
-# Whether to manage Claude Code settings
-claude_code_manage_settings: true
-
-# Whether to backup existing settings before overwriting
-claude_code_backup_settings: true
-
-# Simple hooks - easy YAML configuration
-claude_code_simple_hooks: []
-
-# Advanced hooks - custom Python/shell scripts
 claude_code_advanced_hooks:
   # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
   - event: PreToolUse
@@ -47,17 +25,14 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 2: Sound notification when Claude finishes a task
+  # Hook 2: Sound notification when Claude finishes a task (use different sound for work)
   - event: Stop
     tool: ""
     type: command
-    command: "osascript -e 'beep 2'"
+    command: "afplay \"$HOME/path-to-work-sound.mp3\""  # Change this path
 
   # Hook 3: Sound notification when Claude needs input
   - event: Notification
     tool: ""
     type: command
     command: "osascript -e 'beep 1'"
-
-# Additional settings (optional)
-claude_code_additional_settings: {}

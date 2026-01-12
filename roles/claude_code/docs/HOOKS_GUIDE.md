@@ -9,6 +9,53 @@ The role now supports **two types of hooks** for maximum flexibility:
 1. **Simple Hooks** - Intuitive YAML configuration (recommended)
 2. **Advanced Hooks** - Custom Python/shell scripts for complex logic
 
+## Default Hooks
+
+The role comes pre-configured with these useful hooks:
+
+### 1. Content Validation Hook
+
+Blocks git commits and pull requests that contain emojis or Claude branding, ensuring clean commit messages. Suggests using `fabric` patterns for generating proper commit/PR messages.
+
+### 2. Sound Notifications (macOS)
+
+- **Stop Hook**: Plays 2 beeps when Claude finishes a task or stops working
+- **Notification Hook**: Plays 1 beep when Claude needs your input
+
+These hooks help you stay aware of Claude's status without constantly watching the terminal. They use macOS's built-in `osascript` beep functionality.
+
+### Customizing Sound Notifications
+
+To disable sound notifications, override the default hooks in your playbook:
+
+```yaml
+- hosts: localhost
+  vars:
+    claude_code_advanced_hooks:
+      # Keep only the content validation hook
+      - event: PreToolUse
+        tool: Bash
+        type: command
+        command: |
+          python3 -c "..."
+  roles:
+    - claude_code
+```
+
+To use custom sounds (macOS), replace the beep commands:
+
+```yaml
+claude_code_advanced_hooks:
+  - event: Stop
+    tool: ""
+    type: command
+    command: "afplay /System/Library/Sounds/Glass.aiff"
+  - event: Notification
+    tool: ""
+    type: command
+    command: "afplay /System/Library/Sounds/Ping.aiff"
+```
+
 ## Simple Hooks (Recommended)
 
 Simple hooks require no coding knowledge. Just specify what to match and what message to display.
