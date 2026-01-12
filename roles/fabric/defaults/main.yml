@@ -1,37 +1,35 @@
 ---
-fabric_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}"
-fabric_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', fabric_username) }}"
-fabric_user_home: >-
+# User configuration
+fabric_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}"  # User to install fabric for
+fabric_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', fabric_username) }}"  # Group for fabric files
+fabric_user_home: >-  # Home directory of the fabric user
   {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_facts['env']['HOME'],
      (fabric_username == 'root') | ternary('/root', '/home/' + fabric_username)) }}
 
-# Whether to install Fabric (set to false if you only want to manage config)
-fabric_install: true
+# Installation settings
+fabric_install: true  # Whether to install Fabric (set to false if you only want to manage config)
 
 # Installation method: 'go_install', 'script', 'homebrew', or 'npm'
 # - go_install: Use 'go install' command directly (requires Go in PATH)
 # - script: Use official install script from https://github.com/danielmiessler/fabric
 # - homebrew: Use Homebrew (macOS only)
 # - npm: Use npm (requires Node.js)
-fabric_install_method: "go_install"
+fabric_install_method: "go_install"  # Installation method for fabric
 
-# Package/binary details
-fabric_go_package: "github.com/danielmiessler/fabric/cmd/fabric@latest"
+# Package details
+fabric_go_package: "github.com/danielmiessler/fabric/cmd/fabric@latest"  # Go package path for fabric
 
-# Configuration directory for fabric
-fabric_config_dir: "{{ fabric_user_home }}/.config/fabric"
-
-# Whether to run fabric --setup after installation
-# Note: This requires interactive setup for API keys, so it's disabled by default
-# Users should run this manually after installation
-fabric_run_setup: false
-
-# Whether to initialize fabric directories
-fabric_init_directories: true
+# Configuration
+fabric_config_dir: "{{ fabric_user_home }}/.config/fabric"  # Configuration directory for fabric
+fabric_run_setup: false  # Whether to run 'fabric --setup' after installation (requires interactive input)
+fabric_init_directories: true  # Whether to initialize fabric directories
 
 # Custom patterns configuration
-fabric_install_custom_patterns: false  # Whether to install custom patterns from a git repository
-fabric_custom_patterns_repo: "https://github.com/CowDogMoo/fabric-patterns-hub"  # Git repository URL containing custom patterns
-fabric_custom_patterns_version: "main"  # Git repository version (branch, tag, or commit hash)
-fabric_custom_patterns_subdir: "patterns"  # Subdirectory within the repo containing patterns (relative to repo root)
-fabric_update_custom_patterns: false  # Whether to update custom patterns on subsequent runs (set to false for idempotence)
+# Patterns are automatically discovered from the patterns directory in your repository or local path
+# Any new pattern directories added will be installed without needing manual configuration
+fabric_install_custom_patterns: false  # Whether to install custom patterns from a git repository or local path
+fabric_custom_patterns_repo: "https://github.com/CowDogMoo/fabric-patterns-hub"  # Git repository URL or local path (supports ~, /, ./, ../)
+fabric_custom_patterns_version: "main"  # Git branch, tag, or commit hash (ignored for local paths)
+fabric_custom_patterns_subdir: "patterns"  # Subdirectory within the repo containing pattern directories
+fabric_custom_patterns_symlink: false  # Whether to symlink patterns instead of copying (useful for local development with ~/cowdogmoo/fabric-patterns-hub)
+fabric_update_custom_patterns: false  # Whether to update patterns on subsequent runs (set to true to force updates)

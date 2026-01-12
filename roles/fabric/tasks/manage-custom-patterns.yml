@@ -12,20 +12,36 @@
          (not fabric_custom_patterns_marker.stat.exists or
           fabric_update_custom_patterns | bool) }}
 
+- name: Determine if patterns source is local or remote
+  ansible.builtin.set_fact:
+    fabric_patterns_is_local: >-
+      {{ fabric_custom_patterns_repo.startswith('/') or
+         fabric_custom_patterns_repo.startswith('~') or
+         fabric_custom_patterns_repo.startswith('./') or
+         fabric_custom_patterns_repo.startswith('../') }}
+
 - name: Install or update custom patterns
   when: fabric_should_install_patterns | bool
   block:
-    - name: Ensure git is installed
+    - name: Expand local path if tilde is used
+      ansible.builtin.set_fact:
+        fabric_patterns_source_path: >-
+          {{ fabric_custom_patterns_repo | regex_replace('^~', fabric_user_home) }}
+      when: fabric_patterns_is_local | bool
+
+    - name: Ensure git is installed (for remote repositories)
       ansible.builtin.package:
         name: git
         state: present
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      when: not fabric_patterns_is_local | bool
 
     - name: Create temporary directory for custom patterns repository
       ansible.builtin.tempfile:
         state: directory
         suffix: fabric-custom-patterns
       register: fabric_custom_patterns_temp
+      when: not fabric_patterns_is_local | bool
 
     - name: Clone custom patterns repository
       ansible.builtin.git:
@@ -33,13 +49,46 @@
         dest: "{{ fabric_custom_patterns_temp.path }}"
         version: "{{ fabric_custom_patterns_version }}"
         force: true
+      when: not fabric_patterns_is_local | bool
+
+    - name: Set patterns source directory (remote)
+      ansible.builtin.set_fact:
+        fabric_patterns_source_dir: "{{ fabric_custom_patterns_temp.path }}/{{ fabric_custom_patterns_subdir }}"
+      when: not fabric_patterns_is_local | bool
+
+    - name: Set patterns source directory (local)
+      ansible.builtin.set_fact:
+        fabric_patterns_source_dir: "{{ fabric_patterns_source_path }}/{{ fabric_custom_patterns_subdir }}"
+      when: fabric_patterns_is_local | bool
+
+    - name: Verify patterns source directory exists
+      ansible.builtin.stat:
+        path: "{{ fabric_patterns_source_dir }}"
+      register: fabric_patterns_source_stat
+
+    - name: Fail if patterns source directory doesn't exist
+      ansible.builtin.fail:
+        msg: "Patterns source directory {{ fabric_patterns_source_dir }} does not exist"
+      when: not fabric_patterns_source_stat.stat.exists
 
     - name: Find all custom pattern directories
       ansible.builtin.find:
-        paths: "{{ fabric_custom_patterns_temp.path }}/{{ fabric_custom_patterns_subdir }}"
+        paths: "{{ fabric_patterns_source_dir }}"
         file_type: directory
         recurse: false
       register: fabric_custom_pattern_dirs
+
+    - name: Create symlinks to custom patterns (for local development)
+      ansible.builtin.file:
+        src: "{{ item.path }}"
+        dest: "{{ fabric_config_dir }}/patterns/{{ item.path | basename }}"
+        state: link
+        owner: "{{ fabric_username }}"
+        group: "{{ fabric_usergroup }}"
+        force: true
+      loop: "{{ fabric_custom_pattern_dirs.files }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      when: fabric_custom_patterns_symlink | bool
 
     - name: Copy custom patterns to fabric patterns directory
       ansible.builtin.copy:
@@ -51,12 +100,14 @@
         remote_src: true
       loop: "{{ fabric_custom_pattern_dirs.files }}"
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      when: not fabric_custom_patterns_symlink | bool
 
     - name: Create marker file to track installation
       ansible.builtin.copy:
         content: |
           # Custom patterns installed from {{ fabric_custom_patterns_repo }}
           # Version: {{ fabric_custom_patterns_version }}
+          # Method: {{ 'symlink' if fabric_custom_patterns_symlink else 'copy' }}
           # Installed at: {{ ansible_date_time.iso8601 }}
         dest: "{{ fabric_config_dir }}/.custom-patterns-installed"
         owner: "{{ fabric_username }}"
@@ -68,12 +119,14 @@
       ansible.builtin.file:
         path: "{{ fabric_custom_patterns_temp.path }}"
         state: absent
-      when: fabric_custom_patterns_temp.path is defined
+      when:
+        - not fabric_patterns_is_local | bool
+        - fabric_custom_patterns_temp.path is defined
 
     - name: Display custom patterns installation status
       ansible.builtin.debug:
         msg: >-
-          Custom patterns installed from {{ fabric_custom_patterns_repo }}.
+          Custom patterns {{ 'symlinked' if fabric_custom_patterns_symlink else 'copied' }} from {{ fabric_custom_patterns_repo }}.
           Patterns location: {{ fabric_config_dir }}/patterns/
           Installed patterns: {{ fabric_custom_pattern_dirs.files | map(attribute='path') | map('basename') | list | join(', ') }}
       when: fabric_custom_pattern_dirs.matched > 0
