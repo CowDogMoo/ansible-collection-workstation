@@ -1,6 +1,0 @@
----
-# Molecule test environment configuration
-# Disable features that require local paths not available in CI
-
-# Disable custom fabric patterns for CI testing
-fabric_install_custom_patterns: false

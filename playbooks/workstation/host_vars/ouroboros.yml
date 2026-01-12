@@ -1,6 +1,4 @@
 ---
-# Host-specific overrides for ouroboros (personal machine)
-
 # Fabric custom patterns - enable for local development
 fabric_install_custom_patterns: true
 fabric_custom_patterns_repo: "~/cowdogmoo/fabric-patterns-hub"

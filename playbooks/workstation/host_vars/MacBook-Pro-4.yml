@@ -1,7 +1,4 @@
 ---
-# Host-specific overrides for work machine
-# Rename this file to match your work computer's hostname: hostname.yml
-# Get hostname with: hostname
 claude_code_advanced_hooks:
   # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
   - event: PreToolUse
