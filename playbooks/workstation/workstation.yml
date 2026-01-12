@@ -153,8 +153,11 @@
       vars:
         # Use script install method since Go from asdf may not be in PATH yet
         fabric_install_method: "script"
-        # Install custom patterns from fabric-patterns-hub repository
+        # Install custom patterns from local fabric-patterns-hub repository
         fabric_install_custom_patterns: true
+        fabric_custom_patterns_repo: "~/cowdogmoo/fabric-patterns-hub"
+        fabric_custom_patterns_symlink: true  # Use symlinks for local development
+        fabric_update_custom_patterns: true  # Update patterns on each run
 
     - name: Install and configure Claude Code CLI
       role: cowdogmoo.workstation.claude_code
