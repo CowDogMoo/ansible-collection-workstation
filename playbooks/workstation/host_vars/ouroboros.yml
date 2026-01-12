@@ -1,5 +1,12 @@
 ---
 # Host-specific overrides for ouroboros (personal machine)
+
+# Fabric custom patterns - enable for local development
+fabric_install_custom_patterns: true
+fabric_custom_patterns_repo: "~/cowdogmoo/fabric-patterns-hub"
+fabric_custom_patterns_symlink: true  # Use symlinks for local development
+fabric_update_custom_patterns: true  # Update patterns on each run
+
 claude_code_advanced_hooks:
   # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
   - event: PreToolUse
