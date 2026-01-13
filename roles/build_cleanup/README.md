@@ -18,6 +18,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 | `build_cleanup_enabled` | bool | <code>False</code> | No description |
 | `build_cleanup_fast_mode` | bool | <code>False</code> | No description |
 | `build_cleanup_preserve_includes` | bool | <code>False</code> | No description |
+| `build_cleanup_preserve_static_libs` | bool | <code>False</code> | No description |
 | `build_cleanup_generate_post_script` | bool | <code>True</code> | No description |
 | `build_cleanup_install_path` | str | <code></code> | No description |
 | `build_cleanup_user_home` | str | <code></code> | No description |
@@ -93,7 +94,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 - **Remove locale files (keep only en_US.UTF-8)** (ansible.builtin.shell)
 - **Remove i18n files (internationalization)** (ansible.builtin.shell)
 - **Remove unnecessary include files** (ansible.builtin.file) - Conditional
-- **Remove static libraries** (ansible.builtin.shell)
+- **Remove static libraries** (ansible.builtin.shell) - Conditional
 - **Remove pkg-config files** (ansible.builtin.shell)
 - **Remove systemd (if configured)** (block) - Conditional
 - **Remove systemd directories** (ansible.builtin.file)

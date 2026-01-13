@@ -17,6 +17,12 @@
       register: build_cleanup_test_header_check
       failed_when: not build_cleanup_test_header_check.stat.exists
 
+    - name: Verify test static library was preserved (preserve_static_libs=true)
+      ansible.builtin.stat:
+        path: /usr/lib/test/libtest.a
+      register: build_cleanup_static_lib_check
+      failed_when: not build_cleanup_static_lib_check.stat.exists
+
     - name: Verify source directories were removed
       ansible.builtin.stat:
         path: "/opt/testapp/{{ item }}"
@@ -72,6 +78,7 @@
           ============================================
           /usr/include preserved: YES (preserve_includes=true)
           Test header file preserved: YES
+          Static libraries preserved: YES (preserve_static_libs=true)
           Source directories removed: YES
           Cleanup paths removed: YES
           Cache directories removed: YES

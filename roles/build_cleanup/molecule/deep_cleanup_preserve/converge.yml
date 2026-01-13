@@ -4,13 +4,14 @@
   become: true
 
   tasks:
-    - name: Run build_cleanup role (deep cleanup, includes preserved)
+    - name: Run build_cleanup role (deep cleanup, includes and static libs preserved)
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.build_cleanup
       vars:
         build_cleanup_enabled: true
         build_cleanup_fast_mode: false
         build_cleanup_preserve_includes: true
+        build_cleanup_preserve_static_libs: true
         build_cleanup_install_path: /opt/testapp
         build_cleanup_user_home: /home/testuser
         build_cleanup_username: testuser

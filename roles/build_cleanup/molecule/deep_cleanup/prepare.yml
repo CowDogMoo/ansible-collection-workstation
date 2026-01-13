@@ -49,6 +49,24 @@
       register: build_cleanup_include_before
       failed_when: not build_cleanup_include_before.stat.exists
 
+    - name: Create test static library directory
+      ansible.builtin.file:
+        path: /usr/lib/test
+        state: directory
+        mode: '0755'
+
+    - name: Create test static library file
+      ansible.builtin.copy:
+        content: "!<arch>\ntest static library for molecule verification"
+        dest: /usr/lib/test/libtest.a
+        mode: '0644'
+
+    - name: Verify test static library exists before cleanup
+      ansible.builtin.stat:
+        path: /usr/lib/test/libtest.a
+      register: build_cleanup_static_lib_before
+      failed_when: not build_cleanup_static_lib_before.stat.exists
+
     - name: Create test user
       ansible.builtin.user:
         name: testuser

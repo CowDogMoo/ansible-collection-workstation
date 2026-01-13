@@ -47,6 +47,7 @@
   become: true
   changed_when: false
   failed_when: false
+  when: not (build_cleanup_preserve_static_libs | default(false) | bool)
 
 - name: Remove pkg-config files
   ansible.builtin.shell: |
@@ -164,7 +165,16 @@
       Deep cleanup complete:
       - Removed documentation, man pages, and info pages
       - Kept only en_US locale
-      - Removed include files and static libraries
+      {% if not (build_cleanup_preserve_includes | default(false) | bool) %}
+      - Removed include files (/usr/include)
+      {% else %}
+      - Preserved include files (/usr/include)
+      {% endif %}
+      {% if not (build_cleanup_preserve_static_libs | default(false) | bool) %}
+      - Removed static libraries (.a files)
+      {% else %}
+      - Preserved static libraries (.a files)
+      {% endif %}
       {% if build_cleanup_handle_systemd %}
       - Removed systemd
       {% endif %}

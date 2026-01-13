@@ -17,6 +17,10 @@ build_cleanup_fast_mode: false
 # Preserve include files (/usr/include) - needed for base images that other images build on
 build_cleanup_preserve_includes: false
 
+# Preserve static libraries (.a files) - needed for base images where dependent images compile code
+# Required for Rust compilation (libgcc.a) and other native extensions
+build_cleanup_preserve_static_libs: false
+
 # Generate post-Ansible cleanup script for Packer
 build_cleanup_generate_post_script: true
 

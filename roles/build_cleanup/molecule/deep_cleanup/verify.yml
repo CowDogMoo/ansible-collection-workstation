@@ -11,6 +11,12 @@
       register: build_cleanup_include_check
       failed_when: build_cleanup_include_check.stat.exists
 
+    - name: Verify test static library was removed (default behavior)
+      ansible.builtin.stat:
+        path: /usr/lib/test/libtest.a
+      register: build_cleanup_static_lib_check
+      failed_when: build_cleanup_static_lib_check.stat.exists
+
     - name: Verify source directories were removed
       ansible.builtin.stat:
         path: "/opt/testapp/{{ item }}"
@@ -65,6 +71,7 @@
           Deep Cleanup Verification Complete
           ===================================
           /usr/include removed: YES (default behavior)
+          Static libraries removed: YES (default behavior)
           Source directories removed: YES
           Cleanup paths removed: YES
           Cache directories removed: YES
