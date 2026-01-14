@@ -27,7 +27,7 @@ asdf_plugins:
     scope: "global"
   # renovate: datasource=ruby-version depName=ruby packageName=ruby/ruby
   - name: ruby
-    version: "4.0.0"
+    version: "4.0.1"
     scope: "global"
   # renovate: datasource=github-releases depName=helm packageName=helm/helm extractVersion=^v(?<version>.*)$
   - name: helm
