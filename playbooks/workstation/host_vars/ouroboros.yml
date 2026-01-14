@@ -1,9 +1,9 @@
 ---
-# Fabric custom patterns - enable for local development
+# Fabric custom patterns configuration
 fabric_install_custom_patterns: true
 fabric_custom_patterns_repo: "~/cowdogmoo/fabric-patterns-hub"
-fabric_custom_patterns_symlink: true  # Use symlinks for local development
-fabric_update_custom_patterns: true  # Update patterns on each run
+fabric_custom_patterns_symlink: true
+fabric_update_custom_patterns: true
 
 claude_code_advanced_hooks:
   # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
@@ -31,7 +31,7 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 2: Sound notification when Claude finishes a task (custom sound for personal machine)
+  # Hook 2: Sound notification when Claude finishes a task
   - event: Stop
     tool: ""
     type: command
