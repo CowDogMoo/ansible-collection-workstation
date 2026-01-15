@@ -19,6 +19,8 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', claude_code_username) }}</code> | No description |
 | `claude_code_user_home` | str | <code><multiline value: folded_strip></code> | No description |
 | `claude_code_config_dir` | str | <code>{{ claude_code_user_home }}/.claude</code> | No description |
+| `claude_code_homebrew_prefix` | str | <code><multiline value: folded_strip></code> | No description |
+| `claude_code_path` | str | <code>{{ claude_code_homebrew_prefix }}/bin:{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin</code> | No description |
 | `claude_code_install` | bool | <code>True</code> | No description |
 | `claude_code_manage_settings` | bool | <code>True</code> | No description |
 | `claude_code_backup_settings` | bool | <code>True</code> | No description |
@@ -28,6 +30,8 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_advanced_hooks.1` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks.2` | dict | <code>{}</code> | No description |
 | `claude_code_additional_settings` | dict | <code>{}</code> | No description |
+| `claude_code_manage_mcp_servers` | bool | <code>True</code> | No description |
+| `claude_code_mcp_servers` | list | <code>&#91;&#93;</code> | No description |
 
 ## Tasks
 
@@ -72,7 +76,24 @@ Manages Claude Code CLI configuration including hooks and settings
 - **Check if settings.json will change (dry-run)** (ansible.builtin.template) - Conditional
 - **Create backup of existing settings.json in /tmp** (ansible.builtin.copy) - Conditional
 - **Generate Claude Code settings.json** (ansible.builtin.template) - Conditional
+- **Manage MCP servers** (ansible.builtin.include_tasks) - Conditional
 - **Display configuration status** (ansible.builtin.debug)
+
+### manage-mcp-server.yml
+
+
+- **Check if MCP server exists - {{ mcp_server.name }}** (ansible.builtin.set_fact)
+- **Remove MCP server - {{ mcp_server.name }}** (ansible.builtin.command) - Conditional
+- **Resolve 1Password secrets - {{ mcp_server.name }}** (ansible.builtin.set_fact) - Conditional
+- **Build MCP add command - {{ mcp_server.name }}** (ansible.builtin.set_fact) - Conditional
+- **Add MCP server - {{ mcp_server.name }}** (ansible.builtin.command) - Conditional
+- **Clear resolved env for next iteration** (ansible.builtin.set_fact)
+
+### manage-mcp-servers.yml
+
+
+- **Get list of currently installed MCP servers** (ansible.builtin.command)
+- **Manage MCP servers** (ansible.builtin.include_tasks)
 
 ## Example Playbook
 

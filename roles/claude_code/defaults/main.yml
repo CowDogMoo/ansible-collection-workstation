@@ -8,6 +8,16 @@ claude_code_user_home: >-
 # Configuration directory for Claude Code
 claude_code_config_dir: "{{ claude_code_user_home }}/.claude"
 
+# Homebrew prefix (varies by OS/architecture)
+# macOS ARM: /opt/homebrew, macOS Intel: /usr/local, Linux: /home/linuxbrew/.linuxbrew
+claude_code_homebrew_prefix: >-
+  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(
+       (ansible_architecture == 'arm64') | ternary('/opt/homebrew', '/usr/local'),
+       '/home/linuxbrew/.linuxbrew') }}
+
+# PATH for claude CLI commands
+claude_code_path: "{{ claude_code_homebrew_prefix }}/bin:{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+
 # Whether to install Claude Code CLI
 claude_code_install: true
 
@@ -61,3 +71,33 @@ claude_code_advanced_hooks:
 
 # Additional settings (optional)
 claude_code_additional_settings: {}
+
+# MCP Server Management
+claude_code_manage_mcp_servers: true  # Whether to manage MCP servers
+
+# List of MCP servers to install
+# Each server supports: name, scope, command, args, env, state
+claude_code_mcp_servers: []
+# Example:
+#   - name: chrome-devtools
+#     scope: user  # user or project
+#     command: npx
+#     args:
+#       - "-y"
+#       - "chrome-devtools-mcp@latest"
+#     state: present  # present or absent
+#
+#   - name: grafana
+#     scope: user
+#     command: "{{ claude_code_user_home }}/.local/bin/mcp-grafana"
+#     env:
+#       GRAFANA_URL: "https://grafana.example.com"
+#       GRAFANA_SERVICE_ACCOUNT_TOKEN: "{{ vault_grafana_token }}"
+#     state: present
+#
+#   - name: warpgate
+#     scope: user
+#     command: "{{ claude_code_user_home }}/go/bin/warpgate-mcp-server"
+#     args:
+#       - stdio
+#     state: present

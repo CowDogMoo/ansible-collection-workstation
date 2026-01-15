@@ -1,0 +1,68 @@
+---
+# tasks/manage-mcp-server.yml
+
+- name: Check if MCP server exists - {{ mcp_server.name }}
+  ansible.builtin.set_fact:
+    claude_code_mcp_server_exists: "{{ mcp_server.name in claude_code_mcp_list.stdout }}"
+
+- name: Remove MCP server - {{ mcp_server.name }}
+  ansible.builtin.command:
+    cmd: "claude mcp remove {{ mcp_server.name }} -s {{ mcp_server.scope | default('user') }}"
+  environment:
+    HOME: "{{ claude_code_user_home }}"
+    PATH: "{{ claude_code_path }}"
+  when:
+    - mcp_server.state | default('present') == 'absent'
+    - claude_code_mcp_server_exists | bool
+  changed_when: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ claude_code_username }}"
+
+# Resolve any OP_LOOKUP: prefixed values in env vars using 1Password CLI
+- name: Resolve 1Password secrets - {{ mcp_server.name }}
+  ansible.builtin.set_fact:
+    claude_code_mcp_resolved_env: >-
+      {{ claude_code_mcp_resolved_env | default({}) | combine({
+           item.key: (item.value | regex_search('^OP_LOOKUP:(.*)$', '\\1') | first | default('') != '')
+                     | ternary(lookup('ansible.builtin.pipe', 'op read "' + (item.value | regex_replace('^OP_LOOKUP:', '')) + '"'), item.value)
+         }) }}
+  loop: "{{ mcp_server.env | default({}) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - mcp_server.state | default('present') == 'present'
+    - not claude_code_mcp_server_exists | bool
+  no_log: true
+
+- name: Build MCP add command - {{ mcp_server.name }}
+  ansible.builtin.set_fact:
+    claude_code_mcp_add_cmd: >-
+      claude mcp add {{ mcp_server.name }}
+      --scope {{ mcp_server.scope | default('user') }}
+      {% for key, value in (claude_code_mcp_resolved_env | default(mcp_server.env | default({}))).items() %}
+      -e {{ key }}={{ value }}
+      {% endfor %}
+      -- {{ mcp_server.command }}
+      {% if mcp_server.args is defined %}
+      {{ mcp_server.args | join(' ') }}
+      {% endif %}
+  when: mcp_server.state | default('present') == 'present'
+  no_log: true
+
+- name: Add MCP server - {{ mcp_server.name }}
+  ansible.builtin.command:
+    cmd: "{{ claude_code_mcp_add_cmd }}"
+  environment:
+    HOME: "{{ claude_code_user_home }}"
+    PATH: "{{ claude_code_path }}"
+  when:
+    - mcp_server.state | default('present') == 'present'
+    - not claude_code_mcp_server_exists | bool
+  changed_when: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ claude_code_username }}"
+  no_log: true
+
+- name: Clear resolved env for next iteration
+  ansible.builtin.set_fact:
+    claude_code_mcp_resolved_env: {}

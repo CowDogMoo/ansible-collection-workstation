@@ -271,3 +271,27 @@
           - claude_code_advanced_settings.hooks.PreToolUse[0].hooks[0].type == 'command'
         fail_msg: "Advanced-only hooks not configured correctly"
         success_msg: "Advanced-only hooks work correctly"
+
+    # MCP Server verification (after side_effect removal test)
+    - name: Verify MCP servers list after side_effect removal  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.command:
+        cmd: claude mcp list
+      environment:
+        HOME: "{{ claude_code_user_home }}"
+        PATH: "{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: mcp_list_result
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Display MCP list output for debugging
+      ansible.builtin.debug:
+        var: mcp_list_result.stdout
+
+    - name: Assert MCP server was removed by side_effect
+      ansible.builtin.assert:
+        that:
+          - "'chrome-devtools' not in mcp_list_result.stdout"
+        fail_msg: "MCP server 'chrome-devtools' should have been removed by side_effect: {{ mcp_list_result.stdout }}"
+        success_msg: "MCP server 'chrome-devtools' was successfully removed (state: absent verified)"

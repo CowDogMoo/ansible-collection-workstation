@@ -90,6 +90,13 @@
             tool: Bash
             type: command
             command: "python3 -c \"import json, sys; sys.exit(0)\""
+        claude_code_mcp_servers:
+          - name: chrome-devtools
+            scope: user
+            command: npx
+            args:
+              - "-y"
+              - "chrome-devtools-mcp@latest"
 
     - name: Include role under test (second run - idempotency test)
       ansible.builtin.include_role:
@@ -122,6 +129,13 @@
             tool: Bash
             type: command
             command: "python3 -c \"import json, sys; sys.exit(0)\""
+        claude_code_mcp_servers:
+          - name: chrome-devtools
+            scope: user
+            command: npx
+            args:
+              - "-y"
+              - "chrome-devtools-mcp@latest"
       register: claude_code_second_run
 
     - name: Assert second run is idempotent

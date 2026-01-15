@@ -1,0 +1,63 @@
+---
+# side_effect.yml - Tests non-idempotent scenarios like MCP removal
+- name: Side Effect - Test MCP server removal
+  hosts: all
+  tasks:
+    - name: Set container variables based on distribution  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        container_user: "{{ ansible_facts['distribution'] | lower }}"
+
+    - name: Set container home  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        container_home: "/home/{{ container_user }}"
+
+    - name: Ensure test user and home directory exist
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        shell: /bin/bash
+        create_home: true
+        home: "{{ container_home }}"
+      become: true
+
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    # Test MCP server removal (state: absent)
+    # NOTE: claude_code_manage_settings: false prevents overwriting hooks
+    - name: Test MCP server removal
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.claude_code
+      vars:
+        claude_code_username: "{{ container_user }}"
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.claude"
+        claude_code_manage_settings: false
+        claude_code_mcp_servers:
+          - name: chrome-devtools
+            scope: user
+            state: absent
+
+    - name: Verify MCP server was removed  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.command:
+        cmd: claude mcp list
+      environment:
+        HOME: "{{ container_home }}"
+        PATH: "{{ container_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: mcp_list_result
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert MCP server was removed
+      ansible.builtin.assert:
+        that:
+          - "'chrome-devtools' not in mcp_list_result.stdout"
+        fail_msg: "MCP server 'chrome-devtools' should have been removed but found in: {{ mcp_list_result.stdout }}"
+        success_msg: "MCP server 'chrome-devtools' was successfully removed (state: absent works)"

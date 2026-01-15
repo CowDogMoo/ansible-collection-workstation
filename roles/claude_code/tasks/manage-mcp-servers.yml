@@ -1,0 +1,21 @@
+---
+# tasks/manage-mcp-servers.yml
+
+- name: Get list of currently installed MCP servers
+  ansible.builtin.command:
+    cmd: claude mcp list
+  environment:
+    HOME: "{{ claude_code_user_home }}"
+    PATH: "{{ claude_code_path }}"
+  register: claude_code_mcp_list
+  changed_when: false
+  failed_when: false
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ claude_code_username }}"
+
+- name: Manage MCP servers
+  ansible.builtin.include_tasks: manage-mcp-server.yml
+  loop: "{{ claude_code_mcp_servers }}"
+  loop_control:
+    loop_var: mcp_server
+    label: "{{ mcp_server.name }}"
