@@ -5,6 +5,31 @@ fabric_custom_patterns_repo: "~/cowdogmoo/fabric-patterns-hub"
 fabric_custom_patterns_symlink: true
 fabric_update_custom_patterns: true
 
+# MCP Server configuration for Claude Code
+claude_code_mcp_servers:
+  # Browser automation via Chrome DevTools
+  - name: chrome-devtools
+    scope: user
+    command: npx
+    args:
+      - "-y"
+      - "chrome-devtools-mcp@latest"
+
+  # Grafana integration for dashboards, alerts, and observability
+  - name: grafana
+    scope: user
+    command: "{{ ansible_env.HOME }}/.local/bin/mcp-grafana"
+    env:
+      GRAFANA_URL: "{{ grafana_url | default('https://grafana.techvomit.xyz') }}"
+      GRAFANA_SERVICE_ACCOUNT_TOKEN: "{{ vault_grafana_api_token }}"
+
+  # Warpgate for container/AMI image building
+  - name: warpgate
+    scope: user
+    command: "{{ ansible_env.HOME }}/go/bin/warpgate-mcp-server"
+    args:
+      - stdio
+
 claude_code_advanced_hooks:
   # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
   - event: PreToolUse
