@@ -68,7 +68,7 @@ claude_code_advanced_hooks:
       data = json.load(sys.stdin)
       cmd = data.get('tool_input', {}).get('command', '')
 
-      dangerous_flags = ['--no-verify', '-n', '--no-gpg-sign', '--no-post-rewrite']
+      dangerous_flags = ['--no-verify', '-n']
       blocked_flag = next((f for f in dangerous_flags if f in cmd and 'git' in cmd), None)
 
       if blocked_flag:
