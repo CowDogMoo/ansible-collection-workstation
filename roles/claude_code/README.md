@@ -84,7 +84,10 @@ Manages Claude Code CLI configuration including hooks and settings
 
 - **Check if MCP server exists - {{ mcp_server.name }}** (ansible.builtin.set_fact)
 - **Remove MCP server - {{ mcp_server.name }}** (ansible.builtin.command) - Conditional
-- **Resolve 1Password secrets - {{ mcp_server.name }}** (ansible.builtin.set_fact) - Conditional
+- **Identify 1Password lookups - {{ mcp_server.name }}** (ansible.builtin.set_fact) - Conditional
+- **Resolve 1Password secret for {{ mcp_server.name }}** (ansible.builtin.command) - Conditional
+- **Build resolved environment - {{ mcp_server.name }}** (ansible.builtin.set_fact) - Conditional
+- **Use plain environment - {{ mcp_server.name }}** (ansible.builtin.set_fact) - Conditional
 - **Build MCP add command - {{ mcp_server.name }}** (ansible.builtin.set_fact) - Conditional
 - **Add MCP server - {{ mcp_server.name }}** (ansible.builtin.command) - Conditional
 - **Clear resolved env for next iteration** (ansible.builtin.set_fact)
