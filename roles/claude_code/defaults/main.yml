@@ -57,13 +57,34 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 2: Sound notification when Claude finishes a task
+  # Hook 2: Block dangerous git flags that bypass safety checks
+  - event: PreToolUse
+    tool: Bash
+    type: command
+    command: |
+      python3 -c "
+      import json, sys
+
+      data = json.load(sys.stdin)
+      cmd = data.get('tool_input', {}).get('command', '')
+
+      dangerous_flags = ['--no-verify', '-n', '--no-gpg-sign', '--no-post-rewrite']
+      blocked_flag = next((f for f in dangerous_flags if f in cmd and 'git' in cmd), None)
+
+      if blocked_flag:
+          msg = f'❌ BLOCKED: Cannot use {blocked_flag} flag.\\n\\nThis flag bypasses important safety checks.\\nFix the underlying issues instead.'
+          sys.stderr.write(msg + '\n')
+          sys.exit(2)
+      sys.exit(0)
+      "
+
+  # Hook 3: Sound notification when Claude finishes a task
   - event: Stop
     tool: ""
     type: command
     command: "osascript -e 'beep 2'"
 
-  # Hook 3: Sound notification when Claude needs input
+  # Hook 4: Sound notification when Claude needs input
   - event: Notification
     tool: ""
     type: command
