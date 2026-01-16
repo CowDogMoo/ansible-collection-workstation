@@ -18,20 +18,54 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ claude_code_username }}"
 
-# Resolve any OP_LOOKUP: prefixed values in env vars using 1Password CLI
-- name: Resolve 1Password secrets - {{ mcp_server.name }}
+- name: Identify 1Password lookups - {{ mcp_server.name }}
   ansible.builtin.set_fact:
-    claude_code_mcp_resolved_env: >-
-      {{ claude_code_mcp_resolved_env | default({}) | combine({
-           item.key: (item.value | regex_search('^OP_LOOKUP:(.*)$', '\\1') | first | default('') != '')
-                     | ternary(lookup('ansible.builtin.pipe', 'op read "' + (item.value | regex_replace('^OP_LOOKUP:', '')) + '"'), item.value)
-         }) }}
-  loop: "{{ mcp_server.env | default({}) | dict2items }}"
+    claude_code_mcp_op_lookups: >-
+      {{ mcp_server.env | default({}) | dict2items
+         | selectattr('value', 'match', '^OP_LOOKUP:')
+         | list }}
+    claude_code_mcp_plain_env: >-
+      {{ mcp_server.env | default({}) | dict2items
+         | rejectattr('value', 'match', '^OP_LOOKUP:')
+         | items2dict }}
+  when:
+    - mcp_server.state | default('present') == 'present'
+    - not claude_code_mcp_server_exists | bool
+
+- name: Resolve 1Password secret for {{ mcp_server.name }}
+  ansible.builtin.command:
+    cmd: "op read '{{ item.value | regex_replace('^OP_LOOKUP:', '') }}'"
+  register: claude_code_mcp_op_result
+  loop: "{{ claude_code_mcp_op_lookups | default([]) }}"
   loop_control:
     label: "{{ item.key }}"
   when:
     - mcp_server.state | default('present') == 'present'
     - not claude_code_mcp_server_exists | bool
+    - claude_code_mcp_op_lookups | default([]) | length > 0
+  changed_when: false
+  no_log: true
+
+- name: Build resolved environment - {{ mcp_server.name }}
+  ansible.builtin.set_fact:
+    claude_code_mcp_resolved_env: >-
+      {{ claude_code_mcp_plain_env | default({}) | combine(
+           dict(claude_code_mcp_op_lookups | default([]) | map(attribute='key')
+                | zip(claude_code_mcp_op_result.results | default([]) | map(attribute='stdout')))
+         ) }}
+  when:
+    - mcp_server.state | default('present') == 'present'
+    - not claude_code_mcp_server_exists | bool
+    - claude_code_mcp_op_lookups | default([]) | length > 0
+  no_log: true
+
+- name: Use plain environment - {{ mcp_server.name }}
+  ansible.builtin.set_fact:
+    claude_code_mcp_resolved_env: "{{ mcp_server.env | default({}) }}"
+  when:
+    - mcp_server.state | default('present') == 'present'
+    - not claude_code_mcp_server_exists | bool
+    - claude_code_mcp_op_lookups | default([]) | length == 0
   no_log: true
 
 - name: Build MCP add command - {{ mcp_server.name }}
@@ -66,3 +100,6 @@
 - name: Clear resolved env for next iteration
   ansible.builtin.set_fact:
     claude_code_mcp_resolved_env: {}
+    claude_code_mcp_op_lookups: []
+    claude_code_mcp_plain_env: {}
+    claude_code_mcp_op_result: {}
