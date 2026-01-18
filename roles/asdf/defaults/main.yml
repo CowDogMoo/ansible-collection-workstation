@@ -19,7 +19,7 @@ asdf_shell: "{{ '/bin/zsh' if ansible_facts['distribution'] == 'MacOSX' else '/b
 asdf_plugins:
   # renovate: datasource=github-tags depName=golang packageName=golang/go extractVersion=^go(?<version>.*)$
   - name: golang
-    version: "1.25.5"
+    version: "1.25.6"
     scope: "global"
   # renovate: datasource=github-tags depName=python packageName=python/cpython extractVersion=^v(?<version>.*)$
   - name: python
@@ -31,7 +31,7 @@ asdf_plugins:
     scope: "global"
   # renovate: datasource=github-releases depName=helm packageName=helm/helm extractVersion=^v(?<version>.*)$
   - name: helm
-    version: "4.0.4"
+    version: "4.0.5"
     scope: "global"
   # renovate: datasource=github-tags depName=kubectl packageName=kubernetes/kubernetes extractVersion=^v(?<version>.*)$
   - name: kubectl
