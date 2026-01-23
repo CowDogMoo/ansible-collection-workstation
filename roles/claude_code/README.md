@@ -74,6 +74,7 @@ Manages Claude Code CLI configuration including hooks and settings
 - **Install Claude Code on Linux** (ansible.builtin.include_tasks) - Conditional
 - **Install Claude Code on Windows** (ansible.builtin.include_tasks) - Conditional
 - **Create Claude Code configuration directory** (ansible.builtin.file)
+- **Install global CLAUDE.md instructions** (ansible.builtin.copy)
 - **Check if settings.json will change (dry-run)** (ansible.builtin.template) - Conditional
 - **Create backup of existing settings.json in /tmp** (ansible.builtin.copy) - Conditional
 - **Generate Claude Code settings.json** (ansible.builtin.template) - Conditional

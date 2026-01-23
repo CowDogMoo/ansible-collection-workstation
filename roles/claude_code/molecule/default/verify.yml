@@ -90,6 +90,40 @@
         fail_msg: "settings.json does not exist or has wrong permissions"
         success_msg: "settings.json exists with correct permissions"
 
+    - name: Check if CLAUDE.md exists
+      ansible.builtin.stat:
+        path: "{{ claude_code_config_dir }}/CLAUDE.md"
+      register: claude_code_claude_md_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert CLAUDE.md exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - claude_code_claude_md_stat.stat.exists
+          - claude_code_claude_md_stat.stat.mode == '0644'
+          - claude_code_claude_md_stat.stat.pw_name == container_user
+        fail_msg: "CLAUDE.md does not exist or has wrong permissions/ownership"
+        success_msg: "CLAUDE.md exists with correct permissions and ownership"
+
+    - name: Read CLAUDE.md content
+      ansible.builtin.slurp:
+        path: "{{ claude_code_config_dir }}/CLAUDE.md"
+      register: claude_code_claude_md_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert CLAUDE.md contains expected content
+      ansible.builtin.assert:
+        that:
+          - "'Global Claude Code Instructions' in (claude_code_claude_md_content['content'] | b64decode)"
+          - "'CRITICAL: .claude Directory' in (claude_code_claude_md_content['content'] | b64decode)"
+          - "'Git Workflow' in (claude_code_claude_md_content['content'] | b64decode)"
+          - "'fabric' in (claude_code_claude_md_content['content'] | b64decode)"
+          - "'--no-verify' in (claude_code_claude_md_content['content'] | b64decode)"
+        fail_msg: "CLAUDE.md does not contain expected instructions"
+        success_msg: "CLAUDE.md contains all expected global instructions"
+
     - name: Read settings.json content
       ansible.builtin.slurp:
         path: "{{ claude_code_config_dir }}/settings.json"
