@@ -43,6 +43,15 @@
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
+- name: Install global CLAUDE.md instructions
+  ansible.builtin.copy:
+    src: CLAUDE.md
+    dest: "{{ claude_code_config_dir }}/CLAUDE.md"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
 - name: Check if settings.json will change (dry-run)
   ansible.builtin.template:
     src: settings.json.j2
