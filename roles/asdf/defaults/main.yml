@@ -39,7 +39,7 @@ asdf_plugins:
     scope: "global"
   # renovate: datasource=github-releases depName=packer packageName=hashicorp/packer extractVersion=^v(?<version>.*)$
   - name: packer
-    version: "1.14.3"
+    version: "1.15.0"
     scope: "global"
   # renovate: datasource=github-releases depName=awscli packageName=aws/aws-cli
   - name: awscli
