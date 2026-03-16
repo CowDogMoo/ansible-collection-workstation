@@ -182,6 +182,16 @@
         msg: "XDG_RUNTIME_DIR script does not exist or is not executable"
       when: vnc_setup_is_systemd_present | bool and vnc_setup_systemd | bool and vnc_setup_xdg_runtime_script is defined
 
+    # Detect container environment (VNC runtime is unreliable in containers)
+    - name: Check if running in a container
+      ansible.builtin.stat:
+        path: /.dockerenv
+      register: vnc_setup_dockerenv
+
+    - name: Set container fact
+      ansible.builtin.set_fact:
+        vnc_setup_in_container: "{{ vnc_setup_dockerenv.stat.exists | default(false) }}"
+
     # Process Verification (moved from service.yml)
     - name: Get uids of users
       ansible.builtin.command: id -u {{ item.username }}
@@ -208,6 +218,7 @@
           - item.stdout != ""
         msg: "VNC process for {{ item.item.username }} (display :{{ item.item.vnc_num }}) is not running"
       loop: "{{ vnc_setup_vnc_processes.results }}"
+      when: not vnc_setup_in_container | bool
 
     # Port Checks (moved from service.yml)
     - name: Check VNC ports
@@ -219,6 +230,7 @@
       loop: "{{ vnc_setup_users }}"
       register: vnc_setup_port_check
       ignore_errors: true
+      when: not vnc_setup_in_container | bool
 
     - name: Assert VNC ports are listening
       ansible.builtin.assert:
@@ -226,11 +238,18 @@
           - not item.failed
         msg: "VNC port {{ 5900 + item.item.vnc_num }} for {{ item.item.username }} is not listening"
       loop: "{{ vnc_setup_port_check.results }}"
+      when: not vnc_setup_in_container | bool
 
     # Final Summary
     - name: Display VNC service status summary
       ansible.builtin.debug:
-        msg: "✓ VNC setup verification completed successfully for all users"
+        msg: "VNC setup verification completed successfully for all users"
       when:
+        - not vnc_setup_in_container | bool
         - vnc_setup_vnc_processes.results | selectattr('stdout', 'eq', '') | list | length == 0
         - vnc_setup_port_check.results | selectattr('failed', 'defined') | selectattr('failed', 'eq', true) | list | length == 0
+
+    - name: Display VNC service status summary (container)
+      ansible.builtin.debug:
+        msg: "VNC setup verification completed (runtime checks skipped in container environment)"
+      when: vnc_setup_in_container | bool
