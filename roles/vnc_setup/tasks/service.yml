@@ -40,3 +40,7 @@
         (not vnc_setup_is_systemd_present | bool or not vnc_setup_systemd | bool or vnc_setup_systemd_vnc_start_failed | default(false) | bool)
       register: vnc_setup_vnc_start_result
       changed_when: false
+      failed_when: >
+        vnc_setup_vnc_start_result.rc != 0 and
+        'New Xtigervnc server' not in (vnc_setup_vnc_start_result.stdout | default('')) and
+        'New X' not in (vnc_setup_vnc_start_result.stdout | default(''))
