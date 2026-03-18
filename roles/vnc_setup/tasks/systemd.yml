@@ -24,6 +24,12 @@
           D /run/user/1000 0700 1000 1000 -
         mode: 0644
 
+    - name: Remove problematic snapd tmpfiles config
+      become: true
+      ansible.builtin.file:
+        path: /usr/lib/tmpfiles.d/snapd.conf
+        state: absent
+
     - name: Apply tmpfiles configuration
       become: true
       ansible.builtin.command: systemd-tmpfiles --create

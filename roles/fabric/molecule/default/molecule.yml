@@ -14,7 +14,7 @@ driver:
 
 platforms:
   - name: ubuntu-fabric
-    image: "geerlingguy/docker-ubuntu2204-ansible:latest"
+    image: "geerlingguy/docker-ubuntu2404-ansible:latest"
     command: ""
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
