@@ -9,7 +9,7 @@ driver:
 
 platforms:
   - name: ubuntu_user_setup
-    image: "geerlingguy/docker-ubuntu2204-ansible:latest"
+    image: "geerlingguy/docker-ubuntu2404-ansible:latest"
     # Setting the command to this is necessary for systemd containers
     command: ""
     volumes:

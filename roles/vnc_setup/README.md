@@ -115,6 +115,7 @@ Provides logging directories and log rotation for other roles.
 - **Ensure required systemd services are running** (ansible.builtin.service)
 - **Configure user runtime directories** (block)
 - **Create tmpfiles.d configuration** (ansible.builtin.copy)
+- **Remove problematic snapd tmpfiles config** (ansible.builtin.file)
 - **Apply tmpfiles configuration** (ansible.builtin.command)
 - **Ensure user runtime directories exist** (ansible.builtin.file)
 - **Create XDG_RUNTIME_DIR script in /etc/profile.d** (ansible.builtin.copy)
