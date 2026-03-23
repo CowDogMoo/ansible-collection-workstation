@@ -1,0 +1,186 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # Verify mise artifacts were cleaned
+    # =========================================================================
+
+    - name: Verify mise cache was removed
+      ansible.builtin.stat:
+        path: /home/testuser/.local/share/mise/cache
+      register: build_cleanup_mise_cache_check
+      failed_when: build_cleanup_mise_cache_check.stat.exists
+
+    - name: Verify mise install logs were removed
+      ansible.builtin.find:
+        paths: /home/testuser/.local/share/mise
+        patterns: ".install_*.log"
+        hidden: true
+      register: build_cleanup_mise_log_check
+      failed_when: build_cleanup_mise_log_check.matched > 0
+
+    - name: Verify mise temp downloads were removed
+      ansible.builtin.find:
+        paths: /tmp
+        patterns: "mise-*"
+        file_type: any
+      register: build_cleanup_mise_tmp_check
+      failed_when: build_cleanup_mise_tmp_check.matched > 0
+
+    - name: Verify mise installer script was removed
+      ansible.builtin.stat:
+        path: /tmp/install_mise_plugins
+      register: build_cleanup_mise_script_check
+      failed_when: build_cleanup_mise_script_check.stat.exists
+
+    # =========================================================================
+    # Verify mise preserved items still exist
+    # =========================================================================
+
+    - name: Verify mise installs directory preserved
+      ansible.builtin.stat:
+        path: /home/testuser/.local/share/mise/installs/go/1.26.1/go
+      register: build_cleanup_mise_install_check
+      failed_when: not build_cleanup_mise_install_check.stat.exists
+
+    - name: Verify mise shims directory preserved
+      ansible.builtin.stat:
+        path: /home/testuser/.local/share/mise/shims/go
+      register: build_cleanup_mise_shim_check
+      failed_when: not build_cleanup_mise_shim_check.stat.exists
+
+    - name: Verify mise config preserved
+      ansible.builtin.stat:
+        path: /home/testuser/.config/mise/config.toml
+      register: build_cleanup_mise_config_check
+      failed_when: not build_cleanup_mise_config_check.stat.exists
+
+    # =========================================================================
+    # Verify asdf artifacts were cleaned
+    # =========================================================================
+
+    - name: Verify asdf plugins directory was removed
+      ansible.builtin.stat:
+        path: /home/testuser/.asdf/plugins
+      register: build_cleanup_asdf_plugins_check
+      failed_when: build_cleanup_asdf_plugins_check.stat.exists
+
+    - name: Verify asdf downloads directory was removed
+      ansible.builtin.stat:
+        path: /home/testuser/.asdf/downloads
+      register: build_cleanup_asdf_downloads_check
+      failed_when: build_cleanup_asdf_downloads_check.stat.exists
+
+    - name: Verify asdf install logs were removed
+      ansible.builtin.find:
+        paths: /home/testuser/.asdf
+        patterns: ".install_*.log"
+        hidden: true
+      register: build_cleanup_asdf_log_check
+      failed_when: build_cleanup_asdf_log_check.matched > 0
+
+    - name: Verify asdf temp downloads were removed
+      ansible.builtin.find:
+        paths: /tmp
+        patterns: "asdf-*"
+        file_type: any
+      register: build_cleanup_asdf_tmp_check
+      failed_when: build_cleanup_asdf_tmp_check.matched > 0
+
+    - name: Verify asdf installer script was removed
+      ansible.builtin.stat:
+        path: /tmp/install_asdf_plugins
+      register: build_cleanup_asdf_script_check
+      failed_when: build_cleanup_asdf_script_check.stat.exists
+
+    # =========================================================================
+    # Verify asdf preserved items still exist
+    # =========================================================================
+
+    - name: Verify asdf installs directory preserved
+      ansible.builtin.stat:
+        path: /home/testuser/.asdf/installs/golang/1.26.1/go
+      register: build_cleanup_asdf_install_check
+      failed_when: not build_cleanup_asdf_install_check.stat.exists
+
+    - name: Verify asdf shims directory preserved
+      ansible.builtin.stat:
+        path: /home/testuser/.asdf/shims/go
+      register: build_cleanup_asdf_shim_check
+      failed_when: not build_cleanup_asdf_shim_check.stat.exists
+
+    - name: Verify .tool-versions preserved
+      ansible.builtin.stat:
+        path: /home/testuser/.tool-versions
+      register: build_cleanup_asdf_toolversions_check
+      failed_when: not build_cleanup_asdf_toolversions_check.stat.exists
+
+    # =========================================================================
+    # Verify shared artifacts were cleaned
+    # =========================================================================
+
+    - name: Verify libyaml source directory was removed
+      ansible.builtin.stat:
+        path: /tmp/yaml-0.2.5
+      register: build_cleanup_libyaml_dir_check
+      failed_when: build_cleanup_libyaml_dir_check.stat.exists
+
+    - name: Verify libyaml tarball was removed
+      ansible.builtin.stat:
+        path: /tmp/yaml-0.2.5.tar.gz
+      register: build_cleanup_libyaml_tar_check
+      failed_when: build_cleanup_libyaml_tar_check.stat.exists
+
+    # =========================================================================
+    # Verify test binary still works
+    # =========================================================================
+
+    - name: Verify binary still exists
+      ansible.builtin.stat:
+        path: /opt/testapp/testapp
+      register: build_cleanup_binary_check
+      failed_when: not build_cleanup_binary_check.stat.exists
+
+    - name: Verify binary works
+      ansible.builtin.command:
+        cmd: /opt/testapp/testapp
+      register: build_cleanup_binary_test
+      changed_when: false
+      failed_when: build_cleanup_binary_test.rc != 0
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          Version Manager Cleanup Verification Complete
+          ===============================================
+          Mise cleaned:
+            - Cache directory removed: YES
+            - Install logs removed: YES
+            - Temp downloads removed: YES
+            - Installer script removed: YES
+          Mise preserved:
+            - Installed tools: YES
+            - Shims: YES
+            - Config: YES
+
+          Asdf cleaned:
+            - Plugin repos removed: YES
+            - Downloads cache removed: YES
+            - Install logs removed: YES
+            - Temp downloads removed: YES
+            - Installer script removed: YES
+          Asdf preserved:
+            - Installed tools: YES
+            - Shims: YES
+            - .tool-versions: YES
+
+          Shared:
+            - libyaml artifacts removed: YES
+
+          Binary preserved and functional: YES
+
+          All version manager cleanup tests passed!

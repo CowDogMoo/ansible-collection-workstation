@@ -33,17 +33,13 @@
           - python3
           - python3-minimal
           - libpython3-stdlib
+        build_cleanup_handle_mise: true
         build_cleanup_source_directories:
           - yaml-0.2.5
         build_cleanup_paths:
-          - /tmp/mise-*
-          - /tmp/yaml-*
-          - /tmp/install_mise_plugins
           - "{{ mise_user_home | default('/home/' + (mise_username | default(ansible_facts['user_id']))) }}/.cache"
           - /root/.cache
           - /root/.local
-          - /tmp/*
-          - /var/tmp/*
           - /var/cache/debconf
           - /var/cache/apt/*
           - /usr/include

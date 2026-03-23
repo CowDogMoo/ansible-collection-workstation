@@ -37,6 +37,11 @@ General-purpose, parameterized cleanup role for build artifact minimization
 | `build_cleanup_handle_postgresql` | bool | <code>False</code> | No description |
 | `build_cleanup_handle_perl` | bool | <code>False</code> | No description |
 | `build_cleanup_handle_systemd` | bool | <code>False</code> | No description |
+| `build_cleanup_handle_mise` | bool | <code>False</code> | No description |
+| `build_cleanup_handle_asdf` | bool | <code>False</code> | No description |
+| `build_cleanup_mise_data_dir` | str | <code>{{ build_cleanup_user_home }}/.local/share/mise</code> | No description |
+| `build_cleanup_mise_config_dir` | str | <code>{{ build_cleanup_user_home }}/.config/mise</code> | No description |
+| `build_cleanup_asdf_data_dir` | str | <code>{{ build_cleanup_user_home }}/.asdf</code> | No description |
 | `build_cleanup_python_keep_packages` | list | <code>&#91;&#93;</code> | No description |
 | `build_cleanup_post_script_path` | str | <code>/tmp/post_ansible_cleanup.sh</code> | No description |
 | `build_cleanup_clear_histories` | bool | <code>True</code> | No description |
@@ -74,6 +79,25 @@ General-purpose, parameterized cleanup role for build artifact minimization
 - **Remove Python test and development packages** (ansible.builtin.file)
 - **Clean pip cache via command** (ansible.builtin.command)
 - **Display Python cleanup summary** (ansible.builtin.debug)
+
+### cleanup_version_managers.yml
+
+
+- **Remove mise download cache** (ansible.builtin.file) - Conditional
+- **Find mise install logs** (ansible.builtin.find) - Conditional
+- **Remove mise install logs** (ansible.builtin.file) - Conditional
+- **Remove mise temporary files** (ansible.builtin.file) - Conditional
+- **Find mise temporary downloads** (ansible.builtin.find) - Conditional
+- **Remove mise temporary downloads** (ansible.builtin.file) - Conditional
+- **Remove asdf plugin repositories** (ansible.builtin.file) - Conditional
+- **Remove asdf download cache** (ansible.builtin.file) - Conditional
+- **Find asdf install logs** (ansible.builtin.find) - Conditional
+- **Remove asdf install logs** (ansible.builtin.file) - Conditional
+- **Remove asdf temporary files** (ansible.builtin.file) - Conditional
+- **Find asdf temporary downloads** (ansible.builtin.find) - Conditional
+- **Remove asdf temporary downloads** (ansible.builtin.file) - Conditional
+- **Remove libyaml build artifacts** (ansible.builtin.file) - Conditional
+- **Display version manager cleanup summary** (ansible.builtin.debug)
 
 ### container_optimizations.yml
 
@@ -125,16 +149,17 @@ General-purpose, parameterized cleanup role for build artifact minimization
 - **Display cleanup configuration** (ansible.builtin.debug) - Conditional
 - **Validate required parameters** (ansible.builtin.assert) - Conditional
 - **Execute cleanup phases** (block) - Conditional
-- **Phase 1: Protect packages from autoremoval** (ansible.builtin.include_tasks) - Conditional
-- **Phase 2: Remove build artifacts** (ansible.builtin.include_tasks)
-- **Phase 3: Optimize binaries** (ansible.builtin.include_tasks) - Conditional
-- **Phase 4: Remove development packages** (ansible.builtin.include_tasks) - Conditional
-- **Phase 5: Cleanup Python artifacts** (ansible.builtin.include_tasks)
-- **Phase 6: Container-specific optimizations** (ansible.builtin.include_tasks) - Conditional
-- **Phase 7: Deep cleanup** (ansible.builtin.include_tasks) - Conditional
-- **Phase 8: APT cleanup** (ansible.builtin.include_tasks) - Conditional
-- **Phase 9: Verify binary restoration** (ansible.builtin.include_tasks) - Conditional
-- **Phase 10: Generate post-Ansible cleanup script** (ansible.builtin.include_tasks) - Conditional
+- **Protect packages from autoremoval** (ansible.builtin.include_tasks) - Conditional
+- **Remove build artifacts** (ansible.builtin.include_tasks)
+- **Optimize binaries** (ansible.builtin.include_tasks) - Conditional
+- **Remove development packages** (ansible.builtin.include_tasks) - Conditional
+- **Cleanup Python artifacts** (ansible.builtin.include_tasks)
+- **Cleanup version manager artifacts** (ansible.builtin.include_tasks) - Conditional
+- **Container-specific optimizations** (ansible.builtin.include_tasks) - Conditional
+- **Deep cleanup** (ansible.builtin.include_tasks) - Conditional
+- **APT cleanup** (ansible.builtin.include_tasks) - Conditional
+- **Verify binary restoration** (ansible.builtin.include_tasks) - Conditional
+- **Generate post-Ansible cleanup script** (ansible.builtin.include_tasks) - Conditional
 - **Display cleanup summary** (ansible.builtin.debug) - Conditional
 - **Cleanup skipped** (ansible.builtin.debug) - Conditional
 
