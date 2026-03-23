@@ -15,4 +15,7 @@
 [tools]
 {% for plugin in mise_plugins %}
 {{ plugin.name }} = "{{ plugin.version }}"
+{% for pkg in plugin.packages | default([]) %}
+"{{ pkg.name }}" = "{{ pkg.version | default('latest') }}"
+{% endfor %}
 {% endfor %}

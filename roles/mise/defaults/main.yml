@@ -32,6 +32,9 @@ mise_plugins:
   - name: python
     version: "3.14.3"
     scope: "global"
+    packages:
+      - name: "pipx:ansible"
+        version: "latest"
   # renovate: datasource=ruby-version depName=ruby packageName=ruby/ruby
   - name: ruby
     version: "4.0.2"

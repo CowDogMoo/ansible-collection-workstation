@@ -20,7 +20,7 @@ Provides flexible logging directories and log rotation for any application or se
 | `logging_launchagent_label` | str | <code>com.logging.logrotate</code> | No description |
 | `logging_launchagent_hour` | int | <code>3</code> | No description |
 | `logging_launchagent_minute` | int | <code>0</code> | No description |
-| `logging_logrotate_log_path` | str | <code>{{ ansible_env.HOME }}/logs/logrotate</code> | No description |
+| `logging_logrotate_log_path` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}/logs/logrotate</code> | No description |
 
 ### Role Variables (main.yml)
 

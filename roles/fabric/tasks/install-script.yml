@@ -29,7 +29,7 @@
   become_user: "{{ fabric_username }}"
   environment:
     HOME: "{{ fabric_user_home }}"
-    PATH: "{{ fabric_user_home }}/.local/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ fabric_user_home }}/.local/bin:{{ ansible_facts['env']['PATH'] }}"
 
 - name: Display installed version
   ansible.builtin.debug:

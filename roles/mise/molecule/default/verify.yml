@@ -106,6 +106,34 @@
         fail_msg: "go not found in mise config"
         success_msg: "Found go in mise config"
 
+    - name: Assert mise config contains backend packages
+      ansible.builtin.assert:
+        that:
+          - "'pipx:ansible' in mise_config_content.stdout"
+        fail_msg: "pipx:ansible not found in mise config"
+        success_msg: "Found pipx:ansible in mise config"
+
+    - name: Verify pipx:ansible package is installed via mise
+      ansible.builtin.shell: |
+        set -eo pipefail
+        export PATH="{{ mise_bin_dir }}:$PATH"
+        export MISE_DATA_DIR="{{ mise_data_dir }}"
+        export MISE_CONFIG_DIR="{{ mise_config_dir }}"
+        export PATH="${MISE_DATA_DIR}/shims:$PATH"
+        mise ls "pipx:ansible" | grep -q .
+      args:
+        executable: /bin/bash
+      register: mise_ansible_check
+      failed_when: mise_ansible_check.rc != 0
+      changed_when: false
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+      environment:
+        HOME: "{{ mise_user_home }}"
+        MISE_DATA_DIR: "{{ mise_data_dir }}"
+        MISE_CONFIG_DIR: "{{ mise_config_dir }}"
+        USER: "{{ mise_username }}"
+
     - name: Check shell profile setup
       ansible.builtin.stat:
         path: "{{ mise_user_home }}/{{ (mise_available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"

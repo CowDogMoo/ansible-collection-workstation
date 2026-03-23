@@ -12,7 +12,7 @@ claude_code_config_dir: "{{ claude_code_user_home }}/.claude"
 # macOS ARM: /opt/homebrew, macOS Intel: /usr/local, Linux: /home/linuxbrew/.linuxbrew
 claude_code_homebrew_prefix: >-
   {{ (ansible_facts['os_family'] == 'Darwin') | ternary(
-       (ansible_architecture == 'arm64') | ternary('/opt/homebrew', '/usr/local'),
+       (ansible_facts['architecture'] == 'arm64') | ternary('/opt/homebrew', '/usr/local'),
        '/home/linuxbrew/.linuxbrew') }}
 
 # PATH for claude CLI commands

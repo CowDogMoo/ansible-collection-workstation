@@ -69,7 +69,7 @@
 - name: Create backup of existing settings.json in /tmp
   ansible.builtin.copy:
     src: "{{ claude_code_config_dir }}/settings.json"
-    dest: "/tmp/settings.json.{{ ansible_date_time.iso8601_basic_short }}.backup"
+    dest: "/tmp/settings.json.{{ ansible_facts['date_time']['iso8601_basic_short'] }}.backup"
     owner: "{{ claude_code_username }}"
     group: "{{ claude_code_usergroup }}"
     mode: "0644"
