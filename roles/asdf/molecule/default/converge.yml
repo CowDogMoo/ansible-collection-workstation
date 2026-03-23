@@ -16,6 +16,15 @@
         create_home: true
       become: true
 
+    - name: Ensure home directory ownership (Docker volume mounts may create it as root)
+      ansible.builtin.file:
+        path: "{{ container_home }}"
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        state: directory
+        mode: "0755"
+      become: true
+
     - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         ansible_env:
