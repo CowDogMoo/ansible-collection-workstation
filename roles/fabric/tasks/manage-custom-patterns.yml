@@ -51,13 +51,15 @@
         force: true
       when: not fabric_patterns_is_local | bool
 
-    - name: Set patterns source directory (remote)
+    - name: Set repo root directory (remote)
       ansible.builtin.set_fact:
+        fabric_patterns_repo_root: "{{ fabric_custom_patterns_temp.path }}"
         fabric_patterns_source_dir: "{{ fabric_custom_patterns_temp.path }}/{{ fabric_custom_patterns_subdir }}"
       when: not fabric_patterns_is_local | bool
 
-    - name: Set patterns source directory (local)
+    - name: Set repo root directory (local)
       ansible.builtin.set_fact:
+        fabric_patterns_repo_root: "{{ fabric_patterns_source_path }}"
         fabric_patterns_source_dir: "{{ fabric_patterns_source_path }}/{{ fabric_custom_patterns_subdir }}"
       when: fabric_patterns_is_local | bool
 
@@ -101,6 +103,37 @@
       loop: "{{ fabric_custom_pattern_dirs.files }}"
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       when: not fabric_custom_patterns_symlink | bool
+
+    - name: Check if shared scripts directory exists
+      ansible.builtin.stat:
+        path: "{{ fabric_patterns_repo_root }}/{{ fabric_custom_scripts_subdir }}"
+      register: fabric_scripts_source_stat
+
+    - name: Create symlink to shared scripts directory (for local development)
+      ansible.builtin.file:
+        src: "{{ fabric_patterns_repo_root }}/{{ fabric_custom_scripts_subdir }}"
+        dest: "{{ fabric_config_dir }}/{{ fabric_custom_scripts_subdir }}"
+        state: link
+        owner: "{{ fabric_username }}"
+        group: "{{ fabric_usergroup }}"
+        force: true
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      when:
+        - fabric_scripts_source_stat.stat.exists
+        - fabric_custom_patterns_symlink | bool
+
+    - name: Copy shared scripts to fabric config directory
+      ansible.builtin.copy:
+        src: "{{ fabric_patterns_repo_root }}/{{ fabric_custom_scripts_subdir }}/"
+        dest: "{{ fabric_config_dir }}/{{ fabric_custom_scripts_subdir }}/"
+        owner: "{{ fabric_username }}"
+        group: "{{ fabric_usergroup }}"
+        mode: "0755"
+        remote_src: true
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      when:
+        - fabric_scripts_source_stat.stat.exists
+        - not fabric_custom_patterns_symlink | bool
 
     - name: Create marker file to track installation
       ansible.builtin.copy:

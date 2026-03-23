@@ -31,5 +31,6 @@ fabric_install_custom_patterns: false  # Whether to install custom patterns from
 fabric_custom_patterns_repo: "https://github.com/CowDogMoo/fabric-patterns-hub"  # Git repository URL or local path (supports ~, /, ./, ../)
 fabric_custom_patterns_version: "main"  # Git branch, tag, or commit hash (ignored for local paths)
 fabric_custom_patterns_subdir: "patterns"  # Subdirectory within the repo containing pattern directories
+fabric_custom_scripts_subdir: "scripts"  # Subdirectory within the repo containing shared scripts (e.g., filter.py)
 fabric_custom_patterns_symlink: false  # Whether to symlink patterns instead of copying (useful for local development with ~/cowdogmoo/fabric-patterns-hub)
 fabric_update_custom_patterns: false  # Whether to update patterns on subsequent runs (set to true to force updates)

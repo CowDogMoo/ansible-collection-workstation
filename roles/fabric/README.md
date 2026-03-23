@@ -28,6 +28,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 | `fabric_custom_patterns_repo` | str | <code>https://github.com/CowDogMoo/fabric-patterns-hub</code> | No description |
 | `fabric_custom_patterns_version` | str | <code>main</code> | No description |
 | `fabric_custom_patterns_subdir` | str | <code>patterns</code> | No description |
+| `fabric_custom_scripts_subdir` | str | <code>scripts</code> | No description |
 | `fabric_custom_patterns_symlink` | bool | <code>False</code> | No description |
 | `fabric_update_custom_patterns` | bool | <code>False</code> | No description |
 
@@ -97,13 +98,16 @@ Installs and configures Daniel Miessler's Fabric AI framework
 - **Ensure git is installed (for remote repositories)** (ansible.builtin.package) - Conditional
 - **Create temporary directory for custom patterns repository** (ansible.builtin.tempfile) - Conditional
 - **Clone custom patterns repository** (ansible.builtin.git) - Conditional
-- **Set patterns source directory (remote)** (ansible.builtin.set_fact) - Conditional
-- **Set patterns source directory (local)** (ansible.builtin.set_fact) - Conditional
+- **Set repo root directory (remote)** (ansible.builtin.set_fact) - Conditional
+- **Set repo root directory (local)** (ansible.builtin.set_fact) - Conditional
 - **Verify patterns source directory exists** (ansible.builtin.stat)
 - **Fail if patterns source directory doesn't exist** (ansible.builtin.fail) - Conditional
 - **Find all custom pattern directories** (ansible.builtin.find)
 - **Create symlinks to custom patterns (for local development)** (ansible.builtin.file) - Conditional
 - **Copy custom patterns to fabric patterns directory** (ansible.builtin.copy) - Conditional
+- **Check if shared scripts directory exists** (ansible.builtin.stat)
+- **Create symlink to shared scripts directory (for local development)** (ansible.builtin.file) - Conditional
+- **Copy shared scripts to fabric config directory** (ansible.builtin.copy) - Conditional
 - **Create marker file to track installation** (ansible.builtin.copy)
 - **Clean up temporary directory** (ansible.builtin.file) - Conditional
 - **Display custom patterns installation status** (ansible.builtin.debug) - Conditional
