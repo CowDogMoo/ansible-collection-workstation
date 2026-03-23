@@ -32,43 +32,47 @@
 - name: Execute cleanup phases
   when: build_cleanup_enabled | bool
   block:
-    - name: "Phase 1: Protect packages from autoremoval"
+    - name: Protect packages from autoremoval
       ansible.builtin.include_tasks: protect_packages.yml
       when: build_cleanup_protected_packages | length > 0
 
-    - name: "Phase 2: Remove build artifacts"
+    - name: Remove build artifacts
       ansible.builtin.include_tasks: remove_artifacts.yml
 
-    - name: "Phase 3: Optimize binaries"
+    - name: Optimize binaries
       ansible.builtin.include_tasks: optimize_binaries.yml
       when: build_cleanup_keep_binaries | length > 0
 
-    - name: "Phase 4: Remove development packages"
+    - name: Remove development packages
       ansible.builtin.include_tasks: remove_dev_packages.yml
       when: build_cleanup_packages_debian | length > 0 or build_cleanup_packages_redhat | length > 0
 
-    - name: "Phase 5: Cleanup Python artifacts"
+    - name: Cleanup Python artifacts
       ansible.builtin.include_tasks: cleanup_python.yml
 
-    - name: "Phase 6: Container-specific optimizations"
+    - name: Cleanup version manager artifacts
+      ansible.builtin.include_tasks: cleanup_version_managers.yml
+      when: (build_cleanup_handle_mise | bool) or (build_cleanup_handle_asdf | bool)
+
+    - name: Container-specific optimizations
       ansible.builtin.include_tasks: container_optimizations.yml
       when: build_cleanup_is_container | bool
 
-    - name: "Phase 7: Deep cleanup"
+    - name: Deep cleanup
       ansible.builtin.include_tasks: deep_cleanup.yml
       when: not (build_cleanup_fast_mode | bool)
 
-    - name: "Phase 8: APT cleanup"
+    - name: APT cleanup
       ansible.builtin.include_tasks: apt_cleanup.yml
       when: ansible_facts["os_family"] == "Debian"
 
-    - name: "Phase 9: Verify binary restoration"
+    - name: Verify binary restoration
       ansible.builtin.include_tasks: verify_restore.yml
       when:
         - build_cleanup_keep_binaries | length > 0
         - not (build_cleanup_fast_mode | bool)
 
-    - name: "Phase 10: Generate post-Ansible cleanup script"
+    - name: Generate post-Ansible cleanup script
       ansible.builtin.include_tasks: generate_post_ansible_script.yml
       when: build_cleanup_generate_post_script | bool
 

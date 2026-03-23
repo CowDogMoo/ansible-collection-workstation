@@ -1,0 +1,171 @@
+---
+# Cleanup version manager artifacts
+# ===================================
+# Removes disposable artifacts from mise and asdf version managers
+# while preserving installed tools, shims, and configuration files.
+
+# =============================================================================
+# MISE CLEANUP
+# =============================================================================
+
+- name: Remove mise download cache
+  ansible.builtin.file:
+    path: "{{ build_cleanup_mise_data_dir }}/cache"
+    state: absent
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_mise | bool
+
+- name: Find mise install logs
+  ansible.builtin.find:
+    paths: "{{ build_cleanup_mise_data_dir }}"
+    patterns: ".install_*.log"
+    hidden: true
+  register: build_cleanup_mise_logs
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_mise | bool
+
+- name: Remove mise install logs
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ build_cleanup_mise_logs.files | default([]) }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_mise | bool
+
+- name: Remove mise temporary files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/install_mise_plugins
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_mise | bool
+
+- name: Find mise temporary downloads
+  ansible.builtin.find:
+    paths: /tmp
+    patterns: "mise-*"
+    file_type: any
+  register: build_cleanup_mise_tmp
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_mise | bool
+
+- name: Remove mise temporary downloads
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ build_cleanup_mise_tmp.files | default([]) }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_mise | bool
+
+# =============================================================================
+# ASDF CLEANUP
+# =============================================================================
+
+- name: Remove asdf plugin repositories
+  ansible.builtin.file:
+    path: "{{ build_cleanup_asdf_data_dir }}/plugins"
+    state: absent
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_asdf | bool
+
+- name: Remove asdf download cache
+  ansible.builtin.file:
+    path: "{{ build_cleanup_asdf_data_dir }}/downloads"
+    state: absent
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_asdf | bool
+
+- name: Find asdf install logs
+  ansible.builtin.find:
+    paths: "{{ build_cleanup_asdf_data_dir }}"
+    patterns: ".install_*.log"
+    hidden: true
+  register: build_cleanup_asdf_logs
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_asdf | bool
+
+- name: Remove asdf install logs
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ build_cleanup_asdf_logs.files | default([]) }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_asdf | bool
+
+- name: Remove asdf temporary files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/install_asdf_plugins
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_asdf | bool
+
+- name: Find asdf temporary downloads
+  ansible.builtin.find:
+    paths: /tmp
+    patterns: "asdf-*"
+    file_type: any
+  register: build_cleanup_asdf_tmp
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_asdf | bool
+
+- name: Remove asdf temporary downloads
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ build_cleanup_asdf_tmp.files | default([]) }}"
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_asdf | bool
+
+# =============================================================================
+# SHARED CLEANUP (libyaml source used by both for Ruby compilation)
+# =============================================================================
+
+- name: Remove libyaml build artifacts
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/yaml-0.2.5
+    - /tmp/yaml-0.2.5.tar.gz
+  become: true
+  failed_when: false
+  when: build_cleanup_handle_mise | bool or build_cleanup_handle_asdf | bool
+
+- name: Display version manager cleanup summary
+  ansible.builtin.debug:
+    msg: |
+      Version Manager Cleanup Complete
+      =================================
+      {% if build_cleanup_handle_mise | bool %}
+      Mise:
+        - Removed download cache ({{ build_cleanup_mise_data_dir }}/cache)
+        - Removed {{ build_cleanup_mise_logs.files | default([]) | length }} install logs
+        - Removed temporary downloads and scripts
+        - Preserved: installs/, shims/, config
+      {% endif %}
+      {% if build_cleanup_handle_asdf | bool %}
+      Asdf:
+        - Removed plugin repositories ({{ build_cleanup_asdf_data_dir }}/plugins)
+        - Removed download cache ({{ build_cleanup_asdf_data_dir }}/downloads)
+        - Removed {{ build_cleanup_asdf_logs.files | default([]) | length }} install logs
+        - Removed temporary downloads and scripts
+        - Preserved: installs/, shims/, .tool-versions
+      {% endif %}
+      Shared:
+        - Removed libyaml build artifacts

@@ -33,18 +33,14 @@
           - python3
           - python3-minimal
           - libpython3-stdlib
+        build_cleanup_handle_asdf: true
         build_cleanup_source_directories:
           - yaml-0.2.5
         build_cleanup_paths:
-          - /tmp/asdf-*
-          - /tmp/yaml-*
-          - /tmp/install_asdf_plugins
           - "{{ asdf_user_home | default('/home/' + (asdf_username | default(ansible_facts['user_id']))) }}/.cache"
           - "{{ asdf_user_home | default('/home/' + (asdf_username | default(ansible_facts['user_id']))) }}/.local"
           - /root/.cache
           - /root/.local
-          - /tmp/*
-          - /var/tmp/*
           - /var/cache/debconf
           - /var/cache/apt/*
           - /usr/include

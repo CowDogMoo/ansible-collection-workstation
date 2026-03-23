@@ -70,6 +70,13 @@ build_cleanup_handle_postgresql: false   # Enable PostgreSQL-specific logic
 build_cleanup_handle_perl: false         # Enable Perl removal
 build_cleanup_handle_systemd: false      # Enable systemd removal
 
+# Version manager cleanup
+build_cleanup_handle_mise: false         # Enable mise artifact cleanup
+build_cleanup_handle_asdf: false         # Enable asdf artifact cleanup
+build_cleanup_mise_data_dir: "{{ build_cleanup_user_home }}/.local/share/mise"
+build_cleanup_mise_config_dir: "{{ build_cleanup_user_home }}/.config/mise"
+build_cleanup_asdf_data_dir: "{{ build_cleanup_user_home }}/.asdf"
+
 # Python cleanup
 build_cleanup_python_keep_packages: []   # Additional Python packages to protect
 

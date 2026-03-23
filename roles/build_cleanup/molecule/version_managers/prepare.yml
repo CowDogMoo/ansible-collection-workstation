@@ -1,0 +1,231 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  vars:
+    container_user: testuser
+    container_home: /home/testuser
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Install build dependencies for testing
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - git
+          - python3
+        state: present
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Create test user
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+
+    - name: Create test installation directory
+      ansible.builtin.file:
+        path: /opt/testapp
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create test binary
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          echo "Test Application v1.0.0"
+          exit 0
+        dest: /opt/testapp/testapp
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    # =========================================================================
+    # Simulate mise artifacts
+    # =========================================================================
+
+    - name: Create mise data directory structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+      loop:
+        - "{{ container_home }}/.local/share/mise"
+        - "{{ container_home }}/.local/share/mise/installs/go/1.26.1"
+        - "{{ container_home }}/.local/share/mise/shims"
+        - "{{ container_home }}/.local/share/mise/cache"
+        - "{{ container_home }}/.local/share/mise/cache/go"
+        - "{{ container_home }}/.config/mise"
+
+    - name: Create fake mise installed tool
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          echo "go version go1.26.1 linux/amd64"
+        dest: "{{ container_home }}/.local/share/mise/installs/go/1.26.1/go"
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create fake mise shim
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          exec mise exec -- go "$@"
+        dest: "{{ container_home }}/.local/share/mise/shims/go"
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create fake mise config
+      ansible.builtin.copy:
+        content: |
+          [tools]
+          go = "1.26.1"
+        dest: "{{ container_home }}/.config/mise/config.toml"
+        owner: testuser
+        group: testuser
+        mode: '0644'
+
+    - name: Create mise install logs
+      ansible.builtin.copy:
+        content: "Install log for testing"
+        dest: "{{ container_home }}/.local/share/mise/{{ item }}"
+        owner: testuser
+        group: testuser
+        mode: '0644'
+      loop:
+        - .install_go.log
+        - .install_python.log
+
+    - name: Create mise cache files
+      ansible.builtin.copy:
+        content: "cached data"
+        dest: "{{ container_home }}/.local/share/mise/cache/go/archive.tar.gz"
+        owner: testuser
+        group: testuser
+        mode: '0644'
+
+    - name: Create mise temporary download files
+      ansible.builtin.copy:
+        content: "fake tarball"
+        dest: "{{ item }}"
+        mode: '0644'
+      loop:
+        - /tmp/mise-v2026.3.12-linux-x64.tar.gz
+        - /tmp/install_mise_plugins
+
+    - name: Create mise extraction directory
+      ansible.builtin.file:
+        path: /tmp/mise-extract
+        state: directory
+        mode: '0755'
+
+    # =========================================================================
+    # Simulate asdf artifacts
+    # =========================================================================
+
+    - name: Create asdf data directory structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+      loop:
+        - "{{ container_home }}/.asdf"
+        - "{{ container_home }}/.asdf/installs/golang/1.26.1"
+        - "{{ container_home }}/.asdf/shims"
+        - "{{ container_home }}/.asdf/plugins/golang/.git"
+        - "{{ container_home }}/.asdf/downloads/golang"
+        - "{{ container_home }}/.asdf/completions"
+
+    - name: Create fake asdf installed tool
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          echo "go version go1.26.1 linux/amd64"
+        dest: "{{ container_home }}/.asdf/installs/golang/1.26.1/go"
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create fake asdf shim
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          exec asdf exec go "$@"
+        dest: "{{ container_home }}/.asdf/shims/go"
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create fake asdf plugin files
+      ansible.builtin.copy:
+        content: "plugin repo content"
+        dest: "{{ container_home }}/.asdf/plugins/golang/bin-install"
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create asdf install logs
+      ansible.builtin.copy:
+        content: "Install log for testing"
+        dest: "{{ container_home }}/.asdf/{{ item }}"
+        owner: testuser
+        group: testuser
+        mode: '0644'
+      loop:
+        - .install_golang.log
+        - .install_python.log
+
+    - name: Create asdf download cache files
+      ansible.builtin.copy:
+        content: "cached download"
+        dest: "{{ container_home }}/.asdf/downloads/golang/go1.26.1.tar.gz"
+        owner: testuser
+        group: testuser
+        mode: '0644'
+
+    - name: Create asdf temporary download files
+      ansible.builtin.copy:
+        content: "fake tarball"
+        dest: "{{ item }}"
+        mode: '0644'
+      loop:
+        - /tmp/asdf-v0.18.0-linux-amd64.tar.gz
+        - /tmp/install_asdf_plugins
+
+    - name: Create .tool-versions file
+      ansible.builtin.copy:
+        content: |
+          golang 1.26.1
+        dest: "{{ container_home }}/.tool-versions"
+        owner: testuser
+        group: testuser
+        mode: '0644'
+
+    # =========================================================================
+    # Shared artifacts (libyaml)
+    # =========================================================================
+
+    - name: Create libyaml build artifacts
+      ansible.builtin.file:
+        path: /tmp/yaml-0.2.5
+        state: directory
+        mode: '0755'
+
+    - name: Create libyaml tarball
+      ansible.builtin.copy:
+        content: "fake libyaml tarball"
+        dest: /tmp/yaml-0.2.5.tar.gz
+        mode: '0644'
