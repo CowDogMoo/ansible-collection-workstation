@@ -1,0 +1,155 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    mise_shells:
+      - /bin/bash
+      - /bin/zsh
+  pre_tasks:
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+        mise_username: "{{ container_user }}"
+        mise_user_home: "{{ container_home }}"
+        mise_data_dir: "{{ container_home }}/.local/share/mise"
+        mise_config_dir: "{{ container_home }}/.config/mise"
+        mise_bin_dir: "/usr/local/bin"
+
+    - name: Check available shells
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: mise_shell_check
+      with_items: "{{ mise_shells }}"
+      changed_when: false
+
+    - name: Set available shell fact
+      ansible.builtin.set_fact:
+        mise_available_shell: "{{ (mise_shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/bash') }}"
+
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Check if mise data directory exists
+      ansible.builtin.stat:
+        path: "{{ mise_data_dir }}"
+      register: mise_dir_check
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+
+    - name: Assert that mise data directory exists
+      ansible.builtin.assert:
+        that:
+          - mise_dir_check.stat.exists
+          - mise_dir_check.stat.isdir
+
+    - name: Check if mise binary exists
+      ansible.builtin.stat:
+        path: "{{ mise_bin_dir }}/mise"
+      register: mise_bin_check
+
+    - name: Assert that mise binary exists
+      ansible.builtin.assert:
+        that:
+          - mise_bin_check.stat.exists
+          - mise_bin_check.stat.executable
+
+    - name: Verify mise is accessible
+      ansible.builtin.shell: |
+        export PATH="{{ mise_bin_dir }}:$PATH"
+        export MISE_DATA_DIR="{{ mise_data_dir }}"
+        mise --version
+      register: mise_version_check
+      failed_when: mise_version_check.rc != 0
+      changed_when: false
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+
+    - name: Check installed mise tools and versions
+      ansible.builtin.shell: |
+        export PATH="{{ mise_bin_dir }}:$PATH"
+        export MISE_DATA_DIR="{{ mise_data_dir }}"
+        export MISE_CONFIG_DIR="{{ mise_config_dir }}"
+        export PATH="${MISE_DATA_DIR}/shims:$PATH"
+        echo "Current PATH: $PATH"
+        echo "MISE_DATA_DIR: $MISE_DATA_DIR"
+        echo "Current user: $(whoami)"
+        echo "Tool list:"
+        mise ls || true
+      register: mise_tools_versions
+      changed_when: false
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+      environment:
+        HOME: "{{ mise_user_home }}"
+        MISE_DATA_DIR: "{{ mise_data_dir }}"
+        MISE_CONFIG_DIR: "{{ mise_config_dir }}"
+        USER: "{{ mise_username }}"
+
+    - name: Check contents of mise config
+      ansible.builtin.command:
+        cmd: "cat {{ mise_config_dir }}/config.toml"
+      register: mise_config_content
+      changed_when: false
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+
+    - name: Assert mise config content
+      ansible.builtin.assert:
+        that:
+          - "'go' in mise_config_content.stdout"
+        fail_msg: "go not found in mise config"
+        success_msg: "Found go in mise config"
+
+    - name: Check shell profile setup
+      ansible.builtin.stat:
+        path: "{{ mise_user_home }}/{{ (mise_available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+      register: mise_shell_profile
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+
+    - name: Assert shell profile exists
+      ansible.builtin.assert:
+        that:
+          - mise_shell_profile.stat.exists
+          - mise_shell_profile.stat.mode == '0644'
+
+    - name: Check shell profile content
+      ansible.builtin.command:
+        cmd: "cat {{ mise_user_home }}/{{ (mise_available_shell == '/bin/zsh') | ternary('.zshrc', '.bashrc') }}"
+      register: mise_profile_content
+      changed_when: false
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+
+    - name: Assert shell profile content
+      ansible.builtin.assert:
+        that:
+          - "'MISE_DATA_DIR' in mise_profile_content.stdout"
+          - "'mise activate' in mise_profile_content.stdout"
+
+    - name: Verify go is functional
+      ansible.builtin.shell: |
+        set -e
+        cd "{{ mise_user_home }}"
+        export PATH="{{ mise_bin_dir }}:$PATH"
+        export MISE_DATA_DIR="{{ mise_data_dir }}"
+        export MISE_CONFIG_DIR="{{ mise_config_dir }}"
+        export PATH="${MISE_DATA_DIR}/shims:$PATH"
+        mise current go
+        go version
+      register: mise_go_version
+      failed_when: mise_go_version.rc != 0
+      changed_when: false
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become_user: "{{ mise_username }}"
+      environment:
+        HOME: "{{ mise_user_home }}"
+        MISE_DATA_DIR: "{{ mise_data_dir }}"
+        MISE_CONFIG_DIR: "{{ mise_config_dir }}"
+        USER: "{{ mise_username }}"

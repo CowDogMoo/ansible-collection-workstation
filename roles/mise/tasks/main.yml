@@ -1,0 +1,169 @@
+---
+- name: Set default username for Kali systems
+  ansible.builtin.set_fact:
+    mise_username: "kali"
+  when: ansible_facts['distribution_release'] == "kali-rolling" and mise_username is not defined
+
+- name: Reapply external mise_plugins variable if provided
+  ansible.builtin.set_fact:
+    mise_plugins: "{{ hostvars[inventory_hostname]['mise_plugins'] | default(mise_plugins) }}"
+  when: hostvars[inventory_hostname]['mise_plugins'] is defined
+
+- name: Check available shells
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: mise_shell_check
+  with_items: "{{ mise_shells }}"
+  changed_when: false
+
+- name: Set available shell fact
+  ansible.builtin.set_fact:
+    mise_available_shell: "{{ (mise_shell_check.results | selectattr('stat.exists', 'true') | list | first).item | default('/bin/sh') }}"
+
+- name: Create bin directory if it doesn't exist
+  ansible.builtin.file:
+    path: "{{ mise_bin_dir }}"
+    state: directory
+    owner: "{{ mise_username }}"
+    group: "{{ mise_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  changed_when: false
+
+- name: Fetch and install mise binary
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  block:
+    - name: Download mise archive
+      ansible.builtin.get_url:
+        url: "{{ mise_download_url }}"
+        dest: "/tmp/mise-v{{ mise_version }}.tar.gz"
+        mode: "0644"
+
+    - name: Create temporary extraction directory
+      ansible.builtin.file:
+        path: "/tmp/mise-extract"
+        state: directory
+        mode: "0755"
+
+    - name: Extract mise archive
+      ansible.builtin.unarchive:
+        src: "/tmp/mise-v{{ mise_version }}.tar.gz"
+        dest: "/tmp/mise-extract"
+        remote_src: true
+
+    - name: Find mise binary in extracted archive
+      ansible.builtin.find:
+        paths: "/tmp/mise-extract"
+        patterns: "mise"
+        recurse: true
+        file_type: file
+      register: mise_extracted_binary
+
+    - name: Install mise binary
+      ansible.builtin.copy:
+        src: "{{ mise_extracted_binary.files[0].path }}"
+        dest: "{{ mise_bin_dir }}/mise"
+        owner: "{{ mise_username }}"
+        group: "{{ mise_usergroup }}"
+        mode: "0755"
+        remote_src: true
+
+    - name: Clean up extraction directory
+      ansible.builtin.file:
+        path: "/tmp/mise-extract"
+        state: absent
+
+- name: Setup mise data directory
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  ansible.builtin.file:
+    path: "{{ mise_data_dir }}"
+    state: directory
+    owner: "{{ mise_username }}"
+    group: "{{ mise_usergroup }}"
+    mode: "0755"
+
+- name: Setup mise config directory
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  ansible.builtin.file:
+    path: "{{ mise_config_dir }}"
+    state: directory
+    owner: "{{ mise_username }}"
+    group: "{{ mise_usergroup }}"
+    mode: "0755"
+
+- name: Setup mise shims directory
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  ansible.builtin.file:
+    path: "{{ mise_data_dir }}/shims"
+    state: directory
+    owner: "{{ mise_username }}"
+    group: "{{ mise_usergroup }}"
+    mode: "0755"
+
+- name: Update shell profile
+  ansible.builtin.include_tasks: update_shell_profile.yml
+
+- name: Install libyaml from source
+  ansible.builtin.include_tasks: install_libyaml.yml
+  when: ansible_facts['distribution'] == 'Rocky'
+
+- name: Set common mise environment variables
+  ansible.builtin.set_fact:
+    mise_env:
+      HOME: "{{ mise_user_home }}"
+      MISE_DATA_DIR: "{{ mise_data_dir }}"
+      MISE_CONFIG_DIR: "{{ mise_config_dir }}"
+      PATH: "{{ mise_bin_dir }}:{{ mise_data_dir }}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      USER: "{{ mise_username }}"
+
+- name: Verify mise installation
+  ansible.builtin.shell: |
+    set -o pipefail
+    if ! command -v mise >/dev/null 2>&1; then
+      echo "mise command not found in PATH" >&2
+      exit 1
+    fi
+  args:
+    executable: /bin/bash
+  environment: "{{ mise_env }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ mise_username }}"
+  changed_when: false
+
+- name: Generate mise plugin installation script
+  ansible.builtin.template:
+    src: install_mise_plugins.sh.j2
+    dest: "/tmp/install_mise_plugins"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  changed_when: false
+
+- name: Install mise plugins
+  ansible.builtin.shell: "/tmp/install_mise_plugins"
+  args:
+    executable: /bin/bash
+  environment: "{{ mise_env }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ mise_username }}"
+  register: mise_plugin_installation
+  changed_when: false
+
+- name: Generate mise config file
+  ansible.builtin.template:
+    src: config.toml.j2
+    dest: "{{ mise_config_dir }}/config.toml"
+    owner: "{{ mise_username }}"
+    group: "{{ mise_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Reshim after installations
+  ansible.builtin.shell: |
+    set -eo pipefail
+    mise reshim
+  args:
+    executable: /bin/bash
+  environment: "{{ mise_env }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ mise_username }}"
+  changed_when: false

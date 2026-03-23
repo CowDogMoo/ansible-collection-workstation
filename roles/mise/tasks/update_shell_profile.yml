@@ -1,0 +1,32 @@
+---
+- name: Detect shell and set profile
+  block:
+    - name: Check if shell exists
+      ansible.builtin.command: "which {{ mise_enriched_user.shell | default(ansible_facts['env']['SHELL'] | default('/bin/bash')) }}"
+      register: mise_shell_path
+      ignore_errors: true
+      changed_when: false
+
+    - name: Set detected shell fact
+      ansible.builtin.set_fact:
+        mise_detected_shell: "{{ mise_shell_path.stdout if mise_shell_path.stdout != '' else (ansible_facts['env']['SHELL'] | default('/bin/bash')) }}"
+
+- name: Update shell profile for the user
+  ansible.builtin.blockinfile:
+    path: "{{ mise_user_home }}/{{ ('zsh' in mise_detected_shell) | ternary('.zshrc', '.bashrc') }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - MISE SETUP"
+    block: |
+      # mise binary path
+      export PATH="{{ mise_bin_dir }}:$PATH"
+      # Configure mise data directory
+      export MISE_DATA_DIR="{{ mise_data_dir }}"
+      # mise shims path
+      export PATH="${MISE_DATA_DIR}/shims:$PATH"
+      # Activate mise
+      if command -v mise >/dev/null; then
+        eval "$(mise activate {{ ('zsh' in mise_detected_shell) | ternary('zsh', 'bash') }})"
+      fi
+    create: true
+    mode: "0644"
+    owner: "{{ mise_username }}"
+    group: "{{ lookup('env', 'GITHUB_ACTIONS') | bool | ternary(omit, mise_usergroup) }}"

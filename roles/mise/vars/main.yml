@@ -1,0 +1,7 @@
+---
+# renovate: datasource=github-releases depName=mise packageName=jdx/mise extractVersion=^v(?<version>.*)$
+mise_version: "2026.3.12"
+mise_arch: "{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'x64' }}"
+mise_os: "{{ 'macos' if ansible_facts['system'] == 'Darwin' else 'linux' }}"
+mise_download_url: "https://github.com/jdx/mise/releases/download/v{{ mise_version }}/mise-v{{ mise_version }}-{{ mise_os }}-{{ mise_arch }}.tar.gz"
+mise_checksum_url: "https://github.com/jdx/mise/releases/download/v{{ mise_version }}/SHASUMS256.txt"
