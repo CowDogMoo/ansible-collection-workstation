@@ -18,7 +18,7 @@ claude_code_mcp_servers:
   # Grafana integration for dashboards, alerts, and observability
   - name: grafana
     scope: user
-    command: "{{ ansible_env.HOME }}/.local/bin/mcp-grafana"
+    command: "{{ ansible_facts['env']['HOME'] }}/.local/bin/mcp-grafana"
     env:
       GRAFANA_URL: "{{ grafana_url | default('https://grafana.techvomit.xyz') }}"
       GRAFANA_SERVICE_ACCOUNT_TOKEN: "OP_LOOKUP:op://Automation/Grafana Account/api-token"
@@ -26,7 +26,7 @@ claude_code_mcp_servers:
   # Warpgate for container/AMI image building
   - name: warpgate
     scope: user
-    command: "{{ ansible_env.HOME }}/go/bin/warpgate-mcp-server"
+    command: "{{ ansible_facts['env']['HOME'] }}/go/bin/warpgate-mcp-server"
     args:
       - stdio
 

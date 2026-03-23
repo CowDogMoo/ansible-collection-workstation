@@ -108,7 +108,7 @@
           # Custom patterns installed from {{ fabric_custom_patterns_repo }}
           # Version: {{ fabric_custom_patterns_version }}
           # Method: {{ 'symlink' if fabric_custom_patterns_symlink else 'copy' }}
-          # Installed at: {{ ansible_date_time.iso8601 }}
+          # Installed at: {{ ansible_facts['date_time']['iso8601'] }}
         dest: "{{ fabric_config_dir }}/.custom-patterns-installed"
         owner: "{{ fabric_username }}"
         group: "{{ fabric_usergroup }}"

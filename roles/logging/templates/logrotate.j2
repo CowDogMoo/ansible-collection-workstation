@@ -5,7 +5,7 @@
     {% if log_rotation_config.missingok | default(true) %}missingok{% endif %}
     {% if log_rotation_config.notifempty | default(true) %}notifempty{% endif %}
     {% if log_rotation_config.create | default(false) %}
-    create {{ log_rotation_config.mode | default('0644') }} {{ log_rotation_config.owner | default(ansible_user_id) }} {{ log_rotation_config.group | default(ansible_user_gid | default(ansible_user_id)) }}
+    create {{ log_rotation_config.mode | default('0644') }} {{ log_rotation_config.owner | default(ansible_facts['user_id']) }} {{ log_rotation_config.group | default(ansible_facts['user_gid'] | default(ansible_facts['user_id'])) }}
     {% endif %}
     {% if log_rotation_config.dateext | default(true) %}
     dateext

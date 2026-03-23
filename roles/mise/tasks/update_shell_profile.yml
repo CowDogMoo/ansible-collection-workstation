@@ -29,4 +29,4 @@
     create: true
     mode: "0644"
     owner: "{{ mise_username }}"
-    group: "{{ lookup('env', 'GITHUB_ACTIONS') | bool | ternary(omit, mise_usergroup) }}"
+    group: "{{ (lookup('env', 'GITHUB_ACTIONS') | default('false', true) | lower == 'true') | ternary(omit, mise_usergroup) }}"
