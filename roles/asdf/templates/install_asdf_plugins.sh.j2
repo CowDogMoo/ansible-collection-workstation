@@ -44,24 +44,16 @@ check_plugin() {
 check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
 {% endfor %}
 
-install_plugin() {
+install_version() {
     local plugin=$1
     local version=$2
     local logfile="{{ asdf_user_home }}/.asdf/.install_${plugin}.log"
 
-    echo "Processing plugin: ${plugin}"
-
-    # Install specified version
     echo "Installing ${plugin} version ${version}"
     if ! asdf install "$plugin" "$version" > "$logfile" 2>&1; then
         echo "WARNING: Failed to install ${plugin} ${version}, see ${logfile}" >&2
+        return 1
     fi
-
-    # Reshim the plugin
-    echo "Reshimming ${plugin}"
-    asdf reshim "$plugin"
-
-    echo "Finished: ${plugin}"
     rm -f "$logfile"
 }
 
@@ -74,9 +66,9 @@ if [ "$needs_changes" = true ]; then
     fi
     {% endfor %}
 
-    # Install all plugins in parallel (the heavy/slow part)
+    # Install all versions in parallel (the heavy/slow part)
     {% for plugin in asdf_plugins %}
-    install_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}" &
+    install_version "{{ plugin.name }}" "{{ plugin.version | default('latest') }}" &
     {% endfor %}
 
     # Wait for all background installs to complete
@@ -88,6 +80,18 @@ if [ "$needs_changes" = true ]; then
     if [ "$failed" -gt 0 ]; then
         echo "WARNING: ${failed} plugin install(s) had issues" >&2
     fi
+
+    # Set versions and reshim sequentially (asdf set writes to .tool-versions)
+    {% for plugin in asdf_plugins %}
+    {% if plugin.scope | default('global') == 'global' %}
+    echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} globally (--home)"
+    asdf set --home "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+    {% else %}
+    echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} locally"
+    asdf set "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+    {% endif %}
+    asdf reshim "{{ plugin.name }}"
+    {% endfor %}
 
     echo "CHANGED: Updates were applied"
 else
