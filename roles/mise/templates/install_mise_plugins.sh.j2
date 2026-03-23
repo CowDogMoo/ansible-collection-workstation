@@ -1,0 +1,86 @@
+#!/bin/bash
+set -uo pipefail
+
+# Set environment variables
+export HOME="{{ mise_user_home }}"
+export MISE_DATA_DIR="{{ mise_data_dir }}"
+export MISE_CONFIG_DIR="{{ mise_config_dir }}"
+export PATH="{{ mise_bin_dir }}:${MISE_DATA_DIR}/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+# Verify mise command is available
+if ! command -v mise >/dev/null 2>&1; then
+    echo "ERROR: mise command not found in PATH: ${PATH}" >&2
+    exit 1
+fi
+
+needs_changes=false
+
+check_plugin() {
+    local plugin=$1
+    local version=$2
+
+    # For latest version, just check if any version is installed
+    if [ "$version" = "latest" ]; then
+        if ! mise ls "$plugin" 2>/dev/null | grep -q .; then
+            needs_changes=true
+            return 0
+        fi
+    else
+        # Check if specific version is installed
+        if ! mise ls "$plugin" 2>/dev/null | grep -q "$version"; then
+            needs_changes=true
+            return 0
+        fi
+    fi
+}
+
+# Check each plugin for changes
+{% for plugin in mise_plugins %}
+check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+{% endfor %}
+
+install_plugin() {
+    local plugin=$1
+    local version=$2
+    local logfile="{{ mise_user_home }}/.local/share/mise/.install_${plugin}.log"
+
+    echo "Processing plugin: ${plugin}"
+
+    # Install specified version
+    echo "Installing ${plugin} version ${version}"
+    if ! mise install "${plugin}@${version}" > "$logfile" 2>&1; then
+        echo "WARNING: Failed to install ${plugin} ${version}, see ${logfile}" >&2
+        return 1
+    fi
+
+    echo "Finished: ${plugin}"
+    rm -f "$logfile"
+}
+
+if [ "$needs_changes" = true ]; then
+    # Install all plugins in parallel (the heavy/slow part)
+    {% for plugin in mise_plugins %}
+    install_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}" &
+    {% endfor %}
+
+    # Wait for all background installs to complete
+    failed=0
+    for job in $(jobs -p); do
+        wait "$job" || ((failed++))
+    done
+
+    if [ "$failed" -gt 0 ]; then
+        echo "WARNING: ${failed} plugin install(s) had issues" >&2
+    fi
+
+    # Set global versions
+    {% for plugin in mise_plugins %}
+    {% if plugin.scope | default('global') == 'global' %}
+    mise use --global "{{ plugin.name }}@{{ plugin.version | default('latest') }}"
+    {% endif %}
+    {% endfor %}
+
+    echo "CHANGED: Updates were applied"
+else
+    echo "OK: No changes required"
+fi

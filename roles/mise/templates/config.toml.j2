@@ -1,0 +1,4 @@
+[tools]
+{% for plugin in mise_plugins %}
+{{ plugin.name }} = "{{ plugin.version }}"
+{% endfor %}

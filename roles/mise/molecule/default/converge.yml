@@ -1,0 +1,28 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Create test user
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        shell: /bin/bash
+        create_home: true
+      become: true
+
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Include role under test
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.mise
+      vars:
+        mise_username: "{{ container_user }}"
