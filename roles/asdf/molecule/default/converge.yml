@@ -4,12 +4,25 @@
   vars:
     container_user: "{{ ansible_facts['distribution'] | lower }}"
     container_home: "/home/{{ container_user }}"
+    asdf_molecule_plugins:
+      - golang
+      - helm
+      - kubectl
   tasks:
     - name: Create test user
       ansible.builtin.user:
         name: "{{ container_user }}"
         shell: /bin/bash
         create_home: true
+      become: true
+
+    - name: Ensure home directory ownership (Docker volume mounts may create it as root)
+      ansible.builtin.file:
+        path: "{{ container_home }}"
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        state: directory
+        mode: "0755"
       become: true
 
     - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
@@ -20,6 +33,10 @@
     - name: Include default variables
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
+
+    - name: Trim plugin list to binary-only installs for faster CI
+      ansible.builtin.set_fact:
+        asdf_plugins: "{{ asdf_plugins | selectattr('name', 'in', asdf_molecule_plugins) | list }}"
 
     - name: Include role under test
       ansible.builtin.include_role:

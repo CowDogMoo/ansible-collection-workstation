@@ -1,5 +1,5 @@
 #!/bin/bash
-set -uo pipefail
+set -euo pipefail
 
 # Set environment variables
 export HOME="{{ asdf_user_home }}"
@@ -81,19 +81,18 @@ if [ "$needs_changes" = true ]; then
         echo "WARNING: ${failed} plugin install(s) had issues" >&2
     fi
 
-    # Set versions and reshim sequentially (asdf set writes to .tool-versions)
-    {% for plugin in asdf_plugins %}
-    {% if plugin.scope | default('global') == 'global' %}
-    echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} globally (--home)"
-    asdf set --home "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
-    {% else %}
-    echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} locally"
-    asdf set "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
-    {% endif %}
-    asdf reshim "{{ plugin.name }}"
-    {% endfor %}
-
     echo "CHANGED: Updates were applied"
-else
-    echo "OK: No changes required"
 fi
+
+# Always set versions and reshim (asdf set writes to .tool-versions which is
+# outside the cached .asdf data dir and must be recreated on every run)
+{% for plugin in asdf_plugins %}
+{% if plugin.scope | default('global') == 'global' %}
+echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} globally (--home)"
+asdf set --home "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+{% else %}
+echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} locally"
+asdf set "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+{% endif %}
+asdf reshim "{{ plugin.name }}"
+{% endfor %}

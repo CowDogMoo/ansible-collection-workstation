@@ -19,6 +19,7 @@ platforms:
     command: ""
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /tmp/asdf-cache-ubuntu:/home/ubuntu/.asdf
     cgroupns_mode: host
     privileged: true
 
@@ -29,6 +30,7 @@ platforms:
     pre_build_image: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /tmp/asdf-cache-kali:/home/kali/.asdf
     cgroupns_mode: host
     privileged: true
 

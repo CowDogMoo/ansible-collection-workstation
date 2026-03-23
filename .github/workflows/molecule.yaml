@@ -252,6 +252,24 @@ jobs:
           ansible-galaxy collection build --force
           ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz -p ~/.ansible/collections --force --pre
 
+      - name: Setup asdf cache directories
+        if: contains(matrix.path, 'asdf')
+        shell: bash
+        run: |
+          mkdir -p /tmp/asdf-cache-ubuntu /tmp/asdf-cache-kali
+          chmod 777 /tmp/asdf-cache-ubuntu /tmp/asdf-cache-kali
+
+      - name: Cache asdf plugin installations
+        if: contains(matrix.path, 'asdf')
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: |
+            /tmp/asdf-cache-ubuntu
+            /tmp/asdf-cache-kali
+          key: ${{ runner.os }}-asdf-${{ hashFiles('**/roles/asdf/defaults/main.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-asdf-
+
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
@@ -353,6 +371,24 @@ jobs:
           ansible-galaxy collection build --force
           ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz -p ~/.ansible/collections --force --pre
 
+      - name: Setup asdf cache directories
+        if: contains(matrix.path, 'asdf')
+        shell: bash
+        run: |
+          mkdir -p /tmp/asdf-cache-ubuntu /tmp/asdf-cache-kali
+          chmod 777 /tmp/asdf-cache-ubuntu /tmp/asdf-cache-kali
+
+      - name: Cache asdf plugin installations
+        if: contains(matrix.path, 'asdf')
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: |
+            /tmp/asdf-cache-ubuntu
+            /tmp/asdf-cache-kali
+          key: ${{ runner.os }}-asdf-${{ hashFiles('**/roles/asdf/defaults/main.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-asdf-
+
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
@@ -447,6 +483,24 @@ jobs:
         run: |
           ansible-galaxy collection build --force
           ansible-galaxy collection install cowdogmoo-workstation-*.tar.gz -p ~/.ansible/collections --force --pre
+
+      - name: Setup asdf cache directories
+        if: contains(matrix.path, 'asdf')
+        shell: bash
+        run: |
+          mkdir -p /tmp/asdf-cache-ubuntu /tmp/asdf-cache-kali
+          chmod 777 /tmp/asdf-cache-ubuntu /tmp/asdf-cache-kali
+
+      - name: Cache asdf plugin installations
+        if: contains(matrix.path, 'asdf')
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: |
+            /tmp/asdf-cache-ubuntu
+            /tmp/asdf-cache-kali
+          key: ${{ runner.os }}-asdf-${{ hashFiles('**/roles/asdf/defaults/main.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-asdf-
 
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
