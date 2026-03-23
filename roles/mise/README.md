@@ -76,7 +76,9 @@ Install mise
 - **Check available shells** (ansible.builtin.stat)
 - **Set available shell fact** (ansible.builtin.set_fact)
 - **Create bin directory if it doesn't exist** (ansible.builtin.file)
-- **Fetch and install mise binary** (block)
+- **Check if mise is already installed** (ansible.builtin.stat)
+- **Check installed mise version** (ansible.builtin.command) - Conditional
+- **Fetch and install mise binary** (block) - Conditional
 - **Download mise archive** (ansible.builtin.get_url)
 - **Create temporary extraction directory** (ansible.builtin.file)
 - **Extract mise archive** (ansible.builtin.unarchive)

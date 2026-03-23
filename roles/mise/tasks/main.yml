@@ -30,8 +30,22 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   changed_when: false
 
+- name: Check if mise is already installed
+  ansible.builtin.stat:
+    path: "{{ mise_bin_dir }}/mise"
+  register: mise_binary_stat
+
+- name: Check installed mise version
+  ansible.builtin.command: "{{ mise_bin_dir }}/mise --version"
+  register: mise_installed_version
+  changed_when: false
+  failed_when: false
+  when: mise_binary_stat.stat.exists
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
 - name: Fetch and install mise binary
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: not mise_binary_stat.stat.exists or mise_version not in (mise_installed_version.stdout | default(''))
   block:
     - name: Download mise archive
       ansible.builtin.get_url:
