@@ -121,6 +121,8 @@
         export MISE_CONFIG_DIR="{{ mise_config_dir }}"
         export PATH="${MISE_DATA_DIR}/shims:$PATH"
         mise ls "pipx:ansible" | grep -q .
+      args:
+        executable: /bin/bash
       register: mise_ansible_check
       failed_when: mise_ansible_check.rc != 0
       changed_when: false
