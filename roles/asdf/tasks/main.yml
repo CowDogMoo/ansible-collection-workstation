@@ -129,15 +129,6 @@
   register: asdf_plugin_installation
   changed_when: false
 
-- name: Generate .tool-versions file
-  ansible.builtin.template:
-    src: tool-versions.j2
-    dest: "{{ asdf_user_home }}/.tool-versions"
-    owner: "{{ asdf_username }}"
-    group: "{{ asdf_usergroup }}"
-    mode: "0644"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-
 - name: Reshim after default packages
   ansible.builtin.shell: |
     set -eo pipefail

@@ -89,7 +89,6 @@ Install asdf
 - **Verify ASDF installation** (ansible.builtin.shell)
 - **Generate ASDF plugin installation script** (ansible.builtin.template)
 - **Install ASDF plugins** (ansible.builtin.shell)
-- **Generate .tool-versions file** (ansible.builtin.template)
 - **Reshim after default packages** (ansible.builtin.shell)
 
 ### update_shell_profile.yml

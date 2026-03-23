@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -uo pipefail
 
 # Set environment variables
 export HOME="{{ asdf_user_home }}"
@@ -17,7 +17,6 @@ needs_changes=false
 check_plugin() {
     local plugin=$1
     local version=$2
-    local scope=$3
 
     # Check if plugin exists
     if ! asdf plugin list 2>/dev/null | grep -Fxq "$plugin"; then
@@ -37,48 +36,60 @@ check_plugin() {
             needs_changes=true
             return 0
         fi
-
-        # For global scope, check if it's set as the global version
-        if [ "$scope" = "global" ]; then
-            current_version=$(asdf current "$plugin" 2>/dev/null | awk '{print $2}' || echo "none")
-            if [ "$current_version" != "$version" ]; then
-                needs_changes=true
-                return 0
-            fi
-        fi
     fi
 }
 
 # Check each plugin for changes
 {% for plugin in asdf_plugins %}
-check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}" "{{ plugin.scope | default('global') }}"
+check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
 {% endfor %}
 
-if [ "$needs_changes" = true ]; then
-    {% for plugin in asdf_plugins %}
-    echo "Processing plugin: {{ plugin.name }}"
+install_version() {
+    local plugin=$1
+    local version=$2
+    local logfile="{{ asdf_user_home }}/.asdf/.install_${plugin}.log"
 
-    # Add plugin if it doesn't exist
+    echo "Installing ${plugin} version ${version}"
+    if ! asdf install "$plugin" "$version" > "$logfile" 2>&1; then
+        echo "WARNING: Failed to install ${plugin} ${version}, see ${logfile}" >&2
+        return 1
+    fi
+    rm -f "$logfile"
+}
+
+if [ "$needs_changes" = true ]; then
+    # Add all plugins sequentially first (registry writes aren't concurrency-safe)
+    {% for plugin in asdf_plugins %}
     if ! asdf plugin list 2>/dev/null | grep -Fxq "{{ plugin.name }}"; then
         echo "Adding plugin: {{ plugin.name }}"
         asdf plugin add "{{ plugin.name }}"
     fi
+    {% endfor %}
 
-    # Install specified version
-    echo "Installing {{ plugin.name }} version {{ plugin.version | default('latest') }}"
-    asdf install {{ plugin.name }} {{ plugin.version | default('latest') }} || true
+    # Install all versions in parallel (the heavy/slow part)
+    {% for plugin in asdf_plugins %}
+    install_version "{{ plugin.name }}" "{{ plugin.version | default('latest') }}" &
+    {% endfor %}
 
-    # Set version based on scope
-    if [ "{{ plugin.scope | default('global') }}" = "global" ]; then
-        echo "Setting global {{ plugin.name }} version to {{ plugin.version | default('latest') }}"
-        asdf set -u {{ plugin.name }} {{ plugin.version }}
-    else
-        echo "Setting local {{ plugin.name }} version to {{ plugin.version | default('latest') }}"
-        asdf set {{ plugin.name }} {{ plugin.version }}
+    # Wait for all background installs to complete
+    failed=0
+    for job in $(jobs -p); do
+        wait "$job" || ((failed++))
+    done
+
+    if [ "$failed" -gt 0 ]; then
+        echo "WARNING: ${failed} plugin install(s) had issues" >&2
     fi
 
-    # Reshim the plugin
-    echo "Reshimming {{ plugin.name }}"
+    # Set versions and reshim sequentially (asdf set writes to .tool-versions)
+    {% for plugin in asdf_plugins %}
+    {% if plugin.scope | default('global') == 'global' %}
+    echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} globally (--home)"
+    asdf set --home "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+    {% else %}
+    echo "Setting {{ plugin.name }} {{ plugin.version | default('latest') }} locally"
+    asdf set "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+    {% endif %}
     asdf reshim "{{ plugin.name }}"
     {% endfor %}
 
