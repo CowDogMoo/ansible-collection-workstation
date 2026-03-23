@@ -69,6 +69,16 @@
   become: "{{ logging_is_linux }}"
   when: logging_rotation_configs | length > 0
 
+- name: Ensure olddir directories exist for log rotation
+  ansible.builtin.file:
+    path: "{{ item.olddir | expanduser }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ item.owner | default(ansible_facts['user_id']) }}"
+    group: "{{ item.group | default(ansible_facts['user_gid'] | default(ansible_facts['user_id'])) }}"
+  loop: "{{ logging_rotation_configs | selectattr('olddir', 'defined') | list }}"
+  become: "{{ logging_is_linux and item.olddir.startswith('/var') | default(false) }}"
+
 # Handle multiple log rotation configurations
 - name: Setup log rotation configurations
   ansible.builtin.template:

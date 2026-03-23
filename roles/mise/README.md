@@ -32,6 +32,9 @@ Install mise
 | `mise_shells.2` | str | <code>/usr/bin/bash</code> | No description |
 | `mise_shells.3` | str | <code>/bin/bash</code> | No description |
 | `mise_shell` | str | <code>{{ '/bin/zsh' if ansible_facts&#91;'distribution'&#93; == 'MacOSX' else '/bin/bash' }}</code> | No description |
+| `mise_settings` | dict | <code>{}</code> | No description |
+| `mise_settings.python` | dict | <code>{}</code> | No description |
+| `mise_settings.ruby` | dict | <code>{}</code> | No description |
 | `mise_plugins` | list | <code>&#91;&#93;</code> | No description |
 | `mise_plugins.0` | dict | <code>{}</code> | No description |
 | `mise_plugins.1` | dict | <code>{}</code> | No description |

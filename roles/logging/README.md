@@ -46,6 +46,7 @@ Provides flexible logging directories and log rotation for any application or se
 - **Ensure logging directories exist** (ansible.builtin.file) - Conditional
 - **Ensure parent directory for logrotate config exists on macOS** (ansible.builtin.file) - Conditional
 - **Ensure logrotate config directory exists** (ansible.builtin.file) - Conditional
+- **Ensure olddir directories exist for log rotation** (ansible.builtin.file)
 - **Setup log rotation configurations** (ansible.builtin.template) - Conditional
 - **Ensure logrotate state directory exists on macOS** (ansible.builtin.file) - Conditional
 - **Create logrotate state file on macOS** (ansible.builtin.file) - Conditional

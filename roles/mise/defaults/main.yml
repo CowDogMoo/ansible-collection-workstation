@@ -17,6 +17,12 @@ mise_shells:
 
 mise_shell: "{{ '/bin/zsh' if ansible_facts['distribution'] == 'MacOSX' else '/bin/bash' }}"
 
+mise_settings:
+  python:
+    compile: false
+  ruby:
+    compile: false
+
 mise_plugins:
   # renovate: datasource=github-tags depName=golang packageName=golang/go extractVersion=^go(?<version>.*)$
   - name: go

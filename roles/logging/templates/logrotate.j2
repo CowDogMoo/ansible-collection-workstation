@@ -7,10 +7,19 @@
     {% if log_rotation_config.create | default(false) %}
     create {{ log_rotation_config.mode | default('0644') }} {{ log_rotation_config.owner | default(ansible_user_id) }} {{ log_rotation_config.group | default(ansible_user_gid | default(ansible_user_id)) }}
     {% endif %}
-    {% if log_rotation_config.dateext | default(true) %}dateext{% endif %}
+    {% if log_rotation_config.dateext | default(true) %}
+    dateext
+    dateformat {{ log_rotation_config.dateformat | default('-%Y%m%d') }}
+    {% endif %}
+    {% if log_rotation_config.extension is defined %}
+    extension {{ log_rotation_config.extension }}
+    {% endif %}
     {% if log_rotation_config.maxsize is defined %}
     maxsize {{ log_rotation_config.maxsize }}
     {% endif %}
     {% if log_rotation_config.delaycompress | default(false) %}delaycompress{% endif %}
     {% if log_rotation_config.copytruncate | default(false) %}copytruncate{% endif %}
+    {% if log_rotation_config.olddir is defined %}
+    olddir {{ log_rotation_config.olddir }}
+    {% endif %}
 }
