@@ -752,3 +752,31 @@ releases:
     fragments:
     - 2.2.0.yaml
     release_date: '2025-12-06'
+  2.4.0:
+    changes:
+      added:
+      - Add MCP server management for Claude Code with environment and removal support
+        (#782)
+      - Add git safety check hook and update workstation inventory (#784)
+      - Add global CLAUDE.md usage instructions to Claude Code role (#792)
+      - Add mise version manager role and playbook integration (#856)
+      - Add renovate regex managers for python, go, and task versions in workflows
+      - Add support for installing backend packages via mise plugins (#859)
+      - Standardize fabric custom patterns config for workstation hosts
+      changed:
+      - Add asdf plugin caching for faster molecule test runs (#857)
+      - Configure renovate to detect pip requirements files
+      - Enable major version automerge and improve vnc start failure detection (#848)
+      - Improve 1Password secret resolution for MCP server management (#783)
+      - Improve asdf plugin installation for safety and performance (#855)
+      - Migrate Renovate config (#831)
+      - Migrate asdf references to mise and improve logging rotation (#858)
+      - Update molecule test images to ubuntu 24.04 and improve vnc_setup systemd
+        task (#852)
+      - Update numerous dependencies including kubectl, helm, golang, python, node.js,
+        ansible-core, and CI actions
+      release_summary: New mise version manager role, MCP server management for Claude
+        Code, dependency updates, and CI improvements.
+    fragments:
+    - 2.4.0.yaml
+    release_date: '2026-03-23'
