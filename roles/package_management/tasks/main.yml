@@ -14,7 +14,7 @@
     dest: /usr/share/keyrings/kali-archive-keyring.gpg
     mode: '0644'
   become: true
-  when: ansible_distribution == 'Kali'
+  when: ansible_facts["distribution"] == 'Kali'
 
 - name: Install packages
   become: true
