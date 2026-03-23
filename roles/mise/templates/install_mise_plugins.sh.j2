@@ -37,6 +37,9 @@ check_plugin() {
 # Check each plugin for changes
 {% for plugin in mise_plugins %}
 check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
+{% for pkg in plugin.packages | default([]) %}
+check_plugin "{{ pkg.name }}" "{{ pkg.version | default('latest') }}"
+{% endfor %}
 {% endfor %}
 
 install_plugin() {
@@ -78,6 +81,22 @@ if [ "$needs_changes" = true ]; then
     {% if plugin.scope | default('global') == 'global' %}
     mise use --global "{{ plugin.name }}@{{ plugin.version | default('latest') }}"
     {% endif %}
+    {% endfor %}
+
+    # Install backend packages sequentially (they depend on parent runtimes)
+    {% for plugin in mise_plugins %}
+    {% for pkg in plugin.packages | default([]) %}
+    echo "Installing package: {{ pkg.name }}@{{ pkg.version | default('latest') }}"
+    logfile="{{ mise_user_home }}/.local/share/mise/.install_pkg_$(echo '{{ pkg.name }}' | tr ':' '_').log"
+    if ! mise install "{{ pkg.name }}@{{ pkg.version | default('latest') }}" > "$logfile" 2>&1; then
+        echo "WARNING: Failed to install {{ pkg.name }}, see $logfile" >&2
+    else
+        rm -f "$logfile"
+    fi
+    {% if pkg.scope | default(plugin.scope) | default('global') == 'global' %}
+    mise use --global "{{ pkg.name }}@{{ pkg.version | default('latest') }}"
+    {% endif %}
+    {% endfor %}
     {% endfor %}
 
     echo "CHANGED: Updates were applied"
