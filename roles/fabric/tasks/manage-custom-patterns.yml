@@ -122,18 +122,37 @@
         - fabric_scripts_source_stat.stat.exists
         - fabric_custom_patterns_symlink | bool
 
-    - name: Copy shared scripts to fabric config directory
-      ansible.builtin.copy:
-        src: "{{ fabric_patterns_repo_root }}/{{ fabric_custom_scripts_subdir }}/"
-        dest: "{{ fabric_config_dir }}/{{ fabric_custom_scripts_subdir }}/"
-        owner: "{{ fabric_username }}"
-        group: "{{ fabric_usergroup }}"
-        mode: "0755"
-        remote_src: true
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+    - name: Install shared scripts (copy mode)
       when:
         - fabric_scripts_source_stat.stat.exists
         - not fabric_custom_patterns_symlink | bool
+      block:
+        - name: Find shared script files
+          ansible.builtin.find:
+            paths: "{{ fabric_patterns_repo_root }}/{{ fabric_custom_scripts_subdir }}"
+            file_type: file
+            recurse: false
+          register: fabric_script_files
+
+        - name: Ensure shared scripts directory exists
+          ansible.builtin.file:
+            path: "{{ fabric_config_dir }}/{{ fabric_custom_scripts_subdir }}"
+            state: directory
+            owner: "{{ fabric_username }}"
+            group: "{{ fabric_usergroup }}"
+            mode: "0755"
+          become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+        - name: Copy shared script files to fabric config directory
+          ansible.builtin.copy:
+            src: "{{ item.path }}"
+            dest: "{{ fabric_config_dir }}/{{ fabric_custom_scripts_subdir }}/{{ item.path | basename }}"
+            owner: "{{ fabric_username }}"
+            group: "{{ fabric_usergroup }}"
+            mode: "0755"
+            remote_src: true
+          loop: "{{ fabric_script_files.files }}"
+          become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
     - name: Create marker file to track installation
       ansible.builtin.copy:

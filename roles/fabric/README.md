@@ -107,7 +107,10 @@ Installs and configures Daniel Miessler's Fabric AI framework
 - **Copy custom patterns to fabric patterns directory** (ansible.builtin.copy) - Conditional
 - **Check if shared scripts directory exists** (ansible.builtin.stat)
 - **Create symlink to shared scripts directory (for local development)** (ansible.builtin.file) - Conditional
-- **Copy shared scripts to fabric config directory** (ansible.builtin.copy) - Conditional
+- **Install shared scripts (copy mode)** (block) - Conditional
+- **Find shared script files** (ansible.builtin.find)
+- **Ensure shared scripts directory exists** (ansible.builtin.file)
+- **Copy shared script files to fabric config directory** (ansible.builtin.copy)
 - **Create marker file to track installation** (ansible.builtin.copy)
 - **Clean up temporary directory** (ansible.builtin.file) - Conditional
 - **Display custom patterns installation status** (ansible.builtin.debug) - Conditional
