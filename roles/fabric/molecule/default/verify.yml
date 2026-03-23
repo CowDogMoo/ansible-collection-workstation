@@ -90,3 +90,18 @@
               - fabric_pr_pattern_stat.stat.isreg
             fail_msg: "Custom patterns are not installed correctly"
             success_msg: "Custom patterns (commit, pr) are installed"
+
+        - name: Check for shared scripts directory
+          ansible.builtin.stat:
+            path: "{{ fabric_config_dir }}/scripts/filter.py"
+          register: fabric_filter_script_stat
+          become: true
+          become_user: "{{ container_user }}"
+
+        - name: Assert shared filter script is installed
+          ansible.builtin.assert:
+            that:
+              - fabric_filter_script_stat.stat.exists
+              - fabric_filter_script_stat.stat.isreg
+            fail_msg: "Shared filter script (scripts/filter.py) is not installed"
+            success_msg: "Shared filter script is installed"
