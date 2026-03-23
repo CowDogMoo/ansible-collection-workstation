@@ -141,17 +141,17 @@
       # For debugging
       # role: ../../roles/zsh_setup
 
-    - name: Setup ASDF Configuration
-      role: cowdogmoo.workstation.asdf
+    - name: Setup Mise Configuration
+      role: cowdogmoo.workstation.mise
       # For debugging
-      # role: ../../roles/asdf
+      # role: ../../roles/mise
 
     - name: Install and configure Fabric AI framework
       role: cowdogmoo.workstation.fabric
       # For debugging
       # role: ../../roles/fabric
       vars:
-        # Use script install method since Go from asdf may not be in PATH yet
+        # Use script install method since Go from mise may not be in PATH yet
         fabric_install_method: "script"
         # Machine-specific fabric config (custom patterns, etc.) should be set in host_vars
 

@@ -1,3 +1,17 @@
+{% if mise_settings is defined and mise_settings %}
+[settings]
+{% for key, value in mise_settings.items() %}
+{% if value is mapping %}
+[settings.{{ key }}]
+{% for subkey, subvalue in value.items() %}
+{{ subkey }} = {{ subvalue | lower if subvalue is sameas true or subvalue is sameas false else '"' ~ subvalue ~ '"' }}
+{% endfor %}
+{% else %}
+{{ key }} = {{ value | lower if value is sameas true or value is sameas false else '"' ~ value ~ '"' }}
+{% endif %}
+{% endfor %}
+
+{% endif %}
 [tools]
 {% for plugin in mise_plugins %}
 {{ plugin.name }} = "{{ plugin.version }}"

@@ -4,7 +4,7 @@ zsh_setup_usergroup: "{{ 'staff' if ansible_facts['os_family'] == 'Darwin' else 
 zsh_setup_shell: "{{ 'powershell' if ansible_facts['os_family'] == 'Windows' else (ansible_facts['env']['SHELL'] | default('/bin/bash')).strip() | regex_replace('\n', '') }}"
 zsh_setup_theme: "af-magic"
 zsh_setup_plugins:
-  - asdf
+  - mise
   - aws
   - git
   - docker

@@ -25,7 +25,7 @@ Installs and configures zsh with oh-my-zsh.
 | `zsh_setup_shell` | str | <code>{{ 'powershell' if ansible_facts&#91;'os_family'&#93; == 'Windows' else (ansible_facts&#91;'env'&#93;&#91;'SHELL'&#93; &#124; default('/bin/bash')).strip() &#124; regex_replace('\n', '') }}</code> | No description |
 | `zsh_setup_theme` | str | <code>af-magic</code> | No description |
 | `zsh_setup_plugins` | list | <code>&#91;&#93;</code> | No description |
-| `zsh_setup_plugins.0` | str | <code>asdf</code> | No description |
+| `zsh_setup_plugins.0` | str | <code>mise</code> | No description |
 | `zsh_setup_plugins.1` | str | <code>aws</code> | No description |
 | `zsh_setup_plugins.2` | str | <code>git</code> | No description |
 | `zsh_setup_plugins.3` | str | <code>docker</code> | No description |
