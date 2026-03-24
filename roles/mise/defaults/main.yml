@@ -28,6 +28,15 @@ mise_plugins:
   - name: go
     version: "1.26.1"
     scope: "global"
+    packages:
+      - name: "go:golang.org/x/tools/cmd/goimports"
+        version: "latest"
+      - name: "go:github.com/fzipp/gocyclo/cmd/gocyclo"
+        version: "latest"
+      - name: "go:github.com/golangci/golangci-lint/cmd/golangci-lint"
+        version: "latest"
+      - name: "go:github.com/go-critic/go-critic/cmd/gocritic"
+        version: "latest"
   # renovate: datasource=github-tags depName=python packageName=python/cpython extractVersion=^v(?<version>.*)$
   - name: python
     version: "3.14.3"
