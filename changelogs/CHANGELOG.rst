@@ -1,8 +1,23 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.4.0 Release Notes
+CowDogMoo Workstation Ansible Collection 2.5.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.5.0
+======
+
+Release Summary
+---------------
+
+New features including Go binary relocation in build cleanup, shared scripts directory for fabric custom patterns, and selective cleanup for mise and asdf artifacts
+
+Added
+-----
+
+- Added Go binary relocation support to the build cleanup role (#863)
+- Added selective cleanup for mise and asdf version manager artifacts (#861)
+- Added support for a shared scripts directory in fabric custom patterns (#862)
 
 v2.4.0
 ======

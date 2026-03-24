@@ -780,3 +780,15 @@ releases:
     fragments:
     - 2.4.0.yaml
     release_date: '2026-03-23'
+  2.5.0:
+    changes:
+      added:
+      - Added Go binary relocation support to the build cleanup role (#863)
+      - Added selective cleanup for mise and asdf version manager artifacts (#861)
+      - Added support for a shared scripts directory in fabric custom patterns (#862)
+      release_summary: New features including Go binary relocation in build cleanup,
+        shared scripts directory for fabric custom patterns, and selective cleanup
+        for mise and asdf artifacts
+    fragments:
+    - 2.5.0.yaml
+    release_date: '2026-03-24'
