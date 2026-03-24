@@ -32,6 +32,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 | `build_cleanup_binary_version_flag` | str | <code>version</code> | No description |
 | `build_cleanup_additional_paths` | list | <code>&#91;&#93;</code> | No description |
 | `build_cleanup_container_remove_packages` | list | <code>&#91;&#93;</code> | No description |
+| `build_cleanup_relocate_go_binaries` | bool | <code>False</code> | No description |
 | `build_cleanup_check_unpacked_compilers` | bool | <code>False</code> | No description |
 | `build_cleanup_compiler_paths` | list | <code>&#91;&#93;</code> | No description |
 | `build_cleanup_handle_postgresql` | bool | <code>False</code> | No description |
@@ -150,6 +151,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 - **Validate required parameters** (ansible.builtin.assert) - Conditional
 - **Execute cleanup phases** (block) - Conditional
 - **Protect packages from autoremoval** (ansible.builtin.include_tasks) - Conditional
+- **Relocate Go binaries before cleanup** (ansible.builtin.include_tasks) - Conditional
 - **Remove build artifacts** (ansible.builtin.include_tasks)
 - **Optimize binaries** (ansible.builtin.include_tasks) - Conditional
 - **Remove development packages** (ansible.builtin.include_tasks) - Conditional
@@ -180,6 +182,14 @@ General-purpose, parameterized cleanup role for build artifact minimization
 
 - **Protect packages from autoremoval (Debian family)** (ansible.builtin.command) - Conditional
 - **Display protected packages** (ansible.builtin.debug) - Conditional
+
+### relocate_go_binaries.yml
+
+
+- **Check for Go binaries directory** (ansible.builtin.stat)
+- **Find Go binaries to relocate** (ansible.builtin.find) - Conditional
+- **Relocate Go binaries to install path** (ansible.builtin.copy) - Conditional
+- **Display Go binary relocation summary** (ansible.builtin.debug) - Conditional
 
 ### remove_artifacts.yml
 

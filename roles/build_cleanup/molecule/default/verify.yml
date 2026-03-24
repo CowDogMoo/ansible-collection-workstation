@@ -47,6 +47,31 @@
       changed_when: false
       failed_when: build_cleanup_binary_test.rc != 0
 
+    - name: Verify Go binaries were relocated to install path
+      ansible.builtin.stat:
+        path: "/opt/testapp/{{ item }}"
+      register: build_cleanup_go_binary_check
+      loop:
+        - goapp1
+        - goapp2
+      failed_when: not build_cleanup_go_binary_check.stat.exists
+
+    - name: Verify relocated Go binaries are executable
+      ansible.builtin.command:
+        cmd: "/opt/testapp/{{ item }}"
+      register: build_cleanup_go_binary_test
+      loop:
+        - goapp1
+        - goapp2
+      changed_when: false
+      failed_when: build_cleanup_go_binary_test.rc != 0
+
+    - name: Verify entire ~/go directory was removed
+      ansible.builtin.stat:
+        path: /home/testuser/go
+      register: build_cleanup_go_dir_check
+      failed_when: build_cleanup_go_dir_check.stat.exists
+
     - name: Verify post-Ansible script was generated
       ansible.builtin.stat:
         path: /tmp/post_ansible_cleanup.sh
@@ -107,6 +132,9 @@
           ✓ Cache directories removed
           ✓ Binary preserved and executable
           ✓ Binary functionality verified
+          ✓ Go binaries relocated to install path
+          ✓ Relocated Go binaries are executable
+          ✓ ~/go directory fully removed
           ✓ Post-Ansible script generated
           ✓ Post-Ansible script is executable
           ✓ Post-Ansible script contains expected commands

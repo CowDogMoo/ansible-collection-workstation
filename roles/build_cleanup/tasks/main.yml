@@ -36,6 +36,10 @@
       ansible.builtin.include_tasks: protect_packages.yml
       when: build_cleanup_protected_packages | length > 0
 
+    - name: Relocate Go binaries before cleanup
+      ansible.builtin.include_tasks: relocate_go_binaries.yml
+      when: build_cleanup_relocate_go_binaries | bool
+
     - name: Remove build artifacts
       ansible.builtin.include_tasks: remove_artifacts.yml
 

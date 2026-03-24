@@ -1,0 +1,41 @@
+---
+# Relocate Go binaries
+# ====================
+# Copies Go binaries from ~/go/bin/ to the install path before
+# build artifacts are removed, so binaries survive cleanup.
+
+- name: Check for Go binaries directory
+  ansible.builtin.stat:
+    path: "{{ build_cleanup_user_home }}/go/bin"
+  register: build_cleanup_go_bin_dir
+
+- name: Find Go binaries to relocate
+  ansible.builtin.find:
+    paths: "{{ build_cleanup_user_home }}/go/bin"
+    file_type: file
+  register: build_cleanup_go_binaries_found
+  when: build_cleanup_go_bin_dir.stat.exists
+
+- name: Relocate Go binaries to install path
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: "{{ build_cleanup_install_path }}/{{ item.path | basename }}"
+    remote_src: true
+    mode: "0755"
+    owner: "{{ build_cleanup_username }}"
+  loop: "{{ build_cleanup_go_binaries_found.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  become: true
+  failed_when: false
+  when:
+    - build_cleanup_go_bin_dir.stat.exists
+    - build_cleanup_go_binaries_found.files | default([]) | length > 0
+
+- name: Display Go binary relocation summary
+  ansible.builtin.debug:
+    msg: >-
+      Relocated {{ build_cleanup_go_binaries_found.files | default([]) | length }}
+      Go binaries from {{ build_cleanup_user_home }}/go/bin/
+      to {{ build_cleanup_install_path }}/
+  when: build_cleanup_go_bin_dir.stat.exists
