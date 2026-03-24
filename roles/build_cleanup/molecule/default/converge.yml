@@ -10,11 +10,14 @@
       vars:
         build_cleanup_enabled: true
         build_cleanup_fast_mode: true
+        build_cleanup_relocate_go_binaries: true
         build_cleanup_install_path: /opt/testapp
         build_cleanup_user_home: /home/testuser
         build_cleanup_username: testuser
         build_cleanup_keep_binaries:
           - testapp
+          - goapp1
+          - goapp2
         build_cleanup_protected_packages:
           - libc6
           - libssl3

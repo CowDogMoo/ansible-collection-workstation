@@ -77,6 +77,39 @@
         - /home/testuser/.cargo
         - /root/.cache
 
+    - name: Create Go bin directory with test binaries
+      ansible.builtin.file:
+        path: /home/testuser/go/bin
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+
+    - name: Create fake Go binaries for relocation testing
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          echo "{{ item }} v1.0.0"
+          exit 0
+        dest: "/home/testuser/go/bin/{{ item }}"
+        owner: testuser
+        group: testuser
+        mode: '0755'
+      loop:
+        - goapp1
+        - goapp2
+
+    - name: Create Go pkg and src directories (should be cleaned up)
+      ansible.builtin.file:
+        path: "/home/testuser/go/{{ item }}"
+        state: directory
+        owner: testuser
+        group: testuser
+        mode: '0755'
+      loop:
+        - pkg
+        - src
+
     - name: Create Python cache files
       ansible.builtin.file:
         path: "{{ item }}"

@@ -39,8 +39,7 @@
     - .cache
     - .cargo
     - .rustup
-    - go/pkg
-    - go/src
+    - go
   become: true
   failed_when: false
 

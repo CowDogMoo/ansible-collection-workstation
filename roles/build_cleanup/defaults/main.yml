@@ -61,6 +61,9 @@ build_cleanup_container_remove_packages: []  # Container-specific packages to re
 # SPECIAL HANDLING FLAGS
 # =============================================================================
 
+# Go binary relocation - relocate ~/go/bin/ binaries to install path before cleanup
+build_cleanup_relocate_go_binaries: false
+
 # Compiler checks
 build_cleanup_check_unpacked_compilers: false
 build_cleanup_compiler_paths: []         # e.g., [go, zig]
