@@ -37,6 +37,8 @@ mise_plugins:
         version: "latest"
       - name: "go:github.com/go-critic/go-critic/cmd/gocritic"
         version: "latest"
+      - name: "go:github.com/goreleaser/goreleaser/v2"
+        version: "latest"
   # renovate: datasource=github-tags depName=python packageName=python/cpython extractVersion=^v(?<version>.*)$
   - name: python
     version: "3.14.3"
