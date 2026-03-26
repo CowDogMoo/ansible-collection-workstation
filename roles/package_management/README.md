@@ -38,7 +38,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 | `package_management_common_install_packages.19` | str | <code>unzip</code> | No description |
 | `package_management_common_install_packages.20` | str | <code>vim</code> | No description |
 | `package_management_common_install_packages.21` | str | <code>wget</code> | No description |
-| `package_management_chromium_package` | str | <code>{{ 'chromium-browser' if ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=') else 'chromium' }}</code> | No description |
+| `package_management_chromium_package` | str | <code>{{ 'chromium-browser' if ansible_facts&#91;'distribution'&#93; == 'Ubuntu' and ansible_facts&#91;'distribution_version'&#93; is version('20.04', '>=') else 'chromium' }}</code> | No description |
 | `package_management_debian_specific_packages` | list | <code>&#91;&#93;</code> | No description |
 | `package_management_debian_specific_packages.0` | str | <code>build-essential</code> | No description |
 | `package_management_debian_specific_packages.1` | str | <code>{{ package_management_chromium_package }}</code> | No description |

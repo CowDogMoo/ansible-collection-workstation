@@ -25,7 +25,7 @@ package_management_common_install_packages:
   - wget
 
 # Conditional assignment for Chromium package based on distribution
-package_management_chromium_package: "{{ 'chromium-browser' if ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=') else 'chromium' }}"
+package_management_chromium_package: "{{ 'chromium-browser' if ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_version'] is version('20.04', '>=') else 'chromium' }}"
 
 # Debian-specific packages
 package_management_debian_specific_packages:
