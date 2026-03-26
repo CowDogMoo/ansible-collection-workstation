@@ -12,8 +12,8 @@ vnc_setup_users:
     usergroup: "{{ vnc_setup_default_username }}" # Usergroup for the vnc configuration
     vnc_num: 1 # Port number offset for VNC server (e.g., 5901 for vnc_num: 1)
 
-# Default username value, derived from the ansible_distribution variable
-vnc_setup_default_username: "{{ ansible_distribution | lower }}"
+# Default username value, derived from the distribution fact
+vnc_setup_default_username: "{{ ansible_facts['distribution'] | lower }}"
 
 # Path to clone [vncpwd](https://github.com/jeroennijhof/vncpwd).
 vnc_setup_vncpwd_clone_path: /tmp/vncpwd

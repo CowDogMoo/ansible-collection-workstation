@@ -25,7 +25,7 @@ Provides logging directories and log rotation for other roles.
 | `vnc_setup_systemd` | bool | <code>True</code> | No description |
 | `vnc_setup_users` | list | <code>&#91;&#93;</code> | No description |
 | `vnc_setup_users.0` | dict | <code>{}</code> | No description |
-| `vnc_setup_default_username` | str | <code>{{ ansible_distribution &#124; lower }}</code> | No description |
+| `vnc_setup_default_username` | str | <code>{{ ansible_facts&#91;'distribution'&#93; &#124; lower }}</code> | No description |
 | `vnc_setup_vncpwd_clone_path` | str | <code>/tmp/vncpwd</code> | No description |
 | `vnc_setup_vncpwd_path` | str | <code>/usr/local/bin/vncpwd</code> | No description |
 
