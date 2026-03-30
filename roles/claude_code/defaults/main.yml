@@ -75,8 +75,8 @@ claude_code_advanced_hooks:
       dangerous_long = ['--no-verify', '--no-gpg-sign', '--no-post-rewrite']
       blocked_flag = next((f for f in dangerous_long if f in cmd), None)
 
-      # Check for -n flag as standalone (not part of --name-only etc)
-      if not blocked_flag and re.search(r'(^|\s)-n(\s|$)', cmd):
+      # Check for -n flag as standalone only in git commit commands
+      if not blocked_flag and 'git commit' in cmd and re.search(r'(^|\s)-n(\s|$)', cmd):
           blocked_flag = '-n'
 
       if blocked_flag:
