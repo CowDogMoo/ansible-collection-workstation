@@ -13,13 +13,11 @@
 
 ### Commits
 
-Always use fabric for commit messages:
+Always use `fabric_commit` for commit messages:
 
 ```bash
-git ds | fabric --pattern commit | git commit -F -
+fabric_commit
 ```
-
-**IMPORTANT**: Always remove code fences (```) from commit messages before committing. If a generated commit message contains code fences, strip them out completely.
 
 **NEVER EVER use --no-verify when committing or there will be dire consequences!**
 
@@ -54,7 +52,4 @@ The `fabric_pr` function should handle these automatically, but you must verify 
 
 ## Notes
 
-- `git ds` is an alias for `git diff --staged` (shows staged changes)
 - `git d main` shows the diff against the main branch
-- The fabric patterns will generate properly formatted commit messages and PR descriptions
-- Use `-F -` to read from stdin
