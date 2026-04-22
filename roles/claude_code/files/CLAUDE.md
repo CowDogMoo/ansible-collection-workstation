@@ -49,7 +49,3 @@ After `fabric_pr` creates the PR, you MUST verify and fix if needed:
    ```
 
 The `fabric_pr` function should handle these automatically, but you must verify and correct any issues in the created PR.
-
-## Notes
-
-- `git d main` shows the diff against the main branch
