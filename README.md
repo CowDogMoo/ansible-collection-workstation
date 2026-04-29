@@ -65,6 +65,11 @@ ansible-galaxy collection build --force && \
 Installs and configures [ASDF](https://asdf-vm.com/), a version manager for
 multiple language runtimes.
 
+### Mise
+
+Installs and configures [mise](https://mise.jdx.dev/), a polyglot tool version
+manager and dev environment setup tool.
+
 ### User Setup
 
 Sets up user accounts with optional sudo privileges on Unix-like systems.
