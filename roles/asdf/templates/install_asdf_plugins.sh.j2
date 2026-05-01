@@ -51,7 +51,12 @@ install_version() {
 
     echo "Installing ${plugin} version ${version}"
     if ! asdf install "$plugin" "$version" > "$logfile" 2>&1; then
-        echo "WARNING: Failed to install ${plugin} ${version}, see ${logfile}" >&2
+        {
+            echo "ERROR: Failed to install ${plugin} ${version}"
+            echo "----- ${logfile} -----"
+            cat "$logfile" || true
+            echo "----- end ${logfile} -----"
+        } >&2
         return 1
     fi
     rm -f "$logfile"
@@ -74,11 +79,14 @@ if [ "$needs_changes" = true ]; then
     # Wait for all background installs to complete
     failed=0
     for job in $(jobs -p); do
-        wait "$job" || ((failed++))
+        if ! wait "$job"; then
+            failed=$((failed + 1))
+        fi
     done
 
     if [ "$failed" -gt 0 ]; then
-        echo "WARNING: ${failed} plugin install(s) had issues" >&2
+        echo "ERROR: ${failed} plugin install(s) failed (see logs above)" >&2
+        exit 1
     fi
 
     echo "CHANGED: Updates were applied"

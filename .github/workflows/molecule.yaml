@@ -266,9 +266,9 @@ jobs:
           path: |
             /tmp/asdf-cache-ubuntu
             /tmp/asdf-cache-kali
-          key: ${{ runner.os }}-asdf-${{ hashFiles('**/roles/asdf/defaults/main.yml') }}
+          key: ${{ runner.os }}-asdf-v2-${{ hashFiles('**/roles/asdf/defaults/main.yml', '**/roles/asdf/templates/install_asdf_plugins.sh.j2') }}
           restore-keys: |
-            ${{ runner.os }}-asdf-
+            ${{ runner.os }}-asdf-v2-
 
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
@@ -385,9 +385,9 @@ jobs:
           path: |
             /tmp/asdf-cache-ubuntu
             /tmp/asdf-cache-kali
-          key: ${{ runner.os }}-asdf-${{ hashFiles('**/roles/asdf/defaults/main.yml') }}
+          key: ${{ runner.os }}-asdf-v2-${{ hashFiles('**/roles/asdf/defaults/main.yml', '**/roles/asdf/templates/install_asdf_plugins.sh.j2') }}
           restore-keys: |
-            ${{ runner.os }}-asdf-
+            ${{ runner.os }}-asdf-v2-
 
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
@@ -498,9 +498,9 @@ jobs:
           path: |
             /tmp/asdf-cache-ubuntu
             /tmp/asdf-cache-kali
-          key: ${{ runner.os }}-asdf-${{ hashFiles('**/roles/asdf/defaults/main.yml') }}
+          key: ${{ runner.os }}-asdf-v2-${{ hashFiles('**/roles/asdf/defaults/main.yml', '**/roles/asdf/templates/install_asdf_plugins.sh.j2') }}
           restore-keys: |
-            ${{ runner.os }}-asdf-
+            ${{ runner.os }}-asdf-v2-
 
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
