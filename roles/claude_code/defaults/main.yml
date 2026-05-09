@@ -30,13 +30,26 @@ claude_code_backup_settings: true
 # Simple hooks - easy YAML configuration
 claude_code_simple_hooks: []
 
-# Advanced hooks - custom Python/shell scripts
-claude_code_advanced_hooks:
-  # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
+# Advanced hooks — custom Python/shell scripts.
+#
+# Hooks are defined as a dict keyed by hook id (e.g. `forbidden_content`, `stop_sound`)
+# rather than a positional list. Consumers override individual hooks by setting
+# `claude_code_advanced_hooks_overrides` with the same key, no copy-paste needed:
+#
+#     claude_code_advanced_hooks_overrides:
+#       stop_sound:
+#         command: 'afplay "$HOME/Jobs Done.mp3"'
+#
+# To remove a default hook entirely on a specific host, set its value to `null`.
+# To add a host-specific hook, give it a new key.
+claude_code_advanced_hooks_default:
+
+  # forbidden_content: Block commits/PRs with forbidden content (emojis/branding).
   # Inspects the literal command string. Catches `git commit -m "...Co-Authored-By: Claude..."`
   # and `gh pr create --body "...🤖..."` style invocations. Cannot see content passed via
-  # `-F file`, stdin pipes, $variables, or editor commits — Hook 5 handles those post-hoc.
-  - event: PreToolUse
+  # `-F file`, stdin pipes, $variables, or editor commits — `post_commit_check` handles those.
+  forbidden_content:
+    event: PreToolUse
     tool: Bash
     type: command
     command: |
@@ -73,8 +86,9 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 2: Block dangerous git flags that bypass safety checks
-  - event: PreToolUse
+  # dangerous_flags: Block dangerous git flags that bypass safety checks (--no-verify, etc.).
+  dangerous_flags:
+    event: PreToolUse
     tool: Bash
     type: command
     command: |
@@ -102,12 +116,14 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 3: Post-commit safety net — catches forbidden content that slipped past Hook 1.
-  # Hook 1 only sees the literal command string, so it misses messages passed via `-F file`,
-  # stdin pipes (`fabric_commit` uses `git commit -F -`), $variables, editor commits, and
-  # squash-merges. This runs after any commit-creating command and inspects the resulting
-  # commit message. If forbidden content landed, it tells Claude to amend before pushing.
-  - event: PostToolUse
+  # post_commit_check: Post-commit safety net — catches forbidden content that slipped past
+  # `forbidden_content`. The PreToolUse hook only sees the literal command string, so it misses
+  # messages passed via `-F file`, stdin pipes (`fabric_commit` uses `git commit -F -`),
+  # $variables, editor commits, and squash-merges. This PostToolUse hook runs after any
+  # commit-creating command and inspects the resulting commit message; if forbidden content
+  # landed, it tells Claude to amend before pushing.
+  post_commit_check:
+    event: PostToolUse
     tool: Bash
     type: command
     command: |
@@ -160,17 +176,33 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 4: Sound notification when Claude finishes a task
-  - event: Stop
+  # stop_sound: Sound notification when Claude finishes a task.
+  stop_sound:
+    event: Stop
     tool: ""
     type: command
     command: "osascript -e 'beep 2'"
 
-  # Hook 5: Sound notification when Claude needs input
-  - event: Notification
+  # notify_sound: Sound notification when Claude needs input.
+  notify_sound:
+    event: Notification
     tool: ""
     type: command
     command: "osascript -e 'beep 1'"
+
+# Per-host overrides for the dict above. Keys here are merged into
+# `claude_code_advanced_hooks_default` (recursive=True), so individual hooks can be
+# customized without copy-pasting the whole map.
+claude_code_advanced_hooks_overrides: {}
+
+# Final assembled list passed to the template. Built from defaults + overrides; entries
+# whose value is `null` (after merge) are filtered out so a host can disable a default hook
+# by setting `<key>: ~` in the overrides.
+claude_code_advanced_hooks: >-
+  {{
+    (claude_code_advanced_hooks_default | combine(claude_code_advanced_hooks_overrides, recursive=True))
+    | dict2items | rejectattr('value', 'none') | map(attribute='value') | list
+  }}
 
 # Additional settings (optional)
 claude_code_additional_settings: {}
