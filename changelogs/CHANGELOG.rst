@@ -1,8 +1,29 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.5.0 Release Notes
+CowDogMoo Workstation Ansible Collection 2.6.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.6.0
+======
+
+Added
+-----
+
+- claude_code role - Added a PostToolUse hook that scans the resulting commit message after any commit-creating command and blocks if forbidden content (AI-attribution trailers, branding) landed via paths the PreToolUse hook cannot inspect (`-F file`, stdin pipes, shell variables, editor commits).
+- mise role - Added the goreleaser plugin to the default mise Go tools configuration.
+
+Changed
+-------
+
+- asdf role - Improved asdf plugin install error handling and cache key versioning (#901).
+- claude_code role - Broadened the PreToolUse forbidden-content hook to match any of `git commit/revert/cherry-pick/rebase/merge/tag/notes` and `gh pr/issue/release create/edit/comment` regardless of whether `-m` or `--body` is used. Added the lowercase trailer variant and the noreply@anthropic.com email to the forbidden list.
+- pre-commit - Ensured deterministic ordering and safer ansible-lint execution in advanced hooks (#900).
+
+Fixed
+-----
+
+- claude_code role - Restricted the `-n` flag blocking to only `git commit` commands in advanced hooks so unrelated tools using `-n` are no longer blocked.
 
 v2.5.0
 ======
