@@ -33,6 +33,9 @@ claude_code_simple_hooks: []
 # Advanced hooks - custom Python/shell scripts
 claude_code_advanced_hooks:
   # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
+  # Inspects the literal command string. Catches `git commit -m "...Co-Authored-By: Claude..."`
+  # and `gh pr create --body "...🤖..."` style invocations. Cannot see content passed via
+  # `-F file`, stdin pipes, $variables, or editor commits — Hook 5 handles those post-hoc.
   - event: PreToolUse
     tool: Bash
     type: command
@@ -43,16 +46,29 @@ claude_code_advanced_hooks:
       data = json.load(sys.stdin)
       cmd = data.get('tool_input', {}).get('command', '')
 
-      forbidden = ['🤖', 'Generated with', 'Co-Authored-By: Claude', 'claude.com/claude-code']
+      forbidden = [
+          '🤖',
+          'Generated with',
+          'Co-Authored-By: Claude',
+          'Co-authored-by: Claude',
+          'claude.com/claude-code',
+          'noreply@anthropic.com',
+      ]
 
-      msg = ''
-      if 'git commit' in cmd and '-m' in cmd and any(f in cmd for f in forbidden):
-          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff --staged | fabric --pattern commit'
-      elif 'gh pr create' in cmd and '--body' in cmd and any(f in cmd for f in forbidden):
-          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff main...HEAD | fabric --pattern pr'
+      git_writes = ['git commit', 'git revert', 'git cherry-pick', 'git rebase', 'git merge', 'git tag', 'git notes']
+      gh_writes = ['gh pr create', 'gh pr edit', 'gh pr comment', 'gh issue create', 'gh issue edit', 'gh issue comment', 'gh release create', 'gh release edit']
 
-      if msg:
-          sys.stderr.write(msg + '\n')
+      triggered = next((f for f in forbidden if f in cmd), None)
+      op = next((g for g in git_writes + gh_writes if g in cmd), None)
+
+      if triggered and op:
+          msg = (
+              f'❌ BLOCKED: forbidden content {triggered!r} in {op!r} command.\\n\\n'
+              '✅ Use ONLY fabric output:\\n'
+              '  Commits: fabric_commit  (or: git diff --staged | fabric --pattern commit)\\n'
+              '  PRs:     fabric_pr      (or: git diff main...HEAD | fabric --pattern pr)'
+          )
+          sys.stderr.write(msg + '\\n')
           sys.exit(2)
       sys.exit(0)
       "
@@ -86,13 +102,71 @@ claude_code_advanced_hooks:
       sys.exit(0)
       "
 
-  # Hook 3: Sound notification when Claude finishes a task
+  # Hook 3: Post-commit safety net — catches forbidden content that slipped past Hook 1.
+  # Hook 1 only sees the literal command string, so it misses messages passed via `-F file`,
+  # stdin pipes (`fabric_commit` uses `git commit -F -`), $variables, editor commits, and
+  # squash-merges. This runs after any commit-creating command and inspects the resulting
+  # commit message. If forbidden content landed, it tells Claude to amend before pushing.
+  - event: PostToolUse
+    tool: Bash
+    type: command
+    command: |
+      python3 -c "
+      import json, sys, subprocess, re, os
+
+      data = json.load(sys.stdin)
+      tool_input = data.get('tool_input', {})
+      cmd = tool_input.get('command', '')
+      cwd = data.get('cwd') or tool_input.get('cwd') or os.getcwd()
+
+      commit_patterns = [
+          r'\bgit\s+commit\b',
+          r'\bgit\s+revert\b',
+          r'\bgit\s+cherry-pick\b',
+          r'\bgit\s+rebase\b',
+          r'\bgit\s+merge\b',
+          r'\bfabric_commit\b',
+      ]
+      if not any(re.search(p, cmd) for p in commit_patterns):
+          sys.exit(0)
+
+      try:
+          msg = subprocess.run(
+              ['git', '-C', cwd, 'log', '-1', '--format=%B'],
+              capture_output=True, text=True, timeout=5, check=True,
+          ).stdout
+      except Exception:
+          sys.exit(0)
+
+      forbidden = [
+          '🤖',
+          'Generated with',
+          'Co-Authored-By: Claude',
+          'Co-authored-by: Claude',
+          'claude.com/claude-code',
+          'noreply@anthropic.com',
+      ]
+      hits = [f for f in forbidden if f in msg]
+      if hits:
+          err = (
+              f'❌ Last commit contains forbidden content: {hits!r}\\n\\n'
+              'Amend it now (do NOT push until fixed):\\n'
+              '  git log -1 --format=%B > /tmp/commit_msg\\n'
+              '  # edit /tmp/commit_msg and remove the trailers/branding\\n'
+              '  git commit --amend -F /tmp/commit_msg\\n'
+          )
+          sys.stderr.write(err + '\\n')
+          sys.exit(2)
+      sys.exit(0)
+      "
+
+  # Hook 4: Sound notification when Claude finishes a task
   - event: Stop
     tool: ""
     type: command
     command: "osascript -e 'beep 2'"
 
-  # Hook 4: Sound notification when Claude needs input
+  # Hook 5: Sound notification when Claude needs input
   - event: Notification
     tool: ""
     type: command
