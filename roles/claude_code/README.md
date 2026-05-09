@@ -25,12 +25,14 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_manage_settings` | bool | <code>True</code> | No description |
 | `claude_code_backup_settings` | bool | <code>True</code> | No description |
 | `claude_code_simple_hooks` | list | <code>&#91;&#93;</code> | No description |
-| `claude_code_advanced_hooks` | list | <code>&#91;&#93;</code> | No description |
-| `claude_code_advanced_hooks.0` | dict | <code>{}</code> | No description |
-| `claude_code_advanced_hooks.1` | dict | <code>{}</code> | No description |
-| `claude_code_advanced_hooks.2` | dict | <code>{}</code> | No description |
-| `claude_code_advanced_hooks.3` | dict | <code>{}</code> | No description |
-| `claude_code_advanced_hooks.4` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.forbidden_content` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.dangerous_flags` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.post_commit_check` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.stop_sound` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.notify_sound` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_overrides` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks` | str | <code><multiline value: folded_strip></code> | No description |
 | `claude_code_additional_settings` | dict | <code>{}</code> | No description |
 | `claude_code_manage_mcp_servers` | bool | <code>True</code> | No description |
 | `claude_code_mcp_servers` | list | <code>&#91;&#93;</code> | No description |

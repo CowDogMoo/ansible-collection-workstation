@@ -30,69 +30,9 @@ claude_code_mcp_servers:
     args:
       - stdio
 
-claude_code_advanced_hooks:
-  # Hook 1: Block commits/PRs with forbidden content (emojis/branding)
-  - event: PreToolUse
-    tool: Bash
-    type: command
-    command: |
-      python3 -c "
-      import json, sys
-
-      data = json.load(sys.stdin)
-      cmd = data.get('tool_input', {}).get('command', '')
-
-      forbidden = ['🤖', 'Generated with', 'Co-Authored-By: Claude', 'claude.com/claude-code']
-
-      msg = ''
-      if 'git commit' in cmd and '-m' in cmd and any(f in cmd for f in forbidden):
-          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff --staged | fabric --pattern commit'
-      elif 'gh pr create' in cmd and '--body' in cmd and any(f in cmd for f in forbidden):
-          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff main...HEAD | fabric --pattern pr'
-
-      if msg:
-          sys.stderr.write(msg + '\n')
-          sys.exit(2)
-      sys.exit(0)
-      "
-
-  # Hook 2: Block dangerous git flags that bypass safety checks
-  - event: PreToolUse
-    tool: Bash
-    type: command
-    command: |
-      python3 -c "
-      import json, sys, re
-
-      data = json.load(sys.stdin)
-      cmd = data.get('tool_input', {}).get('command', '')
-
-      if 'git' not in cmd:
-          sys.exit(0)
-
-      # Check for dangerous flags (long flags use simple 'in', short flags use regex)
-      dangerous_long = ['--no-verify', '--no-gpg-sign', '--no-post-rewrite']
-      blocked_flag = next((f for f in dangerous_long if f in cmd), None)
-
-      # Check for -n flag as standalone only in git commit commands
-      if not blocked_flag and 'git commit' in cmd and re.search(r'(^|\s)-n(\s|$)', cmd):
-          blocked_flag = '-n'
-
-      if blocked_flag:
-          msg = f'❌ BLOCKED: Cannot use {blocked_flag} flag.\\n\\nThis flag bypasses important safety checks.\\nFix the underlying issues instead.'
-          sys.stderr.write(msg + '\\n')
-          sys.exit(2)
-      sys.exit(0)
-      "
-
-  # Hook 3: Sound notification when Claude finishes a task
-  - event: Stop
-    tool: ""
-    type: command
+# Override only the bits that differ from the role defaults (see
+# roles/claude_code/defaults/main.yml for the full hook map). Keys are merged
+# recursively into claude_code_advanced_hooks_default.
+claude_code_advanced_hooks_overrides:
+  stop_sound:
     command: "afplay \"$HOME/Jobs Done.mp3\""
-
-  # Hook 4: Sound notification when Claude needs input
-  - event: Notification
-    tool: ""
-    type: command
-    command: "osascript -e 'beep 1'"
