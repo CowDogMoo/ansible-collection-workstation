@@ -92,8 +92,9 @@ package_management_modern_cli_brew_packages:
 # Debian/Ubuntu/Kali apt package names. Only tools that are reliably packaged
 # across currently-supported releases live here; everything else falls through
 # to package_management_modern_cli_binaries below.
-# NOTE: on Debian/Ubuntu the apt binaries are `fdfind` and `batcat` — the
-# zsh_setup role aliases them back to `fd` and `bat`.
+# NOTE: on Debian/Ubuntu the apt binaries are `fdfind` and `batcat` — shell
+# aliases to `fd` and `bat` are out of scope for this role; manage them in
+# your dotfiles.
 package_management_modern_cli_debian_packages:
   - bat
   - duf

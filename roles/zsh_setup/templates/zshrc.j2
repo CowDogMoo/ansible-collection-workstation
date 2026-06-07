@@ -96,25 +96,3 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-
-# Modern CLI tool aliases (managed by cowdogmoo.workstation.zsh_setup).
-# Each alias is guarded so the shell still works if a tool is missing.
-# Debian/Ubuntu ship fd and bat as `fdfind` and `batcat`; shim them back.
-command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1 && alias fd='fdfind'
-command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1 && alias bat='batcat'
-
-if command -v eza >/dev/null 2>&1; then
-  alias ls='eza --group-directories-first'
-  alias ll='eza -lhg --git --group-directories-first'
-  alias la='eza -lahg --git --group-directories-first'
-  alias tree='eza --tree'
-fi
-command -v bat >/dev/null 2>&1 && alias cat='bat -pp'
-command -v dust >/dev/null 2>&1 && alias du='dust'
-command -v duf >/dev/null 2>&1 && alias df='duf'
-command -v procs >/dev/null 2>&1 && alias ps='procs'
-command -v rg >/dev/null 2>&1 && alias grep='rg'
-command -v delta >/dev/null 2>&1 && export GIT_PAGER='delta'
-
-# zoxide: smarter cd. `z <pattern>` jumps; `cd` still works.
-command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
