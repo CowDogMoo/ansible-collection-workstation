@@ -35,6 +35,11 @@ Install mise
 | `mise_settings` | dict | <code>{}</code> | No description |
 | `mise_settings.python` | dict | <code>{}</code> | No description |
 | `mise_settings.ruby` | dict | <code>{}</code> | No description |
+| `mise_install_default_pkg_files` | bool | <code>False</code> | No description |
+| `mise_default_pkg_files` | list | <code>&#91;&#93;</code> | No description |
+| `mise_default_pkg_files.0` | dict | <code>{}</code> | No description |
+| `mise_default_pkg_files.1` | dict | <code>{}</code> | No description |
+| `mise_default_pkg_files.2` | dict | <code>{}</code> | No description |
 | `mise_plugins` | list | <code>&#91;&#93;</code> | No description |
 | `mise_plugins.0` | dict | <code>{}</code> | No description |
 | `mise_plugins.1` | dict | <code>{}</code> | No description |
@@ -61,6 +66,11 @@ Install mise
 
 
 - **Ensure directory exists** (ansible.builtin.file)
+
+### install_default_pkg_files.yml
+
+
+- **Install mise default-package list files** (ansible.builtin.copy)
 
 ### install_libyaml.yml
 
@@ -99,6 +109,7 @@ Install mise
 - **Install mise plugins** (ansible.builtin.shell)
 - **Generate mise config file** (ansible.builtin.template)
 - **Reshim after installations** (ansible.builtin.shell)
+- **Install default-package list files** (ansible.builtin.include_tasks) - Conditional
 
 ### update_shell_profile.yml
 

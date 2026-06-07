@@ -69,6 +69,9 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 | `package_management_redhat_specific_packages.10` | str | <code>zlib-devel</code> | No description |
 | `package_management_install_packages` | str | <code><multiline value: folded></code> | No description |
 | `package_management_install_modern_cli` | bool | <code>False</code> | No description |
+| `package_management_manage_brewfile` | bool | <code>False</code> | No description |
+| `package_management_brewfile_dest` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}/.config/brewfile/Brewfile</code> | No description |
+| `package_management_brewfile_apply` | bool | <code>False</code> | No description |
 | `package_management_modern_cli_brew_packages` | list | <code>&#91;&#93;</code> | No description |
 | `package_management_modern_cli_brew_packages.0` | str | <code>bat</code> | No description |
 | `package_management_modern_cli_brew_packages.1` | str | <code>curlie</code> | No description |
@@ -119,6 +122,13 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 
 ## Tasks
 
+### brewfile.yml
+
+
+- **Ensure Brewfile destination directory exists** (ansible.builtin.file)
+- **Install vendored Brewfile** (ansible.builtin.copy)
+- **Apply Brewfile via brew bundle** (ansible.builtin.command) - Conditional
+
 ### install_github_binary.yml
 
 
@@ -138,6 +148,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 - **Install Kali Linux archive keyring** (ansible.builtin.get_url) - Conditional
 - **Install packages** (ansible.builtin.package) - Conditional
 - **Install modern CLI tools** (ansible.builtin.include_tasks) - Conditional
+- **Manage Brewfile (macOS)** (ansible.builtin.include_tasks) - Conditional
 
 ### modern_cli.yml
 

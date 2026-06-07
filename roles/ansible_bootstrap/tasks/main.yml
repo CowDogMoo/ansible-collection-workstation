@@ -1,0 +1,25 @@
+---
+- name: Ensure ansible state directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ ansible_bootstrap_dir }}"
+    - "{{ ansible_bootstrap_collections_path }}"
+    - "{{ ansible_bootstrap_roles_path }}"
+    - "{{ ansible_bootstrap_fact_cache_path }}"
+
+- name: Ensure remote tmp directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_bootstrap_remote_tmp }}"
+    state: directory
+    mode: "0700"
+
+- name: Render ~/.ansible.cfg
+  ansible.builtin.template:
+    src: ansible.cfg.j2
+    dest: "{{ ansible_bootstrap_user_home }}/.ansible.cfg"
+    mode: "0644"
+    backup: "{{ ansible_bootstrap_backup_cfg }}"
+  when: ansible_bootstrap_manage_cfg | bool

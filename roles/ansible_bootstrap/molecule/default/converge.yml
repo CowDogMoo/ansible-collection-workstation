@@ -1,0 +1,11 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: Include role under test
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.ansible_bootstrap
+      vars:
+        # No vault helper exists in the molecule container; point at a path
+        # that's obviously fake so the cfg renders without us shipping a stub.
+        ansible_bootstrap_vault_password_file: "/tmp/molecule-vault-pass.sh"

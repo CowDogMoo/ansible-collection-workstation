@@ -11,3 +11,9 @@ zsh_setup_plugins:
   - helm
   - kubectl
   - zsh-completions
+
+# Whether the role should write ~/.zshrc when one doesn't exist. Set false on
+# hosts whose ~/.zshrc is owned by a separate dotfiles repo so re-runs don't
+# accidentally fight with it (the existence check below already guards this,
+# but the flag makes intent explicit).
+zsh_setup_manage_zshrc: true
