@@ -1,0 +1,56 @@
+---
+- name: Verify ansible_bootstrap role
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Resolve target home directory
+      ansible.builtin.set_fact:
+        ansible_bootstrap_test_home: "{{ ansible_facts['env']['HOME'] }}"
+
+    - name: Stat managed directories
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ ansible_bootstrap_test_home }}/.ansible"
+        - "{{ ansible_bootstrap_test_home }}/.ansible/collections"
+        - "{{ ansible_bootstrap_test_home }}/.ansible/roles"
+        - "{{ ansible_bootstrap_test_home }}/.ansible/fact_cache"
+        - "/tmp/.ansible/tmp"
+      register: ansible_bootstrap_dirs
+
+    - name: Assert managed directories exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+        quiet: true
+      loop: "{{ ansible_bootstrap_dirs.results }}"
+
+    - name: Stat ~/.ansible.cfg
+      ansible.builtin.stat:
+        path: "{{ ansible_bootstrap_test_home }}/.ansible.cfg"
+      register: ansible_bootstrap_cfg
+
+    - name: Assert ~/.ansible.cfg exists with expected mode
+      ansible.builtin.assert:
+        that:
+          - ansible_bootstrap_cfg.stat.exists
+          - ansible_bootstrap_cfg.stat.mode == "0644"
+
+    - name: Read ~/.ansible.cfg
+      ansible.builtin.slurp:
+        src: "{{ ansible_bootstrap_test_home }}/.ansible.cfg"
+      register: ansible_bootstrap_cfg_body
+
+    - name: Assert ~/.ansible.cfg contains expected templated values
+      ansible.builtin.assert:
+        that:
+          - "'fact_caching = jsonfile' in cfg"
+          - "'collections_path = ' + ansible_bootstrap_test_home + '/.ansible/collections' in cfg"
+          - "'roles_path = ' + ansible_bootstrap_test_home + '/.ansible/roles' in cfg"
+          - "'fact_caching_connection = ' + ansible_bootstrap_test_home + '/.ansible/fact_cache' in cfg"
+          - "'log_folder = ' + ansible_bootstrap_test_home + '/ansible-logs/hosts' in cfg"
+          - "'remote_tmp = /tmp/.ansible/tmp' in cfg"
+        quiet: true
+      vars:
+        cfg: "{{ ansible_bootstrap_cfg_body.content | b64decode }}"

@@ -20,7 +20,7 @@ graph TD
     Plugins --> P1[merge_list_dicts_into_list]
     Plugins --> P2[vnc_pw]
     Collection --> Roles[⚙️ Roles]
-    Roles --> R0[ansible_bootstrap]
+    Roles --> R0[ansible_bootstrap 🧪]
     Roles --> R1[asdf 🧪]
     Roles --> R2[build_cleanup 🧪]
     Roles --> R3[claude_code 🧪]
