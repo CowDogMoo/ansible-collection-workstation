@@ -181,3 +181,7 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ mise_username }}"
   changed_when: false
+
+- name: Install default-package list files
+  ansible.builtin.include_tasks: install_default_pkg_files.yml
+  when: mise_install_default_pkg_files | bool

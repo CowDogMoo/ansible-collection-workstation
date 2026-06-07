@@ -2,7 +2,14 @@
 - name: Workstation
   hosts: all
   roles:
-    # Set up logging first to ensure log directories exist for other roles
+    # Bootstrap ~/.ansible.cfg + ~/.ansible/{collections,roles,fact_cache}
+    # so subsequent roles (and ad-hoc runs) see a configured environment.
+    - name: Bootstrap ansible config and state dirs
+      role: cowdogmoo.workstation.ansible_bootstrap
+      # For debugging
+      # role: ../../roles/ansible_bootstrap
+
+    # Set up logging next to ensure log directories exist for other roles
     - name: Configure logging and log rotation
       role: cowdogmoo.workstation.logging
       # For debugging
@@ -142,6 +149,10 @@
       # role: ../../roles/package_management
       vars:
         package_management_install_modern_cli: true
+        # macOS: place the vendored Brewfile under ~/.config/brewfile/Brewfile.
+        # Set package_management_brewfile_apply: true in host_vars to also run
+        # `brew bundle` against it.
+        package_management_manage_brewfile: true
 
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup

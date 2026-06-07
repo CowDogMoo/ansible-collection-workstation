@@ -34,3 +34,10 @@
   ansible.builtin.include_tasks: modern_cli.yml
   when: package_management_install_modern_cli | bool
   tags: packages
+
+- name: Manage Brewfile (macOS)
+  ansible.builtin.include_tasks: brewfile.yml
+  when:
+    - ansible_facts['os_family'] == 'Darwin'
+    - package_management_manage_brewfile | bool
+  tags: packages

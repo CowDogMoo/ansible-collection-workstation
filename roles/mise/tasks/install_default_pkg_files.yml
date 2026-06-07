@@ -1,0 +1,10 @@
+---
+- name: Install mise default-package list files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ mise_username }}"
+    group: "{{ mise_usergroup }}"
+    mode: "0644"
+  loop: "{{ mise_default_pkg_files }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"

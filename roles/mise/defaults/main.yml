@@ -23,6 +23,18 @@ mise_settings:
   ruby:
     compile: false
 
+# Install the default-package lists that asdf/mise consult when a runtime is
+# first installed (~/.default-golang-pkgs, ~/.default-python-packages,
+# ~/.default-gems). Names match the dotfiles convention.
+mise_install_default_pkg_files: true
+mise_default_pkg_files:
+  - src: default-golang-pkgs
+    dest: "{{ mise_user_home }}/.default-golang-pkgs"
+  - src: default-python-packages
+    dest: "{{ mise_user_home }}/.default-python-packages"
+  - src: default-ruby-gems
+    dest: "{{ mise_user_home }}/.default-gems"
+
 mise_plugins:
   # renovate: datasource=github-tags depName=golang packageName=golang/go extractVersion=^go(?<version>.*)$
   - name: go

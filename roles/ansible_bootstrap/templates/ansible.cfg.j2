@@ -1,0 +1,53 @@
+[defaults]
+# Core settings
+remote_tmp = {{ ansible_bootstrap_remote_tmp }}
+host_key_checking = False
+retry_files_enabled = False
+vault_password_file = {{ ansible_bootstrap_vault_password_file }}
+
+# Paths
+collections_path = {{ ansible_bootstrap_collections_path }}:./collections
+roles_path = {{ ansible_bootstrap_roles_path }}:./roles
+
+# Filter out specific Python loggers from the log file (empty = no filtering)
+log_filter =
+
+# Display settings
+stdout_callback = default
+callback_result_format = yaml
+callback_format_pretty = true
+
+# Performance and profiling callbacks
+callbacks_enabled = community.general.log_plays, ansible.posix.profile_tasks, ansible.posix.timer
+
+# Error handling
+any_errors_fatal = False
+display_failed_stderr = True
+display_ok_hosts = True
+display_skipped_hosts = False
+
+# Fact caching
+gathering = smart
+fact_caching = jsonfile
+fact_caching_connection = {{ ansible_bootstrap_fact_cache_path }}
+fact_caching_timeout = 86400
+
+# Diff output
+always_show_diff = False
+diff_add = green
+diff_remove = red
+diff_lines = 3
+
+[ssh_connection]
+pipelining = True
+control_path = /tmp/ansible-ssh-%%h-%%p-%%r
+
+[callback_counter_enabled]
+enabled = True
+
+[callback_profile_tasks]
+task_output_limit = 20
+sort_order = descending
+
+[callback_log_plays]
+log_folder = {{ ansible_bootstrap_log_folder }}

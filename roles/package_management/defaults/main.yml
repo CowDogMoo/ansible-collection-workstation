@@ -68,6 +68,13 @@ package_management_install_packages: >
 # behavior of roles that already include package_management for base packages.
 package_management_install_modern_cli: false
 
+# Brewfile management (macOS only). When true, places the vendored Brewfile
+# under ~/.config/brewfile/Brewfile. Set package_management_brewfile_apply to
+# also run `brew bundle --file=...` against it.
+package_management_manage_brewfile: false
+package_management_brewfile_dest: "{{ ansible_facts['env']['HOME'] }}/.config/brewfile/Brewfile"
+package_management_brewfile_apply: false
+
 # macOS Homebrew package names — Homebrew carries every tool we want.
 package_management_modern_cli_brew_packages:
   - bat

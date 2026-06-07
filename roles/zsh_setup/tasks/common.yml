@@ -64,10 +64,15 @@
   when: zsh_setup_oh_my_zsh_installed.stat.exists
   changed_when: false
 
+# ~/.zshrc is dotfiles-owned on hosts that run the dotfiles installer first.
+# When dotfiles has already written it the existence check skips the template;
+# on a bare host the template still seeds a working oh-my-zsh shell. Set
+# zsh_setup_manage_zshrc=false to opt out entirely.
 - name: Check if .zshrc exists
   ansible.builtin.stat:
     path: "{{ zsh_setup_user_home }}/.zshrc"
   register: zsh_setup_zshrc_exists
+  when: zsh_setup_manage_zshrc | bool
 
 - name: Ensure .zshrc exists
   ansible.builtin.template:
@@ -76,4 +81,6 @@
     mode: "0644"
   become: true
   become_user: "{{ zsh_setup_username }}"
-  when: not zsh_setup_zshrc_exists.stat.exists
+  when:
+    - zsh_setup_manage_zshrc | bool
+    - not (zsh_setup_zshrc_exists.stat.exists | default(false))

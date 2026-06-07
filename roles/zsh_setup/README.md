@@ -32,6 +32,7 @@ Installs and configures zsh with oh-my-zsh.
 | `zsh_setup_plugins.4` | str | <code>helm</code> | No description |
 | `zsh_setup_plugins.5` | str | <code>kubectl</code> | No description |
 | `zsh_setup_plugins.6` | str | <code>zsh-completions</code> | No description |
+| `zsh_setup_manage_zshrc` | bool | <code>True</code> | No description |
 
 ### Role Variables (main.yml)
 
@@ -54,7 +55,7 @@ Installs and configures zsh with oh-my-zsh.
 - **Set shell executable** (ansible.builtin.set_fact)
 - **Install oh-my-zsh** (ansible.builtin.shell) - Conditional
 - **Remove omz-installer.sh** (ansible.builtin.file) - Conditional
-- **Check if .zshrc exists** (ansible.builtin.stat)
+- **Check if .zshrc exists** (ansible.builtin.stat) - Conditional
 - **Ensure .zshrc exists** (ansible.builtin.template) - Conditional
 
 ### main.yml
