@@ -3,16 +3,26 @@
 # Caller must define package_management_binary as a dict with keys:
 #   name, version, url, archive_binary
 # See package_management_modern_cli_binaries in defaults/main.yml.
+#
+# Idempotency is tracked via a per-(name, version) stamp file rather than the
+# binary's --version output, because some tools (e.g. curlie wraps curl) report
+# an upstream version instead of their own.
 
-- name: "Check installed version of {{ package_management_binary.name }}"
-  ansible.builtin.command: "/usr/local/bin/{{ package_management_binary.name }} --version"
-  register: package_management_binary_installed
-  changed_when: false
-  failed_when: false
+- name: "Check install marker for {{ package_management_binary.name }}"
+  ansible.builtin.stat:
+    path: "/usr/local/share/workstation-cli/{{ package_management_binary.name }}-{{ package_management_binary.version }}.stamp"
+  register: package_management_binary_stamp
 
 - name: "Install GitHub release binary {{ package_management_binary.name }}"
-  when: package_management_binary.version not in (package_management_binary_installed.stdout | default(''))
+  when: not package_management_binary_stamp.stat.exists
   block:
+    - name: "Ensure marker directory exists"
+      become: true
+      ansible.builtin.file:
+        path: "/usr/local/share/workstation-cli"
+        state: directory
+        mode: '0755'
+
     - name: "Create temp extraction directory for {{ package_management_binary.name }}"
       ansible.builtin.tempfile:
         state: directory
@@ -44,9 +54,18 @@
         mode: '0755'
         remote_src: true
 
+    - name: "Write install marker for {{ package_management_binary.name }}"
+      become: true
+      ansible.builtin.file:
+        path: "/usr/local/share/workstation-cli/{{ package_management_binary.name }}-{{ package_management_binary.version }}.stamp"
+        state: touch
+        mode: '0644'
+
   always:
     - name: "Remove temp extraction directory for {{ package_management_binary.name }}"
       ansible.builtin.file:
         path: "{{ package_management_binary_tmpdir.path }}"
         state: absent
-      when: package_management_binary_tmpdir.path is defined
+      when:
+        - package_management_binary_tmpdir is defined
+        - package_management_binary_tmpdir.path is defined

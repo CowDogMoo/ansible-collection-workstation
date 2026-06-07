@@ -122,12 +122,14 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 ### install_github_binary.yml
 
 
-- **Check installed version of {{ package_management_binary.name }}** (ansible.builtin.command)
+- **Check install marker for {{ package_management_binary.name }}** (ansible.builtin.stat)
 - **Install GitHub release binary {{ package_management_binary.name }}** (block) - Conditional
+- **Ensure marker directory exists** (ansible.builtin.file)
 - **Create temp extraction directory for {{ package_management_binary.name }}** (ansible.builtin.tempfile)
 - **Download release archive for {{ package_management_binary.name }}** (ansible.builtin.get_url)
 - **Extract release archive for {{ package_management_binary.name }}** (ansible.builtin.unarchive) - Conditional
 - **Install binary to /usr/local/bin for {{ package_management_binary.name }}** (ansible.builtin.copy)
+- **Write install marker for {{ package_management_binary.name }}** (ansible.builtin.file)
 
 ### main.yml
 
