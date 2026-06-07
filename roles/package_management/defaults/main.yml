@@ -63,3 +63,122 @@ package_management_install_packages: >
   {{ package_management_common_install_packages +
      (package_management_debian_specific_packages if ansible_facts["os_family"] == 'Debian' else []) +
      (package_management_redhat_specific_packages if ansible_facts["os_family"] == 'RedHat' else []) }}
+
+# Modern CLI tools (fd, rg, bat, eza, ...). Opt-in to avoid changing the
+# behavior of roles that already include package_management for base packages.
+package_management_install_modern_cli: false
+
+# macOS Homebrew package names — Homebrew carries every tool we want.
+package_management_modern_cli_brew_packages:
+  - bat
+  - curlie
+  - git-delta
+  - duf
+  - dust
+  - eza
+  - fd
+  - gitui
+  - htmlq
+  - jq
+  - lazygit
+  - procs
+  - ripgrep
+  - sd
+  - tokei
+  - xh
+  - yq
+  - zoxide
+
+# Debian/Ubuntu/Kali apt package names. Only tools that are reliably packaged
+# across currently-supported releases live here; everything else falls through
+# to package_management_modern_cli_binaries below.
+# NOTE: on Debian/Ubuntu the apt binaries are `fdfind` and `batcat` — shell
+# aliases to `fd` and `bat` are out of scope for this role; manage them in
+# your dotfiles.
+package_management_modern_cli_debian_packages:
+  - bat
+  - duf
+  - fd-find
+  - git-delta
+  - jq
+  - ripgrep
+  - zoxide
+
+# RedHat/Fedora/Rocky dnf package names.
+package_management_modern_cli_redhat_packages:
+  - bat
+  - fd-find
+  - git-delta
+  - jq
+  - ripgrep
+  - zoxide
+
+# Architecture suffix used by Rust-toolchain release tarballs
+# (used to build the URLs in package_management_modern_cli_binaries).
+package_management_modern_cli_rust_arch: "{{ 'aarch64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'x86_64' }}"
+
+# GitHub-release binaries installed on Linux when the apt/dnf repos do not
+# carry the tool. Each entry must define:
+#   name:             the final binary name installed under /usr/local/bin
+#   version:          upstream release version (no leading 'v')
+#   url:              direct URL to a release asset (tar.gz or zip)
+#   archive_binary:   path of the binary inside the extracted archive
+#                     (use 'name' itself when the binary sits at the top level)
+# Versions are pinned and renovate-tracked, matching the mise role convention.
+package_management_modern_cli_binaries:
+  # renovate: datasource=github-releases depName=eza packageName=eza-community/eza extractVersion=^v(?<version>.*)$
+  - name: eza
+    version: "0.20.7"
+    url: "https://github.com/eza-community/eza/releases/download/v0.20.7/eza_{{ package_management_modern_cli_rust_arch }}-unknown-linux-gnu.tar.gz"
+    archive_binary: "eza"
+  # renovate: datasource=github-releases depName=dust packageName=bootandy/dust extractVersion=^v(?<version>.*)$
+  - name: dust
+    version: "1.1.2"
+    url: "https://github.com/bootandy/dust/releases/download/v1.1.2/dust-v1.1.2-{{ package_management_modern_cli_rust_arch }}-unknown-linux-gnu.tar.gz"
+    archive_binary: "dust-v1.1.2-{{ package_management_modern_cli_rust_arch }}-unknown-linux-gnu/dust"
+  # renovate: datasource=github-releases depName=procs packageName=dalance/procs extractVersion=^v(?<version>.*)$
+  - name: procs
+    version: "0.14.10"
+    url: "https://github.com/dalance/procs/releases/download/v0.14.10/procs-v0.14.10-{{ package_management_modern_cli_rust_arch }}-linux.zip"
+    archive_binary: "procs"
+  # renovate: datasource=github-releases depName=sd packageName=chmln/sd extractVersion=^v(?<version>.*)$
+  - name: sd
+    version: "1.0.0"
+    url: "https://github.com/chmln/sd/releases/download/v1.0.0/sd-v1.0.0-{{ package_management_modern_cli_rust_arch }}-unknown-linux-musl.tar.gz"
+    archive_binary: "sd-v1.0.0-{{ package_management_modern_cli_rust_arch }}-unknown-linux-musl/sd"
+  # renovate: datasource=github-releases depName=htmlq packageName=mgdm/htmlq extractVersion=^v(?<version>.*)$
+  # NOTE: htmlq only ships an x86_64-linux binary; on aarch64 Linux this 404s.
+  - name: htmlq
+    version: "0.4.0"
+    url: "https://github.com/mgdm/htmlq/releases/download/v0.4.0/htmlq-x86_64-linux.tar.gz"
+    archive_binary: "htmlq"
+  # renovate: datasource=github-releases depName=xh packageName=ducaale/xh extractVersion=^v(?<version>.*)$
+  - name: xh
+    version: "0.24.1"
+    url: "https://github.com/ducaale/xh/releases/download/v0.24.1/xh-v0.24.1-{{ package_management_modern_cli_rust_arch }}-unknown-linux-musl.tar.gz"
+    archive_binary: "xh-v0.24.1-{{ package_management_modern_cli_rust_arch }}-unknown-linux-musl/xh"
+  # renovate: datasource=github-releases depName=curlie packageName=rs/curlie extractVersion=^v(?<version>.*)$
+  - name: curlie
+    version: "1.7.2"
+    url: "https://github.com/rs/curlie/releases/download/v1.7.2/curlie_1.7.2_linux_{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'amd64' }}.tar.gz"
+    archive_binary: "curlie"
+  # renovate: datasource=github-releases depName=lazygit packageName=jesseduffield/lazygit extractVersion=^v(?<version>.*)$
+  - name: lazygit
+    version: "0.45.2"
+    url: "https://github.com/jesseduffield/lazygit/releases/download/v0.45.2/lazygit_0.45.2_Linux_{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'x86_64' }}.tar.gz"
+    archive_binary: "lazygit"
+  # renovate: datasource=github-releases depName=gitui packageName=extrawurst/gitui extractVersion=^v(?<version>.*)$
+  - name: gitui
+    version: "0.27.0"
+    url: "https://github.com/extrawurst/gitui/releases/download/v0.27.0/gitui-linux-{{ 'aarch64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'x86_64' }}.tar.gz"
+    archive_binary: "gitui"
+  # renovate: datasource=github-releases depName=tokei packageName=XAMPPRocky/tokei extractVersion=^v(?<version>.*)$
+  - name: tokei
+    version: "12.1.2"
+    url: "https://github.com/XAMPPRocky/tokei/releases/download/v12.1.2/tokei-{{ package_management_modern_cli_rust_arch }}-unknown-linux-gnu.tar.gz"
+    archive_binary: "tokei"
+  # renovate: datasource=github-releases depName=yq packageName=mikefarah/yq extractVersion=^v(?<version>.*)$
+  - name: yq
+    version: "4.44.3"
+    url: "https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'amd64' }}.tar.gz"
+    archive_binary: "yq_linux_{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'amd64' }}"

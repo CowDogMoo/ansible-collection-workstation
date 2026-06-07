@@ -50,9 +50,18 @@ After `fabric_pr` creates the PR, you MUST verify and fix if needed:
 
 The `fabric_pr` function should handle these automatically, but you must verify and correct any issues in the created PR.
 
-## Search Tools
+## Modern CLI Tools
 
-- Always prefer `rg` (ripgrep) over `grep` when it is installed — it is faster, respects `.gitignore`, and has better defaults. Fall back to `grep` only if `rg` is unavailable.
+Prefer these modern equivalents when installed — they are faster and have better defaults. They are **not** strict drop-ins; verify flags before substituting in scripts.
+
+- `rg` (ripgrep) over `grep` — respects `.gitignore`, parallel
+- `fd` over `find` — simpler positional syntax; for quick lookups, not complex `find -exec` chains
+- `bat -pp` over `cat` — `-pp` disables paging and decoration for tool-friendly output
+- `delta` for diffs — pipe `git diff` / `diff -u` through it for readable output
+- `dust` over `du` — tree-style disk usage
+- `duf` over `df` — clearer filesystem summary
+
+Fall back to the classic tool if the modern one is unavailable.
 
 ## Notes
 

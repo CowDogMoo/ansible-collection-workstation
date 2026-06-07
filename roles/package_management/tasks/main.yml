@@ -29,3 +29,8 @@
   retries: 10
   delay: 5
   tags: packages
+
+- name: Install modern CLI tools
+  ansible.builtin.include_tasks: modern_cli.yml
+  when: package_management_install_modern_cli | bool
+  tags: packages
