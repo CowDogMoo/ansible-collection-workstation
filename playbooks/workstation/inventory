@@ -1,2 +1,0 @@
-[workstation]
-ouroboros ansible_connection=local
