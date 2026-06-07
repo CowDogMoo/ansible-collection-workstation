@@ -1,0 +1,5 @@
+---
+claude_code_additional_settings:
+  skipDangerousModePermissionPrompt: true
+  agentPushNotifEnabled: true
+  inputNeededNotifEnabled: true
