@@ -50,6 +50,10 @@ After `fabric_pr` creates the PR, you MUST verify and fix if needed:
 
 The `fabric_pr` function should handle these automatically, but you must verify and correct any issues in the created PR.
 
+## Search Tools
+
+- Always prefer `rg` (ripgrep) over `grep` when it is installed — it is faster, respects `.gitignore`, and has better defaults. Fall back to `grep` only if `rg` is unavailable.
+
 ## Notes
 
 - `git d main` shows the diff against the main branch
