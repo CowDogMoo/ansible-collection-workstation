@@ -1,0 +1,52 @@
+---
+# Install a single tool from a GitHub release archive.
+# Caller must define package_management_binary as a dict with keys:
+#   name, version, url, archive_binary
+# See package_management_modern_cli_binaries in defaults/main.yml.
+
+- name: "Check installed version of {{ package_management_binary.name }}"
+  ansible.builtin.command: "/usr/local/bin/{{ package_management_binary.name }} --version"
+  register: package_management_binary_installed
+  changed_when: false
+  failed_when: false
+
+- name: "Install GitHub release binary {{ package_management_binary.name }}"
+  when: package_management_binary.version not in (package_management_binary_installed.stdout | default(''))
+  block:
+    - name: "Create temp extraction directory for {{ package_management_binary.name }}"
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: "{{ package_management_binary.name }}"
+      register: package_management_binary_tmpdir
+
+    - name: "Download release archive for {{ package_management_binary.name }}"
+      ansible.builtin.get_url:
+        url: "{{ package_management_binary.url }}"
+        dest: "{{ package_management_binary_tmpdir.path }}/{{ package_management_binary.url | basename }}"
+        mode: '0644'
+      register: package_management_binary_download
+      until: package_management_binary_download is success
+      retries: 3
+      delay: 5
+
+    - name: "Extract release archive for {{ package_management_binary.name }}"
+      ansible.builtin.unarchive:
+        src: "{{ package_management_binary_download.dest }}"
+        dest: "{{ package_management_binary_tmpdir.path }}"
+        remote_src: true
+      when: package_management_binary.url is search('\\.(tar\\.gz|tgz|zip)$')
+
+    - name: "Install binary to /usr/local/bin for {{ package_management_binary.name }}"
+      become: true
+      ansible.builtin.copy:
+        src: "{{ package_management_binary_tmpdir.path }}/{{ package_management_binary.archive_binary }}"
+        dest: "/usr/local/bin/{{ package_management_binary.name }}"
+        mode: '0755'
+        remote_src: true
+
+  always:
+    - name: "Remove temp extraction directory for {{ package_management_binary.name }}"
+      ansible.builtin.file:
+        path: "{{ package_management_binary_tmpdir.path }}"
+        state: absent
+      when: package_management_binary_tmpdir.path is defined
