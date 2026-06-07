@@ -23,10 +23,7 @@ mise_settings:
   ruby:
     compile: false
 
-# Install the default-package lists that asdf/mise consult when a runtime is
-# first installed (~/.default-golang-pkgs, ~/.default-python-packages,
-# ~/.default-gems). Names match the dotfiles convention.
-mise_install_default_pkg_files: true
+mise_install_default_pkg_files: false
 mise_default_pkg_files:
   - src: default-golang-pkgs
     dest: "{{ mise_user_home }}/.default-golang-pkgs"
@@ -43,13 +40,45 @@ mise_plugins:
     packages:
       - name: "go:golang.org/x/tools/cmd/goimports"
         version: "latest"
+      - name: "go:github.com/goreleaser/goreleaser/v2"
+        version: "latest"
+      - name: "go:github.com/magefile/mage"
+        version: "latest"
+      - name: "go:github.com/spf13/cobra-cli"
+        version: "latest"
+      - name: "go:github.com/dolmen-go/goeval"
+        version: "latest"
+      - name: "go:golang.org/x/tools/gopls"
+        version: "latest"
+      - name: "go:golang.org/x/lint/golint"
+        version: "latest"
+      - name: "go:github.com/cweill/gotests/gotests"
+        version: "latest"
+      - name: "go:github.com/fatih/gomodifytags"
+        version: "latest"
+      - name: "go:github.com/josharian/impl"
+        version: "latest"
+      - name: "go:github.com/haya14busa/goplay/cmd/goplay"
+        version: "latest"
+      - name: "go:github.com/go-delve/delve/cmd/dlv"
+        version: "latest"
       - name: "go:github.com/fzipp/gocyclo/cmd/gocyclo"
         version: "latest"
       - name: "go:github.com/golangci/golangci-lint/cmd/golangci-lint"
         version: "latest"
       - name: "go:github.com/go-critic/go-critic/cmd/gocritic"
         version: "latest"
-      - name: "go:github.com/goreleaser/goreleaser/v2"
+      - name: "go:honnef.co/go/tools/cmd/staticcheck"
+        version: "latest"
+      - name: "go:filippo.io/age/cmd/age"
+        version: "latest"
+      - name: "go:github.com/getsops/sops/v3/cmd/sops"
+        version: "latest"
+      - name: "go:github.com/gokcehan/lf"
+        version: "latest"
+      - name: "go:mvdan.cc/sh/v3/cmd/shfmt"
+        version: "latest"
+      - name: "go:github.com/terraform-docs/terraform-docs"
         version: "latest"
   # renovate: datasource=github-tags depName=python packageName=python/cpython extractVersion=^v(?<version>.*)$
   - name: python
@@ -58,10 +87,29 @@ mise_plugins:
     packages:
       - name: "pipx:ansible"
         version: "latest"
+      - name: "pipx:ansible-lint"
+        version: "latest"
+      - name: "pipx:antsibull-changelog"
+        version: "latest"
+      - name: "pipx:aws-consoler"
+        version: "latest"
+      - name: "pipx:checkov"
+        version: "latest"
+      - name: "pipx:mkdocs"
+        version: "latest"
+      - name: "pipx:molecule"
+        version: "latest"
+      - name: "pipx:pre-commit"
+        version: "latest"
+      - name: "pipx:yt-dlp"
+        version: "latest"
   # renovate: datasource=ruby-version depName=ruby packageName=ruby/ruby
   - name: ruby
     version: "4.0.2"
     scope: "global"
+    packages:
+      - name: "gem:mdl"
+        version: "latest"
   # renovate: datasource=github-releases depName=helm packageName=helm/helm extractVersion=^v(?<version>.*)$
   - name: helm
     version: "4.1.3"

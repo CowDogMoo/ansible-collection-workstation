@@ -35,7 +35,7 @@ Install mise
 | `mise_settings` | dict | <code>{}</code> | No description |
 | `mise_settings.python` | dict | <code>{}</code> | No description |
 | `mise_settings.ruby` | dict | <code>{}</code> | No description |
-| `mise_install_default_pkg_files` | bool | <code>True</code> | No description |
+| `mise_install_default_pkg_files` | bool | <code>False</code> | No description |
 | `mise_default_pkg_files` | list | <code>&#91;&#93;</code> | No description |
 | `mise_default_pkg_files.0` | dict | <code>{}</code> | No description |
 | `mise_default_pkg_files.1` | dict | <code>{}</code> | No description |
