@@ -58,8 +58,6 @@ mise_plugins:
         version: "latest"
       - name: "go:github.com/josharian/impl"
         version: "latest"
-      - name: "go:github.com/haya14busa/goplay/cmd/goplay"
-        version: "latest"
       - name: "go:github.com/go-delve/delve/cmd/dlv"
         version: "latest"
       - name: "go:github.com/fzipp/gocyclo/cmd/gocyclo"
