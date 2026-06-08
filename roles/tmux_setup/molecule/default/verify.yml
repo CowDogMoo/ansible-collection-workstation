@@ -31,6 +31,7 @@
           - "'set -g set-clipboard on' in cfg"
           - "'setw -g mode-keys vi' in cfg"
           - "'xclip -selection clipboard' in cfg"
+          - "'source-file -q ' + tmux_setup_local_overrides_path in cfg"
         quiet: true
       vars:
         cfg: "{{ tmux_setup_conf_body.content | b64decode }}"

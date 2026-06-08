@@ -13,3 +13,8 @@ tmux_setup_clipboard_command: "pbcopy"
 
 # Whether to back up an existing ~/.tmux.conf before overwriting it.
 tmux_setup_backup: true
+
+# Per-host overrides file sourced at the end of the managed config. The file
+# does not need to exist — tmux source-file -q is quiet on missing paths.
+# Set to an empty string to omit the source line entirely.
+tmux_setup_local_overrides_path: "{{ tmux_setup_user_home }}/.tmux.conf.local"
