@@ -1,0 +1,24 @@
+---
+git_setup_user_home: "{{ ansible_facts['env']['HOME'] }}"
+
+# Where ~/.gitconfig is written.
+git_setup_gitconfig_path: "{{ git_setup_user_home }}/.gitconfig"
+
+# Path the rendered .gitconfig will [include] for per-host user.name/user.email.
+# The file does not need to exist; git silently ignores missing includes.
+git_setup_userparams_path: "{{ git_setup_user_home }}/.gitconfig.userparams"
+
+# git config core.editor value.
+git_setup_editor: "code --wait"
+
+# git config push.default value.
+git_setup_push_default: "matching"
+
+# git config pull.rebase value.
+git_setup_pull_rebase: true
+
+# Whether to wire `gh` as the credential helper for github.com hosts.
+git_setup_gh_credential_helper: true
+
+# Whether to back up an existing ~/.gitconfig before overwriting it.
+git_setup_backup: true

@@ -1,0 +1,30 @@
+---
+galaxy_info:
+  role_name: shell_functions
+  namespace: cowdogmoo
+  author: Jayson Grace
+  description: Deploys the user's dotfiles shell-function library to ~/.dotfiles
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+    - name: Fedora
+      versions:
+        - all
+    - name: MacOSX
+      versions:
+        - all
+  galaxy_tags:
+    - dotfiles
+    - shell
+    - workstation
+dependencies: []

@@ -154,6 +154,13 @@
         # `brew bundle` against it.
         package_management_manage_brewfile: true
 
+    - name: Deploy shell function libraries to ~/.dotfiles
+      role: cowdogmoo.workstation.shell_functions
+      # For debugging
+      # role: ../../roles/shell_functions
+      # On the maintainer's box, set shell_functions_source_path in host_vars
+      # to rsync from a local checkout instead of cloning from GitHub.
+
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup
       # For debugging
@@ -182,3 +189,13 @@
       role: cowdogmoo.workstation.go_task
       # For debugging
       # role: ../../roles/go_task
+
+    - name: Render ~/.gitconfig
+      role: cowdogmoo.workstation.git_setup
+      # For debugging
+      # role: ../../roles/git_setup
+
+    - name: Render ~/.tmux.conf
+      role: cowdogmoo.workstation.tmux_setup
+      # For debugging
+      # role: ../../roles/tmux_setup

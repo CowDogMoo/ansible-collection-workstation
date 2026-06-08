@@ -1,0 +1,54 @@
+---
+- name: Check whether the local source path exists
+  ansible.builtin.stat:
+    path: "{{ shell_functions_source_path }}"
+  register: shell_functions_local_src
+  when: shell_functions_source_path | length > 0
+
+- name: Decide whether to use the local checkout
+  ansible.builtin.set_fact:
+    shell_functions_use_local: >-
+      {{ (shell_functions_source_path | length > 0)
+         and (shell_functions_local_src.stat.exists | default(false))
+         and (shell_functions_local_src.stat.isdir | default(false)) }}
+
+- name: Ensure destination directory exists
+  ansible.builtin.file:
+    path: "{{ shell_functions_dest }}"
+    state: directory
+    mode: "0755"
+
+- name: Create temp clone directory when no local source is available
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: shell-functions
+  register: shell_functions_tmp_clone
+  when: not shell_functions_use_local
+
+- name: Clone dotfiles repo into temp directory
+  ansible.builtin.git:
+    repo: "{{ shell_functions_repo_url }}"
+    dest: "{{ shell_functions_tmp_clone.path }}"
+    version: "{{ shell_functions_repo_version }}"
+    depth: 1
+  when: not shell_functions_use_local
+
+- name: Resolve effective source directory
+  ansible.builtin.set_fact:
+    shell_functions_effective_src: >-
+      {{ shell_functions_source_path if shell_functions_use_local
+         else shell_functions_tmp_clone.path }}
+
+- name: Copy payload items into destination
+  ansible.builtin.copy:
+    src: "{{ shell_functions_effective_src }}/{{ item }}"
+    dest: "{{ shell_functions_dest }}/"
+    mode: preserve
+    remote_src: true
+  loop: "{{ shell_functions_payload }}"
+
+- name: Remove temp clone
+  ansible.builtin.file:
+    path: "{{ shell_functions_tmp_clone.path }}"
+    state: absent
+  when: not shell_functions_use_local

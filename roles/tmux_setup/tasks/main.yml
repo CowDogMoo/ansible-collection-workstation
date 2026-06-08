@@ -1,0 +1,7 @@
+---
+- name: Render ~/.tmux.conf
+  ansible.builtin.template:
+    src: tmux.conf.j2
+    dest: "{{ tmux_setup_conf_path }}"
+    mode: "0644"
+    backup: "{{ tmux_setup_backup }}"

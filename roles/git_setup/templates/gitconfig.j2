@@ -1,0 +1,49 @@
+# Managed by cowdogmoo.workstation.git_setup. Per-host user.name/user.email
+# belong in {{ git_setup_userparams_path }}, which this file [include]s.
+
+[alias]
+    b      = branch
+    bd     = branch -d
+    cse    = commit -S --edit
+    co     = checkout
+    d      = diff
+    ds     = diff --staged
+    fup    = fetch upstream
+    last   = log -1 HEAD
+    # cgl: Compact Graphical Log
+    cgl    = log --graph --decorate --pretty=oneline --abbrev-commit --all --date=relative --numstat --stat --name-only
+    # gdl: Graphical Detailed Log
+    gdl    = log --graph --decorate --all --pretty=format:'%C(auto)%h %d %s %b'
+    l      = log
+    mse    = merge -S --no-ff --edit
+    pushom = push origin main
+    r      = restore
+    rs     = restore --staged
+    re     = rebase
+    ri     = rebase -i
+    root   = rev-parse --show-toplevel
+    sa     = stash --all
+    sl     = stash list
+    sp     = stash pop
+    s      = status
+    t      = tag
+    unstage= reset HEAD --
+
+[core]
+    editor = {{ git_setup_editor }}
+
+[include]
+    path = {{ git_setup_userparams_path }}
+
+[push]
+    default = {{ git_setup_push_default }}
+
+[pull]
+    rebase = {{ git_setup_pull_rebase | ternary('true', 'false') }}
+{% if git_setup_gh_credential_helper %}
+
+[credential "https://github.com"]
+    helper = !$(command -v gh) auth git-credential
+[credential "https://gist.github.com"]
+    helper = !$(command -v gh) auth git-credential
+{% endif %}

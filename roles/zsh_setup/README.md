@@ -33,6 +33,13 @@ Installs and configures zsh with oh-my-zsh.
 | `zsh_setup_plugins.5` | str | <code>kubectl</code> | No description |
 | `zsh_setup_plugins.6` | str | <code>zsh-completions</code> | No description |
 | `zsh_setup_manage_zshrc` | bool | <code>True</code> | No description |
+| `zsh_setup_backup_zshrc` | bool | <code>True</code> | No description |
+| `zsh_setup_omz_update_frequency` | int | <code>7</code> | No description |
+| `zsh_setup_install_zsh_completions` | bool | <code>True</code> | No description |
+| `zsh_setup_editor` | str | <code>code --wait</code> | No description |
+| `zsh_setup_android_sdk_path` | str | <code>{{ zsh_setup_user_home }}/Library/Android/sdk/platform-tools</code> | No description |
+| `zsh_setup_source_shell_functions` | bool | <code>True</code> | No description |
+| `zsh_setup_shell_functions_dir` | str | <code>{{ zsh_setup_user_home }}/.dotfiles</code> | No description |
 
 ### Role Variables (main.yml)
 
@@ -55,8 +62,7 @@ Installs and configures zsh with oh-my-zsh.
 - **Set shell executable** (ansible.builtin.set_fact)
 - **Install oh-my-zsh** (ansible.builtin.shell) - Conditional
 - **Remove omz-installer.sh** (ansible.builtin.file) - Conditional
-- **Check if .zshrc exists** (ansible.builtin.stat) - Conditional
-- **Ensure .zshrc exists** (ansible.builtin.template) - Conditional
+- **Render ~/.zshrc** (ansible.builtin.template) - Conditional
 
 ### main.yml
 
