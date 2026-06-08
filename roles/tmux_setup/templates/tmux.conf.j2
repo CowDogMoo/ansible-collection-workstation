@@ -84,3 +84,8 @@ bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'printf "\033]52;c;
 # Bind key 'p' to paste the copied text - Ctrl b p
 unbind p
 bind p paste-buffer
+{% if tmux_setup_local_overrides_path | length > 0 %}
+
+# Per-host overrides (not managed by ansible). -q suppresses errors when missing.
+source-file -q {{ tmux_setup_local_overrides_path }}
+{% endif %}

@@ -20,6 +20,7 @@ Renders ~/.tmux.conf with mouse-friendly bindings and OSC52 clipboard
 | `tmux_setup_default_terminal` | str | <code>screen-256color</code> | No description |
 | `tmux_setup_clipboard_command` | str | <code>pbcopy</code> | No description |
 | `tmux_setup_backup` | bool | <code>True</code> | No description |
+| `tmux_setup_local_overrides_path` | str | <code>{{ tmux_setup_user_home }}/.tmux.conf.local</code> | No description |
 
 ## Tasks
 
