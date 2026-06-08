@@ -14,6 +14,10 @@ shell_functions_source_path: ""
 shell_functions_repo_url: "https://github.com/l50/dotfiles.git"
 shell_functions_repo_version: "main"
 
+# Persistent clone location used as the source when no local path is supplied.
+# Idempotent re-runs depend on this being stable across plays.
+shell_functions_cache_path: "{{ shell_functions_user_home }}/.cache/cowdogmoo/shell_functions"
+
 # Files/directories inside the source that the role copies into the destination.
 # These are the shell function libraries plus the small per-tool config trees;
 # everything else in the source repo (CI, tests, install script, etc.) is

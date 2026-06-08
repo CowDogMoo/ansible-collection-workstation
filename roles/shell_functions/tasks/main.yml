@@ -18,26 +18,28 @@
     state: directory
     mode: "0755"
 
-- name: Create temp clone directory when no local source is available
-  ansible.builtin.tempfile:
+- name: Ensure cache parent directory exists
+  ansible.builtin.file:
+    path: "{{ shell_functions_cache_path | dirname }}"
     state: directory
-    suffix: shell-functions
-  register: shell_functions_tmp_clone
+    mode: "0755"
   when: not shell_functions_use_local
 
-- name: Clone dotfiles repo into temp directory
+- name: Maintain cached clone of dotfiles repo
   ansible.builtin.git:
     repo: "{{ shell_functions_repo_url }}"
-    dest: "{{ shell_functions_tmp_clone.path }}"
+    dest: "{{ shell_functions_cache_path }}"
     version: "{{ shell_functions_repo_version }}"
     depth: 1
+    update: true
+    force: false
   when: not shell_functions_use_local
 
 - name: Resolve effective source directory
   ansible.builtin.set_fact:
     shell_functions_effective_src: >-
       {{ shell_functions_source_path if shell_functions_use_local
-         else shell_functions_tmp_clone.path }}
+         else shell_functions_cache_path }}
 
 - name: Copy payload items into destination
   ansible.builtin.copy:
@@ -46,9 +48,3 @@
     mode: preserve
     remote_src: true
   loop: "{{ shell_functions_payload }}"
-
-- name: Remove temp clone
-  ansible.builtin.file:
-    path: "{{ shell_functions_tmp_clone.path }}"
-    state: absent
-  when: not shell_functions_use_local

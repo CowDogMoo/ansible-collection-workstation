@@ -20,6 +20,7 @@ Deploys the user's dotfiles shell-function library to ~/.dotfiles
 | `shell_functions_source_path` | str | <code></code> | No description |
 | `shell_functions_repo_url` | str | <code>https://github.com/l50/dotfiles.git</code> | No description |
 | `shell_functions_repo_version` | str | <code>main</code> | No description |
+| `shell_functions_cache_path` | str | <code>{{ shell_functions_user_home }}/.cache/cowdogmoo/shell_functions</code> | No description |
 | `shell_functions_payload` | list | <code>&#91;&#93;</code> | No description |
 | `shell_functions_payload.0` | str | <code>android.sh</code> | No description |
 | `shell_functions_payload.1` | str | <code>bashutils.sh</code> | No description |
@@ -46,11 +47,10 @@ Deploys the user's dotfiles shell-function library to ~/.dotfiles
 - **Check whether the local source path exists** (ansible.builtin.stat) - Conditional
 - **Decide whether to use the local checkout** (ansible.builtin.set_fact)
 - **Ensure destination directory exists** (ansible.builtin.file)
-- **Create temp clone directory when no local source is available** (ansible.builtin.tempfile) - Conditional
-- **Clone dotfiles repo into temp directory** (ansible.builtin.git) - Conditional
+- **Ensure cache parent directory exists** (ansible.builtin.file) - Conditional
+- **Maintain cached clone of dotfiles repo** (ansible.builtin.git) - Conditional
 - **Resolve effective source directory** (ansible.builtin.set_fact)
 - **Copy payload items into destination** (ansible.builtin.copy)
-- **Remove temp clone** (ansible.builtin.file) - Conditional
 
 ## Example Playbook
 
