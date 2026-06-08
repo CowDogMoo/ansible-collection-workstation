@@ -1,0 +1,7 @@
+---
+- name: Render ~/.gitconfig
+  ansible.builtin.template:
+    src: gitconfig.j2
+    dest: "{{ git_setup_gitconfig_path }}"
+    mode: "0644"
+    backup: "{{ git_setup_backup }}"

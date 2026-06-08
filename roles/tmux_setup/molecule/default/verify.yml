@@ -1,0 +1,36 @@
+---
+- name: Verify tmux_setup role
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Stat ~/.tmux.conf
+      ansible.builtin.stat:
+        path: "{{ tmux_setup_conf_path }}"
+      register: tmux_setup_conf
+
+    - name: Assert ~/.tmux.conf exists with expected mode
+      ansible.builtin.assert:
+        that:
+          - tmux_setup_conf.stat.exists
+          - tmux_setup_conf.stat.mode == "0644"
+
+    - name: Read ~/.tmux.conf
+      ansible.builtin.slurp:
+        src: "{{ tmux_setup_conf_path }}"
+      register: tmux_setup_conf_body
+
+    - name: Assert ~/.tmux.conf contains expected templated content
+      ansible.builtin.assert:
+        that:
+          - "'set -g default-terminal \"screen-256color\"' in cfg"
+          - "'setw -g mouse on' in cfg"
+          - "'set -g set-clipboard on' in cfg"
+          - "'setw -g mode-keys vi' in cfg"
+          - "'xclip -selection clipboard' in cfg"
+        quiet: true
+      vars:
+        cfg: "{{ tmux_setup_conf_body.content | b64decode }}"

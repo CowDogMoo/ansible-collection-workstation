@@ -1,0 +1,34 @@
+---
+- name: Verify shell_functions role
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Stat copied payload items
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ shell_functions_dest }}/bashutils.sh"
+        - "{{ shell_functions_dest }}/common.sh"
+        - "{{ shell_functions_dest }}/files/marker.txt"
+      register: shell_functions_payload_stats
+
+    - name: Assert all payload items were copied
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        quiet: true
+      loop: "{{ shell_functions_payload_stats.results }}"
+
+    - name: Read copied marker file
+      ansible.builtin.slurp:
+        src: "{{ shell_functions_dest }}/files/marker.txt"
+      register: shell_functions_marker
+
+    - name: Assert marker file content matches source
+      ansible.builtin.assert:
+        that:
+          - (shell_functions_marker.content | b64decode) == "molecule marker\n"

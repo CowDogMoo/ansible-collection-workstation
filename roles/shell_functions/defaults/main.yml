@@ -1,0 +1,41 @@
+---
+shell_functions_user_home: "{{ ansible_facts['env']['HOME'] }}"
+
+# Destination the dotfiles content is materialized into. The zsh_setup template
+# sources every *.sh/*.zsh under this path.
+shell_functions_dest: "{{ shell_functions_user_home }}/.dotfiles"
+
+# Optional local checkout to rsync from. When set and the path exists the role
+# uses it instead of cloning the remote repo — useful for the maintainer running
+# from a working tree.
+shell_functions_source_path: ""
+
+# Remote repo cloned when no usable local path is provided.
+shell_functions_repo_url: "https://github.com/l50/dotfiles.git"
+shell_functions_repo_version: "main"
+
+# Persistent clone location used as the source when no local path is supplied.
+# Idempotent re-runs depend on this being stable across plays.
+shell_functions_cache_path: "{{ shell_functions_user_home }}/.cache/cowdogmoo/shell_functions"
+
+# Files/directories inside the source that the role copies into the destination.
+# These are the shell function libraries plus the small per-tool config trees;
+# everything else in the source repo (CI, tests, install script, etc.) is
+# deliberately left behind.
+shell_functions_payload:
+  - android.sh
+  - bashutils.sh
+  - cloud
+  - common.sh
+  - config
+  - containers.sh
+  - docker.sh
+  - files
+  - git.sh
+  - go.sh
+  - k8s.sh
+  - macos.sh
+  - op.sh
+  - python.sh
+  - ssh-agent.sh
+  - terraform.sh

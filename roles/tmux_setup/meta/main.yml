@@ -1,0 +1,30 @@
+---
+galaxy_info:
+  role_name: tmux_setup
+  namespace: cowdogmoo
+  author: Jayson Grace
+  description: Renders ~/.tmux.conf with mouse-friendly bindings and OSC52 clipboard
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+    - name: Fedora
+      versions:
+        - all
+    - name: MacOSX
+      versions:
+        - all
+  galaxy_tags:
+    - tmux
+    - dotfiles
+    - workstation
+dependencies: []

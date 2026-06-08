@@ -12,8 +12,28 @@ zsh_setup_plugins:
   - kubectl
   - zsh-completions
 
-# Whether the role should write ~/.zshrc when one doesn't exist. Set false on
-# hosts whose ~/.zshrc is owned by a separate dotfiles repo so re-runs don't
-# accidentally fight with it (the existence check below already guards this,
-# but the flag makes intent explicit).
+# Whether the role owns ~/.zshrc. When true the file is rewritten every run;
+# set false on hosts whose ~/.zshrc is owned out-of-band so re-runs don't
+# fight with it.
 zsh_setup_manage_zshrc: true
+
+# Whether to back up an existing ~/.zshrc before overwriting it.
+zsh_setup_backup_zshrc: true
+
+# oh-my-zsh auto-update cadence (days).
+zsh_setup_omz_update_frequency: 7
+
+# Whether to install the zsh-completions plugin on first shell startup.
+zsh_setup_install_zsh_completions: true
+
+# Default $EDITOR exported from ~/.zshrc.
+zsh_setup_editor: "code --wait"
+
+# Optional Android SDK platform-tools path. When non-empty and the directory
+# exists at shell start, it's appended to PATH.
+zsh_setup_android_sdk_path: "{{ zsh_setup_user_home }}/Library/Android/sdk/platform-tools"
+
+# Whether to source shell-function libraries from disk. Pair with the
+# cowdogmoo.workstation.shell_functions role to populate the directory.
+zsh_setup_source_shell_functions: true
+zsh_setup_shell_functions_dir: "{{ zsh_setup_user_home }}/.dotfiles"

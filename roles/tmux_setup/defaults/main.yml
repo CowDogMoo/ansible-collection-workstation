@@ -1,0 +1,15 @@
+---
+tmux_setup_user_home: "{{ ansible_facts['env']['HOME'] }}"
+
+# Where ~/.tmux.conf is written.
+tmux_setup_conf_path: "{{ tmux_setup_user_home }}/.tmux.conf"
+
+# Terminal type advertised inside tmux.
+tmux_setup_default_terminal: "screen-256color"
+
+# Command used by `bind C` to copy the pane buffer to the system clipboard.
+# Defaults to macOS pbcopy; override for Linux (e.g. "xclip -selection clipboard").
+tmux_setup_clipboard_command: "pbcopy"
+
+# Whether to back up an existing ~/.tmux.conf before overwriting it.
+tmux_setup_backup: true

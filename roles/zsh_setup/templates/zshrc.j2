@@ -10,13 +10,62 @@ export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="{{ zsh_setup_theme }}"
 plugins=({{ zsh_setup_plugins | join(' ') }})
 
+# Enable zsh completion system
 autoload -U compinit && compinit
+
+# Auto-update oh-my-zsh without prompting
+zstyle ':omz:update' mode auto
+zstyle ':omz:update' frequency {{ zsh_setup_omz_update_frequency }}
 
 # shellcheck source=/dev/null
 source "$ZSH/oh-my-zsh.sh"
 
+{% if zsh_setup_install_zsh_completions %}
+# Install zsh-completions plugin on first run
+if [[ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-completions" ]]; then
+  git clone https://github.com/zsh-users/zsh-completions \
+    "${ZSH_CUSTOM:-${ZSH:-$HOME/.oh-my-zsh}/custom}/plugins/zsh-completions"
+fi
+fpath+=${ZSH_CUSTOM:-${ZSH:-$HOME/.oh-my-zsh}/custom}/plugins/zsh-completions/src
+{% endif %}
+
 # Remove the % from the end of terminal output
 export PROMPT_EOL_MARK=''
+
+export EDITOR={{ zsh_setup_editor | quote }}
+
+{% if zsh_setup_android_sdk_path %}
+# Android SDK platform tools if present
+if [[ -d "{{ zsh_setup_android_sdk_path }}" ]]; then
+    export PATH="$PATH:{{ zsh_setup_android_sdk_path }}"
+fi
+{% endif %}
+
+{% if zsh_setup_source_shell_functions %}
+# Source helper libraries shipped by cowdogmoo.workstation.shell_functions
+if [[ -f "{{ zsh_setup_shell_functions_dir }}/ssh-agent.sh" ]]; then
+    # shellcheck source=/dev/null
+    source "{{ zsh_setup_shell_functions_dir }}/ssh-agent.sh"
+fi
+
+source_dotfiles() {
+    local dir="$1"
+    [[ -d "$dir" ]] || return
+    while IFS= read -r -d '' script; do
+        if [[ -f "$script" && -r "$script" && ! "$script" =~ /files/ ]]; then
+            # shellcheck source=/dev/null
+            source "$script"
+        fi
+    done < <(find "$dir" -type f \( -name "*.sh" -o -name "*.zsh" \) -print0)
+}
+source_dotfiles "{{ zsh_setup_shell_functions_dir }}"
+{% endif %}
+
+# Work-specific configuration
+if [[ -f "$HOME/.work" ]]; then
+    # shellcheck source=/dev/null
+    source "$HOME/.work"
+fi
 
 # direnv hook
 if command -v direnv &> /dev/null; then
