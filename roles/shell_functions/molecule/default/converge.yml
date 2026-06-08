@@ -1,0 +1,32 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    shell_functions_fake_src: /tmp/shell-functions-fake-src
+    shell_functions_test_payload:
+      - bashutils.sh
+      - common.sh
+      - files
+  tasks:
+    - name: Create fake source directory
+      ansible.builtin.file:
+        path: "{{ shell_functions_fake_src }}/files"
+        state: directory
+        mode: "0755"
+
+    - name: Seed fake source files
+      ansible.builtin.copy:
+        dest: "{{ shell_functions_fake_src }}/{{ item.path }}"
+        content: "{{ item.content }}"
+        mode: "0644"
+      loop:
+        - { path: "bashutils.sh", content: "# molecule fake bashutils\n" }
+        - { path: "common.sh", content: "# molecule fake common\n" }
+        - { path: "files/marker.txt", content: "molecule marker\n" }
+
+    - name: Include role under test
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.shell_functions
+      vars:
+        shell_functions_source_path: "{{ shell_functions_fake_src }}"
+        shell_functions_payload: "{{ shell_functions_test_payload }}"

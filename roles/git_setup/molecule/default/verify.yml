@@ -1,0 +1,37 @@
+---
+- name: Verify git_setup role
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Stat ~/.gitconfig
+      ansible.builtin.stat:
+        path: "{{ git_setup_gitconfig_path }}"
+      register: git_setup_gitconfig
+
+    - name: Assert ~/.gitconfig exists with expected mode
+      ansible.builtin.assert:
+        that:
+          - git_setup_gitconfig.stat.exists
+          - git_setup_gitconfig.stat.mode == "0644"
+
+    - name: Read ~/.gitconfig
+      ansible.builtin.slurp:
+        src: "{{ git_setup_gitconfig_path }}"
+      register: git_setup_gitconfig_body
+
+    - name: Assert ~/.gitconfig contains expected templated content
+      ansible.builtin.assert:
+        that:
+          - "'[alias]' in cfg"
+          - "'cgl    = log --graph' in cfg"
+          - "'editor = ' + git_setup_editor in cfg"
+          - "'path = ' + git_setup_userparams_path in cfg"
+          - "'default = ' + git_setup_push_default in cfg"
+          - "'helper = !$(command -v gh) auth git-credential' in cfg"
+        quiet: true
+      vars:
+        cfg: "{{ git_setup_gitconfig_body.content | b64decode }}"

@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: Include role under test
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.tmux_setup
+      vars:
+        # The default uses pbcopy which doesn't exist in Linux molecule images.
+        tmux_setup_clipboard_command: "xclip -selection clipboard"
