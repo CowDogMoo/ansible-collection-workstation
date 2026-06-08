@@ -512,25 +512,44 @@ jobs:
           molecule --version
           molecule list
 
-          if ! MOLECULE_DEBUG=1 molecule test; then
-            echo "Molecule test failed. Collecting debug information..."
+          # Retry up to 3 times when failures look like transient network issues
+          # (github.com flakes downloading release assets, etc.).
+          max_attempts=3
+          attempt=1
+          while true; do
+            echo "=== molecule test attempt ${attempt}/${max_attempts} ==="
+            run_log=$(mktemp)
+            set +e
+            MOLECULE_DEBUG=1 molecule test > "${run_log}" 2>&1
+            rc=$?
+            set -e
+            cat "${run_log}"
+            if [[ ${rc} -eq 0 ]]; then
+              break
+            fi
+            if [[ ${attempt} -ge ${max_attempts} ]] || ! grep -qE "Connection failure|Gateway Time-out|read operation timed out|HTTP Error 5[0-9][0-9]|Could not resolve host|Temporary failure in name resolution" "${run_log}"; then
+              echo "Molecule test failed. Collecting debug information..."
 
-            echo "Docker containers:"
-            docker ps -a
+              echo "Docker containers:"
+              docker ps -a
 
-            echo "=== Docker Container Logs ==="
-            while read -r container; do
-              echo "=== Logs from container ${container} ==="
-              docker logs "${container}" 2>&1
-              echo "=== End logs for container ${container} ==="
-            done < <(docker ps -q)
+              echo "=== Docker Container Logs ==="
+              while read -r container; do
+                echo "=== Logs from container ${container} ==="
+                docker logs "${container}" 2>&1
+                echo "=== End logs for container ${container} ==="
+              done < <(docker ps -q)
 
-            echo "=== Molecule Logs ==="
-            while IFS= read -r -d '' log; do
-              echo "Contents of ${log}:"
-              cat "${log}"
-              echo "=== End of ${log} ==="
-            done < <(find . -name '*.log' -print0)
+              echo "=== Molecule Logs ==="
+              while IFS= read -r -d '' log; do
+                echo "Contents of ${log}:"
+                cat "${log}"
+                echo "=== End of ${log} ==="
+              done < <(find . -name '*.log' -print0)
 
-            exit 1
-          fi
+              exit 1
+            fi
+            echo "Transient network failure detected; retrying in 30s..."
+            sleep 30
+            attempt=$((attempt + 1))
+          done
