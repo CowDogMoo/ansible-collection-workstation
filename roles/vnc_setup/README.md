@@ -3,7 +3,7 @@
 
 ## Description
 
-Provides logging directories and log rotation for other roles.
+Installs and configures TigerVNC servers with per-user passwords and optional systemd units.
 
 ## Requirements
 

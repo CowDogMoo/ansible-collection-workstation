@@ -64,57 +64,32 @@ ansible-galaxy collection build --force && \
 
 ## Roles
 
-### ASDF
+Each role has its own README under `roles/<name>/README.md` with full variable
+docs and examples. The table below is regenerated from each role's
+`meta/main.yml` by `.hooks/gen-arch-diagram.py` on pre-commit — don't edit it
+by hand.
 
-Installs and configures [ASDF](https://asdf-vm.com/), a version manager for
-multiple language runtimes.
+<!-- ROLES TABLE START -->
 
-### Mise
+| Role | Description |
+| ---- | ----------- |
+| [`ansible_bootstrap`](roles/ansible_bootstrap/README.md) | Templates ~/.ansible.cfg and creates the ~/.ansible directory tree (collections, roles, fact_cache) plus the remote tmp directory. |
+| [`asdf`](roles/asdf/README.md) | Install asdf |
+| [`build_cleanup`](roles/build_cleanup/README.md) | General-purpose, parameterized cleanup role for build artifact minimization |
+| [`claude_code`](roles/claude_code/README.md) | Manages Claude Code CLI configuration including hooks and settings |
+| [`fabric`](roles/fabric/README.md) | Installs and configures Daniel Miessler's Fabric AI framework |
+| [`git_setup`](roles/git_setup/README.md) | Renders ~/.gitconfig with aliases and sane defaults |
+| [`go_task`](roles/go_task/README.md) | Installs go-task (Task runner) on Unix-like and Windows systems |
+| [`logging`](roles/logging/README.md) | Provides flexible logging directories and log rotation for any application or service. |
+| [`mise`](roles/mise/README.md) | Install mise |
+| [`package_management`](roles/package_management/README.md) | Manage package installations and cleanups on Debian-based and Red Hat-based systems |
+| [`shell_functions`](roles/shell_functions/README.md) | Deploys the user's dotfiles shell-function library to ~/.dotfiles |
+| [`tmux_setup`](roles/tmux_setup/README.md) | Renders ~/.tmux.conf with mouse-friendly bindings and OSC52 clipboard |
+| [`user_setup`](roles/user_setup/README.md) | Sets up user accounts with optional sudo privileges for Unix-like and Windows systems. |
+| [`vnc_setup`](roles/vnc_setup/README.md) | Installs and configures TigerVNC servers with per-user passwords and optional systemd units. |
+| [`zsh_setup`](roles/zsh_setup/README.md) | Installs and configures zsh with oh-my-zsh. |
 
-Installs and configures [mise](https://mise.jdx.dev/), a polyglot tool version
-manager and dev environment setup tool.
-
-### User Setup
-
-Sets up user accounts with optional sudo privileges on Unix-like systems.
-
-### Package Management
-
-Manages package installations and cleanups on Debian-based and Red Hat-based systems.
-
-### Zsh Setup
-
-Installs and configures Zsh with Oh-My-Zsh, setting up a robust shell environment.
-
-### VNC Setup
-
-Configures VNC services for remote desktop access, including password
-management and service setup.
-
-### Logging
-
-Creates logging directories and log rotation configurations for a provided path.
-
-### Fabric
-
-Installs and configures [Fabric](https://github.com/danielmiessler/fabric),
-an open-source AI framework for augmenting humans using AI.
-
-### Claude Code
-
-Installs and manages [Claude Code](https://docs.claude.com/en/docs/claude-code)
-CLI, including installation, configuration, hooks, and settings.
-
-### Go Task
-
-Installs and configures [go-task](https://taskfile.dev/), a task runner and
-build tool written in Go, providing a simpler alternative to Make.
-
-### Build Cleanup
-
-A general-purpose, parameterized cleanup role for build artifact minimization.
-Optimizes container images and build environments by removing unnecessary files,
-caches, and temporary artifacts.
+<!-- ROLES TABLE END -->
 
 ## Usage
 
