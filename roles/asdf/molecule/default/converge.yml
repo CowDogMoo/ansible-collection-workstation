@@ -25,6 +25,18 @@
         mode: "0755"
       become: true
 
+    - name: Reclaim the cached .asdf mount for the test user
+      # The asdf cache is restored on the host by the runner user, whose UID
+      # does not match the container user's UID, so previously cached
+      # downloads/install dirs are unwritable inside the container.
+      ansible.builtin.file:
+        path: "{{ container_home }}/.asdf"
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        state: directory
+        recurse: true
+      become: true
+
     - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         ansible_env:
