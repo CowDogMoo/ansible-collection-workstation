@@ -2,7 +2,7 @@
 galaxy_info:
   role_name: fabric
   namespace: cowdogmoo
-  author: CowDogMoo
+  author: Jayson Grace
   description: Installs and configures Daniel Miessler's Fabric AI framework
   company: CowDogMoo
   license: MIT

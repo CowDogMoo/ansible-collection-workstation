@@ -3,7 +3,7 @@
 
 ## Description
 
-Install asdf
+Installs the asdf version manager, wires it into the user's shell, and installs configured plugins.
 
 ## Requirements
 
@@ -117,6 +117,6 @@ Install asdf
 
 
 - Ubuntu: all
-- macOS: all
+- MacOSX: all
 - EL: all
 <!-- DOCSIBLE END -->

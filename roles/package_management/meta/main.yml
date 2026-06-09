@@ -29,3 +29,5 @@ galaxy_info:
     - kali
     - redhat
     - centos
+
+dependencies: []

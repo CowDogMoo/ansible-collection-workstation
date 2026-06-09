@@ -1,9 +1,9 @@
 ---
 galaxy_info:
-  role_name: logging
+  role_name: vnc_setup
   author: Jayson Grace
   namespace: cowdogmoo
-  description: Provides logging directories and log rotation for other roles.
+  description: Installs and configures TigerVNC servers with per-user passwords and optional systemd units.
   company: CowDogMoo
   license: MIT
   min_ansible_version: "2.14"
@@ -18,8 +18,11 @@ galaxy_info:
       versions:
         - all
   galaxy_tags:
-    - user
-    - setup
+    - vnc
+    - tigervnc
+    - remote
+    - desktop
+    - workstation
 
 dependencies:
   - role: cowdogmoo.workstation.user_setup

@@ -3,7 +3,7 @@
 
 ## Description
 
-Install mise
+Installs the mise polyglot tool version manager, wires it into the user's shell, and installs configured default tools.
 
 ## Requirements
 
@@ -137,6 +137,6 @@ Install mise
 
 
 - Ubuntu: all
-- macOS: all
+- MacOSX: all
 - EL: all
 <!-- DOCSIBLE END -->

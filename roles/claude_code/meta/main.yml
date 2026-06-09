@@ -2,7 +2,7 @@
 galaxy_info:
   role_name: claude_code
   namespace: cowdogmoo
-  author: CowDogMoo
+  author: Jayson Grace
   description: Manages Claude Code CLI configuration including hooks and settings
   company: CowDogMoo
   license: MIT
