@@ -2,6 +2,9 @@
 
 set -g default-terminal "{{ tmux_setup_default_terminal }}"
 
+# Scrollback buffer size
+set -g history-limit {{ tmux_setup_history_limit }}
+
 # Enable mouse support
 setw -g mouse on
 
