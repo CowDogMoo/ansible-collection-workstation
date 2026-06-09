@@ -231,7 +231,7 @@ General-purpose, parameterized cleanup role for build artifact minimization
 
 ## Author Information
 
-- **Author**: CowDogMoo
+- **Author**: Jayson Grace
 - **Company**: CowDogMoo
 - **License**: MIT
 

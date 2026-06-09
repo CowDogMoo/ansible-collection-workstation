@@ -2,7 +2,7 @@
 galaxy_info:
   role_name: build_cleanup
   namespace: cowdogmoo
-  author: CowDogMoo
+  author: Jayson Grace
   description: General-purpose, parameterized cleanup role for build artifact minimization
   company: CowDogMoo
 

@@ -99,5 +99,8 @@ Installs and configures zsh with oh-my-zsh.
 
 
 - Ubuntu: all
-- macOS: all
+- Debian: all
+- Kali: all
+- EL: all
+- MacOSX: all
 <!-- DOCSIBLE END -->

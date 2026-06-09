@@ -74,14 +74,14 @@ by hand.
 | Role | Description |
 | ---- | ----------- |
 | [`ansible_bootstrap`](roles/ansible_bootstrap/README.md) | Templates ~/.ansible.cfg and creates the ~/.ansible directory tree (collections, roles, fact_cache) plus the remote tmp directory. |
-| [`asdf`](roles/asdf/README.md) | Install asdf |
+| [`asdf`](roles/asdf/README.md) | Installs the asdf version manager, wires it into the user's shell, and installs configured plugins. |
 | [`build_cleanup`](roles/build_cleanup/README.md) | General-purpose, parameterized cleanup role for build artifact minimization |
 | [`claude_code`](roles/claude_code/README.md) | Manages Claude Code CLI configuration including hooks and settings |
 | [`fabric`](roles/fabric/README.md) | Installs and configures Daniel Miessler's Fabric AI framework |
 | [`git_setup`](roles/git_setup/README.md) | Renders ~/.gitconfig with aliases and sane defaults |
 | [`go_task`](roles/go_task/README.md) | Installs go-task (Task runner) on Unix-like and Windows systems |
 | [`logging`](roles/logging/README.md) | Provides flexible logging directories and log rotation for any application or service. |
-| [`mise`](roles/mise/README.md) | Install mise |
+| [`mise`](roles/mise/README.md) | Installs the mise polyglot tool version manager, wires it into the user's shell, and installs configured default tools. |
 | [`package_management`](roles/package_management/README.md) | Manage package installations and cleanups on Debian-based and Red Hat-based systems |
 | [`shell_functions`](roles/shell_functions/README.md) | Deploys the user's dotfiles shell-function library to ~/.dotfiles |
 | [`tmux_setup`](roles/tmux_setup/README.md) | Renders ~/.tmux.conf with mouse-friendly bindings and OSC52 clipboard |

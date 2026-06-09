@@ -125,7 +125,7 @@ Installs and configures Daniel Miessler's Fabric AI framework
 
 ## Author Information
 
-- **Author**: CowDogMoo
+- **Author**: Jayson Grace
 - **Company**: CowDogMoo
 - **License**: MIT
 

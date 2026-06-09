@@ -113,7 +113,7 @@ Manages Claude Code CLI configuration including hooks and settings
 
 ## Author Information
 
-- **Author**: CowDogMoo
+- **Author**: Jayson Grace
 - **Company**: CowDogMoo
 - **License**: MIT
 
