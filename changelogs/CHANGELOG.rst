@@ -1,8 +1,54 @@
 ============================================================
-CowDogMoo Workstation Ansible Collection 2.6.0 Release Notes
+CowDogMoo Workstation Ansible Collection 2.7.0 Release Notes
 ============================================================
 
 .. contents:: Topics
+
+v2.7.0
+======
+
+Release Summary
+---------------
+
+Adds four new dotfile/bootstrap roles (ansible_bootstrap, git_setup,
+shell_functions, tmux_setup), optional modern CLI tool installation,
+per-host tmux config overrides, and refreshes collection and tool
+dependencies.
+
+Added
+-----
+
+- Added Claude Code settings for the bringer-of-despair workstation
+- Added bootstrap support for Ansible config and workstation package defaults (#930)
+- Added optional installation of modern CLI tools (#929)
+- Added per-host tmux config overrides support for customizable terminal multiplexer setups (#934)
+- Added workstation dotfile setup roles for streamlined development environment configuration (#933)
+
+Changed
+-------
+
+- Restructured advanced hooks to use a keyed dict with override support (#905)
+- Updated Go to v1.26.4 (#926, #927)
+- Updated Helm to v4.2.0 (#915)
+- Updated Node.js to v24.16.0 (#921)
+- Updated Packer to v1.15.4 (#928)
+- Updated Python to v3.14.5 (#910)
+- Updated Ruby to v4.0.5 (#918)
+- Updated ``amazon.aws`` collection to v11.3.0 (#914)
+- Updated ``ansible-core`` to v2.21.0 (#919)
+- Updated ``ansible.windows`` collection to v3.6.1 (#924)
+- Updated ``community.general`` collection to v13 (#920)
+- Updated kubectl to v1.36.1 (#909)
+
+Removed
+-------
+
+- Removed broken ``goplay`` from mise defaults (#931)
+
+Fixed
+-----
+
+- Fixed cached ``.asdf`` mount ownership reclamation for the test user in Molecule (#935)
 
 v2.6.0
 ======
