@@ -49,6 +49,8 @@
     # This should come after logging setup to ensure directories exist
     - name: Install and configure Grafana Alloy
       role: grafana.grafana.alloy
+      tags:
+        - alloy
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       vars:
         # Workaround for undefined variable warning on macOS
@@ -168,6 +170,8 @@
 
     - name: Setup Mise Configuration
       role: cowdogmoo.workstation.mise
+      tags:
+        - mise
       # For debugging
       # role: ../../roles/mise
 
@@ -182,11 +186,15 @@
 
     - name: Install and configure Claude Code CLI
       role: cowdogmoo.workstation.claude_code
+      tags:
+        - claude
       # For debugging
       # role: ../../roles/claude_code
 
     - name: Install Go Task
       role: cowdogmoo.workstation.go_task
+      tags:
+        - go_task
       # For debugging
       # role: ../../roles/go_task
 
