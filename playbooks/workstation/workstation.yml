@@ -177,6 +177,8 @@
 
     - name: Install and configure Fabric AI framework
       role: cowdogmoo.workstation.fabric
+      tags:
+        - fabric
       # For debugging
       # role: ../../roles/fabric
       vars:
