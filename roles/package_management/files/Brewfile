@@ -1,5 +1,6 @@
 tap "homebrew/bundle"
 tap "common-fate/granted"
+tap "hashicorp/tap"
 
 ### Cloud Service Providers ###
 # AWS
@@ -23,10 +24,12 @@ brew "grep"
 brew "logrotate"
 brew "netcat"
 brew "p7zip"
+brew "pstree"
 brew "htop"
 brew "tree"
 brew "watch"
 brew "wget"
+brew "zip"
 brew "zsh-completions"
 
 ### Bash Scripting Utilities ###
@@ -37,6 +40,7 @@ brew "bats-core"
 
 ### Cloud Agnostic Infrastructure Management ###
 # These tools are used to build, change, and version infrastructure efficiently and safely across multiple providers
+brew "hashicorp/tap/terraform"
 brew "terraform-docs"
 brew "terragrunt"
 brew "tflint"
@@ -47,6 +51,10 @@ cask "docker"
 brew "helm"
 # Lightweight utility to set up k3s on any local or remote VM
 brew "k3sup"
+# Switch between kubectl contexts/namespaces (also installs kubens)
+brew "kubectx"
+# Kubernetes command-line tool
+brew "kubernetes-cli"
 # Template-free customization of Kubernetes YAML manifests
 brew "kustomize"
 # Create k8s test environments
@@ -86,6 +94,10 @@ brew "jadx"
 ### Compression Utility ###
 # General-purpose data compression software with high compression ratio
 brew "xz"
+
+### macOS System Utilities ###
+# Command-line interface for managing Bluetooth on macOS
+brew "blueutil"
 
 ### Web Browsers ###
 # Various web browsers
