@@ -37,3 +37,6 @@ zsh_setup_android_sdk_path: "{{ zsh_setup_user_home }}/Library/Android/sdk/platf
 # cowdogmoo.workstation.shell_functions role to populate the directory.
 zsh_setup_source_shell_functions: true
 zsh_setup_shell_functions_dir: "{{ zsh_setup_user_home }}/.dotfiles"
+
+# Whether to run the package_management role to install packages
+zsh_setup_install_packages: true

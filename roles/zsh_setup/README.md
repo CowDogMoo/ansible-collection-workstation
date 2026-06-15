@@ -9,11 +9,6 @@ Installs and configures zsh with oh-my-zsh.
 
 - Ansible >= 2.14
 
-## Dependencies
-
-
-- cowdogmoo.workstation.package_management
-
 ## Role Variables
 
 ### Default Variables (main.yml)
@@ -40,6 +35,7 @@ Installs and configures zsh with oh-my-zsh.
 | `zsh_setup_android_sdk_path` | str | <code>{{ zsh_setup_user_home }}/Library/Android/sdk/platform-tools</code> | No description |
 | `zsh_setup_source_shell_functions` | bool | <code>True</code> | No description |
 | `zsh_setup_shell_functions_dir` | str | <code>{{ zsh_setup_user_home }}/.dotfiles</code> | No description |
+| `zsh_setup_install_packages` | bool | <code>True</code> | No description |
 
 ### Role Variables (main.yml)
 
@@ -68,7 +64,7 @@ Installs and configures zsh with oh-my-zsh.
 
 
 - **Include tasks to get user home directory** (ansible.builtin.include_tasks)
-- **Install required packages for zsh** (ansible.builtin.include_role)
+- **Install required packages for zsh** (ansible.builtin.include_role) - Conditional
 - **Ensure user group exists** (ansible.builtin.group) - Conditional
 - **Ensure user exists** (ansible.builtin.user) - Conditional
 - **Include common tasks** (ansible.builtin.include_tasks)
