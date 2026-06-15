@@ -55,7 +55,9 @@ class AnsibleCollectionAnalyzer:
     def _read_role_description(role_dir: Path) -> str:
         """Extract galaxy_info.description from a role's meta/main.yml.
 
-        Uses a simple regex so we don't pull in PyYAML as a hook dep.
+        Uses a simple parser so we don't pull in PyYAML as a hook dep.
+        Handles plain values, quoted values, and YAML block scalars
+        (``|``/``>`` with optional ``-``/``+`` chomping indicators).
         """
         meta_path = role_dir / 'meta' / 'main.yml'
         if not meta_path.exists():
@@ -64,14 +66,40 @@ class AnsibleCollectionAnalyzer:
             text = meta_path.read_text()
         except OSError:
             return ''
-        match = re.search(r'^\s+description:\s*(.+)$', text, re.MULTILINE)
-        if not match:
-            return ''
-        desc = match.group(1).strip()
-        # Strip surrounding quotes if present
-        if len(desc) >= 2 and desc[0] == desc[-1] and desc[0] in ('"', "'"):
-            desc = desc[1:-1]
-        return desc
+
+        lines = text.splitlines()
+        key_re = re.compile(r'^(\s+)description:\s*(.*)$')
+        block_indicator_re = re.compile(r'^[|>][-+]?\s*$')
+
+        for i, line in enumerate(lines):
+            m = key_re.match(line)
+            if not m:
+                continue
+            key_indent = len(m.group(1))
+            value = m.group(2).strip()
+
+            if value and not block_indicator_re.match(value):
+                # Drop trailing inline comments (best-effort) and surrounding quotes.
+                value = re.sub(r'\s+#.*$', '', value).strip()
+                if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+                    value = value[1:-1]
+                return value
+
+            # Block scalar — collect more-indented continuation lines and
+            # join them into a single line (the table cell can't render
+            # newlines, so folding to spaces is the safest representation).
+            parts = []
+            for cont in lines[i + 1:]:
+                if not cont.strip():
+                    continue
+                stripped = cont.lstrip()
+                cont_indent = len(cont) - len(stripped)
+                if cont_indent <= key_indent:
+                    break
+                parts.append(stripped.rstrip())
+            return ' '.join(parts)
+
+        return ''
 
 def generate_mermaid(structure):
     """Generate Mermaid diagram"""
