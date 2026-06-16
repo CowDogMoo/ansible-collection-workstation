@@ -516,9 +516,11 @@ jobs:
           # (github.com flakes downloading release assets, etc.).
           max_attempts=3
           attempt=1
+          run_log=$(mktemp)
+          trap 'rm -f "${run_log}"' EXIT
           while true; do
             echo "=== molecule test attempt ${attempt}/${max_attempts} ==="
-            run_log=$(mktemp)
+            : > "${run_log}"
             set +e
             MOLECULE_DEBUG=1 molecule test > "${run_log}" 2>&1
             rc=$?
