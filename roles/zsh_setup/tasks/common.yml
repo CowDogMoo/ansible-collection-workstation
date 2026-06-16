@@ -3,7 +3,7 @@
   ansible.builtin.include_tasks: "../../mise/tasks/ensure_directory_exists.yml"
   args:
     apply:
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' and zsh_setup_username != ansible_facts['user_id'] }}"
   vars:
     directories:
       - path: "{{ zsh_setup_user_home }}"
@@ -22,7 +22,7 @@
     url: "{{ zsh_setup_omz_install_script_url }}"
     dest: "{{ zsh_setup_user_home }}/omz-installer.sh"
     mode: '0755'
-  become: true
+  become: "{{ zsh_setup_username != ansible_facts['user_id'] }}"
   become_user: "{{ zsh_setup_username }}"
   when: not zsh_setup_oh_my_zsh_installed.stat.exists
 
@@ -51,7 +51,7 @@
   environment:
     HOME: "{{ zsh_setup_user_home }}"
     ZSH: "{{ zsh_setup_user_home }}/.oh-my-zsh"
-  become: true
+  become: "{{ zsh_setup_username != ansible_facts['user_id'] }}"
   become_user: "{{ zsh_setup_username }}"
   when: not zsh_setup_oh_my_zsh_installed.stat.exists
 
@@ -59,7 +59,7 @@
   ansible.builtin.file:
     path: "{{ zsh_setup_user_home }}/omz-installer.sh"
     state: absent
-  become: true
+  become: "{{ zsh_setup_username != ansible_facts['user_id'] }}"
   become_user: "{{ zsh_setup_username }}"
   when: zsh_setup_oh_my_zsh_installed.stat.exists
   changed_when: false
@@ -71,6 +71,6 @@
     dest: "{{ zsh_setup_user_home }}/.zshrc"
     mode: "0644"
     backup: "{{ zsh_setup_backup_zshrc }}"
-  become: true
+  become: "{{ zsh_setup_username != ansible_facts['user_id'] }}"
   become_user: "{{ zsh_setup_username }}"
   when: zsh_setup_manage_zshrc | bool

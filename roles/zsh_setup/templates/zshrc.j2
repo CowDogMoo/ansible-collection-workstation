@@ -53,6 +53,10 @@ source_dotfiles() {
     [[ -d "$dir" ]] || return
     while IFS= read -r -d '' script; do
         if [[ -f "$script" && -r "$script" && ! "$script" =~ /files/ ]]; then
+            # Skip macOS specific scripts on non-Darwin platforms
+            if [[ "$script" =~ "macos.sh$" && "$(uname)" != "Darwin" ]]; then
+                continue
+            fi
             # shellcheck source=/dev/null
             source "$script"
         fi

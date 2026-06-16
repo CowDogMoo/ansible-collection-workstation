@@ -7,6 +7,7 @@
     name: cowdogmoo.workstation.package_management
   vars:
     package_management_common_install_packages: "{{ zsh_setup_common_install_packages }}"
+  when: zsh_setup_install_packages | default(true) | bool
 
 - name: Ensure user group exists
   ansible.builtin.group:
