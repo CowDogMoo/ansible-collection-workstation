@@ -1,0 +1,12 @@
+group:
+  repos: |
+    l50/ansible-collection-arsenal
+    l50/ansible-collection-bulwark
+  files:
+    - source: .hooks/
+      dest: .hooks/
+      deleteOrphaned: true
+    - source: Taskfile.yaml
+      dest: Taskfile.yaml
+    - source: .editorconfig
+      dest: .editorconfig

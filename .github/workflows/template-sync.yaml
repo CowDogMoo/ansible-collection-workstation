@@ -1,77 +1,52 @@
 ---
 name: Template Sync
 on:
-  # checkov:skip=CKV_GHA_7: "Workflow dispatch inputs are required for manual debugging and configuration"
+  # checkov:skip=CKV_GHA_7: "Workflow dispatch inputs are required for manual debugging"
   workflow_dispatch:
-    inputs:
-      dryRun:
-        description: Dry Run
-        default: "false"
-        required: false
-      logLevel:
-        description: Log Level
-        default: "debug"
-        required: false
-
-  schedule:
-    # Run on the 1st of every month at 00:00 UTC
-    - cron: "0 0 1 * *"
-
   push:
     branches: ["main"]
     paths:
-      - '.github/**'
       - '.hooks/**'
-      - '.pre-commit-config.yaml'
-      - '.mdlrc'
-      - '.editorconfig'
       - 'Taskfile.yaml'
+      - '.editorconfig'
+      - '.github/sync.yml'
 
 concurrency:
   cancel-in-progress: true
-  group: ${{ github.workflow }}-${{ github.run_number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
-  template-sync:
+  sync:
+    name: Sync infrastructure files to consumer repos
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Token
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Generate downstream token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
         with:
-          app-id: "${{ secrets.BOT_APP_ID }}"
-          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
-          owner: "${{ github.repository_owner }}"
+          app-id: ${{ secrets.L50_BOT_APP_ID }}
+          private-key: ${{ secrets.L50_BOT_APP_PRIVATE_KEY }}
+          owner: l50
+          repositories: |
+            ansible-collection-arsenal
+            ansible-collection-bulwark
 
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Sync files
+        uses: step-security/repo-file-sync-action@25ed98101e502f84b885ff5883bb0b0c14a7b87f # v1.21.3
         with:
-          token: "${{ steps.app-token.outputs.token }}"
+          GH_INSTALLATION_TOKEN: ${{ steps.app-token.outputs.token }}
+          GIT_EMAIL: github-actions[bot]@users.noreply.github.com
+          GIT_USERNAME: github-actions[bot]
+          COMMIT_PREFIX: "chore:"
+          COMMIT_EACH_FILE: false
+          PR_LABELS: sync,template,ansible
+          PR_BODY: |
+            Automated sync of shared infrastructure files from `CowDogMoo/ansible-collection-workstation`.
 
-      - name: Template Sync
-        uses: AndreasAugustin/actions-template-sync@8a0f668b83c32a0f673353086d74f12b8853d4f5 # v2.5.3
-        with:
-          source_gh_token: ${{ steps.app-token.outputs.token }}
-          target_gh_token: ${{ steps.app-token.outputs.token }}
-          git_user_name: github-actions[bot]
-          git_user_email: github-actions[bot]@users.noreply.github.com
-          pr_title: "chore: sync infrastructure files with ansible collection template"
-          pr_labels: sync,template,ansible
-          pr_body: |
-            🤖 A new version of the ansible collection template files is available.
-
-            This PR was automatically created to sync the following:
-            - GitHub Actions workflows
-            - Pre-commit hooks and configurations
-            - Ansible-lint configurations
-            - Task definitions
-            - Editor configs and linter rules
-
-            Please review the changes carefully before merging.
-          source_repo_path: CowDogMoo/ansible-collection-workstation
-          steps: "prechecks,pull,commit,push,pr"
-          upstream_branch: main
+            Workflow files and `.pre-commit-config.yaml` are owned by Renovate and excluded here.
