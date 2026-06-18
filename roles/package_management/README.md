@@ -70,6 +70,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 | `package_management_install_packages` | str | <code><multiline value: folded></code> | No description |
 | `package_management_install_modern_cli` | bool | <code>False</code> | No description |
 | `package_management_manage_brewfile` | bool | <code>False</code> | No description |
+| `package_management_brewfile_src` | str | <code></code> | No description |
 | `package_management_brewfile_dest` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}/.config/brewfile/Brewfile</code> | No description |
 | `package_management_brewfile_apply` | bool | <code>False</code> | No description |
 | `package_management_modern_cli_brew_packages` | list | <code>&#91;&#93;</code> | No description |
@@ -126,7 +127,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 
 
 - **Ensure Brewfile destination directory exists** (ansible.builtin.file)
-- **Install vendored Brewfile** (ansible.builtin.copy)
+- **Install Brewfile** (ansible.builtin.copy) - Conditional
 - **Apply Brewfile via brew bundle** (ansible.builtin.command) - Conditional
 
 ### install_github_binary.yml

@@ -23,7 +23,9 @@
     path: "{{ shell_functions_cache_path | dirname }}"
     state: directory
     mode: "0755"
-  when: not shell_functions_use_local
+  when:
+    - not shell_functions_use_local
+    - shell_functions_repo_url | length > 0
 
 - name: Maintain cached clone of dotfiles repo
   ansible.builtin.git:
@@ -33,7 +35,9 @@
     depth: 1
     update: true
     force: false
-  when: not shell_functions_use_local
+  when:
+    - not shell_functions_use_local
+    - shell_functions_repo_url | length > 0
 
 - name: Resolve effective source directory
   ansible.builtin.set_fact:

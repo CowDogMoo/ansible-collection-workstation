@@ -8,6 +8,12 @@
       role: cowdogmoo.workstation.ansible_bootstrap
       # For debugging
       # role: ../../roles/ansible_bootstrap
+      vars:
+        # The vault password helper is environment-specific (this one reads the
+        # password from 1Password), so it lives with the playbook rather than in
+        # the role. The role installs it at ansible_bootstrap_vault_password_file
+        # and points ~/.ansible.cfg there.
+        ansible_bootstrap_vault_helper_src: "{{ playbook_dir }}/files/vault-pass.sh"
 
     # Set up logging next to ensure log directories exist for other roles
     - name: Configure logging and log rotation
@@ -151,10 +157,12 @@
       # role: ../../roles/package_management
       vars:
         package_management_install_modern_cli: true
-        # macOS: place the vendored Brewfile under ~/.config/brewfile/Brewfile.
-        # Set package_management_brewfile_apply: true in host_vars to also run
-        # `brew bundle` against it.
+        # macOS: place this playbook's Brewfile under ~/.config/brewfile/Brewfile.
+        # The Brewfile is a personal app list, so it lives with the playbook
+        # rather than in the role. Set package_management_brewfile_apply: true in
+        # host_vars to also run `brew bundle` against it.
         package_management_manage_brewfile: true
+        package_management_brewfile_src: "{{ playbook_dir }}/files/Brewfile"
 
     - name: Deploy shell function libraries to ~/.dotfiles
       role: cowdogmoo.workstation.shell_functions
@@ -162,6 +170,27 @@
       # role: ../../roles/shell_functions
       # On the maintainer's box, set shell_functions_source_path in host_vars
       # to rsync from a local checkout instead of cloning from GitHub.
+      vars:
+        # The dotfiles source and the set of files to materialize are personal,
+        # so they live with the playbook rather than in the role.
+        shell_functions_repo_url: "https://github.com/l50/dotfiles.git"
+        shell_functions_payload:
+          - android.sh
+          - bashutils.sh
+          - cloud
+          - common.sh
+          - config
+          - containers.sh
+          - docker.sh
+          - files
+          - git.sh
+          - go.sh
+          - k8s.sh
+          - macos.sh
+          - op.sh
+          - python.sh
+          - ssh-agent.sh
+          - terraform.sh
 
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup

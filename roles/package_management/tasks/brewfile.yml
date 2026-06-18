@@ -5,15 +5,18 @@
     state: directory
     mode: "0755"
 
-- name: Install vendored Brewfile
+- name: Install Brewfile
   ansible.builtin.copy:
-    src: Brewfile
+    src: "{{ package_management_brewfile_src }}"
     dest: "{{ package_management_brewfile_dest }}"
     mode: "0644"
+  when: package_management_brewfile_src | length > 0
 
 - name: Apply Brewfile via brew bundle
   ansible.builtin.command:
     cmd: "brew bundle --file={{ package_management_brewfile_dest }}"
   register: package_management_brew_bundle
   changed_when: "'Installing' in package_management_brew_bundle.stdout or 'Upgrading' in package_management_brew_bundle.stdout"
-  when: package_management_brewfile_apply | bool
+  when:
+    - package_management_brewfile_apply | bool
+    - package_management_brewfile_src | length > 0

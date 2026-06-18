@@ -11,13 +11,16 @@ ansible_bootstrap_remote_tmp: "/tmp/.ansible/tmp"
 # Per-host log directory used by the community.general.log_plays callback.
 ansible_bootstrap_log_folder: "{{ ansible_bootstrap_user_home }}/ansible-logs/hosts"
 
-# Vault password helper. The role installs its bundled helper here and points
-# ~/.ansible.cfg at it. Override the path (and set ansible_bootstrap_install_vault_helper
-# to false) if you keep the helper elsewhere.
+# Path ~/.ansible.cfg points its vault_password_file at. The role only writes
+# the cfg reference; it does not ship a helper script of its own (a vault helper
+# is environment-specific — e.g. it might shell out to 1Password, pass, or a KMS).
 ansible_bootstrap_vault_password_file: "{{ ansible_bootstrap_dir }}/vault-pass.sh"
 
-# Whether to install the bundled vault password helper at the path above.
-ansible_bootstrap_install_vault_helper: true
+# Optional path (on the control node) to a vault password helper to install at
+# ansible_bootstrap_vault_password_file. Leave empty to skip installing one and
+# only render the cfg reference. Supply your own helper from the calling
+# playbook, e.g. ansible_bootstrap_vault_helper_src: "{{ playbook_dir }}/files/vault-pass.sh".
+ansible_bootstrap_vault_helper_src: ""
 
 # Whether to write ~/.ansible.cfg. Set false to keep dirs but skip the cfg.
 ansible_bootstrap_manage_cfg: true

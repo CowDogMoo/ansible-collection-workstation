@@ -18,10 +18,10 @@
 
 - name: Install vault password helper
   ansible.builtin.copy:
-    src: vault-pass.sh
+    src: "{{ ansible_bootstrap_vault_helper_src }}"
     dest: "{{ ansible_bootstrap_vault_password_file }}"
     mode: "0700"
-  when: ansible_bootstrap_install_vault_helper | bool
+  when: ansible_bootstrap_vault_helper_src | length > 0
 
 - name: Render ~/.ansible.cfg
   ansible.builtin.template:
