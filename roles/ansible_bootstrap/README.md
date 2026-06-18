@@ -23,7 +23,7 @@ Templates ~/.ansible.cfg and creates the ~/.ansible directory tree (collections,
 | `ansible_bootstrap_remote_tmp` | str | <code>/tmp/.ansible/tmp</code> | No description |
 | `ansible_bootstrap_log_folder` | str | <code>{{ ansible_bootstrap_user_home }}/ansible-logs/hosts</code> | No description |
 | `ansible_bootstrap_vault_password_file` | str | <code>{{ ansible_bootstrap_dir }}/vault-pass.sh</code> | No description |
-| `ansible_bootstrap_install_vault_helper` | bool | <code>True</code> | No description |
+| `ansible_bootstrap_vault_helper_src` | str | <code></code> | No description |
 | `ansible_bootstrap_manage_cfg` | bool | <code>True</code> | No description |
 | `ansible_bootstrap_backup_cfg` | bool | <code>True</code> | No description |
 

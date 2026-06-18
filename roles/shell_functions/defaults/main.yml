@@ -10,8 +10,11 @@ shell_functions_dest: "{{ shell_functions_user_home }}/.dotfiles"
 # from a working tree.
 shell_functions_source_path: ""
 
-# Remote repo cloned when no usable local path is provided.
-shell_functions_repo_url: "https://github.com/l50/dotfiles.git"
+# Remote repo cloned when no usable local path is provided. The role ships no
+# default repo — the dotfiles source is personal, so supply it from the calling
+# playbook (e.g. shell_functions_repo_url: "https://github.com/you/dotfiles.git").
+# When both this and shell_functions_source_path are empty the role is a no-op.
+shell_functions_repo_url: ""
 shell_functions_repo_version: "main"
 
 # Persistent clone location used as the source when no local path is supplied.
@@ -19,23 +22,7 @@ shell_functions_repo_version: "main"
 shell_functions_cache_path: "{{ shell_functions_user_home }}/.cache/cowdogmoo/shell_functions"
 
 # Files/directories inside the source that the role copies into the destination.
-# These are the shell function libraries plus the small per-tool config trees;
-# everything else in the source repo (CI, tests, install script, etc.) is
-# deliberately left behind.
-shell_functions_payload:
-  - android.sh
-  - bashutils.sh
-  - cloud
-  - common.sh
-  - config
-  - containers.sh
-  - docker.sh
-  - files
-  - git.sh
-  - go.sh
-  - k8s.sh
-  - macos.sh
-  - op.sh
-  - python.sh
-  - ssh-agent.sh
-  - terraform.sh
+# Which files exist is specific to the source repo, so the role ships an empty
+# list — set this in the calling playbook to the items you want materialized
+# (everything else in the source repo is deliberately left behind).
+shell_functions_payload: []
