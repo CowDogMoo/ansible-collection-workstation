@@ -1,0 +1,22 @@
+---
+- name: Check if already installed
+  ansible.builtin.command: which agy
+  register: antigravity_check
+  changed_when: false
+  failed_when: false
+
+- name: Print manual install notice
+  ansible.builtin.debug:
+    msg: "Please install agy manually on Windows."
+  when: antigravity_check.rc != 0
+
+- name: Verify installation
+  ansible.builtin.command: agy --version
+  register: antigravity_version
+  changed_when: false
+  failed_when: false
+
+- name: Display version
+  ansible.builtin.debug:
+    msg: "Antigravity installed: {{ antigravity_version.stdout }}"
+  when: antigravity_version.rc == 0

@@ -1,0 +1,23 @@
+---
+- name: Check if already installed
+  ansible.builtin.command: which agy
+  register: antigravity_check
+  changed_when: false
+  failed_when: false
+
+- name: Install via Homebrew
+  community.general.homebrew:
+    name: agy
+    state: present
+  when: antigravity_check.rc != 0
+
+- name: Verify installation
+  ansible.builtin.command: agy --version
+  register: antigravity_version
+  changed_when: false
+  failed_when: false
+
+- name: Display version
+  ansible.builtin.debug:
+    msg: "Antigravity installed: {{ antigravity_version.stdout }}"
+  when: antigravity_version.rc == 0

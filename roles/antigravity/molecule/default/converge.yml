@@ -1,0 +1,47 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Include role under test (first run)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.antigravity
+      vars:
+        antigravity_username: "{{ container_user }}"
+        antigravity_user_home: "{{ container_home }}"
+        antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_plugins:
+          - name: chrome-devtools
+            target: chrome-devtools-mcp@latest
+            state: present
+
+    - name: Include role under test (second run - idempotency test)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.antigravity
+      vars:
+        antigravity_username: "{{ container_user }}"
+        antigravity_user_home: "{{ container_home }}"
+        antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_plugins:
+          - name: chrome-devtools
+            target: chrome-devtools-mcp@latest
+            state: present
+      register: antigravity_second_run
+
+    - name: Assert second run is idempotent
+      ansible.builtin.assert:
+        that:
+          - antigravity_second_run is not changed
+        fail_msg: "Second run should not report changes (idempotency failed)"
+        success_msg: "Role is idempotent"

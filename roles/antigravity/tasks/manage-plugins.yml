@@ -1,0 +1,21 @@
+---
+# tasks/manage-plugins.yml
+
+- name: Get list of currently installed plugins
+  ansible.builtin.command:
+    cmd: agy plugin list
+  environment:
+    HOME: "{{ antigravity_user_home }}"
+    PATH: "{{ antigravity_path }}"
+  register: antigravity_plugin_list
+  changed_when: false
+  failed_when: false
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ antigravity_username }}"
+
+- name: Manage plugins
+  ansible.builtin.include_tasks: manage-plugin.yml
+  loop: "{{ antigravity_plugins }}"
+  loop_control:
+    loop_var: plugin
+    label: "{{ plugin.name }}"

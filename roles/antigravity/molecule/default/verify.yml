@@ -1,0 +1,130 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Set home directory and config facts
+      ansible.builtin.set_fact:
+        antigravity_user_home: "{{ container_home }}"
+        antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_username: "{{ container_user }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Check if agy binary is in PATH
+      ansible.builtin.command: which agy
+      environment:
+        PATH: "{{ antigravity_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: antigravity_which_check
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Debug agy location
+      ansible.builtin.debug:
+        msg: "Agy found at: {{ antigravity_which_check.stdout }}"
+      when: antigravity_which_check.rc == 0
+
+    - name: Assert agy is installed
+      ansible.builtin.assert:
+        that:
+          - antigravity_which_check.rc == 0
+          - antigravity_which_check.stdout | length > 0
+        fail_msg: "Antigravity CLI is not installed or not in PATH"
+        success_msg: "Antigravity CLI is installed at: {{ antigravity_which_check.stdout }}"
+
+    - name: Test agy command
+      ansible.builtin.command: agy --version
+      environment:
+        PATH: "{{ antigravity_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: antigravity_version_output
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert agy command works
+      ansible.builtin.assert:
+        that:
+          - antigravity_version_output.rc == 0
+          - >
+            ('agy' in antigravity_version_output.stdout.lower()) or
+            (antigravity_version_output.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+') is not none)
+        fail_msg: "Agy command failed or version output not recognized. Output was: {{ antigravity_version_output.stdout }}"
+        success_msg: "Agy command works, version: {{ antigravity_version_output.stdout }}"
+
+    - name: Check if agy config directory exists
+      ansible.builtin.stat:
+        path: "{{ antigravity_config_dir }}"
+      register: antigravity_config_dir_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert agy config directory exists
+      ansible.builtin.assert:
+        that:
+          - antigravity_config_dir_stat.stat.exists
+          - antigravity_config_dir_stat.stat.isdir
+          - antigravity_config_dir_stat.stat.mode == '0755'
+        fail_msg: "Agy config directory does not exist or has wrong permissions"
+        success_msg: "Agy config directory exists with correct permissions"
+
+    - name: Check if AGENTS.md exists
+      ansible.builtin.stat:
+        path: "{{ antigravity_config_dir }}/AGENTS.md"
+      register: antigravity_agy_md_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert AGENTS.md exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - antigravity_agy_md_stat.stat.exists
+          - antigravity_agy_md_stat.stat.mode == '0644'
+          - antigravity_agy_md_stat.stat.pw_name == container_user
+        fail_msg: "AGENTS.md does not exist or has wrong permissions/ownership"
+        success_msg: "AGENTS.md exists with correct permissions and ownership"
+
+    - name: Read AGENTS.md content
+      ansible.builtin.slurp:
+        path: "{{ antigravity_config_dir }}/AGENTS.md"
+      register: antigravity_agy_md_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert AGENTS.md contains expected content
+      ansible.builtin.assert:
+        that:
+          - "'Global Antigravity Instructions' in (antigravity_agy_md_content['content'] | b64decode)"
+          - "'CRITICAL: .gemini' in (antigravity_agy_md_content['content'] | b64decode)"
+        fail_msg: "AGENTS.md does not contain expected instructions"
+        success_msg: "AGENTS.md contains all expected global instructions"
+
+    - name: Verify plugin list after side_effect removal  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.command:
+        cmd: agy plugin list
+      environment:
+        HOME: "{{ antigravity_user_home }}"
+        PATH: "{{ antigravity_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: plugin_list_result
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Display plugin list output for debugging
+      ansible.builtin.debug:
+        var: plugin_list_result.stdout
+
+    - name: Assert plugin was removed by side_effect
+      ansible.builtin.assert:
+        that:
+          - "'chrome-devtools' not in plugin_list_result.stdout"
+        fail_msg: "Plugin 'chrome-devtools' should have been removed by side_effect: {{ plugin_list_result.stdout }}"
+        success_msg: "Plugin 'chrome-devtools' was successfully removed (state: absent verified)"
