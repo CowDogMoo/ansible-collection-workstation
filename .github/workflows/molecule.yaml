@@ -119,7 +119,7 @@ jobs:
             MATRIX_JSON="["
             FIRST=true
             for role_path in roles/*; do
-              if [ -d "$role_path" ]; then
+              if [ -d "$role_path" ] && [ -d "$role_path/molecule" ]; then
                 role=$(basename "$role_path")
                 if [[ "$FIRST" == "true" ]]; then
                   FIRST=false
@@ -130,7 +130,7 @@ jobs:
               fi
             done
             for pb_path in playbooks/*; do
-              if [ -d "$pb_path" ]; then
+              if [ -d "$pb_path" ] && [ -d "$pb_path/molecule" ]; then
                 pb=$(basename "$pb_path")
                 if [[ "$FIRST" == "true" ]]; then
                   FIRST=false
@@ -161,7 +161,7 @@ jobs:
 
             # Always add all playbooks
             for pb_path in playbooks/*; do
-              if [ -d "$pb_path" ]; then
+              if [ -d "$pb_path" ] && [ -d "$pb_path/molecule" ]; then
                 pb=$(basename "$pb_path")
                 if [[ "$FIRST" == "true" ]]; then
                   FIRST=false
