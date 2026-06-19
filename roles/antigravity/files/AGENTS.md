@@ -1,4 +1,4 @@
-# Global Agy Instructions
+# Global Antigravity Instructions
 
 ## CRITICAL: .gemini Directory
 

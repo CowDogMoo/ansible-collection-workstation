@@ -62,3 +62,23 @@
         state: present
         update_cache: true
       become: true
+
+    - name: Create mock agy binary
+      ansible.builtin.copy:
+        dest: /usr/local/bin/agy
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          case "$1" in
+            --version) echo "agy v1.0.0" ;;
+            plugin)
+              if [ "$2" = "list" ]; then
+                cat /tmp/agy_plugins 2>/dev/null || echo ""
+              elif [ "$2" = "install" ]; then
+                echo "$3" >> /tmp/agy_plugins
+              elif [ "$2" = "uninstall" ]; then
+                sed -i "/$3/d" /tmp/agy_plugins 2>/dev/null || true
+              fi
+              ;;
+          esac
+      become: true
