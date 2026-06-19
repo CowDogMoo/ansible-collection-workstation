@@ -1,0 +1,32 @@
+---
+# tasks/manage-plugin.yml
+
+- name: Check if plugin exists - {{ plugin.name }}
+  ansible.builtin.set_fact:
+    antigravity_plugin_exists: "{{ plugin.name in antigravity_plugin_list.stdout }}"
+
+- name: Remove plugin - {{ plugin.name }}
+  ansible.builtin.command:
+    cmd: "agy plugin uninstall {{ plugin.name }}"
+  environment:
+    HOME: "{{ antigravity_user_home }}"
+    PATH: "{{ antigravity_path }}"
+  when:
+    - plugin.state | default('present') == 'absent'
+    - antigravity_plugin_exists | bool
+  changed_when: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ antigravity_username }}"
+
+- name: Add plugin - {{ plugin.name }}
+  ansible.builtin.command:
+    cmd: "agy plugin install {{ plugin.target | default(plugin.name) }}"
+  environment:
+    HOME: "{{ antigravity_user_home }}"
+    PATH: "{{ antigravity_path }}"
+  when:
+    - plugin.state | default('present') == 'present'
+    - not antigravity_plugin_exists | bool
+  changed_when: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become_user: "{{ antigravity_username }}"

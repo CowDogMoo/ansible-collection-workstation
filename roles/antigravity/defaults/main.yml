@@ -1,0 +1,35 @@
+---
+antigravity_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}"
+antigravity_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('staff', antigravity_username) }}"
+antigravity_user_home: >-
+  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_facts['env']['HOME'],
+     (antigravity_username == 'root') | ternary('/root', '/home/' + antigravity_username)) }}
+
+# Configuration directory for Agy
+antigravity_config_dir: "{{ antigravity_user_home }}/.gemini/config"
+
+# Homebrew prefix (varies by OS/architecture)
+antigravity_homebrew_prefix: >-
+  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(
+       (ansible_facts['architecture'] == 'arm64') | ternary('/opt/homebrew', '/usr/local'),
+       '/home/linuxbrew/.linuxbrew') }}
+
+# PATH for agy CLI commands
+antigravity_path: "{{ antigravity_homebrew_prefix }}/bin:{{ antigravity_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+
+# Whether to install Antigravity CLI
+antigravity_install: true
+
+# Whether to manage Agy settings
+antigravity_manage_settings: true
+
+# Plugin Management
+antigravity_manage_plugins: true  # Whether to manage plugins
+
+# List of plugins to install
+# Each plugin supports: name, target, state
+antigravity_plugins: []
+# Example:
+#   - name: python_debugger
+#     target: python_debugger@latest
+#     state: present

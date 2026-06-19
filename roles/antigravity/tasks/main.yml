@@ -1,0 +1,66 @@
+---
+- name: Set antigravity username for Kali systems
+  ansible.builtin.set_fact:
+    antigravity_username: "kali"
+  when: ansible_facts['distribution_release'] == "kali-rolling" and antigravity_username is not defined
+
+- name: Ensure antigravity user home directory exists
+  ansible.builtin.stat:
+    path: "{{ antigravity_user_home }}"
+  register: antigravity_home_stat
+  changed_when: false
+
+- name: Fail if user home directory doesn't exist
+  ansible.builtin.fail:
+    msg: "User home directory {{ antigravity_user_home }} does not exist"
+  when: not antigravity_home_stat.stat.exists
+
+- name: Install Antigravity on macOS
+  ansible.builtin.include_tasks: install-macos.yml
+  when:
+    - ansible_facts['os_family'] == 'Darwin'
+    - antigravity_install | bool
+
+- name: Install Antigravity on Linux
+  ansible.builtin.include_tasks: install-linux.yml
+  when:
+    - ansible_facts['os_family'] != 'Darwin'
+    - ansible_facts['os_family'] != 'Windows'
+    - antigravity_install | bool
+
+- name: Install Antigravity on Windows
+  ansible.builtin.include_tasks: install-windows.yml
+  when:
+    - ansible_facts['os_family'] == 'Windows'
+    - antigravity_install | bool
+
+- name: Create Antigravity configuration directory
+  ansible.builtin.file:
+    path: "{{ antigravity_config_dir }}"
+    state: directory
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Install global AGENTS.md instructions
+  ansible.builtin.copy:
+    src: AGENTS.md
+    dest: "{{ antigravity_config_dir }}/AGENTS.md"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: antigravity_manage_settings | bool
+
+- name: Manage plugins
+  ansible.builtin.include_tasks: manage-plugins.yml
+  when:
+    - antigravity_manage_plugins | bool
+    - antigravity_plugins | length > 0
+
+- name: Display configuration status
+  ansible.builtin.debug:
+    msg: >-
+      Config Dir: {{ antigravity_config_dir }} |
+      Plugins: {{ antigravity_plugins | length }}

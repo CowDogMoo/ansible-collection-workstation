@@ -1,0 +1,62 @@
+---
+# side_effect.yml - Tests non-idempotent scenarios like plugin removal
+- name: Side Effect - Test plugin removal
+  hosts: all
+  tasks:
+    - name: Set container variables based on distribution  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        container_user: "{{ ansible_facts['distribution'] | lower }}"
+
+    - name: Set container home  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        container_home: "/home/{{ container_user }}"
+
+    - name: Ensure test user and home directory exist
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        shell: /bin/bash
+        create_home: true
+        home: "{{ container_home }}"
+      become: true
+
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    # Test plugin removal (state: absent)
+    - name: Test plugin removal
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.antigravity
+      vars:
+        antigravity_username: "{{ container_user }}"
+        antigravity_user_home: "{{ container_home }}"
+        antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_manage_settings: false
+        antigravity_plugins:
+          - name: chrome-devtools
+            target: chrome-devtools-mcp@latest
+            state: absent
+
+    - name: Verify plugin was removed  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.command:
+        cmd: agy plugin list
+      environment:
+        HOME: "{{ container_home }}"
+        PATH: "{{ container_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      register: plugin_list_result
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert plugin was removed
+      ansible.builtin.assert:
+        that:
+          - "'chrome-devtools' not in plugin_list_result.stdout"
+        fail_msg: "Plugin 'chrome-devtools' should have been removed but found in: {{ plugin_list_result.stdout }}"
+        success_msg: "Plugin 'chrome-devtools' was successfully removed (state: absent works)"

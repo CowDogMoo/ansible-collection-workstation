@@ -21,20 +21,21 @@ graph TD
     Plugins --> P2[vnc_pw]
     Collection --> Roles[⚙️ Roles]
     Roles --> R0[ansible_bootstrap 🧪]
-    Roles --> R1[asdf 🧪]
-    Roles --> R2[build_cleanup 🧪]
-    Roles --> R3[claude_code 🧪]
-    Roles --> R4[fabric 🧪]
-    Roles --> R5[git_setup 🧪]
-    Roles --> R6[go_task 🧪]
-    Roles --> R7[logging 🧪]
-    Roles --> R8[mise 🧪]
-    Roles --> R9[package_management 🧪]
-    Roles --> R10[shell_functions 🧪]
-    Roles --> R11[tmux_setup 🧪]
-    Roles --> R12[user_setup 🧪]
-    Roles --> R13[vnc_setup 🧪]
-    Roles --> R14[zsh_setup 🧪]
+    Roles --> R1[antigravity 🧪]
+    Roles --> R2[asdf 🧪]
+    Roles --> R3[build_cleanup 🧪]
+    Roles --> R4[claude_code 🧪]
+    Roles --> R5[fabric 🧪]
+    Roles --> R6[git_setup 🧪]
+    Roles --> R7[go_task 🧪]
+    Roles --> R8[logging 🧪]
+    Roles --> R9[mise 🧪]
+    Roles --> R10[package_management 🧪]
+    Roles --> R11[shell_functions 🧪]
+    Roles --> R12[tmux_setup 🧪]
+    Roles --> R13[user_setup 🧪]
+    Roles --> R14[vnc_setup 🧪]
+    Roles --> R15[zsh_setup 🧪]
     Collection --> Playbooks[📚 Playbooks]
     Playbooks --> PB0[asdf]
     Playbooks --> PB1[mise]
@@ -74,6 +75,7 @@ by hand.
 | Role | Description |
 | ---- | ----------- |
 | [`ansible_bootstrap`](roles/ansible_bootstrap/README.md) | Templates ~/.ansible.cfg and creates the ~/.ansible directory tree (collections, roles, fact_cache) plus the remote tmp directory. |
+| [`antigravity`](roles/antigravity/README.md) | Manages Antigravity CLI configuration including hooks and settings |
 | [`asdf`](roles/asdf/README.md) | Installs the asdf version manager, wires it into the user's shell, and installs configured plugins. |
 | [`build_cleanup`](roles/build_cleanup/README.md) | General-purpose, parameterized cleanup role for build artifact minimization |
 | [`claude_code`](roles/claude_code/README.md) | Manages Claude Code CLI configuration including hooks and settings |

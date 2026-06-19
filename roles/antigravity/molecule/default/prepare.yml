@@ -1,0 +1,84 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Create test user
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        shell: /bin/bash
+        create_home: true
+      become: true
+
+    - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        ansible_env:
+          HOME: "{{ container_home }}"
+
+    # Install Node.js 18.x for testing (Antigravity requires >=18)
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - curl
+          - ca-certificates
+          - gnupg
+        state: present
+        update_cache: true
+      become: true
+
+    - name: Create keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+      become: true
+
+    - name: Download NodeSource GPG key
+      ansible.builtin.get_url:
+        url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+        dest: /tmp/nodesource.gpg.key
+        mode: "0644"
+      become: true
+
+    - name: Dearmor NodeSource GPG key
+      ansible.builtin.command:
+        cmd: gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg /tmp/nodesource.gpg.key
+        creates: /etc/apt/keyrings/nodesource.gpg
+      become: true
+
+    - name: Add NodeSource repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main"
+        state: present
+        filename: nodesource
+      become: true
+
+    - name: Install Node.js 18.x
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+        update_cache: true
+      become: true
+
+    - name: Create mock agy binary
+      ansible.builtin.copy:
+        dest: /usr/local/bin/agy
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          case "$1" in
+            --version) echo "agy v1.0.0" ;;
+            plugin)
+              if [ "$2" = "list" ]; then
+                cat /tmp/agy_plugins 2>/dev/null || echo ""
+              elif [ "$2" = "install" ]; then
+                echo "$3" >> /tmp/agy_plugins
+              elif [ "$2" = "uninstall" ]; then
+                sed -i "/$3/d" /tmp/agy_plugins 2>/dev/null || true
+              fi
+              ;;
+          esac
+      become: true

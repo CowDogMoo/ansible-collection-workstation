@@ -222,6 +222,13 @@
       # For debugging
       # role: ../../roles/claude_code
 
+    - name: Install and configure Antigravity CLI
+      role: cowdogmoo.workstation.antigravity
+      tags:
+        - antigravity
+      # For debugging
+      # role: ../../roles/antigravity
+
     - name: Install Go Task
       role: cowdogmoo.workstation.go_task
       tags:
