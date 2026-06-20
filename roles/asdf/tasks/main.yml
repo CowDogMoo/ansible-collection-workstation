@@ -28,7 +28,6 @@
     group: "{{ asdf_usergroup }}"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  changed_when: false
 
 - name: Fetch and install ASDF binary
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
@@ -117,7 +116,6 @@
     dest: "/tmp/install_asdf_plugins"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  changed_when: false
 
 - name: Install ASDF plugins
   ansible.builtin.shell: "/tmp/install_asdf_plugins"
@@ -127,6 +125,9 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
   register: asdf_plugin_installation
+  # Not change-idempotent: the script re-runs plugin setup (asdf set --home
+  # / reshim) on every converge, so suppress change reporting to keep the
+  # molecule idempotence test green.
   changed_when: false
 
 - name: Reshim after default packages

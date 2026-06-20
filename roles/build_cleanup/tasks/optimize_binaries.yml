@@ -20,7 +20,7 @@
     cmd: "strip --strip-all {{ build_cleanup_install_path }}/{{ item }}"
   loop: "{{ build_cleanup_keep_binaries }}"
   become: true
-  changed_when: false
+  changed_when: true
   failed_when: false
   register: build_cleanup_strip_result
 
@@ -29,7 +29,7 @@
     cmd: "upx --best --lzma {{ build_cleanup_install_path }}/{{ item }}"
   loop: "{{ build_cleanup_keep_binaries }}"
   become: true
-  changed_when: false
+  changed_when: true
   failed_when: false
   register: build_cleanup_upx_result
   when: ansible_facts.packages is defined and 'upx' in ansible_facts.packages
@@ -63,7 +63,6 @@
     state: absent
   loop: "{{ build_cleanup_keep_binaries }}"
   become: true
-  changed_when: false
   failed_when: false
 
 - name: Ensure binary permissions are correct

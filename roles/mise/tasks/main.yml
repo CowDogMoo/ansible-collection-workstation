@@ -28,7 +28,6 @@
     group: "{{ mise_usergroup }}"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  changed_when: false
 
 - name: Check if mise is already installed
   ansible.builtin.stat:
@@ -150,7 +149,6 @@
     dest: "/tmp/install_mise_plugins"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  changed_when: false
 
 - name: Install mise plugins
   ansible.builtin.shell: "/tmp/install_mise_plugins"
@@ -160,6 +158,9 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ mise_username }}"
   register: mise_plugin_installation
+  # Not change-idempotent: the script re-runs plugin setup (mise use
+  # --global / reshim) on every converge, so suppress change reporting to
+  # keep the molecule idempotence test green.
   changed_when: false
 
 - name: Generate mise config file

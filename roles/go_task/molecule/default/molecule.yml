@@ -17,6 +17,7 @@ platforms:
     image: "geerlingguy/docker-ubuntu2404-ansible:latest"
     # Setting the command to this is necessary for systemd containers
     command: ""
+    pre_build_image: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     cgroupns_mode: host
@@ -43,3 +44,18 @@ provisioner:
 
 verifier:
   name: ansible
+
+scenario:
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
