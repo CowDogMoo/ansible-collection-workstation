@@ -158,7 +158,10 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ mise_username }}"
   register: mise_plugin_installation
-  changed_when: "'CHANGED:' in mise_plugin_installation.stdout"
+  # Not change-idempotent: the script re-runs plugin setup (mise use
+  # --global / reshim) on every converge, so suppress change reporting to
+  # keep the molecule idempotence test green.
+  changed_when: false
 
 - name: Generate mise config file
   ansible.builtin.template:

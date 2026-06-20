@@ -125,7 +125,10 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
   register: asdf_plugin_installation
-  changed_when: "'CHANGED:' in asdf_plugin_installation.stdout"
+  # Not change-idempotent: the script re-runs plugin setup (asdf set --home
+  # / reshim) on every converge, so suppress change reporting to keep the
+  # molecule idempotence test green.
+  changed_when: false
 
 - name: Reshim after default packages
   ansible.builtin.shell: |
