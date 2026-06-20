@@ -28,7 +28,6 @@
     group: "{{ asdf_usergroup }}"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  changed_when: false
 
 - name: Fetch and install ASDF binary
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
@@ -117,7 +116,6 @@
     dest: "/tmp/install_asdf_plugins"
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
-  changed_when: false
 
 - name: Install ASDF plugins
   ansible.builtin.shell: "/tmp/install_asdf_plugins"
@@ -127,7 +125,7 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ asdf_username }}"
   register: asdf_plugin_installation
-  changed_when: false
+  changed_when: "'CHANGED:' in asdf_plugin_installation.stdout"
 
 - name: Reshim after default packages
   ansible.builtin.shell: |

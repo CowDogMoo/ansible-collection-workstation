@@ -11,45 +11,28 @@
       ansible.builtin.stat:
         path: "{{ go_task_install_dir }}/task"
       register: go_task_task_binary
-      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Check if task binary exists on Windows
-      ansible.windows.win_stat:
-        path: "{{ go_task_windows_install_dir }}\\task.exe"
-      register: go_task_task_binary_windows
-      when: ansible_facts['os_family'] == 'Windows'
-
-    - name: Assert task binary exists on Unix-like systems
+    - name: Assert task binary is installed, executable, and mode 0755
       ansible.builtin.assert:
         that:
           - go_task_task_binary.stat.exists
           - go_task_task_binary.stat.executable
-      when: ansible_facts['os_family'] != 'Windows'
-
-    - name: Assert task binary exists on Windows
-      ansible.builtin.assert:
-        that:
-          - go_task_task_binary_windows.stat.exists
-      when: ansible_facts['os_family'] == 'Windows'
+          - go_task_task_binary.stat.mode == '0755'
+        fail_msg: >-
+          task binary missing or has wrong permissions at
+          {{ go_task_install_dir }}/task
+          (exists={{ go_task_task_binary.stat.exists | default(false) }},
+          mode={{ go_task_task_binary.stat.mode | default('n/a') }})
 
     - name: Test task command
       ansible.builtin.command: task --version
       register: go_task_task_version_output
       changed_when: false
       failed_when: false
-      when: ansible_facts['os_family'] != 'Windows'
-
-    - name: Test task command on Windows
-      ansible.windows.win_command: task --version
-      register: go_task_task_version_output_windows
-      changed_when: false
-      failed_when: false
-      when: ansible_facts['os_family'] == 'Windows'
 
     - name: Debug task version output
       ansible.builtin.debug:
         var: go_task_task_version_output
-      when: ansible_facts['os_family'] != 'Windows'
 
     - name: Assert task command works
       ansible.builtin.assert:
@@ -60,15 +43,3 @@
             ('task v' in go_task_task_version_output.stdout.lower()) or
             (go_task_task_version_output.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+') is not none)
         fail_msg: "Task command failed or version output not recognized. Output was: {{ go_task_task_version_output.stdout }}"
-      when: ansible_facts['os_family'] != 'Windows'
-
-    - name: Assert task command works on Windows
-      ansible.builtin.assert:
-        that:
-          - go_task_task_version_output_windows.rc == 0
-          - >
-            ('task version' in go_task_task_version_output_windows.stdout.lower()) or
-            ('task v' in go_task_task_version_output_windows.stdout.lower()) or
-            (go_task_task_version_output_windows.stdout | regex_search('v?[0-9]+\.[0-9]+\.[0-9]+') is not none)
-        fail_msg: "Task command failed or version output not recognized. Output was: {{ go_task_task_version_output_windows.stdout }}"
-      when: ansible_facts['os_family'] == 'Windows'

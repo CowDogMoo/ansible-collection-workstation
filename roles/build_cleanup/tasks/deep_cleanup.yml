@@ -22,14 +22,14 @@
   ansible.builtin.shell: |
     find /usr/share/locale -mindepth 1 -maxdepth 1 ! -name 'en_US*' -exec rm -rf {} \;
   become: true
-  changed_when: false
+  changed_when: true
   failed_when: false
 
 - name: Remove i18n files (internationalization)
   ansible.builtin.shell: |
     find /usr/share/i18n/locales -mindepth 1 -maxdepth 1 ! -name 'en_US*' -exec rm -rf {} \;
   become: true
-  changed_when: false
+  changed_when: true
   failed_when: false
 
 - name: Remove unnecessary include files
@@ -45,7 +45,7 @@
     find /usr/lib -name "*.a" -delete
     find /usr/local/lib -name "*.a" -delete 2>/dev/null || true
   become: true
-  changed_when: false
+  changed_when: true
   failed_when: false
   when: not (build_cleanup_preserve_static_libs | default(false) | bool)
 
@@ -54,7 +54,7 @@
     find /usr/lib -name "*.pc" -delete
     find /usr/local/lib -name "*.pc" -delete 2>/dev/null || true
   become: true
-  changed_when: false
+  changed_when: true
   failed_when: false
 
 - name: Remove systemd (if configured)
