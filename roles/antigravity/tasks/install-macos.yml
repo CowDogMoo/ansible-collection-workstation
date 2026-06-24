@@ -7,7 +7,7 @@
 
 - name: Install via Homebrew
   community.general.homebrew:
-    name: agy
+    name: antigravity-cli
     state: present
   when: antigravity_check.rc != 0
 
