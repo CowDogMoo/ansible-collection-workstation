@@ -5,13 +5,17 @@
   changed_when: false
   failed_when: false
 
-- name: Install via Homebrew
-  community.general.homebrew:
-    name: agy
-    state: present
+- name: Download Antigravity CLI installer
+  ansible.builtin.get_url:
+    url: https://antigravity.google/cli/install.sh
+    dest: /tmp/agy-install.sh
+    mode: '0755'
   when: antigravity_check.rc != 0
-  ignore_errors: true
-  register: antigravity_brew_install
+
+- name: Execute Antigravity CLI installer
+  ansible.builtin.command: /tmp/agy-install.sh
+  when: antigravity_check.rc != 0
+  changed_when: true
 
 - name: Verify installation
   ansible.builtin.command: agy --version

@@ -32,8 +32,8 @@ Manages Antigravity CLI configuration including hooks and settings
 
 
 - **Check if already installed** (ansible.builtin.command)
-- **Install via Homebrew** (community.general.homebrew) - Conditional
-- **Print manual install notice** (ansible.builtin.debug) - Conditional
+- **Download Antigravity CLI installer** (ansible.builtin.get_url) - Conditional
+- **Execute Antigravity CLI installer** (ansible.builtin.command) - Conditional
 - **Verify installation** (ansible.builtin.command)
 - **Display version** (ansible.builtin.debug) - Conditional
 
@@ -41,7 +41,8 @@ Manages Antigravity CLI configuration including hooks and settings
 
 
 - **Check if already installed** (ansible.builtin.command)
-- **Install via Homebrew** (community.general.homebrew) - Conditional
+- **Download Antigravity CLI installer** (ansible.builtin.get_url) - Conditional
+- **Execute Antigravity CLI installer** (ansible.builtin.command) - Conditional
 - **Verify installation** (ansible.builtin.command)
 - **Display version** (ansible.builtin.debug) - Conditional
 
