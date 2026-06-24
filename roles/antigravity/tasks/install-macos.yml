@@ -10,6 +10,8 @@
     name: agy
     state: present
   when: antigravity_check.rc != 0
+  ignore_errors: true
+  register: antigravity_brew_install
 
 - name: Verify installation
   ansible.builtin.command: agy --version
