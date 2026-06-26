@@ -28,27 +28,22 @@ fabric_commit
 
 ### Pull Requests
 
-Always use the `fabric_pr` function to create pull requests:
+Always use `fabric_pr` for pull requests — both to **open** them and to **update** them. `fabric_pr` regenerates the title/body from the current `git diff main`, then creates the PR or, if one already exists for the branch, updates that PR in place.
 
 ```bash
 fabric_pr
 ```
 
-**CRITICAL POST-CREATION VERIFICATION**:
+**The PR title and body must ALWAYS be `fabric_pr`'s generated output. NEVER hand-write or hand-edit them.**
 
-After `fabric_pr` creates the PR, you MUST verify and fix if needed:
+- Any time the branch changes — after a **rebase, amend, new commits, or force-push** — the existing body is stale. Re-run `fabric_pr`; it regenerates from the new diff and updates the existing PR. This is the ONLY correct way to refresh a PR body.
+- Do **not** run `gh pr edit --body "..."` (or `--title`) with text you wrote yourself, and do not "clean up", "correct", or "just fix" the body by hand. Substituting your own writing for fabric's output breaks this rule no matter how small the change. If the body needs to change, re-run `fabric_pr`.
 
-1. **Check the created PR** using `gh pr view` to see the title and body
-2. **Verify requirements**:
-   - **No code fences (```)** in the title or body
-   - **No duplicate title** - the title text must NOT appear in the body
-3. **If violations found**, update the PR immediately using `gh pr edit`:
+**Format verification — after every `fabric_pr`:**
 
-   ```bash
-   gh pr edit --body "corrected body without code fences or duplicate title"
-   ```
-
-The `fabric_pr` function should handle these automatically, but you must verify and correct any issues in the created PR.
+1. Check the PR with `gh pr view`.
+2. Confirm the fabric output is clean: **no code fences (```)** in the title or body, and the **title is not duplicated** in the body.
+3. If the output is malformed, the bug is in the fabric `pr` pattern or its `filter.sh` (`~/.config/fabric/patterns/pr/filter.sh`) — fix it at the source and re-run `fabric_pr`. Never patch the symptom by hand-editing the PR.
 
 ## Modern CLI Tools
 
