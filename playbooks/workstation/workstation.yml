@@ -98,9 +98,11 @@
 
           // Process logs and extract hostname from filename
           loki.process "ansible" {
-            // Extract the hostname from the file path
+            // Strip trailing -YYYYMMDD dateext chains so any rotated files
+            // tailing in (e.g. before olddir was wired up) don't multiply
+            // Loki's host-label cardinality.
             stage.regex {
-              expression = ".*/hosts/(?P<extracted_hostname>[^/]+)$"
+              expression = ".*/hosts/(?P<extracted_hostname>.+?)(?:-[0-9]{8})*$"
               source     = "filename"
             }
 
