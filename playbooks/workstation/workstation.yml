@@ -34,6 +34,11 @@
         logging_rotation_configs:
           - name: "ansible-hosts"
             path: "~/ansible-logs/hosts/*"
+            # Without olddir, the path glob re-matches yesterday's rotated file
+            # (e.g. `localhost-20260626`), so dateext appends another suffix on
+            # each run — producing `localhost-20260626-20260628-...` and
+            # exploding Loki's series count (the shipper labels host by basename).
+            olddir: "{{ ansible_facts['env']['HOME'] }}/ansible-logs/hosts/archive"
             rotate: 30
             frequency: "daily"
             compress: true
@@ -93,9 +98,11 @@
 
           // Process logs and extract hostname from filename
           loki.process "ansible" {
-            // Extract the hostname from the file path
+            // Strip trailing -YYYYMMDD dateext chains so any rotated files
+            // tailing in (e.g. before olddir was wired up) don't multiply
+            // Loki's host-label cardinality.
             stage.regex {
-              expression = ".*/hosts/(?P<extracted_hostname>[^/]+)$"
+              expression = ".*/hosts/(?P<extracted_hostname>.+?)(?:-[0-9]{8})*$"
               source     = "filename"
             }
 
