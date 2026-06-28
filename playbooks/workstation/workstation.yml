@@ -34,6 +34,11 @@
         logging_rotation_configs:
           - name: "ansible-hosts"
             path: "~/ansible-logs/hosts/*"
+            # Without olddir, the path glob re-matches yesterday's rotated file
+            # (e.g. `localhost-20260626`), so dateext appends another suffix on
+            # each run — producing `localhost-20260626-20260628-...` and
+            # exploding Loki's series count (the shipper labels host by basename).
+            olddir: "{{ ansible_facts['env']['HOME'] }}/ansible-logs/hosts/archive"
             rotate: 30
             frequency: "daily"
             compress: true
