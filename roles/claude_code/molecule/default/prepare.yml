@@ -18,47 +18,17 @@
         ansible_env:
           HOME: "{{ container_home }}"
 
-    # Install Node.js 18.x for testing (Claude Code requires >=18)
+    # Node comes from the distro rather than NodeSource. The NodeSource signing key
+    # URL began returning 403 to every client, which broke prepare outright, and the
+    # packaged versions already clear Claude Code's >=18 floor (Ubuntu 24.04 ships
+    # 18.19, Kali ships 24.18). Dropping the third-party repo also drops a network
+    # dependency that CI cannot control.
     - name: Install prerequisites
       ansible.builtin.apt:
         name:
           - curl
           - ca-certificates
-          - gnupg
-        state: present
-        update_cache: true
-      become: true
-
-    - name: Create keyrings directory
-      ansible.builtin.file:
-        path: /etc/apt/keyrings
-        state: directory
-        mode: "0755"
-      become: true
-
-    - name: Download NodeSource GPG key
-      ansible.builtin.get_url:
-        url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
-        dest: /tmp/nodesource.gpg.key
-        mode: "0644"
-      become: true
-
-    - name: Dearmor NodeSource GPG key
-      ansible.builtin.command:
-        cmd: gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg /tmp/nodesource.gpg.key
-        creates: /etc/apt/keyrings/nodesource.gpg
-      become: true
-
-    - name: Add NodeSource repository
-      ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main"
-        state: present
-        filename: nodesource
-      become: true
-
-    - name: Install Node.js 18.x
-      ansible.builtin.apt:
-        name: nodejs
+          - nodejs
         state: present
         update_cache: true
       become: true
