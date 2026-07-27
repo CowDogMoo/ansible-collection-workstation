@@ -1,0 +1,13 @@
+{#-
+  Serializes claude_code_mcp_servers for the `op inject` pass in manage-mcp-servers.yml.
+
+  This exists as a template rather than an inline `{{ ... | to_json }}` expression because
+  Ansible converts a templated string that parses as a data structure back into a native
+  object, then renders it with str() when it reaches a string parameter — producing a
+  Python repr with single quotes that no JSON parser will accept. A template lookup
+  returns text that skips that conversion.
+
+  OP_LOOKUP: is the older prefix form; normalizing it here means a server spec can be
+  copied between this role and the antigravity role unchanged.
+-#}
+{{ claude_code_mcp_servers | to_json | regex_replace('OP_LOOKUP:op://', 'op://') }}

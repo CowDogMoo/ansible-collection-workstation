@@ -1,0 +1,39 @@
+---
+# Variables applied to every host the workstation playbook runs against.
+# Anything site-specific — a Grafana instance, a 1Password vault path, a machine's
+# sound file — belongs in host_vars, not here.
+
+# MCP servers configured for Antigravity on every workstation. agy has no `mcp`
+# subcommand, so the role writes these into ~/.gemini/config/mcp_config.json.
+# Servers added by hand or through the /mcp overlay are left alone.
+#
+# Split into base + extra because Ansible replaces lists rather than merging them:
+# a host that sets antigravity_mcp_servers directly would drop everything below it.
+antigravity_mcp_servers_base:
+  # Browser automation via Chrome DevTools
+  - name: chrome-devtools
+    command: npx
+    args:
+      - "-y"
+      - "chrome-devtools-mcp@latest"
+
+  # Warpgate for container/AMI image building
+  - name: warpgate
+    command: "{{ ansible_facts['env']['HOME'] }}/go/bin/warpgate-mcp-server"
+    args:
+      - stdio
+
+  # Grafana integration for dashboards, alerts, and observability.
+  # Both the instance URL and the token come from 1Password, so no site-specific value
+  # lands in the repo. The role resolves these with a single `op inject` pass.
+  - name: grafana
+    command: "{{ ansible_facts['env']['HOME'] }}/.local/bin/mcp-grafana"
+    env:
+      GRAFANA_URL: "op://automation/Grafana Account/website"
+      GRAFANA_SERVICE_ACCOUNT_TOKEN: "op://automation/Grafana Account/api-token"
+
+# Host-specific additions. Set this in host_vars to append servers that only make
+# sense on one machine (see ouroboros.yml).
+antigravity_mcp_servers_extra: []
+
+antigravity_mcp_servers: "{{ antigravity_mcp_servers_base + antigravity_mcp_servers_extra }}"

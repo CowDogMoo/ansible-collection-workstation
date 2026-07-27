@@ -1,0 +1,131 @@
+---
+# tasks/manage-mcp-servers.yml
+#
+# Unlike `claude mcp add`, agy exposes no `mcp` subcommand, so the server list is
+# managed by rewriting mcp_config.json. Servers added by hand or through the /mcp
+# overlay are preserved: only names present in antigravity_mcp_servers are added,
+# updated, or (state: absent) removed.
+#
+# Secrets and site-specific values stay out of the repo as `op://` references, resolved
+# in a single `op inject` pass — the same approach used for the terragrunt and kubernetes
+# bootstrap templates in the woe repo. Injecting over the whole assembled document rather
+# than field by field means a reference works anywhere: an env value, a URL, a binary path.
+#
+# The rendered JSON is deliberately never stored in a fact. set_fact coerces a value that
+# parses as JSON into a dict, which silently turned the op:// substring check into a
+# dict-key lookup. Passing lookup('template', ...) straight into the module argument that
+# consumes it keeps it a string.
+
+- name: Check for existing MCP configuration
+  ansible.builtin.stat:
+    path: "{{ antigravity_mcp_config_file }}"
+  register: antigravity_mcp_config_stat
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
+- name: Read existing MCP configuration
+  ansible.builtin.slurp:
+    src: "{{ antigravity_mcp_config_file }}"
+  register: antigravity_mcp_existing
+  when: antigravity_mcp_config_stat.stat.exists
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  no_log: true
+
+# A hand-corrupted or half-written mcp_config.json would otherwise blow up the
+# from_json below with an unhelpful template error, so fall back to an empty map
+# and let the write task rebuild the file from scratch.
+- name: Parse existing MCP servers
+  ansible.builtin.set_fact:
+    antigravity_mcp_existing_servers: >-
+      {{ (antigravity_mcp_existing['content'] | b64decode | from_json).get('mcpServers', {})
+         if antigravity_mcp_config_stat.stat.exists else {} }}
+  failed_when: false
+  no_log: true
+
+# Detected from the source vars rather than the rendered document. Existing on-disk
+# servers are included so references left behind by an interrupted run still get resolved.
+- name: Determine whether 1Password resolution is needed
+  ansible.builtin.set_fact:
+    antigravity_mcp_needs_op: >-
+      {{ 'op://' in (antigravity_mcp_servers | to_json)
+         or 'op://' in (antigravity_mcp_existing_servers | default({}, true) | to_json) }}
+
+- name: Check for the 1Password CLI
+  ansible.builtin.command: which op
+  register: antigravity_op_check
+  changed_when: false
+  failed_when: false
+  when: antigravity_mcp_needs_op | bool
+
+- name: Fail with guidance when op:// references cannot be resolved
+  ansible.builtin.fail:
+    msg: >-
+      antigravity_mcp_servers contains op:// references but the 1Password CLI is not on
+      PATH. Install it (brew install 1password-cli) and run `op signin`, or replace the
+      references with literal values.
+  when:
+    - antigravity_mcp_needs_op | bool
+    - antigravity_op_check.rc != 0
+
+# Staged through a file rather than piped to stdin because Ansible converts a templated
+# value whose whole result parses as a Python literal back into a native object, then
+# renders it with str() on the way into a string parameter — yielding a repr with single
+# quotes that no JSON parser accepts. Whether that conversion triggers depends on how the
+# rendered JSON happens to be formatted, so `op inject -i` is used to remove the guesswork.
+# The staging file holds only op:// references, never resolved secrets.
+- name: Create a staging file for 1Password resolution
+  ansible.builtin.tempfile:
+    state: file
+    suffix: .json
+  register: antigravity_mcp_staging
+  when: antigravity_mcp_needs_op | bool
+  changed_when: false
+
+- name: Write MCP configuration for resolution
+  ansible.builtin.template:
+    src: mcp_config.json.j2
+    dest: "{{ antigravity_mcp_staging.path }}"
+    mode: "0600"
+  when: antigravity_mcp_needs_op | bool
+  changed_when: false
+
+- name: Resolve 1Password references
+  ansible.builtin.command:
+    cmd: "op inject -i {{ antigravity_mcp_staging.path }}"
+  register: antigravity_mcp_injected
+  when: antigravity_mcp_needs_op | bool
+  changed_when: false
+  no_log: true
+
+- name: Remove the staging file
+  ansible.builtin.file:
+    path: "{{ antigravity_mcp_staging.path }}"
+    state: absent
+  when: antigravity_mcp_needs_op | bool
+  changed_when: false
+
+# op inject substitutes raw text, so a secret containing a quote or backslash would
+# produce a document that no longer parses. Catch that here rather than writing a
+# corrupt mcp_config.json that agy silently fails to load.
+- name: Verify the resolved configuration still parses
+  ansible.builtin.assert:
+    that:
+      - (antigravity_mcp_injected.stdout | from_json).mcpServers is defined
+    fail_msg: >-
+      Resolved mcp_config.json is no longer valid JSON. A 1Password value likely contains
+      a character that broke the document (a quote or backslash).
+    quiet: true
+  when: antigravity_mcp_needs_op | bool
+  no_log: true
+
+# 0600 rather than 0644: resolved secrets land in this file.
+- name: Write MCP configuration
+  ansible.builtin.copy:
+    content: >-
+      {{ antigravity_mcp_injected.stdout if antigravity_mcp_needs_op | bool
+         else lookup('template', 'mcp_config.json.j2') }}
+    dest: "{{ antigravity_mcp_config_file }}"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0600"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  no_log: true

@@ -1,5 +1,14 @@
 ---
 # tasks/manage-mcp-servers.yml
+#
+# Secrets and site-specific values stay out of the repo as `op://` references, resolved
+# in a single `op inject` pass over the whole server list before any of it reaches the
+# `claude mcp add` command line. Injecting over the serialized list rather than field by
+# field means a reference works anywhere in a spec — an env value, a URL, a binary path —
+# not just in secrets.
+#
+# `OP_LOOKUP:op://...` is the older prefix form and is normalized away here, so a server
+# spec can be copied between this role and the antigravity role unchanged.
 
 - name: Get list of currently installed MCP servers
   ansible.builtin.command:
@@ -13,9 +22,90 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   become_user: "{{ claude_code_username }}"
 
+# The serialized list is deliberately never stored in a fact: set_fact coerces a value
+# that parses as JSON back into a list, which silently turns the op:// substring check
+# into a list-membership test that is always false. Keep it inline as a string.
+- name: Determine whether 1Password resolution is needed
+  ansible.builtin.set_fact:
+    claude_code_mcp_needs_op: "{{ 'op://' in (claude_code_mcp_servers | to_json) }}"
+
+- name: Check for the 1Password CLI
+  ansible.builtin.command: which op
+  register: claude_code_op_check
+  changed_when: false
+  failed_when: false
+  when: claude_code_mcp_needs_op | bool
+
+- name: Fail with guidance when op:// references cannot be resolved
+  ansible.builtin.fail:
+    msg: >-
+      claude_code_mcp_servers contains op:// references but the 1Password CLI is not on
+      PATH. Install it (brew install 1password-cli) and run `op signin`, or replace the
+      references with literal values.
+  when:
+    - claude_code_mcp_needs_op | bool
+    - claude_code_op_check.rc != 0
+
+# Staged through a file rather than piped to stdin because Ansible converts a templated
+# value whose whole result parses as a Python literal back into a native object, then
+# renders it with str() on the way into a string parameter — yielding a repr with single
+# quotes that no JSON parser accepts. `op inject -i` sidesteps the string round-trip.
+# The staging file holds only op:// references, never resolved secrets.
+- name: Create a staging file for 1Password resolution
+  ansible.builtin.tempfile:
+    state: file
+    suffix: .json
+  register: claude_code_mcp_staging
+  when: claude_code_mcp_needs_op | bool
+  changed_when: false
+
+- name: Write MCP server definitions for resolution
+  ansible.builtin.template:
+    src: mcp_servers.json.j2
+    dest: "{{ claude_code_mcp_staging.path }}"
+    mode: "0600"
+  when: claude_code_mcp_needs_op | bool
+  changed_when: false
+
+- name: Resolve 1Password references
+  ansible.builtin.command:
+    cmd: "op inject -i {{ claude_code_mcp_staging.path }}"
+  register: claude_code_mcp_injected
+  when: claude_code_mcp_needs_op | bool
+  changed_when: false
+  no_log: true
+
+- name: Remove the staging file
+  ansible.builtin.file:
+    path: "{{ claude_code_mcp_staging.path }}"
+    state: absent
+  when: claude_code_mcp_needs_op | bool
+  changed_when: false
+
+# op inject substitutes raw text, so a secret containing a quote or backslash would
+# produce a document that no longer parses. Catch that here instead of failing later with
+# an opaque template error or, worse, registering a mangled server.
+- name: Verify the resolved definitions still parse
+  ansible.builtin.assert:
+    that:
+      - claude_code_mcp_injected.stdout | from_json is iterable
+    fail_msg: >-
+      Resolved MCP server definitions are no longer valid JSON. A 1Password value likely
+      contains a character that broke the document (a quote or backslash).
+    quiet: true
+  when: claude_code_mcp_needs_op | bool
+  no_log: true
+
+- name: Use the resolved MCP server definitions
+  ansible.builtin.set_fact:
+    claude_code_mcp_servers_resolved: >-
+      {{ (claude_code_mcp_injected.stdout | from_json) if claude_code_mcp_needs_op | bool
+         else claude_code_mcp_servers }}
+  no_log: true
+
 - name: Manage MCP servers
   ansible.builtin.include_tasks: manage-mcp-server.yml
-  loop: "{{ claude_code_mcp_servers }}"
+  loop: "{{ claude_code_mcp_servers_resolved }}"
   loop_control:
     loop_var: mcp_server
     label: "{{ mcp_server.name }}"

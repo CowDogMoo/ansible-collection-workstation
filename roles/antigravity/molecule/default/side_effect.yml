@@ -1,6 +1,6 @@
 ---
-# side_effect.yml - Tests non-idempotent scenarios like plugin removal
-- name: Side Effect - Test plugin removal
+# side_effect.yml - Tests non-idempotent scenarios: plugin and MCP server removal
+- name: Side Effect - Test plugin and MCP server removal
   hosts: all
   tasks:
     - name: Set container variables based on distribution  # noqa: var-naming[no-role-prefix]
@@ -28,8 +28,9 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
-    # Test plugin removal (state: absent)
-    - name: Test plugin removal
+    # Test plugin and MCP server removal (state: absent). chrome-devtools stays in the
+    # MCP list so verify.yml can prove removal is selective rather than a wholesale rewrite.
+    - name: Test plugin and MCP server removal
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.antigravity
       vars:
@@ -37,6 +38,16 @@
         antigravity_user_home: "{{ container_home }}"
         antigravity_config_dir: "{{ container_home }}/.gemini/config"
         antigravity_manage_settings: false
+        antigravity_manage_hooks: false
+        antigravity_mcp_servers:
+          - name: chrome-devtools
+            command: npx
+            args:
+              - "-y"
+              - "chrome-devtools-mcp@latest"
+          - name: doomed
+            command: /bin/true
+            state: absent
         antigravity_plugins:
           - name: chrome-devtools
             target: chrome-devtools-mcp@latest
