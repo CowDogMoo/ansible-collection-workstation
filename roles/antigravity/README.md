@@ -100,7 +100,8 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Resolve 1Password references** (ansible.builtin.command) - Conditional
 - **Remove the staging file** (ansible.builtin.file) - Conditional
 - **Verify the resolved configuration still parses** (ansible.builtin.assert) - Conditional
-- **Write MCP configuration** (ansible.builtin.copy)
+- **Write MCP configuration** (ansible.builtin.template) - Conditional
+- **Write MCP configuration with resolved 1Password references** (ansible.builtin.copy) - Conditional
 
 ### manage-plugin.yml
 

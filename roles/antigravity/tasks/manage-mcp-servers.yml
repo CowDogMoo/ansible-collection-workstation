@@ -117,15 +117,31 @@
   when: antigravity_mcp_needs_op | bool
   no_log: true
 
+# Split into two writes so neither content value is a lone Jinja expression. A parameter
+# whose entire result parses as JSON gets converted to a dict and re-serialized by the
+# module, and the serialization it picks differs from what the template produced — which
+# made the file alternate between compact and pretty-printed on successive runs and never
+# converge. The template module writes its rendered output verbatim; the copy below keeps
+# a literal "\n" alongside the expression so the result stays a string.
+#
 # 0600 rather than 0644: resolved secrets land in this file.
 - name: Write MCP configuration
-  ansible.builtin.copy:
-    content: >-
-      {{ antigravity_mcp_injected.stdout if antigravity_mcp_needs_op | bool
-         else lookup('template', 'mcp_config.json.j2') }}
+  ansible.builtin.template:
+    src: mcp_config.json.j2
     dest: "{{ antigravity_mcp_config_file }}"
     owner: "{{ antigravity_username }}"
     group: "{{ antigravity_usergroup }}"
     mode: "0600"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: not antigravity_mcp_needs_op | bool
+
+- name: Write MCP configuration with resolved 1Password references
+  ansible.builtin.copy:
+    content: "{{ antigravity_mcp_injected.stdout }}\n"
+    dest: "{{ antigravity_mcp_config_file }}"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0600"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: antigravity_mcp_needs_op | bool
   no_log: true
