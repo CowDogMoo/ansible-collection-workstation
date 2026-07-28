@@ -8,6 +8,19 @@ antigravity_user_home: >-
 # Configuration directory for Agy
 antigravity_config_dir: "{{ antigravity_user_home }}/.gemini/config"
 
+# Global rules file. Sits in ~/.gemini rather than the customization root: GEMINI.md is
+# the only globally-scoped rules path Google documents.
+antigravity_rules_file: "{{ antigravity_user_home }}/.gemini/GEMINI.md"
+
+# Unlike Claude Code — which nests hooks inside ~/.claude/settings.json — Antigravity
+# reads hooks from a dedicated file in the customization root. Versions of agy before
+# 1.0.8 wrote this to ~/.gemini/antigravity-cli/hooks.json via the /hooks command;
+# writing the shared path directly is correct on every version.
+antigravity_hooks_file: "{{ antigravity_config_dir }}/hooks.json"
+
+# MCP servers are shared by the CLI, the IDE, and Antigravity 2.0.
+antigravity_mcp_config_file: "{{ antigravity_config_dir }}/mcp_config.json"
+
 # Homebrew prefix (varies by OS/architecture)
 antigravity_homebrew_prefix: >-
   {{ (ansible_facts['os_family'] == 'Darwin') | ternary(
@@ -23,6 +36,12 @@ antigravity_install: true
 # Whether to manage Agy settings
 antigravity_manage_settings: true
 
+# Whether to manage hooks
+antigravity_manage_hooks: true
+
+# Whether to backup existing hooks.json before overwriting
+antigravity_backup_settings: true
+
 # Plugin Management
 antigravity_manage_plugins: true  # Whether to manage plugins
 
@@ -32,4 +51,223 @@ antigravity_plugins: []
 # Example:
 #   - name: python_debugger
 #     target: python_debugger@latest
+#     state: present
+
+# Hooks — custom shell/Python commands bound to agent lifecycle events.
+#
+# Antigravity's hooks.json is keyed by hook name, which lines up with the dict-keyed
+# layout used here: each key below becomes a top-level entry in the generated file.
+# Consumers override individual hooks via `antigravity_hooks_overrides` using the same
+# key, no copy-paste needed:
+#
+#     antigravity_hooks_overrides:
+#       stop_sound:
+#         command: 'afplay "$HOME/Jobs Done.mp3"'
+#
+# To remove a default hook entirely on a specific host, set its value to `null`.
+# To add a host-specific hook, give it a new key.
+#
+# Supported events: PreToolUse, PostToolUse, PreInvocation, PostInvocation, Stop.
+# There is no Notification event, so Claude Code's `notify_sound` has no counterpart.
+#
+# Tool matchers use Antigravity's own tool names — `run_command`, `view_file`,
+# `write_to_file`, `replace_file_content`, `grep_search`, `find_by_name` — not Claude's
+# `Bash`/`Read`/`Write`. A matcher is a regex; "" or "*" matches every tool.
+#
+# Hooks communicate by writing JSON to stdout, not via exit codes. A PreToolUse hook
+# blocks with {"decision": "deny", "reason": "..."}; a Stop hook keeps the agent running
+# with {"decision": "continue", "reason": "..."} and the reason is injected as a system
+# message. Emitting `{}` expresses no opinion — note that "allow" is NOT the safe default
+# for a non-matching command, since it would auto-approve tool calls that would otherwise
+# have prompted for confirmation.
+antigravity_hooks_default:
+
+  # forbidden_content: Block commits/PRs with forbidden content (emojis/branding).
+  # Inspects the literal command string. Catches `git commit -m "...Co-Authored-By: Claude..."`
+  # and `gh pr create --body "...🤖..."` style invocations. Cannot see content passed via
+  # `-F file`, stdin pipes, $variables, or editor commits — `post_commit_check` handles those.
+  forbidden_content:
+    event: PreToolUse
+    matcher: run_command
+    command: |
+      python3 -c "
+      import json, sys
+
+      data = json.load(sys.stdin)
+      args = data.get('toolCall', {}).get('args', {})
+      # run_command exposes the shell string as CommandLine; the fallbacks keep the hook
+      # working if a future agy release renames or lowercases the field.
+      cmd = args.get('CommandLine') or args.get('commandLine') or args.get('command') or ''
+
+      forbidden = [
+          '🤖',
+          'Generated with',
+          'Co-Authored-By: Claude',
+          'Co-authored-by: Claude',
+          'claude.com/claude-code',
+          'noreply@anthropic.com',
+          'Co-Authored-By: Antigravity',
+          'Co-authored-by: Antigravity',
+          'Co-Authored-By: Gemini',
+          'Co-authored-by: Gemini',
+          'antigravity.google',
+      ]
+
+      git_writes = ['git commit', 'git revert', 'git cherry-pick', 'git rebase', 'git merge', 'git tag', 'git notes']
+      gh_writes = ['gh pr create', 'gh pr edit', 'gh pr comment', 'gh issue create', 'gh issue edit', 'gh issue comment', 'gh release create', 'gh release edit']
+
+      triggered = next((f for f in forbidden if f in cmd), None)
+      op = next((g for g in git_writes + gh_writes if g in cmd), None)
+
+      if triggered and op:
+          reason = (
+              f'BLOCKED: forbidden content {triggered!r} in {op!r} command.\\n\\n'
+              'Use ONLY fabric output:\\n'
+              '  Commits: fabric_commit  (or: git diff --staged | fabric --pattern commit)\\n'
+              '  PRs:     fabric_pr      (or: git diff main...HEAD | fabric --pattern pr)'
+          )
+          print(json.dumps({'decision': 'deny', 'reason': reason}))
+      else:
+          print(json.dumps({}))
+      "
+
+  # dangerous_flags: Block dangerous git flags that bypass safety checks (--no-verify, etc.).
+  dangerous_flags:
+    event: PreToolUse
+    matcher: run_command
+    command: |
+      python3 -c "
+      import json, sys, re
+
+      data = json.load(sys.stdin)
+      args = data.get('toolCall', {}).get('args', {})
+      cmd = args.get('CommandLine') or args.get('commandLine') or args.get('command') or ''
+
+      if 'git' not in cmd:
+          print(json.dumps({}))
+          sys.exit(0)
+
+      # Check for dangerous flags (long flags use simple 'in', short flags use regex)
+      dangerous_long = ['--no-verify', '--no-gpg-sign', '--no-post-rewrite']
+      blocked_flag = next((f for f in dangerous_long if f in cmd), None)
+
+      # Check for -n flag as standalone only in git commit commands
+      if not blocked_flag and 'git commit' in cmd and re.search(r'(^|\s)-n(\s|$)', cmd):
+          blocked_flag = '-n'
+
+      if blocked_flag:
+          reason = f'BLOCKED: Cannot use {blocked_flag} flag.\\n\\nThis flag bypasses important safety checks.\\nFix the underlying issues instead.'
+          print(json.dumps({'decision': 'deny', 'reason': reason}))
+      else:
+          print(json.dumps({}))
+      "
+
+  # post_commit_check: Safety net for forbidden content that slipped past `forbidden_content`.
+  # The PreToolUse hook only sees the literal command string, so it misses messages passed
+  # via `-F file`, stdin pipes (`fabric_commit` uses `git commit -F -`), $variables, editor
+  # commits, and squash-merges.
+  #
+  # This runs on Stop rather than PostToolUse: PostToolUse hooks must emit `{}` and have no
+  # way to push back, whereas a Stop hook returning "continue" keeps the agent working and
+  # feeds `reason` back as a system message. `executionNum` bounds the retries so a commit
+  # the agent refuses to amend can't wedge the session in an endless block loop.
+  post_commit_check:
+    event: Stop
+    command: |
+      python3 -c "
+      import json, sys, subprocess, os
+
+      data = json.load(sys.stdin)
+      paths = data.get('workspacePaths') or []
+      cwd = paths[0] if paths else os.getcwd()
+
+      # Give up after a few rounds rather than blocking termination forever.
+      if int(data.get('executionNum') or 0) > 3:
+          print(json.dumps({}))
+          sys.exit(0)
+
+      try:
+          msg = subprocess.run(
+              ['git', '-C', cwd, 'log', '-1', '--format=%B'],
+              capture_output=True, text=True, timeout=5, check=True,
+          ).stdout
+      except Exception:
+          print(json.dumps({}))
+          sys.exit(0)
+
+      forbidden = [
+          '🤖',
+          'Generated with',
+          'Co-Authored-By: Claude',
+          'Co-authored-by: Claude',
+          'claude.com/claude-code',
+          'noreply@anthropic.com',
+          'Co-Authored-By: Antigravity',
+          'Co-authored-by: Antigravity',
+          'Co-Authored-By: Gemini',
+          'Co-authored-by: Gemini',
+          'antigravity.google',
+      ]
+      hits = [f for f in forbidden if f in msg]
+      if hits:
+          reason = (
+              f'Last commit contains forbidden content: {hits!r}\\n\\n'
+              'Amend it now (do NOT push until fixed):\\n'
+              '  git log -1 --format=%B > /tmp/commit_msg\\n'
+              '  # edit /tmp/commit_msg and remove the trailers/branding\\n'
+              '  git commit --amend -F /tmp/commit_msg\\n'
+          )
+          print(json.dumps({'decision': 'continue', 'reason': reason}))
+      else:
+          print(json.dumps({}))
+      "
+
+  # stop_sound: Sound notification when the agent finishes a task. Emits no JSON, which
+  # leaves termination alone.
+  stop_sound:
+    event: Stop
+    command: "osascript -e 'beep 2'"
+
+# Per-host overrides for the dict above. Keys here are merged into
+# `antigravity_hooks_default` (recursive=True), so individual hooks can be
+# customized without copy-pasting the whole map.
+antigravity_hooks_overrides: {}
+
+# Final assembled map passed to the template. Built from defaults + overrides; entries
+# whose value is `null` (after merge) are filtered out so a host can disable a default hook
+# by setting `<key>: ~` in the overrides.
+antigravity_hooks: >-
+  {{
+    (antigravity_hooks_default | combine(antigravity_hooks_overrides, recursive=True))
+    | dict2items | rejectattr('value', 'none') | items2dict
+  }}
+
+# MCP Server Management
+antigravity_manage_mcp_servers: true  # Whether to manage MCP servers
+
+# List of MCP servers to install
+# Each server supports: name, command, args, env, state
+#
+# agy has no `mcp` subcommand, so these are written straight into mcp_config.json.
+# Servers not named here — including ones added through the /mcp overlay — are left alone.
+#
+# Any `op://vault/item/field` string is resolved by a single `op inject` pass over the
+# assembled document, so references work anywhere in a spec — not just secrets. That is
+# what keeps site-specific values (hostnames, account ids, paths) out of the repo. The
+# claude_code role's `OP_LOOKUP:op://...` prefix is also accepted, so a server spec can be
+# copied between the two roles unchanged.
+antigravity_mcp_servers: []
+# Example:
+#   - name: chrome-devtools
+#     command: npx
+#     args:
+#       - "-y"
+#       - "chrome-devtools-mcp@latest"
+#     state: present  # present or absent
+#
+#   - name: grafana
+#     command: "{{ antigravity_user_home }}/.local/bin/mcp-grafana"
+#     env:
+#       GRAFANA_URL: "op://automation/Grafana Account/grafana-url"
+#       GRAFANA_SERVICE_ACCOUNT_TOKEN: "op://automation/Grafana Account/api-token"
 #     state: present

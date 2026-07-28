@@ -34,6 +34,17 @@
     - ansible_facts['os_family'] == 'Windows'
     - antigravity_install | bool
 
+# Created before the config dir so ~/.gemini itself ends up owned by the user rather
+# than by whoever `become` resolved to when the nested path was auto-created.
+- name: Create Antigravity home directory
+  ansible.builtin.file:
+    path: "{{ antigravity_rules_file | dirname }}"
+    state: directory
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+
 - name: Create Antigravity configuration directory
   ansible.builtin.file:
     path: "{{ antigravity_config_dir }}"
@@ -43,15 +54,61 @@
     mode: "0755"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
 
-- name: Install global AGENTS.md instructions
+- name: Install global GEMINI.md instructions
   ansible.builtin.copy:
-    src: AGENTS.md
-    dest: "{{ antigravity_config_dir }}/AGENTS.md"
+    src: GEMINI.md
+    dest: "{{ antigravity_rules_file }}"
     owner: "{{ antigravity_username }}"
     group: "{{ antigravity_usergroup }}"
     mode: "0644"
   become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
   when: antigravity_manage_settings | bool
+
+- name: Check if hooks.json will change (dry-run)
+  ansible.builtin.template:
+    src: hooks.json.j2
+    dest: "{{ antigravity_hooks_file }}"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0644"
+  check_mode: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: antigravity_manage_hooks | bool
+  register: antigravity_hooks_check
+  changed_when: false
+  diff: false
+
+- name: Create backup of existing hooks.json in /tmp
+  ansible.builtin.copy:
+    src: "{{ antigravity_hooks_file }}"
+    dest: "/tmp/hooks.json.{{ ansible_facts['date_time']['iso8601_basic_short'] }}.backup"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0644"
+    remote_src: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when:
+    - antigravity_manage_hooks | bool
+    - antigravity_backup_settings | bool
+    - antigravity_hooks_check is changed
+  register: antigravity_backup_result
+
+- name: Generate Antigravity hooks.json
+  ansible.builtin.template:
+    src: hooks.json.j2
+    dest: "{{ antigravity_hooks_file }}"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: antigravity_manage_hooks | bool
+  register: antigravity_hooks_result
+
+- name: Manage MCP servers
+  ansible.builtin.include_tasks: manage-mcp-servers.yml
+  when:
+    - antigravity_manage_mcp_servers | bool
+    - antigravity_mcp_servers | length > 0
 
 - name: Manage plugins
   ansible.builtin.include_tasks: manage-plugins.yml
@@ -63,4 +120,7 @@
   ansible.builtin.debug:
     msg: >-
       Config Dir: {{ antigravity_config_dir }} |
-      Plugins: {{ antigravity_plugins | length }}
+      Hooks: {{ antigravity_hooks | length }}
+      {% if antigravity_backup_result.dest is defined %}| Backup: {{ antigravity_backup_result.dest }}{% endif %}
+      | MCP Servers: {{ antigravity_mcp_servers | length }}
+      | Plugins: {{ antigravity_plugins | length }}

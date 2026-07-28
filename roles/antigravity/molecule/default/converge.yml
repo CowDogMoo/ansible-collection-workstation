@@ -4,6 +4,19 @@
   vars:
     container_user: "{{ ansible_facts['distribution'] | lower }}"
     container_home: "/home/{{ container_user }}"
+    # Exercised by both role invocations below and re-asserted in verify.yml.
+    test_mcp_servers:
+      - name: chrome-devtools
+        command: npx
+        args:
+          - "-y"
+          - "chrome-devtools-mcp@latest"
+      - name: doomed
+        command: /bin/true
+        state: present
+    test_hooks_overrides:
+      stop_sound:
+        command: "true"
   tasks:
     - name: Set home directory fact  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
@@ -21,6 +34,8 @@
         antigravity_username: "{{ container_user }}"
         antigravity_user_home: "{{ container_home }}"
         antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_mcp_servers: "{{ test_mcp_servers }}"
+        antigravity_hooks_overrides: "{{ test_hooks_overrides }}"
         antigravity_plugins:
           - name: chrome-devtools
             target: chrome-devtools-mcp@latest
@@ -33,6 +48,8 @@
         antigravity_username: "{{ container_user }}"
         antigravity_user_home: "{{ container_home }}"
         antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_mcp_servers: "{{ test_mcp_servers }}"
+        antigravity_hooks_overrides: "{{ test_hooks_overrides }}"
         antigravity_plugins:
           - name: chrome-devtools
             target: chrome-devtools-mcp@latest

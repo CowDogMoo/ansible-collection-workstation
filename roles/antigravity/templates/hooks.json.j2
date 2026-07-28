@@ -1,0 +1,31 @@
+{#-
+  Renders antigravity_hooks into Antigravity's hooks.json.
+
+  Top-level keys are hook names, so each entry in the antigravity_hooks map becomes one
+  named hook config. Entry shape depends on the event: PreToolUse and PostToolUse group
+  handlers under a tool-name matcher, while PreInvocation, PostInvocation, and Stop take a
+  flat list of handlers with no matcher at all.
+
+  Building a dict and handing it to to_nice_json keeps the output valid JSON regardless of
+  what ends up in a hook's command string.
+-#}
+{% set grouped_events = ['PreToolUse', 'PostToolUse'] %}
+{% set hooks_json = {} %}
+{% for name, hook in antigravity_hooks.items() %}
+{%   set event = hook.event | default('PreToolUse') %}
+{%   set handler = {'type': hook.type | default('command'), 'command': hook.command} %}
+{%   if hook.timeout is defined %}
+{%     set _ = handler.update({'timeout': hook.timeout}) %}
+{%   endif %}
+{%   if event in grouped_events %}
+{%     set entries = [{'matcher': hook.matcher | default(''), 'hooks': [handler]}] %}
+{%   else %}
+{%     set entries = [handler] %}
+{%   endif %}
+{%   set spec = {event: entries} %}
+{%   if hook.enabled is defined %}
+{%     set _ = spec.update({'enabled': hook.enabled}) %}
+{%   endif %}
+{%   set _ = hooks_json.update({name: spec}) %}
+{% endfor %}
+{{ hooks_json | to_nice_json(indent=2) }}

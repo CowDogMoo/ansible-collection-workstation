@@ -15,13 +15,15 @@ claude_code_mcp_servers:
       - "-y"
       - "chrome-devtools-mcp@latest"
 
-  # Grafana integration for dashboards, alerts, and observability
+  # Grafana integration for dashboards, alerts, and observability.
+  # Both the instance URL and the token resolve from 1Password via a single `op inject`
+  # pass, so no site-specific value lands in the repo.
   - name: grafana
     scope: user
     command: "{{ ansible_facts['env']['HOME'] }}/.local/bin/mcp-grafana"
     env:
-      GRAFANA_URL: "{{ grafana_url | default('https://grafana.techvomit.xyz') }}"
-      GRAFANA_SERVICE_ACCOUNT_TOKEN: "OP_LOOKUP:op://Automation/Grafana Account/api-token"
+      GRAFANA_URL: "op://automation/Grafana Account/website"
+      GRAFANA_SERVICE_ACCOUNT_TOKEN: "op://automation/Grafana Account/api-token"
 
   # Warpgate for container/AMI image building
   - name: warpgate
@@ -34,5 +36,16 @@ claude_code_mcp_servers:
 # roles/claude_code/defaults/main.yml for the full hook map). Keys are merged
 # recursively into claude_code_advanced_hooks_default.
 claude_code_advanced_hooks_overrides:
+  stop_sound:
+    command: "afplay \"$HOME/Jobs Done.mp3\""
+
+# Antigravity MCP servers are shared across every workstation via group_vars/all.yml —
+# both the Grafana URL and its token resolve from 1Password, so nothing host-specific is
+# needed here. Set antigravity_mcp_servers_extra to append a server on this host only.
+
+# Antigravity hook overrides (see roles/antigravity/defaults/main.yml). Keys are merged
+# recursively into antigravity_hooks_default. Note there is no notify_sound counterpart:
+# Antigravity has no Notification event.
+antigravity_hooks_overrides:
   stop_sound:
     command: "afplay \"$HOME/Jobs Done.mp3\""

@@ -1,0 +1,35 @@
+{#-
+  Assembles mcp_config.json from the servers already on disk plus antigravity_mcp_servers.
+
+  Any op:// references survive this stage untouched; the calling task pipes the result
+  through `op inject` to resolve them. That keeps 1Password references usable anywhere in
+  a server spec — a URL, a command path, an env value — instead of only in secrets.
+
+  Servers not named in antigravity_mcp_servers are preserved, so entries added by hand or
+  through the /mcp overlay are never clobbered.
+-#}
+{% set absent = antigravity_mcp_servers
+     | selectattr('state', 'defined')
+     | selectattr('state', 'equalto', 'absent')
+     | map(attribute='name') | list %}
+{% set servers = {} %}
+{% for name, spec in (antigravity_mcp_existing_servers | default({}, true)).items() %}
+{%   set _ = servers.update({name: spec}) %}
+{% endfor %}
+{% for srv in antigravity_mcp_servers %}
+{%   if srv.state | default('present') != 'absent' %}
+{#     Normalize the claude_code role's OP_LOOKUP: prefix down to a bare op:// ref so a
+       server spec can be copied between the two roles unchanged. #}
+{%     set env = {} %}
+{%     for key, value in (srv.env | default({})).items() %}
+{%       set _ = env.update({key: value | regex_replace('^OP_LOOKUP:', '')}) %}
+{%     endfor %}
+{%     set _ = servers.update({srv.name: {
+         'command': srv.command | regex_replace('^OP_LOOKUP:', ''),
+         'args': srv.args | default([]),
+         'env': env,
+       }}) %}
+{%   endif %}
+{% endfor %}
+{% set final = servers | dict2items | rejectattr('key', 'in', absent) | items2dict %}
+{{ {'mcpServers': final} | to_nice_json(indent=2) }}

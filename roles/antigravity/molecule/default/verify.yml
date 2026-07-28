@@ -11,6 +11,9 @@
         antigravity_user_home: "{{ container_home }}"
         antigravity_config_dir: "{{ container_home }}/.gemini/config"
         antigravity_username: "{{ container_user }}"
+        antigravity_hooks_file: "{{ container_home }}/.gemini/config/hooks.json"
+        antigravity_mcp_config_file: "{{ container_home }}/.gemini/config/mcp_config.json"
+        antigravity_rules_file: "{{ container_home }}/.gemini/GEMINI.md"
 
     - name: Include default variables
       ansible.builtin.include_vars:
@@ -75,36 +78,187 @@
         fail_msg: "Agy config directory does not exist or has wrong permissions"
         success_msg: "Agy config directory exists with correct permissions"
 
-    - name: Check if AGENTS.md exists
+    - name: Check if GEMINI.md exists
       ansible.builtin.stat:
-        path: "{{ antigravity_config_dir }}/AGENTS.md"
+        path: "{{ antigravity_rules_file }}"
       register: antigravity_agy_md_stat
       become: true
       become_user: "{{ container_user }}"
 
-    - name: Assert AGENTS.md exists with correct permissions
+    - name: Assert GEMINI.md exists with correct permissions
       ansible.builtin.assert:
         that:
           - antigravity_agy_md_stat.stat.exists
           - antigravity_agy_md_stat.stat.mode == '0644'
           - antigravity_agy_md_stat.stat.pw_name == container_user
-        fail_msg: "AGENTS.md does not exist or has wrong permissions/ownership"
-        success_msg: "AGENTS.md exists with correct permissions and ownership"
+        fail_msg: "GEMINI.md does not exist or has wrong permissions/ownership"
+        success_msg: "GEMINI.md exists with correct permissions and ownership"
 
-    - name: Read AGENTS.md content
-      ansible.builtin.slurp:
+    # Global rules belong in ~/.gemini, not the customization root — assert the old
+    # location stays empty so a regression back to AGENTS.md is caught.
+    - name: Check that the legacy AGENTS.md location is unused
+      ansible.builtin.stat:
         path: "{{ antigravity_config_dir }}/AGENTS.md"
+      register: antigravity_legacy_md_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert legacy AGENTS.md was not written
+      ansible.builtin.assert:
+        that:
+          - not antigravity_legacy_md_stat.stat.exists
+        fail_msg: "Rules were written to the legacy {{ antigravity_config_dir }}/AGENTS.md path"
+        success_msg: "Rules live only at {{ antigravity_rules_file }}"
+
+    - name: Read GEMINI.md content
+      ansible.builtin.slurp:
+        path: "{{ antigravity_rules_file }}"
       register: antigravity_agy_md_content
       become: true
       become_user: "{{ container_user }}"
 
-    - name: Assert AGENTS.md contains expected content
+    - name: Assert GEMINI.md contains expected content
       ansible.builtin.assert:
         that:
           - "'Global Antigravity Instructions' in (antigravity_agy_md_content['content'] | b64decode)"
           - "'CRITICAL: .gemini' in (antigravity_agy_md_content['content'] | b64decode)"
-        fail_msg: "AGENTS.md does not contain expected instructions"
-        success_msg: "AGENTS.md contains all expected global instructions"
+        fail_msg: "GEMINI.md does not contain expected instructions"
+        success_msg: "GEMINI.md contains all expected global instructions"
+
+    - name: Check if hooks.json exists
+      ansible.builtin.stat:
+        path: "{{ antigravity_hooks_file }}"
+      register: antigravity_hooks_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert hooks.json exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - antigravity_hooks_stat.stat.exists
+          - antigravity_hooks_stat.stat.mode == '0644'
+          - antigravity_hooks_stat.stat.pw_name == container_user
+        fail_msg: "hooks.json does not exist or has wrong permissions/ownership"
+        success_msg: "hooks.json exists with correct permissions and ownership"
+
+    - name: Read hooks.json
+      ansible.builtin.slurp:
+        path: "{{ antigravity_hooks_file }}"
+      register: antigravity_hooks_raw
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse hooks.json
+      ansible.builtin.set_fact:
+        antigravity_hooks_parsed: "{{ antigravity_hooks_raw['content'] | b64decode | from_json }}"
+
+    # Antigravity keys hooks.json by hook name, and the entry shape differs per event:
+    # PreToolUse groups handlers under a tool matcher, Stop takes a flat handler list.
+    - name: Assert hooks.json has the expected structure
+      ansible.builtin.assert:
+        that:
+          - "'forbidden_content' in antigravity_hooks_parsed"
+          - "'dangerous_flags' in antigravity_hooks_parsed"
+          - "'post_commit_check' in antigravity_hooks_parsed"
+          - "'stop_sound' in antigravity_hooks_parsed"
+          - "'PreToolUse' in antigravity_hooks_parsed['forbidden_content']"
+          - antigravity_hooks_parsed['forbidden_content']['PreToolUse'][0]['matcher'] == 'run_command'
+          - antigravity_hooks_parsed['forbidden_content']['PreToolUse'][0]['hooks'][0]['type'] == 'command'
+          - "'Stop' in antigravity_hooks_parsed['stop_sound']"
+          - "'matcher' not in antigravity_hooks_parsed['stop_sound']['Stop'][0]"
+          - antigravity_hooks_parsed['stop_sound']['Stop'][0]['command'] == 'true'
+        fail_msg: "hooks.json structure is wrong: {{ antigravity_hooks_parsed }}"
+        success_msg: "hooks.json has correct per-event shapes and the override was applied"
+
+    # Hooks signal decisions through stdout JSON, so a hook that emits nothing parseable
+    # is silently inert in production. Run the real command to prove it blocks.
+    - name: Run forbidden_content hook against a violating command
+      ansible.builtin.command:
+        cmd: "{{ antigravity_hooks_parsed['forbidden_content']['PreToolUse'][0]['hooks'][0]['command'] }}"
+        stdin: "{{ hook_payload | to_json }}"
+      vars:
+        hook_payload:
+          toolCall:
+            name: run_command
+            args:
+              CommandLine: 'git commit -m "x{{ trailer }}"'
+        trailer: "\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+      register: antigravity_hook_deny
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert forbidden_content hook denies branded commits
+      ansible.builtin.assert:
+        that:
+          - (antigravity_hook_deny.stdout | from_json)['decision'] == 'deny'
+        fail_msg: "forbidden_content hook failed to deny: {{ antigravity_hook_deny.stdout }}"
+        success_msg: "forbidden_content hook denies branded commits"
+
+    - name: Run forbidden_content hook against a clean command
+      ansible.builtin.command:
+        cmd: "{{ antigravity_hooks_parsed['forbidden_content']['PreToolUse'][0]['hooks'][0]['command'] }}"
+        stdin: "{{ hook_payload | to_json }}"
+      vars:
+        hook_payload:
+          toolCall:
+            name: run_command
+            args:
+              CommandLine: "git commit -F -"
+      register: antigravity_hook_allow
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    # An explicit "allow" would auto-approve tool calls that should still prompt, so the
+    # no-violation path must return an empty decision rather than a positive one.
+    - name: Assert forbidden_content hook stays neutral on clean commands
+      ansible.builtin.assert:
+        that:
+          - "'decision' not in (antigravity_hook_allow.stdout | from_json)"
+        fail_msg: "forbidden_content hook should express no opinion, got: {{ antigravity_hook_allow.stdout }}"
+        success_msg: "forbidden_content hook stays neutral on clean commands"
+
+    - name: Check if mcp_config.json exists
+      ansible.builtin.stat:
+        path: "{{ antigravity_mcp_config_file }}"
+      register: antigravity_mcp_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    # 0600 because resolved OP_LOOKUP secrets land in this file.
+    - name: Assert mcp_config.json exists with restrictive permissions
+      ansible.builtin.assert:
+        that:
+          - antigravity_mcp_stat.stat.exists
+          - antigravity_mcp_stat.stat.mode == '0600'
+          - antigravity_mcp_stat.stat.pw_name == container_user
+        fail_msg: "mcp_config.json missing or has wrong permissions (expected 0600)"
+        success_msg: "mcp_config.json exists with 0600 permissions"
+
+    - name: Read mcp_config.json
+      ansible.builtin.slurp:
+        path: "{{ antigravity_mcp_config_file }}"
+      register: antigravity_mcp_raw
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse mcp_config.json
+      ansible.builtin.set_fact:
+        antigravity_mcp_parsed: "{{ antigravity_mcp_raw['content'] | b64decode | from_json }}"
+
+    - name: Assert MCP servers were written and selectively removed
+      ansible.builtin.assert:
+        that:
+          - "'mcpServers' in antigravity_mcp_parsed"
+          - "'chrome-devtools' in antigravity_mcp_parsed['mcpServers']"
+          - antigravity_mcp_parsed['mcpServers']['chrome-devtools']['command'] == 'npx'
+          - "'chrome-devtools-mcp@latest' in antigravity_mcp_parsed['mcpServers']['chrome-devtools']['args']"
+          - "'doomed' not in antigravity_mcp_parsed['mcpServers']"
+        fail_msg: >-
+          MCP config wrong. 'doomed' should have been removed by side_effect while
+          'chrome-devtools' survived: {{ antigravity_mcp_parsed }}
+        success_msg: "MCP servers written correctly and 'doomed' removed (state: absent verified)"
 
     - name: Verify plugin list after side_effect removal  # noqa: var-naming[no-role-prefix]
       ansible.builtin.command:
