@@ -25,17 +25,6 @@ provisioner:
   name: ansible
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
-  inventory:
-    host_vars:
-      ubuntu-workstation:
-        # group_vars/all.yml points the Grafana MCP server at 1Password. This container
-        # has no `op` binary and no vault access, and the role fails fast on unresolvable
-        # op:// references by design, so substitute a literal server that still exercises
-        # the merge-and-write path. Inventory host_vars outrank playbook group_vars, which
-        # is why this override takes effect at all.
-        antigravity_mcp_servers:
-          - name: molecule-probe
-            command: /bin/true
 
 verifier:
   name: ansible
