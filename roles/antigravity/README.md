@@ -38,6 +38,7 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_hooks_overrides` | dict | <code>{}</code> | No description |
 | `antigravity_hooks` | str | <code><multiline value: folded_strip></code> | No description |
 | `antigravity_manage_mcp_servers` | bool | <code>True</code> | No description |
+| `antigravity_mcp_op_required` | bool | <code>False</code> | No description |
 | `antigravity_mcp_servers` | list | <code>&#91;&#93;</code> | No description |
 
 ## Tasks
@@ -94,7 +95,9 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Parse existing MCP servers** (ansible.builtin.set_fact)
 - **Determine whether 1Password resolution is needed** (ansible.builtin.set_fact)
 - **Check for the 1Password CLI** (ansible.builtin.command) - Conditional
-- **Fail with guidance when op:// references cannot be resolved** (ansible.builtin.fail) - Conditional
+- **Fail with guidance when op:// references are required but unresolvable** (ansible.builtin.fail) - Conditional
+- **Warn that servers carrying op:// references are being skipped** (ansible.builtin.debug) - Conditional
+- **Skip the servers whose op:// references cannot be resolved** (ansible.builtin.set_fact) - Conditional
 - **Create a staging file for 1Password resolution** (ansible.builtin.tempfile) - Conditional
 - **Write MCP configuration for resolution** (ansible.builtin.template) - Conditional
 - **Resolve 1Password references** (ansible.builtin.command) - Conditional

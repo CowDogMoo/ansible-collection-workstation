@@ -14,6 +14,13 @@
       - name: doomed
         command: /bin/true
         state: present
+    # Nothing installs the 1Password CLI in the container, so this reference is
+    # deliberately unresolvable — see the third role invocation below.
+    test_mcp_op_servers:
+      - name: needs-op
+        command: /bin/true
+        env:
+          TOKEN: "op://vault/item/token"
     test_hooks_overrides:
       stop_sound:
         command: "true"
@@ -62,3 +69,38 @@
           - antigravity_second_run is not changed
         fail_msg: "Second run should not report changes (idempotency failed)"
         success_msg: "Role is idempotent"
+
+    # A missing 1Password CLI used to abort the play, which broke every host that does not
+    # use 1Password rather than just the servers needing it. Run last so the unresolvable
+    # server cannot disturb the idempotency check above.
+    - name: Include role under test (unresolvable op:// reference)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.antigravity
+      vars:
+        antigravity_username: "{{ container_user }}"
+        antigravity_user_home: "{{ container_home }}"
+        antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_manage_settings: false
+        antigravity_manage_hooks: false
+        antigravity_mcp_servers: "{{ test_mcp_servers + test_mcp_op_servers }}"
+
+    - name: Read mcp_config.json written without the 1Password CLI
+      ansible.builtin.slurp:
+        src: "{{ container_home }}/.gemini/config/mcp_config.json"
+      register: antigravity_mcp_without_op
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert the unresolvable server was skipped and the others survived
+      ansible.builtin.assert:
+        that:
+          - "'needs-op' not in antigravity_mcp_without_op_servers"
+          - "'chrome-devtools' in antigravity_mcp_without_op_servers"
+        fail_msg: >-
+          Without `op`, 'needs-op' must be dropped rather than written with a literal
+          op:// value, and the servers needing no resolution must still be configured:
+          {{ antigravity_mcp_without_op_servers }}
+        success_msg: "Unresolvable op:// server skipped; the rest were still written"
+      vars:
+        antigravity_mcp_without_op_servers: >-
+          {{ (antigravity_mcp_without_op['content'] | b64decode | from_json)['mcpServers'] }}
