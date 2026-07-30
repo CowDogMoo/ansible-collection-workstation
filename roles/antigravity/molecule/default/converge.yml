@@ -14,8 +14,7 @@
       - name: doomed
         command: /bin/true
         state: present
-    # Nothing installs the 1Password CLI in the container, so this reference is
-    # deliberately unresolvable — see the third role invocation below.
+    # The container has no `op`, so this reference cannot be resolved.
     test_mcp_op_servers:
       - name: needs-op
         command: /bin/true
@@ -70,9 +69,7 @@
         fail_msg: "Second run should not report changes (idempotency failed)"
         success_msg: "Role is idempotent"
 
-    # A missing 1Password CLI used to abort the play, which broke every host that does not
-    # use 1Password rather than just the servers needing it. Run last so the unresolvable
-    # server cannot disturb the idempotency check above.
+    # Run last so the unresolvable server cannot disturb the idempotency check above.
     - name: Include role under test (unresolvable op:// reference)
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.antigravity
