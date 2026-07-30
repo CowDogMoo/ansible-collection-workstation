@@ -245,6 +245,12 @@ antigravity_hooks: >-
 # MCP Server Management
 antigravity_manage_mcp_servers: true  # Whether to manage MCP servers
 
+# Whether a missing 1Password CLI is fatal. Off by default so a host without `op` still
+# gets every server that carries no op:// reference; the ones that do are skipped with a
+# warning rather than aborting the play. Turn on where a silently absent server is worse
+# than a failed run.
+antigravity_mcp_op_required: false
+
 # List of MCP servers to install
 # Each server supports: name, command, args, env, state
 #

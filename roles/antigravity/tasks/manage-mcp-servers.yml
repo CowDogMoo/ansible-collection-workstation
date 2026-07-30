@@ -56,12 +56,39 @@
   failed_when: false
   when: antigravity_mcp_needs_op | bool
 
-- name: Fail with guidance when op:// references cannot be resolved
+- name: Fail with guidance when op:// references are required but unresolvable
   ansible.builtin.fail:
     msg: >-
       antigravity_mcp_servers contains op:// references but the 1Password CLI is not on
       PATH. Install it (brew install 1password-cli) and run `op signin`, or replace the
       references with literal values.
+  when:
+    - antigravity_mcp_needs_op | bool
+    - antigravity_op_check.rc != 0
+    - antigravity_mcp_op_required | bool
+
+# Every op:// reference is site-specific by design, so a host without the CLI is an
+# ordinary case (CI, a fresh box, anyone not using 1Password) rather than a misconfigured
+# one — hence a warning instead of a failed play. Writing the references verbatim is not
+# an option either: agy would get a server whose URL or token is the literal string
+# "op://…", which fails at connect time and gives no hint why.
+- name: Warn that servers carrying op:// references are being skipped
+  ansible.builtin.debug:
+    msg: >-
+      1Password CLI not found; skipping the MCP servers that carry op:// references.
+      Install it (brew install 1password-cli) and run `op signin` to configure them, or
+      set antigravity_mcp_op_required=true to make this fatal instead.
+  when:
+    - antigravity_mcp_needs_op | bool
+    - antigravity_op_check.rc != 0
+
+# Clearing needs_op routes the rest of the file down the plain-template path, skipping the
+# staging file and the `op inject` call. Servers already in mcp_config.json are left alone,
+# so an entry resolved by an earlier run survives a run made without 1Password to hand.
+- name: Skip the servers whose op:// references cannot be resolved
+  ansible.builtin.set_fact:
+    antigravity_mcp_skip_op_servers: true
+    antigravity_mcp_needs_op: false
   when:
     - antigravity_mcp_needs_op | bool
     - antigravity_op_check.rc != 0

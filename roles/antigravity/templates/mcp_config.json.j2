@@ -17,7 +17,13 @@
 {%   set _ = servers.update({name: spec}) %}
 {% endfor %}
 {% for srv in antigravity_mcp_servers %}
-{%   if srv.state | default('present') != 'absent' %}
+{#   antigravity_mcp_skip_op_servers is set when the 1Password CLI is missing: the spec
+     cannot be resolved, so it is dropped rather than written with a literal op:// value.
+     Matching on the serialized spec catches a reference anywhere in it, and covers the
+     OP_LOOKUP: prefix too since that form still contains op://. #}
+{%   if srv.state | default('present') != 'absent'
+       and not (antigravity_mcp_skip_op_servers | default(false)
+                and 'op://' in (srv | to_json)) %}
 {#     Normalize the claude_code role's OP_LOOKUP: prefix down to a bare op:// ref so a
        server spec can be copied between the two roles unchanged. #}
 {%     set env = {} %}
