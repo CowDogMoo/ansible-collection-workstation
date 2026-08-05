@@ -30,6 +30,10 @@
             mode: "0755"
             owner: "{{ ansible_facts['user_id'] }}"
             group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
+          - path: "~/logs"  # Non-ansible launchd agent logs
+            mode: "0755"
+            owner: "{{ ansible_facts['user_id'] }}"
+            group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
 
         logging_rotation_configs:
           - name: "ansible-hosts"
@@ -49,6 +53,27 @@
             maxsize: "100M"
             copytruncate: true
             delaycompress: true
+            owner: "{{ ansible_facts['user_id'] }}"
+            group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
+
+          - name: "iem-decibel-monitor"
+            path: "~/logs/iem-decibel-monitor.log"
+            # This file is a launchd StandardErrorPath target, so launchd holds an
+            # open fd on the inode. `create` would rename the file out from under
+            # the daemon, which would keep writing to the rotated inode while the
+            # fresh file stayed empty. copytruncate is the only correct mode here,
+            # and it is mutually exclusive with create.
+            copytruncate: true
+            create: false
+            # The monitor emits a retry line every 3s whenever the Fireface is
+            # unplugged, so cap by size rather than trusting the daily cadence.
+            maxsize: "10M"
+            rotate: 3
+            frequency: "daily"
+            compress: true
+            missingok: true
+            notifempty: true
+            dateext: true
             owner: "{{ ansible_facts['user_id'] }}"
             group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
 
