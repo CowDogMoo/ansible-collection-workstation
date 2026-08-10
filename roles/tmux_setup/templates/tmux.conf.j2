@@ -13,20 +13,21 @@ unbind -n MouseDrag1Pane
 unbind -n MouseDragEnd1Pane
 bind -n MouseDrag1Pane if -Ft= '#{mouse_any_flag}' 'if -Ft= "#{pane_in_mode}" "copy-mode -M" "send-keys -M"' 'copy-mode -M'
 
-# Copy to clipboard on mouse drag end
-bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
-bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
+# Copy to clipboard on mouse drag end without leaving copy-mode,
+# so the scroll position and selection are preserved
+bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-no-clear "{{ tmux_setup_clipboard_command }}"
+bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-no-clear "{{ tmux_setup_clipboard_command }}"
 
 # Customize word separators to include paths and special chars
 set-option -gs word-separators " \t\"'`@"
 
 # Enable double-click to select and copy word
 bind -n DoubleClick1Pane select-pane \; copy-mode -M \; send-keys -X select-word \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
-bind -T copy-mode-vi DoubleClick1Pane select-pane \; send-keys -X select-word \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
+bind -T copy-mode-vi DoubleClick1Pane select-pane \; send-keys -X select-word \; send-keys -X copy-pipe-no-clear "{{ tmux_setup_clipboard_command }}"
 
 # Enable triple-click to select and copy line
 bind -n TripleClick1Pane select-pane \; copy-mode -M \; send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
-bind -T copy-mode-vi TripleClick1Pane select-pane \; send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
+bind -T copy-mode-vi TripleClick1Pane select-pane \; send-keys -X select-line \; send-keys -X copy-pipe-no-clear "{{ tmux_setup_clipboard_command }}"
 
 bind m set -g mouse \; display "Mouse: #{?mouse,ON,OFF}"
 

@@ -21,9 +21,9 @@ Installs the asdf version manager, wires it into the user's shell, and installs 
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
 | `asdf_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
-| `asdf_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('staff', asdf_username) }}</code> | No description |
+| `asdf_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary(ansible_facts&#91;'user_gid'&#93; &#124; default('staff'), asdf_username) }}</code> | No description |
 | `asdf_user_home` | str | <code><multiline value: folded_strip></code> | No description |
-| `asdf_bin_dir` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('/usr/local/bin', '/usr/local/bin') }}</code> | No description |
+| `asdf_bin_dir` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary(asdf_user_home + '/.local/bin', '/usr/local/bin') }}</code> | No description |
 | `asdf_data_dir` | str | <code>{{ asdf_user_home }}/.asdf</code> | No description |
 | `asdf_shells` | list | <code>&#91;&#93;</code> | No description |
 | `asdf_shells.0` | str | <code>/usr/bin/zsh</code> | No description |

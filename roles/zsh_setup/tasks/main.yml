@@ -9,11 +9,15 @@
     package_management_common_install_packages: "{{ zsh_setup_common_install_packages }}"
   when: zsh_setup_install_packages | default(true) | bool
 
+# Skipped on macOS: zsh_setup_usergroup resolves to a numeric GID there,
+# which the group module would treat as a group name to create
 - name: Ensure user group exists
   ansible.builtin.group:
     name: "{{ zsh_setup_usergroup }}"
     state: present
-  when: zsh_setup_getent_passwd.failed | default(false)
+  when:
+    - zsh_setup_getent_passwd.failed | default(false)
+    - ansible_facts['os_family'] != 'Darwin'
 
 - name: Ensure user exists
   ansible.builtin.user:
