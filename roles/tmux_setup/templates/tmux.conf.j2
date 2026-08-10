@@ -13,20 +13,20 @@ unbind -n MouseDrag1Pane
 unbind -n MouseDragEnd1Pane
 bind -n MouseDrag1Pane if -Ft= '#{mouse_any_flag}' 'if -Ft= "#{pane_in_mode}" "copy-mode -M" "send-keys -M"' 'copy-mode -M'
 
-# Don't auto-copy on drag end
-unbind -T copy-mode-vi MouseDragEnd1Pane
-unbind -T copy-mode MouseDragEnd1Pane
+# Copy to clipboard on mouse drag end
+bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
+bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
 
 # Customize word separators to include paths and special chars
 set-option -gs word-separators " \t\"'`@"
 
-# Enable double-click to select word
-bind -n DoubleClick1Pane select-pane \; copy-mode -M \; send-keys -X select-word
-bind -T copy-mode-vi DoubleClick1Pane select-pane \; send-keys -X select-word
+# Enable double-click to select and copy word
+bind -n DoubleClick1Pane select-pane \; copy-mode -M \; send-keys -X select-word \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
+bind -T copy-mode-vi DoubleClick1Pane select-pane \; send-keys -X select-word \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
 
-# Enable triple-click to select line
-bind -n TripleClick1Pane select-pane \; copy-mode -M \; send-keys -X select-line
-bind -T copy-mode-vi TripleClick1Pane select-pane \; send-keys -X select-line
+# Enable triple-click to select and copy line
+bind -n TripleClick1Pane select-pane \; copy-mode -M \; send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
+bind -T copy-mode-vi TripleClick1Pane select-pane \; send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
 
 bind m set -g mouse \; display "Mouse: #{?mouse,ON,OFF}"
 
@@ -66,6 +66,10 @@ set -g status-right "#{?pane_in_mode,#[fg=yellow][#{pane_mode}]#[default] ,}%Y-%
 # Enable vi keybindings
 setw -g mode-keys vi
 
+# Vi mode visual selection
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
+
 # Enable the use of arrows for pane navigation
 set -g status-keys vi
 
@@ -81,8 +85,9 @@ bind r source-file ~/.tmux.conf
 # Enable OSC 52 clipboard for copying over SSH
 set -g set-clipboard on
 
-# Bind key 'y' to copy to system clipboard (works locally and over SSH via OSC 52)
-bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'printf "\033]52;c;$(base64 | tr -d "\n")\a"'
+# Bind keys 'y' and Enter to copy to system clipboard
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
 
 # Bind key 'p' to paste the copied text - Ctrl b p
 unbind p

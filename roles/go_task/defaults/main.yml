@@ -3,7 +3,7 @@
 go_task_version: latest
 
 # Installation directory for Unix-like systems
-go_task_install_dir: /usr/local/bin
+go_task_install_dir: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_facts['env']['HOME'] + '/.local/bin', '/usr/local/bin') }}"
 
 # Installation directory for Windows systems
 go_task_windows_install_dir: C:\\Program Files\\task

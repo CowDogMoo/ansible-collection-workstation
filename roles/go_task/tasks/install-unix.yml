@@ -64,12 +64,11 @@
         remote_src: true
 
     - name: Ensure installation directory exists
-      become: true
+      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       ansible.builtin.file:
         path: "{{ go_task_install_dir }}"
         state: directory
         mode: '0755'
-      when: ansible_facts['os_family'] != 'Darwin'
 
     - name: Install go-task binary
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
