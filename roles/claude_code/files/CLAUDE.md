@@ -58,6 +58,73 @@ Prefer these modern equivalents when installed — they are faster and have bett
 
 Fall back to the classic tool if the modern one is unavailable.
 
+## Browser Automation (Claude in Chrome)
+
+Use the built-in Chrome integration (`claude --chrome`, or `/chrome` → "Enabled by
+default"). It opens new tabs in the **already-running** Chrome and shares its login
+state, so sites you're signed into stay signed in.
+
+**Do NOT add `chrome-devtools-mcp`, `@playwright/mcp`, or `puppeteer` as MCP servers
+for general browsing.** They launch a separate browser on their own throwaway
+profile (`~/.cache/chrome-devtools-mcp/`, `~/.cache/ms-playwright/`), which means
+re-authenticating everywhere. Reach for them only when you specifically need
+headless/CI browsing, and remove them afterward (`claude mcp remove <name> --scope user`).
+
+Requires OAuth login. API-key auth, or Bedrock/Vertex/Foundry, disables the Chrome
+integration entirely.
+
+### Session startup
+
+ALWAYS call `tabs_context_mcp` first, before any other browser tool.
+
+Tab IDs are per-session and go stale. Never reuse an ID from earlier in the
+conversation or from a previous session.
+
+- Only work in an existing tab if explicitly asked; otherwise `tabs_create_mcp`.
+- On any "tab doesn't exist" / invalid-tab error, re-call `tabs_context_mcp` for
+  fresh IDs instead of retrying the same ID. Same after a closed tab or failed
+  navigation.
+
+### Reading pages
+
+Prefer, in order: `find` (locating an element or string) → `get_page_text` (content
+as text) → `read_page` (interactive element map, for clicking and typing) →
+screenshot (only when layout or visual state actually matters).
+
+Never screenshot just to read text — it costs far more and reads worse.
+
+### Modal dialogs
+
+**NEVER trigger `alert()`, `confirm()`, `prompt()`, or native browser modals.** They
+block the extension's event loop and every subsequent tool call hangs until a human
+dismisses the dialog by hand.
+
+- Avoid clicking elements likely to confirm-prompt (Delete, Discard, Leave site).
+  If unavoidable, warn first that the session may stall.
+- Debug with `console.log` via `javascript_tool` + `read_console_messages`, never
+  `alert()`.
+- If one fires and tools stop responding, stop and say so. Do not keep retrying.
+
+### Debugging
+
+`read_console_messages` and `read_network_requests` are verbose. Always pass the
+`pattern` regex to filter (`"\\[MyApp\\]"`, `"error|failed"`) instead of dumping
+everything.
+
+### Don't spiral
+
+Stop and ask for direction when the same call fails 2–3 times, the extension stops
+responding, elements ignore clicks, pages won't load, or the task pulls into
+unrelated pages. Say what you tried and what went wrong. Never re-run a failing
+action indefinitely.
+
+### Misc
+
+- Batch independent actions into one `browser_batch` call.
+- For multi-step flows worth reviewing, record with `gif_creator` — capture a few
+  extra frames before the first and after the last action, and name the file for
+  what it shows (`login_flow.gif`, not `output.gif`).
+
 ## Notes
 
 - `git d main` shows the diff against the main branch
