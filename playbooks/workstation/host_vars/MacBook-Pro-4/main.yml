@@ -7,13 +7,6 @@ fabric_update_custom_patterns: true
 
 # MCP Server configuration for Claude Code
 claude_code_mcp_servers:
-  # Browser automation via Chrome DevTools
-  - name: chrome-devtools
-    scope: user
-    command: npx
-    args:
-      - "-y"
-      - "chrome-devtools-mcp@latest"
 
   # Grafana integration for dashboards, alerts, and observability
   - name: grafana

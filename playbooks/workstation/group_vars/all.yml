@@ -10,12 +10,6 @@
 # Split into base + extra because Ansible replaces lists rather than merging them:
 # a host that sets antigravity_mcp_servers directly would drop everything below it.
 antigravity_mcp_servers_base:
-  # Browser automation via Chrome DevTools
-  - name: chrome-devtools
-    command: npx
-    args:
-      - "-y"
-      - "chrome-devtools-mcp@latest"
 
   # Warpgate for container/AMI image building
   - name: warpgate
