@@ -31,6 +31,7 @@
   when:
     - logging_is_linux
     - ansible_facts['os_family'] == "Debian"
+    - not (logging_logrotate_check.stat.exists | default(false))
 
 - name: Install logrotate on Linux (RedHat-based)
   ansible.builtin.dnf:
@@ -40,6 +41,7 @@
   when:
     - logging_is_linux
     - ansible_facts['os_family'] == "RedHat"
+    - not (logging_logrotate_check.stat.exists | default(false))
 
 - name: Ensure logging directories exist
   ansible.builtin.file:
