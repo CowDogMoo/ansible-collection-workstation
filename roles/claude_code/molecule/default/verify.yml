@@ -117,7 +117,8 @@
       ansible.builtin.assert:
         that:
           - "'Global Claude Code Instructions' in (claude_code_claude_md_content['content'] | b64decode)"
-          - "'CRITICAL: .claude Directory' in (claude_code_claude_md_content['content'] | b64decode)"
+          - "'.claude Directory and Version Control' in (claude_code_claude_md_content['content'] | b64decode)"
+          - "'settings.local.json' in (claude_code_claude_md_content['content'] | b64decode)"
           - "'Git Workflow' in (claude_code_claude_md_content['content'] | b64decode)"
           - "'fabric' in (claude_code_claude_md_content['content'] | b64decode)"
           - "'--no-verify' in (claude_code_claude_md_content['content'] | b64decode)"
