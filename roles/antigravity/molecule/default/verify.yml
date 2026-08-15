@@ -121,7 +121,8 @@
       ansible.builtin.assert:
         that:
           - "'Global Antigravity Instructions' in (antigravity_agy_md_content['content'] | b64decode)"
-          - "'CRITICAL: .gemini' in (antigravity_agy_md_content['content'] | b64decode)"
+          - "'.gemini Directory and Version Control' in (antigravity_agy_md_content['content'] | b64decode)"
+          - "'oauth_creds.json' in (antigravity_agy_md_content['content'] | b64decode)"
         fail_msg: "GEMINI.md does not contain expected instructions"
         success_msg: "GEMINI.md contains all expected global instructions"
 

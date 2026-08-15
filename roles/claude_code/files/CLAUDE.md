@@ -1,13 +1,30 @@
 # Global Claude Code Instructions
 
-## CRITICAL: .claude Directory
+## .claude Directory and Version Control
 
-**NEVER EVER commit the .claude directory or any of its contents to git!**
+A project's `.claude/` directory mixes team-shared configuration with personal
+state. Commit the shared parts; keep the personal parts out of git.
 
-- The `.claude/` directory and its contents are personal/local configuration
-- Always ensure `.claude/` is in `.gitignore`
-- Never add, stage, or commit any files from `.claude/`
-- If `.claude/` appears in git status as staged, immediately run `git restore --staged .claude/`
+**Commit these** (team-shared configuration):
+
+- `.claude/settings.json` — shared permissions, hooks, and MCP configuration
+- `.claude/agents/` — project subagents
+- `.claude/skills/` — project skills
+- `.claude/commands/` — project slash commands
+- `.claude/rules/` — topic-scoped instruction files
+- `CLAUDE.md` (repo root or `.claude/CLAUDE.md`) — project instructions
+
+**NEVER commit these** (personal/local state):
+
+- `.claude/settings.local.json` — personal overrides (Claude Code auto-adds it
+  to the global git excludes)
+- `.claude/worktrees/`, `.claude/agent-memory-local/`, and any other
+  session/cache state
+- The global `~/.claude/` directory — it belongs to the user, never to a repo
+
+If a local-only file shows up staged, run `git restore --staged <path>` and add
+it to `.gitignore` — but never blanket-ignore the whole `.claude/` directory,
+since that hides shared agents, skills, and settings from the team.
 
 ## Git Workflow
 

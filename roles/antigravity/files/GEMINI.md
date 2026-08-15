@@ -1,13 +1,31 @@
 # Global Antigravity Instructions
 
-## CRITICAL: .gemini Directory
+## .gemini Directory and Version Control
 
-**NEVER EVER commit the .gemini directory or any of its contents to git!**
+Project-level agent configuration is team-shared and belongs in git; personal
+state and credentials never do.
 
-- The `.gemini/` directory and its contents are personal/local configuration
-- Always ensure `.gemini/` is in `.gitignore`
-- Never add, stage, or commit any files from `.gemini/`
-- If `.gemini/` appears in git status as staged, immediately run `git restore --staged .gemini/`
+**Commit these** (team-shared configuration):
+
+- `.gemini/settings.json` — project-scoped Gemini CLI settings (use `$VAR_NAME`
+  env-var syntax so secrets stay out of the file)
+- `.gemini/commands/` — project custom commands
+- `.agent/rules/` and `.agent/workflows/` — Antigravity workspace rules and
+  workflows
+- `GEMINI.md` / `AGENTS.md` at the repo root — project context and rules
+
+**NEVER commit these** (personal/local state and credentials):
+
+- The global `~/.gemini/` directory — it holds OAuth credentials
+  (`oauth_creds.json`, `google_accounts.json`) and belongs to the user, never
+  to a repo
+- `.env` files or anything else containing API keys
+- Session/cache state such as `.gemini/tmp/`
+
+If a local-only file shows up staged, run `git restore --staged <path>` and add
+it to `.gitignore` — but never blanket-ignore the whole `.gemini/` or `.agent/`
+directory, since that hides shared settings, commands, rules, and workflows
+from the team.
 
 ## Git Workflow
 
