@@ -11,8 +11,7 @@ tmux_setup_default_terminal: "screen-256color"
 tmux_setup_history_limit: 100000
 
 # Command used by `bind C` to copy the pane buffer to the system clipboard.
-# Defaults to macOS pbcopy; override for Linux (e.g. "xclip -selection clipboard").
-tmux_setup_clipboard_command: "pbcopy"
+tmux_setup_clipboard_command: "{{ 'pbcopy' if ansible_facts['os_family'] == 'Darwin' else 'xclip -selection clipboard' }}"
 
 # Whether to back up an existing ~/.tmux.conf before overwriting it.
 tmux_setup_backup: true

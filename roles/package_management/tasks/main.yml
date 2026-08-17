@@ -6,7 +6,9 @@
     create: true
     mode: '0644'
   become: true
-  when: ansible_facts["os_family"] == 'Debian'
+  when:
+    - ansible_facts["os_family"] == 'Debian'
+    - package_management_enabled | default(true) | bool
 
 - name: Install Kali Linux archive keyring
   ansible.builtin.get_url:
@@ -14,7 +16,9 @@
     dest: /usr/share/keyrings/kali-archive-keyring.gpg
     mode: '0644'
   become: true
-  when: ansible_facts["distribution"] == 'Kali'
+  when:
+    - ansible_facts["distribution"] == 'Kali'
+    - package_management_enabled | default(true) | bool
 
 - name: Install packages
   become: true
@@ -22,7 +26,9 @@
     name: "{{ package_management_install_packages }}"
     state: present
     update_cache: true
-  when: ansible_facts["os_family"] in ['Debian', 'RedHat']
+  when:
+    - ansible_facts["os_family"] in ['Debian', 'RedHat']
+    - package_management_enabled | default(true) | bool
   environment: "{{ (ansible_facts['os_family'] == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   register: package_management_package_result
   until: package_management_package_result is success

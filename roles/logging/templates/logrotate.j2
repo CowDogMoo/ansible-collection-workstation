@@ -1,4 +1,4 @@
-{{ log_rotation_config.path | expanduser }} {
+{{ log_rotation_config.path | regex_replace('^~', ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }} {
     rotate {{ log_rotation_config.rotate | default(30) }}
     {{ log_rotation_config.frequency | default('daily') }}
     {% if log_rotation_config.compress | default(true) %}compress{% endif %}
@@ -20,6 +20,6 @@
     {% if log_rotation_config.delaycompress | default(false) %}delaycompress{% endif %}
     {% if log_rotation_config.copytruncate | default(false) %}copytruncate{% endif %}
     {% if log_rotation_config.olddir is defined %}
-    olddir {{ log_rotation_config.olddir }}
+    olddir {{ log_rotation_config.olddir | regex_replace('^~', ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}
     {% endif %}
 }
