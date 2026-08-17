@@ -24,7 +24,7 @@
     go install {{ fabric_go_package }}
   environment:
     HOME: "{{ fabric_user_home }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
   become_user: "{{ fabric_username }}"
   when: fabric_check.rc != 0
   register: fabric_go_install
@@ -35,7 +35,7 @@
   register: fabric_version_check
   changed_when: false
   failed_when: false
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
   become_user: "{{ fabric_username }}"
 
 - name: Display installed version

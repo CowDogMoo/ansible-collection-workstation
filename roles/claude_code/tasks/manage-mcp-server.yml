@@ -19,7 +19,7 @@
     - mcp_server.state | default('present') == 'absent'
     - claude_code_mcp_server_exists | bool
   changed_when: true
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
   become_user: "{{ claude_code_username }}"
 
 - name: Build MCP add command - {{ mcp_server.name }}
@@ -47,6 +47,6 @@
     - mcp_server.state | default('present') == 'present'
     - not claude_code_mcp_server_exists | bool
   changed_when: true
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
   become_user: "{{ claude_code_username }}"
   no_log: true

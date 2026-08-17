@@ -19,7 +19,7 @@ Renders ~/.tmux.conf with mouse-friendly bindings and OSC52 clipboard
 | `tmux_setup_conf_path` | str | <code>{{ tmux_setup_user_home }}/.tmux.conf</code> | No description |
 | `tmux_setup_default_terminal` | str | <code>screen-256color</code> | No description |
 | `tmux_setup_history_limit` | int | <code>100000</code> | No description |
-| `tmux_setup_clipboard_command` | str | <code>{{ 'pbcopy' if ansible_facts&#91;'os_family'&#93; == 'Darwin' else 'xclip -selection clipboard' }}</code> | No description |
+| `tmux_setup_clipboard_command` | str | <code>{{ 'pbcopy' if ansible_facts&#91;'os_family'&#93; == 'Darwin' else '(xclip -selection clipboard 2>/dev/null &#124;&#124; true)' }}</code> | No description |
 | `tmux_setup_backup` | bool | <code>True</code> | No description |
 | `tmux_setup_local_overrides_path` | str | <code>{{ tmux_setup_user_home }}/.tmux.conf.local</code> | No description |
 

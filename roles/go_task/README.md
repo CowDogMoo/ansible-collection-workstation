@@ -16,7 +16,7 @@ Installs go-task (Task runner) on Unix-like and Windows systems
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
 | `go_task_version` | str | <code>latest</code> | No description |
-| `go_task_install_dir` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary((ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) + '/.local/bin', '/usr/local/bin') }}</code> | No description |
+| `go_task_install_dir` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin' or ansible_facts&#91;'user_id'&#93; != 'root') &#124; ternary((ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) + '/.local/bin', '/usr/local/bin') }}</code> | No description |
 | `go_task_windows_install_dir` | str | <code>C:\\Program Files\\task</code> | No description |
 | `go_task_windows_add_to_path` | bool | <code>True</code> | No description |
 | `go_task_github_token` | str | <code>{{ lookup('env', 'GITHUB_TOKEN') &#124; default('') }}</code> | No description |

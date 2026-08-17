@@ -19,10 +19,10 @@ unbind -n MouseDrag1Pane
 unbind -n MouseDragEnd1Pane
 bind -n MouseDrag1Pane if -Ft= '#{mouse_any_flag}' 'if -Ft= "#{pane_in_mode}" "copy-mode -M" "send-keys -M"' 'copy-mode -M'
 
-# Copy to clipboard on mouse drag end without leaving copy-mode,
-# so the scroll position and selection are preserved
-bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-no-clear "{{ tmux_setup_clipboard_command }}"
-bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-no-clear "{{ tmux_setup_clipboard_command }}"
+# Releasing the mouse keeps the selection highlighted without copying;
+# nothing reaches the clipboard until 'y' (or Enter) is pressed
+bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X stop-selection
+bind-key -T copy-mode MouseDragEnd1Pane send-keys -X stop-selection
 
 # Customize word separators to include paths and special chars
 set-option -gs word-separators " \t\"'`@"
@@ -47,7 +47,7 @@ bind - split-window -v -c "#{pane_current_path}"
 bind P command-prompt -p "Pane Title:" "select-pane -T '%%'"
 
 # Keybinding to copy entire pane content to clipboard
-bind C run-shell "tmux capture-pane -pS - | {{ tmux_setup_clipboard_command }}" \; display-message "Pane copied to clipboard"
+bind C run-shell "tmux capture-pane -pS - | tmux load-buffer -w -" \; display-message "Pane copied to clipboard"
 
 # Pane borders - make them highly visible
 set -g pane-border-style fg=colour240,bg=colour235
@@ -92,6 +92,8 @@ bind r source-file ~/.tmux.conf
 
 # Enable OSC 52 clipboard for copying over SSH
 set -g set-clipboard on
+set -as terminal-features ',*:clipboard'
+set -as terminal-overrides ',*:Ms=\E]52;%p1%s;%p2%s\007'
 
 # Bind keys 'y' and Enter to copy to system clipboard
 bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "{{ tmux_setup_clipboard_command }}"
