@@ -120,7 +120,7 @@
           - "'.claude Directory and Version Control' in (claude_code_claude_md_content['content'] | b64decode)"
           - "'settings.local.json' in (claude_code_claude_md_content['content'] | b64decode)"
           - "'Git Workflow' in (claude_code_claude_md_content['content'] | b64decode)"
-          - "'fabric' in (claude_code_claude_md_content['content'] | b64decode)"
+          - "'squad_commit' in (claude_code_claude_md_content['content'] | b64decode)"
           - "'--no-verify' in (claude_code_claude_md_content['content'] | b64decode)"
         fail_msg: "CLAUDE.md does not contain expected instructions"
         success_msg: "CLAUDE.md contains all expected global instructions"
