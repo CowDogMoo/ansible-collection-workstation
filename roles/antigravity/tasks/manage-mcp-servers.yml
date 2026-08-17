@@ -30,16 +30,30 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
   no_log: true
 
-# A hand-corrupted or half-written mcp_config.json would otherwise blow up the
-# from_json below with an unhelpful template error, so fall back to an empty map
-# and let the write task rebuild the file from scratch.
+# A hand-corrupted or half-written mcp_config.json blows up the from_json below,
+# and `failed_when` cannot rescue that: the expression fails while templating the
+# task's own argument, before a result exists for `failed_when` to judge. Only
+# block/rescue catches it — fall back to an empty map and let the write task
+# rebuild the file from scratch.
 - name: Parse existing MCP servers
-  ansible.builtin.set_fact:
-    antigravity_mcp_existing_servers: >-
-      {{ (antigravity_mcp_existing['content'] | b64decode | from_json).get('mcpServers', {})
-         if antigravity_mcp_config_stat.stat.exists else {} }}
-  failed_when: false
-  no_log: true
+  block:
+    - name: Extract mcpServers from the existing configuration
+      ansible.builtin.set_fact:
+        antigravity_mcp_existing_servers: >-
+          {{ (antigravity_mcp_existing['content'] | b64decode | from_json).get('mcpServers', {})
+             if antigravity_mcp_config_stat.stat.exists else {} }}
+      no_log: true
+  rescue:
+    - name: Warn that the existing MCP configuration is unreadable
+      ansible.builtin.debug:
+        msg: >-
+          {{ antigravity_mcp_config_file }} exists but does not parse as a JSON object;
+          rebuilding it from antigravity_mcp_servers. Servers added by hand to the old
+          file are not preserved this run.
+
+    - name: Fall back to an empty MCP server map
+      ansible.builtin.set_fact:
+        antigravity_mcp_existing_servers: {}
 
 # Detected from the source vars rather than the rendered document. Existing on-disk
 # servers are included so references left behind by an interrupted run still get resolved.
