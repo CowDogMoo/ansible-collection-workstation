@@ -29,6 +29,7 @@
           - "'set -g default-terminal \"screen-256color\"' in cfg"
           - "'set -g history-limit 100000' in cfg"
           - "'setw -g mouse on' in cfg"
+          - "\"bind -n WheelUpPane if -Ft= '#{||:#{pane_in_mode},#{mouse_any_flag}}' 'send-keys -M' 'copy-mode -e'\" in cfg"
           - "'set -g set-clipboard on' in cfg"
           - "'setw -g mode-keys vi' in cfg"
           - "'xclip -selection clipboard' in cfg"
