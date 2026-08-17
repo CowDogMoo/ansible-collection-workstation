@@ -31,10 +31,12 @@ from the team.
 
 ### Commits
 
-Always use `fabric_commit` for commit messages:
+Always use `squad_commit` for commit messages (billed to the Claude
+subscription via squad's claude-code provider). If it fails, fall back to
+`fabric_commit` (API-billed):
 
 ```bash
-fabric_commit
+squad_commit
 ```
 
 **NEVER EVER use --no-verify when committing or there will be dire consequences!**
@@ -46,27 +48,24 @@ fabric_commit
 
 ### Pull Requests
 
-Always use the `fabric_pr` function to create pull requests:
+Always use `squad_pr` for pull requests — both to **open** them and to **update** them (billed to the Claude subscription; fall back to `fabric_pr` if it fails). `squad_pr` regenerates the title/body from the current `git diff main`, then creates the PR or, if one already exists for the branch, updates that PR in place.
 
 ```bash
-fabric_pr
+squad_pr
 ```
 
-**CRITICAL POST-CREATION VERIFICATION**:
+**The PR title and body must ALWAYS be `squad_pr`'s generated output. NEVER hand-write or hand-edit them.**
 
-After `fabric_pr` creates the PR, you MUST verify and fix if needed:
+- Any time the branch changes — after a **rebase, amend, new commits, or force-push** — the existing body is stale. Re-run `squad_pr`; it regenerates from the new diff and updates the existing PR. This is the ONLY correct way to refresh a PR body.
+- Do **not** run `gh pr edit --body "..."` (or `--title`) with text you wrote yourself, and do not "clean up", "correct", or "just fix" the body by hand. Substituting your own writing for the generated output breaks this rule no matter how small the change. If the body needs to change, re-run `squad_pr`.
 
-1. **Check the created PR** using `gh pr view` to see the title and body
-2. **Verify requirements**:
-   - **No code fences (```)** in the title or body
-   - **No duplicate title** - the title text must NOT appear in the body
-3. **If violations found**, update the PR immediately using `gh pr edit`:
+**Format verification — after every `squad_pr`:**
 
-   ```bash
-   gh pr edit --body "corrected body without code fences or duplicate title"
-   ```
+1. Check the PR with `gh pr view`.
+2. Confirm the generated output is clean: **no code fences (```)** in the title or body, and the **title is not duplicated** in the body.
+3. If the output is malformed, the bug is in the `pr` pattern or the filter — both live in `~/cowdogmoo/fabric-patterns-hub` (`patterns/pr/system.md`, `scripts/filter.py`) — fix it at the source and re-run `squad_pr`. Never patch the symptom by hand-editing the PR.
 
-The `fabric_pr` function should handle these automatically, but you must verify and correct any issues in the created PR.
+Both `squad_pr` and `fabric_pr` share the same patterns and filters from `~/cowdogmoo/fabric-patterns-hub`, so a source fix applies to both.
 
 ## Modern CLI Tools
 

@@ -124,9 +124,9 @@ antigravity_hooks_default:
       if triggered and op:
           reason = (
               f'BLOCKED: forbidden content {triggered!r} in {op!r} command.\\n\\n'
-              'Use ONLY fabric output:\\n'
-              '  Commits: fabric_commit  (or: git diff --staged | fabric --pattern commit)\\n'
-              '  PRs:     fabric_pr      (or: git diff main...HEAD | fabric --pattern pr)'
+              'Use ONLY squad output:\\n'
+              '  Commits: squad_commit  (or: git diff --staged | squad_gen commit)\\n'
+              '  PRs:     squad_pr      (or: git diff main...HEAD | squad_gen pr)'
           )
           print(json.dumps({'decision': 'deny', 'reason': reason}))
       else:
@@ -166,7 +166,7 @@ antigravity_hooks_default:
 
   # post_commit_check: Safety net for forbidden content that slipped past `forbidden_content`.
   # The PreToolUse hook only sees the literal command string, so it misses messages passed
-  # via `-F file`, stdin pipes (`fabric_commit` uses `git commit -F -`), $variables, editor
+  # via `-F file`, stdin pipes (`squad_commit` uses `git commit -F -`), $variables, editor
   # commits, and squash-merges.
   #
   # This runs on Stop rather than PostToolUse: PostToolUse hooks must emit `{}` and have no
