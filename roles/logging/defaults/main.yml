@@ -30,4 +30,11 @@ logging_rotation_configs: []
 logging_launchagent_label: "com.logging.logrotate" # Default label for the LaunchAgent
 logging_launchagent_hour: 3 # Default to 3:00 AM daily
 logging_launchagent_minute: 0 # Default to 3:00 AM daily
-logging_logrotate_log_path: "{{ ansible_facts['env']['HOME'] }}/logs/logrotate" # Where logrotate itself logs
+logging_logrotate_log_path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/logs/logrotate" # Where logrotate itself logs
+
+# System-specific paths
+logging_logrotate_binary_darwin: "/opt/homebrew/sbin/logrotate"
+logging_logrotate_binary_linux: "/usr/sbin/logrotate"
+logging_logrotate_config_dir_darwin: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/.config/logrotate.d"
+logging_logrotate_config_dir_linux: "{{ '/etc/logrotate.d' if (ansible_facts['user_id'] == 'root' or logging_manage_system | default(false)) else ((ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) + '/.config/logrotate.d') }}"
+logging_logrotate_state_file: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) + '/.config/logrotate.state' if (ansible_facts['os_family'] == 'Darwin' or ansible_facts['user_id'] != 'root') else '/var/lib/logrotate/status' }}"

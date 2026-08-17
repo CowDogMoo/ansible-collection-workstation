@@ -15,7 +15,7 @@
     - plugin.state | default('present') == 'absent'
     - antigravity_plugin_exists | bool
   changed_when: true
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
   become_user: "{{ antigravity_username }}"
 
 - name: Add plugin - {{ plugin.name }}
@@ -28,5 +28,5 @@
     - plugin.state | default('present') == 'present'
     - not antigravity_plugin_exists | bool
   changed_when: true
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
   become_user: "{{ antigravity_username }}"

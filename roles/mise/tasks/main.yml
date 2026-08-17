@@ -27,7 +27,7 @@
     owner: "{{ mise_username }}"
     group: "{{ mise_usergroup }}"
     mode: "0755"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and (not mise_bin_dir.startswith(mise_user_home) or mise_username != ansible_facts['user_id']) }}"
 
 - name: Check if mise is already installed
   ansible.builtin.stat:
@@ -40,10 +40,10 @@
   changed_when: false
   failed_when: false
   when: mise_binary_stat.stat.exists
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and (not mise_bin_dir.startswith(mise_user_home) or mise_username != ansible_facts['user_id']) }}"
 
 - name: Fetch and install mise binary
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and (not mise_bin_dir.startswith(mise_user_home) or mise_username != ansible_facts['user_id']) }}"
   when: not mise_binary_stat.stat.exists or mise_version not in (mise_installed_version.stdout | default(''))
   block:
     - name: Download mise archive
@@ -87,7 +87,7 @@
         state: absent
 
 - name: Setup mise data directory
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
   ansible.builtin.file:
     path: "{{ mise_data_dir }}"
     state: directory
@@ -96,7 +96,7 @@
     mode: "0755"
 
 - name: Setup mise config directory
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
   ansible.builtin.file:
     path: "{{ mise_config_dir }}"
     state: directory
@@ -105,7 +105,7 @@
     mode: "0755"
 
 - name: Setup mise shims directory
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
   ansible.builtin.file:
     path: "{{ mise_data_dir }}/shims"
     state: directory
@@ -139,7 +139,7 @@
   args:
     executable: /bin/bash
   environment: "{{ mise_env }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
   become_user: "{{ mise_username }}"
   changed_when: false
 
@@ -148,14 +148,14 @@
     src: install_mise_plugins.sh.j2
     dest: "/tmp/install_mise_plugins"
     mode: "0755"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
 
 - name: Install mise plugins
   ansible.builtin.shell: "/tmp/install_mise_plugins"
   args:
     executable: /bin/bash
   environment: "{{ mise_env }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
   become_user: "{{ mise_username }}"
   register: mise_plugin_installation
   # Not change-idempotent: the script re-runs plugin setup (mise use
@@ -170,7 +170,7 @@
     owner: "{{ mise_username }}"
     group: "{{ mise_usergroup }}"
     mode: "0644"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
 
 - name: Reshim after installations
   ansible.builtin.shell: |
@@ -179,7 +179,7 @@
   args:
     executable: /bin/bash
   environment: "{{ mise_env }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"
   become_user: "{{ mise_username }}"
   changed_when: false
 

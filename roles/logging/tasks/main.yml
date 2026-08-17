@@ -6,8 +6,8 @@
 
 - name: Set logrotate paths based on OS
   ansible.builtin.set_fact:
-    logging_logrotate_binary: "{{ logging_logrotate_binary_darwin if logging_is_macos else logging_logrotate_binary_linux }}"
-    logging_logrotate_config_dir: "{{ logging_logrotate_config_dir_darwin if logging_is_macos else logging_logrotate_config_dir_linux }}"
+    logging_logrotate_binary: "{{ logging_logrotate_binary | default(logging_logrotate_binary_darwin if logging_is_macos else logging_logrotate_binary_linux) }}"
+    logging_logrotate_config_dir: "{{ logging_logrotate_config_dir | default(logging_logrotate_config_dir_darwin if logging_is_macos else logging_logrotate_config_dir_linux) }}"
 
 - name: Check if logrotate binary exists
   ansible.builtin.stat:
@@ -45,7 +45,7 @@
 
 - name: Ensure logging directories exist
   ansible.builtin.file:
-    path: "{{ item.path | expanduser }}"
+    path: "{{ item.path | regex_replace('^~', ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}"
     state: directory
     mode: "{{ item.mode | default('0755') }}"
     owner: "{{ item.owner | default(ansible_facts['user_id']) }}"
@@ -68,12 +68,12 @@
     path: "{{ logging_logrotate_config_dir }}"
     state: directory
     mode: "0755"
-  become: "{{ logging_is_linux }}"
+  become: "{{ logging_is_linux and logging_logrotate_config_dir.startswith('/etc') }}"
   when: logging_rotation_configs | length > 0
 
 - name: Ensure olddir directories exist for log rotation
   ansible.builtin.file:
-    path: "{{ item.olddir | expanduser }}"
+    path: "{{ item.olddir | regex_replace('^~', ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}"
     state: directory
     mode: "0755"
     owner: "{{ item.owner | default(ansible_facts['user_id']) }}"
@@ -87,7 +87,7 @@
     src: logrotate.j2
     dest: "{{ logging_logrotate_config_dir }}/{{ item.name | default(item.path.split('/')[-2]) }}"
     mode: "0644"
-  become: "{{ logging_is_linux }}"
+  become: "{{ logging_is_linux and logging_logrotate_config_dir.startswith('/etc') }}"
   loop: "{{ logging_rotation_configs }}"
   vars:
     log_rotation_config: "{{ item }}"

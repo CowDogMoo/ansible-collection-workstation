@@ -22,27 +22,27 @@
       # role: ../../roles/logging
       vars:
         logging_directories:
-          - path: "~/ansible-logs"
+          - path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/ansible-logs"
             mode: "0755"
             owner: "{{ ansible_facts['user_id'] }}"
             group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
-          - path: "~/ansible-logs/hosts"  # For log_plays callback
+          - path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/ansible-logs/hosts"  # For log_plays callback
             mode: "0755"
             owner: "{{ ansible_facts['user_id'] }}"
             group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
-          - path: "~/logs"  # Non-ansible launchd agent logs
+          - path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/logs"  # Non-ansible launchd agent logs
             mode: "0755"
             owner: "{{ ansible_facts['user_id'] }}"
             group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
 
         logging_rotation_configs:
           - name: "ansible-hosts"
-            path: "~/ansible-logs/hosts/*"
+            path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/ansible-logs/hosts/*"
             # Without olddir, the path glob re-matches yesterday's rotated file
             # (e.g. `localhost-20260626`), so dateext appends another suffix on
             # each run — producing `localhost-20260626-20260628-...` and
             # exploding Loki's series count (the shipper labels host by basename).
-            olddir: "{{ ansible_facts['env']['HOME'] }}/ansible-logs/hosts/archive"
+            olddir: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/ansible-logs/hosts/archive"
             rotate: 30
             frequency: "daily"
             compress: true
@@ -57,7 +57,7 @@
             group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
 
           - name: "iem-decibel-monitor"
-            path: "~/logs/iem-decibel-monitor.log"
+            path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/logs/iem-decibel-monitor.log"
             # This file is a launchd StandardErrorPath target, so launchd holds an
             # open fd on the inode. `create` would rename the file out from under
             # the daemon, which would keep writing to the rotated inode while the
@@ -79,7 +79,7 @@
 
         # Optional: Override default LaunchAgent settings for macOS
         logging_launchagent_label: "com.ansible.logrotate"
-        logging_logrotate_log_path: "{{ ansible_facts['env']['HOME'] }}/ansible-logs/logrotate"
+        logging_logrotate_log_path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/ansible-logs/logrotate"
 
     # Install and configure Alloy for log shipping to Loki
     # This should come after logging setup to ensure directories exist
@@ -87,6 +87,7 @@
       role: grafana.grafana.alloy
       tags:
         - alloy
+      when: alloy_enabled | default(true) | bool
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
       vars:
         # Workaround for undefined variable warning on macOS
@@ -180,11 +181,13 @@
 
     - name: Setup users on workstation
       role: cowdogmoo.workstation.user_setup
+      when: user_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/user_setup
 
     - name: Install modern CLI tools (fd, rg, bat, eza, delta, dust, duf, procs, sd, zoxide, jq, yq, ...)
       role: cowdogmoo.workstation.package_management
+      when: package_management_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/package_management
       vars:
@@ -198,6 +201,7 @@
 
     - name: Deploy shell function libraries to ~/.dotfiles
       role: cowdogmoo.workstation.shell_functions
+      when: shell_functions_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/shell_functions
       # On the maintainer's box, set shell_functions_source_path in host_vars
@@ -226,6 +230,7 @@
 
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup
+      when: zsh_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/zsh_setup
 
@@ -233,6 +238,7 @@
       role: cowdogmoo.workstation.mise
       tags:
         - mise
+      when: mise_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/mise
 
@@ -240,6 +246,7 @@
       role: cowdogmoo.workstation.fabric
       tags:
         - fabric
+      when: fabric_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/fabric
       vars:
@@ -251,6 +258,7 @@
       role: cowdogmoo.workstation.claude_code
       tags:
         - claude
+      when: claude_code_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/claude_code
 
@@ -258,6 +266,7 @@
       role: cowdogmoo.workstation.antigravity
       tags:
         - antigravity
+      when: antigravity_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/antigravity
 
@@ -265,15 +274,18 @@
       role: cowdogmoo.workstation.go_task
       tags:
         - go_task
+      when: go_task_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/go_task
 
     - name: Render ~/.gitconfig
       role: cowdogmoo.workstation.git_setup
+      when: git_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/git_setup
 
     - name: Render ~/.tmux.conf
       role: cowdogmoo.workstation.tmux_setup
+      when: tmux_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/tmux_setup

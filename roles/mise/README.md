@@ -21,7 +21,7 @@ Installs the mise polyglot tool version manager, wires it into the user's shell,
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
 | `mise_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
-| `mise_usergroup` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary(ansible_facts&#91;'user_gid'&#93; &#124; default('staff'), mise_username) }}</code> | No description |
+| `mise_usergroup` | str | <code>{{ (ansible_facts&#91;'user_gid'&#93; &#124; default('staff')) if ansible_facts&#91;'os_family'&#93; == 'Darwin' else mise_username }}</code> | No description |
 | `mise_user_home` | str | <code><multiline value: folded_strip></code> | No description |
 | `mise_bin_dir` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary(mise_user_home + '/.local/bin', '/usr/local/bin') }}</code> | No description |
 | `mise_data_dir` | str | <code>{{ mise_user_home }}/.local/share/mise</code> | No description |

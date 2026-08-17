@@ -20,14 +20,14 @@
   ansible.builtin.stat:
     path: "{{ antigravity_mcp_config_file }}"
   register: antigravity_mcp_config_stat
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
 
 - name: Read existing MCP configuration
   ansible.builtin.slurp:
     src: "{{ antigravity_mcp_config_file }}"
   register: antigravity_mcp_existing
   when: antigravity_mcp_config_stat.stat.exists
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
   no_log: true
 
 # A hand-corrupted or half-written mcp_config.json would otherwise blow up the
@@ -159,7 +159,7 @@
     owner: "{{ antigravity_username }}"
     group: "{{ antigravity_usergroup }}"
     mode: "0600"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
   when: not antigravity_mcp_needs_op | bool
 
 - name: Write MCP configuration with resolved 1Password references
@@ -169,6 +169,6 @@
     owner: "{{ antigravity_username }}"
     group: "{{ antigravity_usergroup }}"
     mode: "0600"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
   when: antigravity_mcp_needs_op | bool
   no_log: true

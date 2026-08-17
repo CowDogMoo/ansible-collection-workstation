@@ -1,10 +1,12 @@
 ---
 # User configuration
 fabric_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}"  # User to install fabric for
-fabric_usergroup: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_facts['user_gid'] | default('staff'), fabric_username) }}"  # Group for fabric files
+fabric_usergroup: "{{ (ansible_facts['user_gid'] | default('staff')) if ansible_facts['os_family'] == 'Darwin' else fabric_username }}"  # Group for fabric files
 fabric_user_home: >-  # Home directory of the fabric user
-  {{ (ansible_facts['os_family'] == 'Darwin') | ternary(ansible_facts['env']['HOME'],
-     (fabric_username == 'root') | ternary('/root', '/home/' + fabric_username)) }}
+  {{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME']))
+     if (fabric_username == (ansible_facts['user_id'] | default(ansible_facts['user']) | default('')))
+     else ((ansible_facts['os_family'] == 'Darwin') | ternary('/Users/' + fabric_username,
+           (fabric_username == 'root') | ternary('/root', '/home/' + fabric_username))) }}
 
 # Installation settings
 fabric_install: true  # Whether to install Fabric (set to false if you only want to manage config)

@@ -20,17 +20,12 @@ Provides flexible logging directories and log rotation for any application or se
 | `logging_launchagent_label` | str | <code>com.logging.logrotate</code> | No description |
 | `logging_launchagent_hour` | int | <code>3</code> | No description |
 | `logging_launchagent_minute` | int | <code>0</code> | No description |
-| `logging_logrotate_log_path` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}/logs/logrotate</code> | No description |
-
-### Role Variables (main.yml)
-
-| Variable | Type | Value | Description |
-| -------- | ---- | ----- | ----------- |
-| `logging_logrotate_binary_darwin` | str | `/opt/homebrew/sbin/logrotate` | No description |
-| `logging_logrotate_binary_linux` | str | `/usr/sbin/logrotate` | No description |
-| `logging_logrotate_config_dir_darwin` | str | `{{ ansible_facts['env']['HOME'] }}/.config/logrotate.d` | No description |
-| `logging_logrotate_config_dir_linux` | str | `/etc/logrotate.d` | No description |
-| `logging_logrotate_state_file` | str | `{{ ansible_facts['env']['HOME'] + '/.config/logrotate.state' if ansible_facts['os_family'] == 'Darwin' else '/var/lib/logrotate/status' }}` | No description |
+| `logging_logrotate_log_path` | str | <code>{{ (ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) }}/logs/logrotate</code> | No description |
+| `logging_logrotate_binary_darwin` | str | <code>/opt/homebrew/sbin/logrotate</code> | No description |
+| `logging_logrotate_binary_linux` | str | <code>/usr/sbin/logrotate</code> | No description |
+| `logging_logrotate_config_dir_darwin` | str | <code>{{ (ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) }}/.config/logrotate.d</code> | No description |
+| `logging_logrotate_config_dir_linux` | str | <code>{{ '/etc/logrotate.d' if (ansible_facts&#91;'user_id'&#93; == 'root' or logging_manage_system &#124; default(false)) else ((ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) + '/.config/logrotate.d') }}</code> | No description |
+| `logging_logrotate_state_file` | str | <code>{{ (ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) + '/.config/logrotate.state' if (ansible_facts&#91;'os_family'&#93; == 'Darwin' or ansible_facts&#91;'user_id'&#93; != 'root') else '/var/lib/logrotate/status' }}</code> | No description |
 
 ## Tasks
 
