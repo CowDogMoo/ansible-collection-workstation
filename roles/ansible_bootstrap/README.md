@@ -15,7 +15,7 @@ Templates ~/.ansible.cfg and creates the ~/.ansible directory tree (collections,
 
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
-| `ansible_bootstrap_user_home` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}</code> | No description |
+| `ansible_bootstrap_user_home` | str | <code>{{ ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;) }}</code> | No description |
 | `ansible_bootstrap_dir` | str | <code>{{ ansible_bootstrap_user_home }}/.ansible</code> | No description |
 | `ansible_bootstrap_collections_path` | str | <code>{{ ansible_bootstrap_dir }}/collections</code> | No description |
 | `ansible_bootstrap_roles_path` | str | <code>{{ ansible_bootstrap_dir }}/roles</code> | No description |

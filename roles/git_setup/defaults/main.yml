@@ -1,5 +1,5 @@
 ---
-git_setup_user_home: "{{ ansible_facts['env']['HOME'] }}"
+git_setup_user_home: "{{ ansible_facts['user_dir'] | default(ansible_facts['env']['HOME']) }}"
 
 # Where ~/.gitconfig is written.
 git_setup_gitconfig_path: "{{ git_setup_user_home }}/.gitconfig"

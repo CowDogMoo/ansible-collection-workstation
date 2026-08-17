@@ -1,5 +1,5 @@
 ---
-shell_functions_user_home: "{{ ansible_facts['env']['HOME'] }}"
+shell_functions_user_home: "{{ ansible_facts['user_dir'] | default(ansible_facts['env']['HOME']) }}"
 
 # Destination the dotfiles content is materialized into. The zsh_setup template
 # sources every *.sh/*.zsh under this path.

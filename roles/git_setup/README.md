@@ -15,7 +15,7 @@ Renders ~/.gitconfig with aliases and sane defaults
 
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
-| `git_setup_user_home` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}</code> | No description |
+| `git_setup_user_home` | str | <code>{{ ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;) }}</code> | No description |
 | `git_setup_gitconfig_path` | str | <code>{{ git_setup_user_home }}/.gitconfig</code> | No description |
 | `git_setup_userparams_path` | str | <code>{{ git_setup_user_home }}/.gitconfig.userparams</code> | No description |
 | `git_setup_editor` | str | <code>code --wait</code> | No description |
