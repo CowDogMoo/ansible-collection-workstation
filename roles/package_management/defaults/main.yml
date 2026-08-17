@@ -1,4 +1,9 @@
 ---
+# Master toggle for the whole role. Checked in-task (not just at the playbook
+# level) so it also applies when other roles include package_management
+# directly, e.g. zsh_setup.
+package_management_enabled: true
+
 # Common packages to be installed on all systems
 package_management_common_install_packages:
   - autoconf

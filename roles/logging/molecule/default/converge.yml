@@ -26,3 +26,28 @@
             maxsize: 100M
         logging_logrotate_log_path: /var/log/logrotate
         logging_logrotate_state_file: /var/lib/logrotate.state
+
+# Exercise the user-scope Linux path: configs land under ~/.config/logrotate.d
+# and the role renders systemd user units instead of relying on system cron.
+# (Containers run as root, so the user-scope dir is forced via override; the
+# timer enable step is skipped because containers have no user session bus.)
+- name: Converge user-scope rotation
+  hosts: all
+  tasks:
+    - name: Include role under test with a user-scope config dir
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.logging
+      vars:
+        logging_logrotate_config_dir: "{{ ansible_facts['user_dir'] | default('/root') }}/.config/logrotate.d"
+        logging_directories:
+          - path: "~/test-user-logs"
+            mode: "0755"
+        logging_rotation_configs:
+          - name: user-app
+            path: "~/test-user-logs/*.log"
+            rotate: 7
+            frequency: daily
+            compress: true
+            missingok: true
+            notifempty: true
+            create: true

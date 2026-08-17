@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily user-scope logrotate run
+
+[Timer]
+OnCalendar={{ logging_systemd_timer_on_calendar }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

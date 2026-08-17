@@ -3,11 +3,7 @@
   ansible.builtin.set_fact:
     logging_is_macos: "{{ ansible_facts['os_family'] == 'Darwin' }}"
     logging_is_linux: "{{ ansible_facts['os_family'] in ['Debian', 'RedHat'] }}"
-
-- name: Set logrotate paths based on OS
-  ansible.builtin.set_fact:
-    logging_logrotate_binary: "{{ logging_logrotate_binary | default(logging_logrotate_binary_darwin if logging_is_macos else logging_logrotate_binary_linux) }}"
-    logging_logrotate_config_dir: "{{ logging_logrotate_config_dir | default(logging_logrotate_config_dir_darwin if logging_is_macos else logging_logrotate_config_dir_linux) }}"
+    logging_user_scope_linux: "{{ ansible_facts['os_family'] in ['Debian', 'RedHat'] and not logging_logrotate_config_dir.startswith('/etc') }}"
 
 - name: Check if logrotate binary exists
   ansible.builtin.stat:
@@ -155,3 +151,53 @@
   when:
     - logging_is_macos
     - logging_rotation_configs | length > 0
+
+# System logrotate only reads /etc/logrotate.d, so configs written to a
+# user-scope directory on Linux need their own scheduler — a systemd user
+# timer, mirroring the LaunchAgent used on macOS.
+- name: Ensure systemd user unit directory exists
+  ansible.builtin.file:
+    path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/.config/systemd/user"
+    state: directory
+    mode: "0755"
+  when:
+    - logging_user_scope_linux
+    - logging_rotation_configs | length > 0
+
+- name: Install systemd user units for logrotate
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/.config/systemd/user/{{ item }}"
+    mode: "0644"
+  loop:
+    - logrotate.service
+    - logrotate.timer
+  when:
+    - logging_user_scope_linux
+    - logging_rotation_configs | length > 0
+
+# `systemctl --user` needs a reachable user session bus; containers and bare
+# SSH sessions without lingering don't have one, so probe before enabling.
+# The command exercises the same bus connection the systemd_service module
+# uses, which no module can probe — hence the noqa.
+- name: Check for a reachable systemd user session # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: systemctl --user show-environment
+  register: logging_systemd_user_session
+  changed_when: false
+  failed_when: false
+  when:
+    - logging_user_scope_linux
+    - logging_rotation_configs | length > 0
+
+- name: Enable and start the logrotate user timer
+  ansible.builtin.systemd_service:
+    name: logrotate.timer
+    scope: user
+    daemon_reload: true
+    enabled: true
+    state: started
+  when:
+    - logging_user_scope_linux
+    - logging_rotation_configs | length > 0
+    - logging_systemd_user_session.rc | default(1) == 0
