@@ -13,4 +13,3 @@ changelogs/.plugin-cache.yaml
 .backups
 playbooks/workstation/inventory
 .claude/settings.local.json
-.gemini/
