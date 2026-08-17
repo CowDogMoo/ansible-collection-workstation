@@ -7,4 +7,4 @@
     group: "{{ mise_usergroup }}"
     mode: "0644"
   loop: "{{ mise_default_pkg_files }}"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and mise_username != ansible_facts['user_id'] }}"

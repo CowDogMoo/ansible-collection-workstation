@@ -30,7 +30,7 @@
     executable: /bin/bash
   environment:
     HOME: "{{ claude_code_user_home }}"
-  become: true
+  become: "{{ claude_code_username != ansible_facts['user_id'] }}"
   become_user: "{{ claude_code_username }}"
   when:
     - claude_code_check.rc != 0
@@ -43,7 +43,7 @@
   register: claude_code_version
   changed_when: false
   failed_when: false
-  become: true
+  become: "{{ claude_code_username != ansible_facts['user_id'] }}"
   become_user: "{{ claude_code_username }}"
 
 - name: Display version

@@ -41,7 +41,7 @@
     owner: "{{ fabric_username }}"
     group: "{{ fabric_usergroup }}"
     mode: "0755"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
   when: fabric_init_directories | bool
 
 - name: Create fabric patterns directory
@@ -51,7 +51,7 @@
     owner: "{{ fabric_username }}"
     group: "{{ fabric_usergroup }}"
     mode: "0755"
-  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
   when: fabric_init_directories | bool
 
 - name: Manage custom patterns from git repository

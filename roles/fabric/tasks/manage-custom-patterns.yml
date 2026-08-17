@@ -33,7 +33,7 @@
       ansible.builtin.package:
         name: git
         state: present
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
       when: not fabric_patterns_is_local | bool
 
     - name: Create temporary directory for custom patterns repository
@@ -89,7 +89,7 @@
         group: "{{ fabric_usergroup }}"
         force: true
       loop: "{{ fabric_custom_pattern_dirs.files }}"
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
       when: fabric_custom_patterns_symlink | bool
 
     - name: Copy custom patterns to fabric patterns directory
@@ -101,7 +101,7 @@
         mode: "0755"
         remote_src: true
       loop: "{{ fabric_custom_pattern_dirs.files }}"
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
       when: not fabric_custom_patterns_symlink | bool
 
     - name: Check if shared scripts directory exists
@@ -117,7 +117,7 @@
         owner: "{{ fabric_username }}"
         group: "{{ fabric_usergroup }}"
         force: true
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
       when:
         - fabric_scripts_source_stat.stat.exists
         - fabric_custom_patterns_symlink | bool
@@ -141,7 +141,7 @@
             owner: "{{ fabric_username }}"
             group: "{{ fabric_usergroup }}"
             mode: "0755"
-          become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+          become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
 
         - name: Copy shared script files to fabric config directory
           ansible.builtin.copy:
@@ -152,7 +152,7 @@
             mode: "0755"
             remote_src: true
           loop: "{{ fabric_script_files.files }}"
-          become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+          become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
 
     - name: Create marker file to track installation
       ansible.builtin.copy:
@@ -165,7 +165,7 @@
         owner: "{{ fabric_username }}"
         group: "{{ fabric_usergroup }}"
         mode: "0644"
-      become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      become: "{{ ansible_facts['os_family'] != 'Darwin' and fabric_username != ansible_facts['user_id'] }}"
 
     - name: Clean up temporary directory
       ansible.builtin.file:

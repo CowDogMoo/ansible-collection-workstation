@@ -280,12 +280,16 @@
 
     - name: Render ~/.gitconfig
       role: cowdogmoo.workstation.git_setup
+      tags:
+        - git
       when: git_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/git_setup
 
     - name: Render ~/.tmux.conf
       role: cowdogmoo.workstation.tmux_setup
+      tags:
+        - tmux
       when: tmux_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/tmux_setup
