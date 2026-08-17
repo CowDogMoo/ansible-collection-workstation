@@ -92,7 +92,8 @@ Manages Antigravity CLI configuration including hooks and settings
 
 - **Check for existing MCP configuration** (ansible.builtin.stat)
 - **Read existing MCP configuration** (ansible.builtin.slurp) - Conditional
-- **Parse existing MCP servers** (ansible.builtin.set_fact)
+- **Parse existing MCP servers** (block)
+- **Extract mcpServers from the existing configuration** (ansible.builtin.set_fact)
 - **Determine whether 1Password resolution is needed** (ansible.builtin.set_fact)
 - **Check for the 1Password CLI** (ansible.builtin.command) - Conditional
 - **Fail with guidance when op:// references are required but unresolvable** (ansible.builtin.fail) - Conditional
