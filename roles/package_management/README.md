@@ -72,7 +72,7 @@ Manage package installations and cleanups on Debian-based and Red Hat-based syst
 | `package_management_install_modern_cli` | bool | <code>False</code> | No description |
 | `package_management_manage_brewfile` | bool | <code>False</code> | No description |
 | `package_management_brewfile_src` | str | <code></code> | No description |
-| `package_management_brewfile_dest` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}/.config/brewfile/Brewfile</code> | No description |
+| `package_management_brewfile_dest` | str | <code>{{ (ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) }}/.config/brewfile/Brewfile</code> | No description |
 | `package_management_brewfile_apply` | bool | <code>False</code> | No description |
 | `package_management_modern_cli_brew_packages` | list | <code>&#91;&#93;</code> | No description |
 | `package_management_modern_cli_brew_packages.0` | str | <code>bat</code> | No description |

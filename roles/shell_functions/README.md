@@ -15,7 +15,7 @@ Deploys the user's dotfiles shell-function library to ~/.dotfiles
 
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
-| `shell_functions_user_home` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}</code> | No description |
+| `shell_functions_user_home` | str | <code>{{ ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;) }}</code> | No description |
 | `shell_functions_dest` | str | <code>{{ shell_functions_user_home }}/.dotfiles</code> | No description |
 | `shell_functions_source_path` | str | <code></code> | No description |
 | `shell_functions_repo_url` | str | <code></code> | No description |

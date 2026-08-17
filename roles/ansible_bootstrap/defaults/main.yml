@@ -1,5 +1,5 @@
 ---
-ansible_bootstrap_user_home: "{{ ansible_facts['env']['HOME'] }}"
+ansible_bootstrap_user_home: "{{ ansible_facts['user_dir'] | default(ansible_facts['env']['HOME']) }}"
 
 # Where ansible's user-level state lives.
 ansible_bootstrap_dir: "{{ ansible_bootstrap_user_home }}/.ansible"

@@ -81,7 +81,7 @@ package_management_install_modern_cli: false
 # Set package_management_brewfile_apply to also run `brew bundle --file=...`.
 package_management_manage_brewfile: false
 package_management_brewfile_src: ""
-package_management_brewfile_dest: "{{ ansible_facts['env']['HOME'] }}/.config/brewfile/Brewfile"
+package_management_brewfile_dest: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/.config/brewfile/Brewfile"
 package_management_brewfile_apply: false
 
 # macOS Homebrew package names — Homebrew carries every tool we want.

@@ -8,6 +8,12 @@ set -g history-limit {{ tmux_setup_history_limit }}
 # Enable mouse support
 setw -g mouse on
 
+# tmux >= 3.6 adds #{alternate_on} to the default WheelUpPane binding, which
+# forwards wheel events to full-screen apps instead of scrolling tmux history.
+# Pin the pre-3.6 behavior: the wheel always scrolls tmux scrollback unless
+# the app itself enables mouse reporting.
+bind -n WheelUpPane if -Ft= '#{||:#{pane_in_mode},#{mouse_any_flag}}' 'send-keys -M' 'copy-mode -e'
+
 # Prevent mouse selection from crossing pane boundaries
 unbind -n MouseDrag1Pane
 unbind -n MouseDragEnd1Pane

@@ -15,7 +15,7 @@ Renders ~/.tmux.conf with mouse-friendly bindings and OSC52 clipboard
 
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
-| `tmux_setup_user_home` | str | <code>{{ ansible_facts&#91;'env'&#93;&#91;'HOME'&#93; }}</code> | No description |
+| `tmux_setup_user_home` | str | <code>{{ ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;) }}</code> | No description |
 | `tmux_setup_conf_path` | str | <code>{{ tmux_setup_user_home }}/.tmux.conf</code> | No description |
 | `tmux_setup_default_terminal` | str | <code>screen-256color</code> | No description |
 | `tmux_setup_history_limit` | int | <code>100000</code> | No description |
