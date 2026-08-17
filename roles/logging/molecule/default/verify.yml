@@ -65,3 +65,44 @@
           - logging_logrotate_debug.rc == 0
         fail_msg: "Logrotate configuration is invalid"
         success_msg: "Logrotate configuration is valid"
+
+    # User-scope path (second converge play): config and systemd user units
+    - name: Check user-scope rotation artifacts
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ ansible_facts['user_dir'] }}/.config/logrotate.d/user-app"
+        - "{{ ansible_facts['user_dir'] }}/.config/systemd/user/logrotate.service"
+        - "{{ ansible_facts['user_dir'] }}/.config/systemd/user/logrotate.timer"
+      register: logging_user_scope_stats
+
+    - name: Assert user-scope rotation artifacts exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "Missing user-scope artifact: {{ item.item }}"
+        quiet: true
+      loop: "{{ logging_user_scope_stats.results }}"
+
+    - name: Read user-scope rotation config
+      ansible.builtin.slurp:
+        src: "{{ ansible_facts['user_dir'] }}/.config/logrotate.d/user-app"
+      register: logging_user_scope_config
+
+    - name: Assert tilde paths were expanded to the user's home
+      ansible.builtin.assert:
+        that:
+          - "ansible_facts['user_dir'] + '/test-user-logs/*.log' in logging_user_scope_config.content | b64decode"
+        fail_msg: "User-scope config does not contain the expanded home path"
+
+    - name: Read rendered systemd user service
+      ansible.builtin.slurp:
+        src: "{{ ansible_facts['user_dir'] }}/.config/systemd/user/logrotate.service"
+      register: logging_user_scope_service
+
+    - name: Assert the service runs logrotate against the user config dir
+      ansible.builtin.assert:
+        that:
+          - "'/logrotate.d/*' in logging_user_scope_service.content | b64decode"
+          - "'logrotate -s' in logging_user_scope_service.content | b64decode"
+        fail_msg: "systemd user service does not invoke logrotate on the user config dir"

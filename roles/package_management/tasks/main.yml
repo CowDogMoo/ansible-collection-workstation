@@ -8,7 +8,7 @@
   become: true
   when:
     - ansible_facts["os_family"] == 'Debian'
-    - package_management_enabled | default(true) | bool
+    - package_management_enabled | bool
 
 - name: Install Kali Linux archive keyring
   ansible.builtin.get_url:
@@ -18,7 +18,7 @@
   become: true
   when:
     - ansible_facts["distribution"] == 'Kali'
-    - package_management_enabled | default(true) | bool
+    - package_management_enabled | bool
 
 - name: Install packages
   become: true
@@ -28,7 +28,7 @@
     update_cache: true
   when:
     - ansible_facts["os_family"] in ['Debian', 'RedHat']
-    - package_management_enabled | default(true) | bool
+    - package_management_enabled | bool
   environment: "{{ (ansible_facts['os_family'] == 'Debian') | ternary({'DEBIAN_FRONTEND': 'noninteractive'}, {}) }}"
   register: package_management_package_result
   until: package_management_package_result is success
@@ -38,12 +38,15 @@
 
 - name: Install modern CLI tools
   ansible.builtin.include_tasks: modern_cli.yml
-  when: package_management_install_modern_cli | bool
+  when:
+    - package_management_enabled | bool
+    - package_management_install_modern_cli | bool
   tags: packages
 
 - name: Manage Brewfile (macOS)
   ansible.builtin.include_tasks: brewfile.yml
   when:
+    - package_management_enabled | bool
     - ansible_facts['os_family'] == 'Darwin'
     - package_management_manage_brewfile | bool
   tags: packages

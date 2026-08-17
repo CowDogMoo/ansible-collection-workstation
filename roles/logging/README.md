@@ -21,11 +21,15 @@ Provides flexible logging directories and log rotation for any application or se
 | `logging_launchagent_hour` | int | <code>3</code> | No description |
 | `logging_launchagent_minute` | int | <code>0</code> | No description |
 | `logging_logrotate_log_path` | str | <code>{{ (ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) }}/logs/logrotate</code> | No description |
+| `logging_manage_system` | bool | <code>False</code> | No description |
+| `logging_systemd_timer_on_calendar` | str | <code>*-*-* 03:00:00</code> | No description |
 | `logging_logrotate_binary_darwin` | str | <code>/opt/homebrew/sbin/logrotate</code> | No description |
 | `logging_logrotate_binary_linux` | str | <code>/usr/sbin/logrotate</code> | No description |
 | `logging_logrotate_config_dir_darwin` | str | <code>{{ (ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) }}/.config/logrotate.d</code> | No description |
-| `logging_logrotate_config_dir_linux` | str | <code>{{ '/etc/logrotate.d' if (ansible_facts&#91;'user_id'&#93; == 'root' or logging_manage_system &#124; default(false)) else ((ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) + '/.config/logrotate.d') }}</code> | No description |
+| `logging_logrotate_config_dir_linux` | str | <code>{{ '/etc/logrotate.d' if (ansible_facts&#91;'user_id'&#93; == 'root' or logging_manage_system &#124; bool) else ((ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) + '/.config/logrotate.d') }}</code> | No description |
 | `logging_logrotate_state_file` | str | <code>{{ (ansible_facts&#91;'user_dir'&#93; &#124; default(ansible_facts&#91;'env'&#93;&#91;'HOME'&#93;)) + '/.config/logrotate.state' if (ansible_facts&#91;'os_family'&#93; == 'Darwin' or ansible_facts&#91;'user_id'&#93; != 'root') else '/var/lib/logrotate/status' }}</code> | No description |
+| `logging_logrotate_binary` | str | <code>{{ logging_logrotate_binary_darwin if ansible_facts&#91;'os_family'&#93; == 'Darwin' else logging_logrotate_binary_linux }}</code> | No description |
+| `logging_logrotate_config_dir` | str | <code>{{ logging_logrotate_config_dir_darwin if ansible_facts&#91;'os_family'&#93; == 'Darwin' else logging_logrotate_config_dir_linux }}</code> | No description |
 
 ## Tasks
 
@@ -33,7 +37,6 @@ Provides flexible logging directories and log rotation for any application or se
 
 
 - **Set OS-specific facts** (ansible.builtin.set_fact)
-- **Set logrotate paths based on OS** (ansible.builtin.set_fact)
 - **Check if logrotate binary exists** (ansible.builtin.stat)
 - **Install logrotate on macOS** (community.general.homebrew) - Conditional
 - **Install logrotate on Linux (Debian-based)** (ansible.builtin.apt) - Conditional
@@ -50,6 +53,10 @@ Provides flexible logging directories and log rotation for any application or se
 - **Unload existing LaunchAgent if present** (ansible.builtin.command) - Conditional
 - **Load LaunchAgent for logrotate on macOS** (ansible.builtin.command) - Conditional
 - **Ensure logrotate's own log directory exists** (ansible.builtin.file) - Conditional
+- **Ensure systemd user unit directory exists** (ansible.builtin.file) - Conditional
+- **Install systemd user units for logrotate** (ansible.builtin.template) - Conditional
+- **Check for a reachable systemd user session** (ansible.builtin.command) - Conditional
+- **Enable and start the logrotate user timer** (ansible.builtin.systemd_service) - Conditional
 
 ## Example Playbook
 
