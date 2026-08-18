@@ -32,6 +32,9 @@
           - "\"bind -n WheelUpPane if -Ft= '#{||:#{pane_in_mode},#{mouse_any_flag}}' 'send-keys -M' 'copy-mode -e'\" in cfg"
           - "'set -g set-clipboard on' in cfg"
           - "'setw -g mode-keys vi' in cfg"
+          - "'set -g status-left-length 80' in cfg"
+          - "'Session: #{=/32/…:session_name}' in cfg"
+          - "'Pane: #P #[fg=yellow]|#[default] ' in cfg"
           - "'xclip -selection clipboard' in cfg"
           - "'source-file -q ' + tmux_setup_local_overrides_path in cfg"
         quiet: true

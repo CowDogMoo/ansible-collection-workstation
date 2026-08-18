@@ -67,8 +67,11 @@ set -g mode-style "bg=colour78,fg=colour232"
 # Set status bar
 set -g status-bg black
 set -g status-fg white
-set -g status-left-length 60
-set -g status-left "#[fg=green]Session: #S #[fg=yellow]| #[fg=cyan]Window: #I #[fg=yellow]| #[fg=magenta]Pane: #P"
+# Cap the displayed session name and give status-left enough room that it can
+# never be hard-truncated; the trailing "| " keeps the window list from
+# rendering flush against (clobbering) the status-left text.
+set -g status-left-length 80
+set -g status-left "#[fg=green]Session: #{=/32/…:session_name} #[fg=yellow]| #[fg=cyan]Window: #I #[fg=yellow]| #[fg=magenta]Pane: #P #[fg=yellow]|#[default] "
 set -g status-right "#{?pane_in_mode,#[fg=yellow][#{pane_mode}]#[default] ,}%Y-%m-%d %H:%M"
 
 # Enable vi keybindings
