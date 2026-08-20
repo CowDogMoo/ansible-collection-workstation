@@ -56,13 +56,16 @@
 
 - name: Install global GEMINI.md instructions
   ansible.builtin.copy:
-    src: GEMINI.md
+    src: "{{ antigravity_rules_src if (antigravity_rules_content | default('') | length == 0) else omit }}"
+    content: "{{ antigravity_rules_content if (antigravity_rules_content | default('') | length > 0) else omit }}"
     dest: "{{ antigravity_rules_file }}"
     owner: "{{ antigravity_username }}"
     group: "{{ antigravity_usergroup }}"
     mode: "0644"
   become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
-  when: antigravity_manage_settings | bool
+  when:
+    - antigravity_manage_settings | bool
+    - (antigravity_rules_src | default('') | length > 0) or (antigravity_rules_content | default('') | length > 0)
 
 - name: Check if hooks.json will change (dry-run)
   ansible.builtin.template:

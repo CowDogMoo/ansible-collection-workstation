@@ -45,12 +45,16 @@
 
 - name: Install global CLAUDE.md instructions
   ansible.builtin.copy:
-    src: CLAUDE.md
-    dest: "{{ claude_code_config_dir }}/CLAUDE.md"
+    src: "{{ claude_code_rules_src if (claude_code_rules_content | default('') | length == 0) else omit }}"
+    content: "{{ claude_code_rules_content if (claude_code_rules_content | default('') | length > 0) else omit }}"
+    dest: "{{ claude_code_rules_file }}"
     owner: "{{ claude_code_username }}"
     group: "{{ claude_code_usergroup }}"
     mode: "0644"
   become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  when:
+    - claude_code_manage_settings | bool
+    - (claude_code_rules_src | default('') | length > 0) or (claude_code_rules_content | default('') | length > 0)
 
 - name: Check if settings.json will change (dry-run)
   ansible.builtin.template:
