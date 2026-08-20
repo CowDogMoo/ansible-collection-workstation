@@ -19,6 +19,9 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_usergroup` | str | <code>{{ (ansible_facts&#91;'user_gid'&#93; &#124; default('staff')) if ansible_facts&#91;'os_family'&#93; == 'Darwin' else claude_code_username }}</code> | No description |
 | `claude_code_user_home` | str | <code><multiline value: folded_strip></code> | No description |
 | `claude_code_config_dir` | str | <code>{{ claude_code_user_home }}/.claude</code> | No description |
+| `claude_code_rules_file` | str | <code>{{ claude_code_config_dir }}/CLAUDE.md</code> | No description |
+| `claude_code_rules_src` | str | <code>CLAUDE.md</code> | No description |
+| `claude_code_rules_content` | str | <code></code> | No description |
 | `claude_code_homebrew_prefix` | str | <code><multiline value: folded_strip></code> | No description |
 | `claude_code_path` | str | <code>{{ claude_code_homebrew_prefix }}/bin:{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin</code> | No description |
 | `claude_code_install` | bool | <code>True</code> | No description |

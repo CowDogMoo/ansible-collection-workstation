@@ -14,6 +14,16 @@ antigravity_config_dir: "{{ antigravity_user_home }}/.gemini/config"
 # the only globally-scoped rules path Google documents.
 antigravity_rules_file: "{{ antigravity_user_home }}/.gemini/GEMINI.md"
 
+# Source file for global GEMINI.md instructions.
+# Defaults to GEMINI.md from the role's files/ directory.
+# Point to a custom path (e.g. `{{ playbook_dir }}/files/GEMINI.md`) or set
+# `antigravity_rules_content` to supply custom instructions per-host or from a private playbook.
+antigravity_rules_src: "GEMINI.md"
+
+# Optional raw content for global GEMINI.md instructions.
+# If non-empty, this takes precedence over antigravity_rules_src.
+antigravity_rules_content: ""
+
 # Unlike Claude Code — which nests hooks inside ~/.claude/settings.json — Antigravity
 # reads hooks from a dedicated file in the customization root. Versions of agy before
 # 1.0.8 wrote this to ~/.gemini/antigravity-cli/hooks.json via the /hooks command;

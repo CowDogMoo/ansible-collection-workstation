@@ -20,6 +20,8 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_user_home` | str | <code><multiline value: folded_strip></code> | No description |
 | `antigravity_config_dir` | str | <code>{{ antigravity_user_home }}/.gemini/config</code> | No description |
 | `antigravity_rules_file` | str | <code>{{ antigravity_user_home }}/.gemini/GEMINI.md</code> | No description |
+| `antigravity_rules_src` | str | <code>GEMINI.md</code> | No description |
+| `antigravity_rules_content` | str | <code></code> | No description |
 | `antigravity_hooks_file` | str | <code>{{ antigravity_config_dir }}/hooks.json</code> | No description |
 | `antigravity_mcp_config_file` | str | <code>{{ antigravity_config_dir }}/mcp_config.json</code> | No description |
 | `antigravity_homebrew_prefix` | str | <code><multiline value: folded_strip></code> | No description |

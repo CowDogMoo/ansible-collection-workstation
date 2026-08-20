@@ -10,6 +10,19 @@ claude_code_user_home: >-
 # Configuration directory for Claude Code
 claude_code_config_dir: "{{ claude_code_user_home }}/.claude"
 
+# Global rules file for Claude Code instructions.
+claude_code_rules_file: "{{ claude_code_config_dir }}/CLAUDE.md"
+
+# Source file for global CLAUDE.md instructions.
+# Defaults to CLAUDE.md from the role's files/ directory.
+# Point to a custom path (e.g. `{{ playbook_dir }}/files/CLAUDE.md`) or set
+# `claude_code_rules_content` to supply custom instructions per-host or from a private playbook.
+claude_code_rules_src: "CLAUDE.md"
+
+# Optional raw content for global CLAUDE.md instructions.
+# If non-empty, this takes precedence over claude_code_rules_src.
+claude_code_rules_content: ""
+
 # Homebrew prefix (varies by OS/architecture)
 # macOS ARM: /opt/homebrew, macOS Intel: /usr/local, Linux: /home/linuxbrew/.linuxbrew
 claude_code_homebrew_prefix: >-
