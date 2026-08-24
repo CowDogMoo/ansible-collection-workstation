@@ -5,12 +5,22 @@
   changed_when: false
   failed_when: false
 
+# The install script drops the binary in the target user's ~/.local/bin, which
+# is not on the PATH `which` searches above — without this check every rerun
+# re-downloads the installer.
+- name: Check for user-local install
+  ansible.builtin.stat:
+    path: "{{ claude_code_user_home }}/.local/bin/claude"
+  register: claude_code_local_install
+
 - name: Check if npm is available
   ansible.builtin.command: which npm
   register: claude_code_npm_check
   changed_when: false
   failed_when: false
-  when: claude_code_check.rc != 0
+  when:
+    - claude_code_check.rc != 0
+    - not claude_code_local_install.stat.exists
 
 - name: Install via npm
   community.general.npm:
@@ -20,6 +30,7 @@
   become: true
   when:
     - claude_code_check.rc != 0
+    - not claude_code_local_install.stat.exists
     - claude_code_npm_check.rc == 0
 
 - name: Install via script (fallback)
@@ -34,8 +45,12 @@
   become_user: "{{ claude_code_username }}"
   when:
     - claude_code_check.rc != 0
+    - not claude_code_local_install.stat.exists
     - claude_code_npm_check.rc != 0
   register: claude_code_script_install
+  retries: 3
+  delay: 10
+  until: claude_code_script_install.rc == 0
   changed_when: "'Successfully installed' in claude_code_script_install.stdout"
 
 - name: Verify installation
