@@ -46,6 +46,7 @@ Manages Claude Code CLI configuration including hooks and settings
 
 
 - **Check if already installed** (ansible.builtin.command)
+- **Check for user-local install** (ansible.builtin.stat)
 - **Check if npm is available** (ansible.builtin.command) - Conditional
 - **Install via npm** (community.general.npm) - Conditional
 - **Install via script (fallback)** (ansible.builtin.shell) - Conditional

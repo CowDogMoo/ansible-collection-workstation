@@ -545,7 +545,10 @@ jobs:
           molecule list
 
           # Retry up to 3 times when failures look like transient network issues
-          # (github.com flakes downloading release assets, etc.).
+          # (github.com flakes downloading release assets, curl connection
+          # resets) or container-boot races (systemd-tmpfiles wiping /tmp while
+          # the first fact-gathering module is still importing its payload,
+          # which surfaces as "Module result deserialization failed").
           max_attempts=3
           attempt=1
           run_log=$(mktemp)
@@ -561,7 +564,7 @@ jobs:
             if [[ ${rc} -eq 0 ]]; then
               break
             fi
-            if [[ ${attempt} -ge ${max_attempts} ]] || ! grep -qE "Connection failure|Gateway Time-out|read operation timed out|HTTP Error 5[0-9][0-9]|Could not resolve host|Temporary failure in name resolution" "${run_log}"; then
+            if [[ ${attempt} -ge ${max_attempts} ]] || ! grep -qE "Connection failure|Gateway Time-out|read operation timed out|HTTP Error 5[0-9][0-9]|Could not resolve host|Temporary failure in name resolution|Connection reset by peer|Recv failure|Module result deserialization failed" "${run_log}"; then
               echo "Molecule test failed. Collecting debug information..."
 
               echo "Docker containers:"
@@ -583,7 +586,7 @@ jobs:
 
               exit 1
             fi
-            echo "Transient network failure detected; retrying in 30s..."
+            echo "Transient failure detected; retrying in 30s..."
             sleep 30
             attempt=$((attempt + 1))
           done
