@@ -22,12 +22,15 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_rules_file` | str | <code>{{ antigravity_user_home }}/.gemini/GEMINI.md</code> | No description |
 | `antigravity_rules_src` | str | <code>GEMINI.md</code> | No description |
 | `antigravity_rules_content` | str | <code></code> | No description |
+| `antigravity_rules_dir` | str | <code>{{ antigravity_config_dir }}/rules</code> | No description |
+| `antigravity_rules_src_dir` | str | <code></code> | No description |
 | `antigravity_hooks_file` | str | <code>{{ antigravity_config_dir }}/hooks.json</code> | No description |
 | `antigravity_mcp_config_file` | str | <code>{{ antigravity_config_dir }}/mcp_config.json</code> | No description |
 | `antigravity_homebrew_prefix` | str | <code><multiline value: folded_strip></code> | No description |
 | `antigravity_path` | str | <code>{{ antigravity_homebrew_prefix }}/bin:{{ antigravity_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin</code> | No description |
 | `antigravity_install` | bool | <code>True</code> | No description |
 | `antigravity_manage_settings` | bool | <code>True</code> | No description |
+| `antigravity_manage_rules` | bool | <code>True</code> | No description |
 | `antigravity_manage_hooks` | bool | <code>True</code> | No description |
 | `antigravity_backup_settings` | bool | <code>True</code> | No description |
 | `antigravity_manage_plugins` | bool | <code>True</code> | No description |
@@ -82,6 +85,8 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Create Antigravity home directory** (ansible.builtin.file)
 - **Create Antigravity configuration directory** (ansible.builtin.file)
 - **Install global GEMINI.md instructions** (ansible.builtin.copy) - Conditional
+- **Create Antigravity rules directory** (ansible.builtin.file) - Conditional
+- **Install Antigravity rules** (ansible.builtin.copy) - Conditional
 - **Check if hooks.json will change (dry-run)** (ansible.builtin.template) - Conditional
 - **Create backup of existing hooks.json in /tmp** (ansible.builtin.copy) - Conditional
 - **Generate Antigravity hooks.json** (ansible.builtin.template) - Conditional
@@ -101,11 +106,12 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Fail with guidance when op:// references are required but unresolvable** (ansible.builtin.fail) - Conditional
 - **Warn that servers carrying op:// references are being skipped** (ansible.builtin.debug) - Conditional
 - **Skip the servers whose op:// references cannot be resolved** (ansible.builtin.set_fact) - Conditional
-- **Create a staging file for 1Password resolution** (ansible.builtin.tempfile) - Conditional
-- **Write MCP configuration for resolution** (ansible.builtin.template) - Conditional
-- **Resolve 1Password references** (ansible.builtin.command) - Conditional
-- **Remove the staging file** (ansible.builtin.file) - Conditional
-- **Verify the resolved configuration still parses** (ansible.builtin.assert) - Conditional
+- **Resolve 1Password references in MCP configuration** (block) - Conditional
+- **Create a staging file for 1Password resolution** (ansible.builtin.tempfile)
+- **Write MCP configuration for resolution** (ansible.builtin.template)
+- **Resolve 1Password references** (ansible.builtin.command)
+- **Remove the staging file** (ansible.builtin.file)
+- **Verify the resolved configuration still parses** (ansible.builtin.assert)
 - **Write MCP configuration** (ansible.builtin.template) - Conditional
 - **Write MCP configuration with resolved 1Password references** (ansible.builtin.copy) - Conditional
 
