@@ -15,6 +15,7 @@
         antigravity_mcp_config_file: "{{ container_home }}/.gemini/config/mcp_config.json"
         antigravity_rules_file: "{{ container_home }}/.gemini/GEMINI.md"
         antigravity_rules_dir: "{{ container_home }}/.gemini/config/rules"
+        antigravity_scripts_dir: "{{ container_home }}/.gemini/config/scripts"
 
     - name: Include default variables
       ansible.builtin.include_vars:
@@ -142,6 +143,22 @@
           - antigravity_rules_dir_stat.stat.mode == '0755'
         fail_msg: "Rules directory does not exist or has wrong permissions"
         success_msg: "Rules directory exists with correct permissions"
+
+    - name: Check if scripts directory exists
+      ansible.builtin.stat:
+        path: "{{ antigravity_scripts_dir }}"
+      register: antigravity_scripts_dir_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert scripts directory exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - antigravity_scripts_dir_stat.stat.exists
+          - antigravity_scripts_dir_stat.stat.isdir
+          - antigravity_scripts_dir_stat.stat.mode == '0755'
+        fail_msg: "Scripts directory does not exist or has wrong permissions"
+        success_msg: "Scripts directory exists with correct permissions"
 
 
     - name: Check if hooks.json exists
