@@ -229,14 +229,14 @@
       become: true
       become_user: "{{ container_user }}"
 
-    # An explicit "allow" would auto-approve tool calls that should still prompt, so the
-    # no-violation path must return an empty decision rather than a positive one.
-    - name: Assert forbidden_content hook stays neutral on clean commands
+    # Antigravity PreToolUse hooks fail closed on empty JSON ({}), so non-matching
+    # commands must emit {"decision": "allow"}.
+    - name: Assert forbidden_content hook allows clean commands
       ansible.builtin.assert:
         that:
-          - "'decision' not in (antigravity_hook_allow.stdout | from_json)"
-        fail_msg: "forbidden_content hook should express no opinion, got: {{ antigravity_hook_allow.stdout }}"
-        success_msg: "forbidden_content hook stays neutral on clean commands"
+          - (antigravity_hook_allow.stdout | from_json)['decision'] == 'allow'
+        fail_msg: "forbidden_content hook failed to allow: {{ antigravity_hook_allow.stdout }}"
+        success_msg: "forbidden_content hook allows clean commands"
 
     - name: Check if mcp_config.json exists
       ansible.builtin.stat:

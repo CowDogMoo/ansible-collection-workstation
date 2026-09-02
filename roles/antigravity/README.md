@@ -106,11 +106,12 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Fail with guidance when op:// references are required but unresolvable** (ansible.builtin.fail) - Conditional
 - **Warn that servers carrying op:// references are being skipped** (ansible.builtin.debug) - Conditional
 - **Skip the servers whose op:// references cannot be resolved** (ansible.builtin.set_fact) - Conditional
-- **Create a staging file for 1Password resolution** (ansible.builtin.tempfile) - Conditional
-- **Write MCP configuration for resolution** (ansible.builtin.template) - Conditional
-- **Resolve 1Password references** (ansible.builtin.command) - Conditional
-- **Remove the staging file** (ansible.builtin.file) - Conditional
-- **Verify the resolved configuration still parses** (ansible.builtin.assert) - Conditional
+- **Resolve 1Password references in MCP configuration** (block) - Conditional
+- **Create a staging file for 1Password resolution** (ansible.builtin.tempfile)
+- **Write MCP configuration for resolution** (ansible.builtin.template)
+- **Resolve 1Password references** (ansible.builtin.command)
+- **Remove the staging file** (ansible.builtin.file)
+- **Verify the resolved configuration still parses** (ansible.builtin.assert)
 - **Write MCP configuration** (ansible.builtin.template) - Conditional
 - **Write MCP configuration with resolved 1Password references** (ansible.builtin.copy) - Conditional
 
