@@ -11,6 +11,8 @@
         claude_code_user_home: "{{ container_home }}"
         claude_code_config_dir: "{{ container_home }}/.claude"
         claude_code_username: "{{ container_user }}"
+        claude_code_rules_dir: "{{ container_home }}/.claude/rules"
+        claude_code_scripts_dir: "{{ container_home }}/.claude/scripts"
 
     - name: Include default variables
       ansible.builtin.include_vars:
@@ -124,6 +126,38 @@
           - "'--no-verify' in (claude_code_claude_md_content['content'] | b64decode)"
         fail_msg: "CLAUDE.md does not contain expected instructions"
         success_msg: "CLAUDE.md contains all expected global instructions"
+
+    - name: Check if rules directory exists
+      ansible.builtin.stat:
+        path: "{{ claude_code_rules_dir }}"
+      register: claude_code_rules_dir_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert rules directory exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - claude_code_rules_dir_stat.stat.exists
+          - claude_code_rules_dir_stat.stat.isdir
+          - claude_code_rules_dir_stat.stat.mode == '0755'
+        fail_msg: "Rules directory does not exist or has wrong permissions"
+        success_msg: "Rules directory exists with correct permissions"
+
+    - name: Check if scripts directory exists
+      ansible.builtin.stat:
+        path: "{{ claude_code_scripts_dir }}"
+      register: claude_code_scripts_dir_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert scripts directory exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - claude_code_scripts_dir_stat.stat.exists
+          - claude_code_scripts_dir_stat.stat.isdir
+          - claude_code_scripts_dir_stat.stat.mode == '0755'
+        fail_msg: "Scripts directory does not exist or has wrong permissions"
+        success_msg: "Scripts directory exists with correct permissions"
 
     - name: Read settings.json content
       ansible.builtin.slurp:

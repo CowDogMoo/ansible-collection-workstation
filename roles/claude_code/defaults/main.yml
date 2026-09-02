@@ -23,6 +23,24 @@ claude_code_rules_src: "CLAUDE.md"
 # If non-empty, this takes precedence over claude_code_rules_src.
 claude_code_rules_content: ""
 
+# Topic-scoped rules directory for modular agent instructions
+claude_code_rules_dir: "{{ claude_code_config_dir }}/rules"
+
+# Source directory for topic-scoped rules (optional)
+# Can be a path relative to playbook files/ or an absolute path on controller
+claude_code_rules_src_dir: ""
+
+# Scripts directory for custom hook scripts and executables
+claude_code_scripts_dir: "{{ claude_code_config_dir }}/scripts"
+
+# Source directory for custom hook scripts (optional)
+# Can be a path relative to playbook files/ or an absolute path on controller
+claude_code_scripts_src_dir: ""
+
+# Optional source file for custom settings.json.
+# If non-empty, this file is installed directly instead of generating from templates/settings.json.j2.
+claude_code_settings_src: ""
+
 # Homebrew prefix (varies by OS/architecture)
 # macOS ARM: /opt/homebrew, macOS Intel: /usr/local, Linux: /home/linuxbrew/.linuxbrew
 claude_code_homebrew_prefix: >-
@@ -38,6 +56,12 @@ claude_code_install: true
 
 # Whether to manage Claude Code settings
 claude_code_manage_settings: true
+
+# Whether to manage topic-scoped rule files
+claude_code_manage_rules: true
+
+# Whether to manage custom scripts directory
+claude_code_manage_scripts: true
 
 # Whether to backup existing settings before overwriting
 claude_code_backup_settings: true
@@ -197,14 +221,16 @@ claude_code_advanced_hooks_default:
     event: Stop
     tool: ""
     type: command
-    command: "osascript -e 'beep 2'"
+    command: >-
+      {{ "osascript -e 'beep 2'" if (ansible_facts['os_family'] | default('')) == 'Darwin' else "printf '\\a'" }}
 
   # notify_sound: Sound notification when Claude needs input.
   notify_sound:
     event: Notification
     tool: ""
     type: command
-    command: "osascript -e 'beep 1'"
+    command: >-
+      {{ "osascript -e 'beep 1'" if (ansible_facts['os_family'] | default('')) == 'Darwin' else "printf '\\a'" }}
 
 # Per-host overrides for the dict above. Keys here are merged into
 # `claude_code_advanced_hooks_default` (recursive=True), so individual hooks can be
