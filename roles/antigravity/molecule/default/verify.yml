@@ -14,6 +14,7 @@
         antigravity_hooks_file: "{{ container_home }}/.gemini/config/hooks.json"
         antigravity_mcp_config_file: "{{ container_home }}/.gemini/config/mcp_config.json"
         antigravity_rules_file: "{{ container_home }}/.gemini/GEMINI.md"
+        antigravity_rules_dir: "{{ container_home }}/.gemini/config/rules"
 
     - name: Include default variables
       ansible.builtin.include_vars:
@@ -125,6 +126,23 @@
           - "'oauth_creds.json' in (antigravity_agy_md_content['content'] | b64decode)"
         fail_msg: "GEMINI.md does not contain expected instructions"
         success_msg: "GEMINI.md contains all expected global instructions"
+
+    - name: Check if rules directory exists
+      ansible.builtin.stat:
+        path: "{{ antigravity_rules_dir }}"
+      register: antigravity_rules_dir_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert rules directory exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - antigravity_rules_dir_stat.stat.exists
+          - antigravity_rules_dir_stat.stat.isdir
+          - antigravity_rules_dir_stat.stat.mode == '0755'
+        fail_msg: "Rules directory does not exist or has wrong permissions"
+        success_msg: "Rules directory exists with correct permissions"
+
 
     - name: Check if hooks.json exists
       ansible.builtin.stat:

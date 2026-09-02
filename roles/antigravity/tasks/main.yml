@@ -67,6 +67,29 @@
     - antigravity_manage_settings | bool
     - (antigravity_rules_src | default('') | length > 0) or (antigravity_rules_content | default('') | length > 0)
 
+- name: Create Antigravity rules directory
+  ansible.builtin.file:
+    path: "{{ antigravity_rules_dir }}"
+    state: directory
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  when: antigravity_manage_rules | bool
+
+- name: Install Antigravity rules
+  ansible.builtin.copy:
+    src: "{{ antigravity_rules_src_dir | regex_replace('/+$', '') }}/"
+    dest: "{{ antigravity_rules_dir }}/"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    directory_mode: "0755"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  when:
+    - antigravity_manage_rules | bool
+    - antigravity_rules_src_dir | default('') | length > 0
+
 - name: Check if hooks.json will change (dry-run)
   ansible.builtin.template:
     src: hooks.json.j2
