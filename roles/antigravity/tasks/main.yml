@@ -90,6 +90,41 @@
     - antigravity_manage_rules | bool
     - antigravity_rules_src_dir | default('') | length > 0
 
+- name: Create Antigravity scripts directory
+  ansible.builtin.file:
+    path: "{{ antigravity_scripts_dir }}"
+    state: directory
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  when: antigravity_manage_scripts | bool
+
+- name: Install Antigravity scripts
+  ansible.builtin.copy:
+    src: "{{ antigravity_scripts_src_dir | regex_replace('/+$', '') }}/"
+    dest: "{{ antigravity_scripts_dir }}/"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    directory_mode: "0755"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  when:
+    - antigravity_manage_scripts | bool
+    - antigravity_scripts_src_dir | default('') | length > 0
+
+- name: Install custom Antigravity hooks.json from source
+  ansible.builtin.copy:
+    src: "{{ antigravity_hooks_src }}"
+    dest: "{{ antigravity_hooks_file }}"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  when:
+    - antigravity_manage_hooks | bool
+    - antigravity_hooks_src | default('') | length > 0
+
 - name: Check if hooks.json will change (dry-run)
   ansible.builtin.template:
     src: hooks.json.j2
@@ -99,7 +134,9 @@
     mode: "0644"
   check_mode: true
   become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
-  when: antigravity_manage_hooks | bool
+  when:
+    - antigravity_manage_hooks | bool
+    - antigravity_hooks_src | default('') | length == 0
   register: antigravity_hooks_check
   changed_when: false
   diff: false
@@ -116,6 +153,7 @@
   when:
     - antigravity_manage_hooks | bool
     - antigravity_backup_settings | bool
+    - antigravity_hooks_src | default('') | length == 0
     - antigravity_hooks_check is changed
   register: antigravity_backup_result
 
@@ -127,7 +165,9 @@
     group: "{{ antigravity_usergroup }}"
     mode: "0644"
   become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
-  when: antigravity_manage_hooks | bool
+  when:
+    - antigravity_manage_hooks | bool
+    - antigravity_hooks_src | default('') | length == 0
   register: antigravity_hooks_result
 
 - name: Manage MCP servers

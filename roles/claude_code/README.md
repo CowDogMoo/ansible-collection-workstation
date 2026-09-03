@@ -22,10 +22,17 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_rules_file` | str | <code>{{ claude_code_config_dir }}/CLAUDE.md</code> | No description |
 | `claude_code_rules_src` | str | <code>CLAUDE.md</code> | No description |
 | `claude_code_rules_content` | str | <code></code> | No description |
+| `claude_code_rules_dir` | str | <code>{{ claude_code_config_dir }}/rules</code> | No description |
+| `claude_code_rules_src_dir` | str | <code></code> | No description |
+| `claude_code_scripts_dir` | str | <code>{{ claude_code_config_dir }}/scripts</code> | No description |
+| `claude_code_scripts_src_dir` | str | <code></code> | No description |
+| `claude_code_settings_src` | str | <code></code> | No description |
 | `claude_code_homebrew_prefix` | str | <code><multiline value: folded_strip></code> | No description |
 | `claude_code_path` | str | <code>{{ claude_code_homebrew_prefix }}/bin:{{ claude_code_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin</code> | No description |
 | `claude_code_install` | bool | <code>True</code> | No description |
 | `claude_code_manage_settings` | bool | <code>True</code> | No description |
+| `claude_code_manage_rules` | bool | <code>True</code> | No description |
+| `claude_code_manage_scripts` | bool | <code>True</code> | No description |
 | `claude_code_backup_settings` | bool | <code>True</code> | No description |
 | `claude_code_simple_hooks` | list | <code>&#91;&#93;</code> | No description |
 | `claude_code_advanced_hooks_default` | dict | <code>{}</code> | No description |
@@ -82,6 +89,11 @@ Manages Claude Code CLI configuration including hooks and settings
 - **Install Claude Code on Windows** (ansible.builtin.include_tasks) - Conditional
 - **Create Claude Code configuration directory** (ansible.builtin.file)
 - **Install global CLAUDE.md instructions** (ansible.builtin.copy) - Conditional
+- **Create Claude Code rules directory** (ansible.builtin.file) - Conditional
+- **Install Claude Code rules** (ansible.builtin.copy) - Conditional
+- **Create Claude Code scripts directory** (ansible.builtin.file) - Conditional
+- **Install Claude Code scripts** (ansible.builtin.copy) - Conditional
+- **Install custom Claude Code settings.json from source** (ansible.builtin.copy) - Conditional
 - **Check if settings.json will change (dry-run)** (ansible.builtin.template) - Conditional
 - **Create backup of existing settings.json in /tmp** (ansible.builtin.copy) - Conditional
 - **Generate Claude Code settings.json** (ansible.builtin.template) - Conditional

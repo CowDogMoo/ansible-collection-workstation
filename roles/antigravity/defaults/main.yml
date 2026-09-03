@@ -31,6 +31,17 @@ antigravity_rules_dir: "{{ antigravity_config_dir }}/rules"
 # Can be a path relative to playbook files/ or an absolute path on controller
 antigravity_rules_src_dir: ""
 
+# Scripts directory for custom hook scripts and executables
+antigravity_scripts_dir: "{{ antigravity_config_dir }}/scripts"
+
+# Source directory for custom hook scripts (optional)
+# Can be a path relative to playbook files/ or an absolute path on controller
+antigravity_scripts_src_dir: ""
+
+# Optional source file for custom hooks.json.
+# If non-empty, this file is installed directly instead of generating from templates/hooks.json.j2.
+antigravity_hooks_src: ""
+
 # Unlike Claude Code — which nests hooks inside ~/.claude/settings.json — Antigravity
 # reads hooks from a dedicated file in the customization root. Versions of agy before
 # 1.0.8 wrote this to ~/.gemini/antigravity-cli/hooks.json via the /hooks command;
@@ -57,6 +68,9 @@ antigravity_manage_settings: true
 
 # Whether to manage topic-scoped rule files
 antigravity_manage_rules: true
+
+# Whether to manage custom scripts directory
+antigravity_manage_scripts: true
 
 # Whether to manage hooks
 antigravity_manage_hooks: true
@@ -248,7 +262,8 @@ antigravity_hooks_default:
   # leaves termination alone.
   stop_sound:
     event: Stop
-    command: "osascript -e 'beep 2'"
+    command: >-
+      {{ "osascript -e 'beep 2'" if (ansible_facts['os_family'] | default('')) == 'Darwin' else "printf '\\a'" }}
 
 # Per-host overrides for the dict above. Keys here are merged into
 # `antigravity_hooks_default` (recursive=True), so individual hooks can be

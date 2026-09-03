@@ -24,6 +24,9 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_rules_content` | str | <code></code> | No description |
 | `antigravity_rules_dir` | str | <code>{{ antigravity_config_dir }}/rules</code> | No description |
 | `antigravity_rules_src_dir` | str | <code></code> | No description |
+| `antigravity_scripts_dir` | str | <code>{{ antigravity_config_dir }}/scripts</code> | No description |
+| `antigravity_scripts_src_dir` | str | <code></code> | No description |
+| `antigravity_hooks_src` | str | <code></code> | No description |
 | `antigravity_hooks_file` | str | <code>{{ antigravity_config_dir }}/hooks.json</code> | No description |
 | `antigravity_mcp_config_file` | str | <code>{{ antigravity_config_dir }}/mcp_config.json</code> | No description |
 | `antigravity_homebrew_prefix` | str | <code><multiline value: folded_strip></code> | No description |
@@ -31,6 +34,7 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_install` | bool | <code>True</code> | No description |
 | `antigravity_manage_settings` | bool | <code>True</code> | No description |
 | `antigravity_manage_rules` | bool | <code>True</code> | No description |
+| `antigravity_manage_scripts` | bool | <code>True</code> | No description |
 | `antigravity_manage_hooks` | bool | <code>True</code> | No description |
 | `antigravity_backup_settings` | bool | <code>True</code> | No description |
 | `antigravity_manage_plugins` | bool | <code>True</code> | No description |
@@ -87,6 +91,9 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Install global GEMINI.md instructions** (ansible.builtin.copy) - Conditional
 - **Create Antigravity rules directory** (ansible.builtin.file) - Conditional
 - **Install Antigravity rules** (ansible.builtin.copy) - Conditional
+- **Create Antigravity scripts directory** (ansible.builtin.file) - Conditional
+- **Install Antigravity scripts** (ansible.builtin.copy) - Conditional
+- **Install custom Antigravity hooks.json from source** (ansible.builtin.copy) - Conditional
 - **Check if hooks.json will change (dry-run)** (ansible.builtin.template) - Conditional
 - **Create backup of existing hooks.json in /tmp** (ansible.builtin.copy) - Conditional
 - **Generate Antigravity hooks.json** (ansible.builtin.template) - Conditional

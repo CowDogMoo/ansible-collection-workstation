@@ -56,6 +56,64 @@
     - claude_code_manage_settings | bool
     - (claude_code_rules_src | default('') | length > 0) or (claude_code_rules_content | default('') | length > 0)
 
+- name: Create Claude Code rules directory
+  ansible.builtin.file:
+    path: "{{ claude_code_rules_dir }}"
+    state: directory
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  when: claude_code_manage_rules | bool
+
+- name: Install Claude Code rules
+  ansible.builtin.copy:
+    src: "{{ claude_code_rules_src_dir | regex_replace('/+$', '') }}/"
+    dest: "{{ claude_code_rules_dir }}/"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    directory_mode: "0755"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  when:
+    - claude_code_manage_rules | bool
+    - claude_code_rules_src_dir | default('') | length > 0
+
+- name: Create Claude Code scripts directory
+  ansible.builtin.file:
+    path: "{{ claude_code_scripts_dir }}"
+    state: directory
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  when: claude_code_manage_scripts | bool
+
+- name: Install Claude Code scripts
+  ansible.builtin.copy:
+    src: "{{ claude_code_scripts_src_dir | regex_replace('/+$', '') }}/"
+    dest: "{{ claude_code_scripts_dir }}/"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    directory_mode: "0755"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  when:
+    - claude_code_manage_scripts | bool
+    - claude_code_scripts_src_dir | default('') | length > 0
+
+- name: Install custom Claude Code settings.json from source
+  ansible.builtin.copy:
+    src: "{{ claude_code_settings_src }}"
+    dest: "{{ claude_code_config_dir }}/settings.json"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  when:
+    - claude_code_manage_settings | bool
+    - claude_code_settings_src | default('') | length > 0
+
 - name: Check if settings.json will change (dry-run)
   ansible.builtin.template:
     src: settings.json.j2
@@ -65,7 +123,9 @@
     mode: "0644"
   check_mode: true
   become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
-  when: claude_code_manage_settings | bool
+  when:
+    - claude_code_manage_settings | bool
+    - claude_code_settings_src | default('') | length == 0
   register: claude_code_settings_check
   changed_when: false
   diff: false
@@ -82,6 +142,7 @@
   when:
     - claude_code_manage_settings | bool
     - claude_code_backup_settings | bool
+    - claude_code_settings_src | default('') | length == 0
     - claude_code_settings_check is changed
   register: claude_code_backup_result
 
@@ -93,7 +154,9 @@
     group: "{{ claude_code_usergroup }}"
     mode: "0644"
   become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
-  when: claude_code_manage_settings | bool
+  when:
+    - claude_code_manage_settings | bool
+    - claude_code_settings_src | default('') | length == 0
   register: claude_code_settings_result
 
 - name: Manage MCP servers
