@@ -274,8 +274,19 @@ jobs:
         working-directory: ${{ env.COLLECTION_PATH }}
         shell: bash
         run: |
-          ansible-galaxy collection install -r requirements.yml
-          ansible-galaxy install -r requirements.yml
+          # A partial Galaxy API response poisons ~/.ansible/galaxy_cache and makes
+          # every later resolve fail, so retry each install against a clean cache.
+          retry() {
+            for attempt in 1 2 3; do
+              "$@" && return 0
+              echo "::warning::$* failed (attempt ${attempt}/3), clearing Galaxy response cache"
+              rm -rf ~/.ansible/galaxy_cache
+              sleep 15
+            done
+            return 1
+          }
+          retry ansible-galaxy collection install -r requirements.yml --no-cache
+          retry ansible-galaxy install -r requirements.yml
 
       - name: Build and install collection locally
         working-directory: ${{ env.COLLECTION_PATH }}
@@ -393,8 +404,19 @@ jobs:
         working-directory: ${{ env.COLLECTION_PATH }}
         shell: bash
         run: |
-          ansible-galaxy collection install -r requirements.yml
-          ansible-galaxy install -r requirements.yml
+          # A partial Galaxy API response poisons ~/.ansible/galaxy_cache and makes
+          # every later resolve fail, so retry each install against a clean cache.
+          retry() {
+            for attempt in 1 2 3; do
+              "$@" && return 0
+              echo "::warning::$* failed (attempt ${attempt}/3), clearing Galaxy response cache"
+              rm -rf ~/.ansible/galaxy_cache
+              sleep 15
+            done
+            return 1
+          }
+          retry ansible-galaxy collection install -r requirements.yml --no-cache
+          retry ansible-galaxy install -r requirements.yml
 
       - name: Build and install collection locally
         working-directory: ${{ env.COLLECTION_PATH }}
@@ -506,8 +528,19 @@ jobs:
         working-directory: ${{ env.COLLECTION_PATH }}
         shell: bash
         run: |
-          ansible-galaxy collection install -r requirements.yml
-          ansible-galaxy install -r requirements.yml
+          # A partial Galaxy API response poisons ~/.ansible/galaxy_cache and makes
+          # every later resolve fail, so retry each install against a clean cache.
+          retry() {
+            for attempt in 1 2 3; do
+              "$@" && return 0
+              echo "::warning::$* failed (attempt ${attempt}/3), clearing Galaxy response cache"
+              rm -rf ~/.ansible/galaxy_cache
+              sleep 15
+            done
+            return 1
+          }
+          retry ansible-galaxy collection install -r requirements.yml --no-cache
+          retry ansible-galaxy install -r requirements.yml
 
       - name: Build and install collection locally
         working-directory: ${{ env.COLLECTION_PATH }}

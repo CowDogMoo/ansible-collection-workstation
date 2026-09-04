@@ -49,7 +49,18 @@ jobs:
 
       - name: Install Ansible collections
         run: |
-          ansible-galaxy collection install -r requirements.yml --force
+          # A partial Galaxy API response poisons ~/.ansible/galaxy_cache and makes
+          # every later resolve fail, so retry each install against a clean cache.
+          retry() {
+            for attempt in 1 2 3; do
+              "$@" && return 0
+              echo "::warning::$* failed (attempt ${attempt}/3), clearing Galaxy response cache"
+              rm -rf ~/.ansible/galaxy_cache
+              sleep 15
+            done
+            return 1
+          }
+          retry ansible-galaxy collection install -r requirements.yml --force --no-cache
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
