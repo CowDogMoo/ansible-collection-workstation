@@ -31,6 +31,10 @@ sys.stderr.write(msg + '\\n') if msg else None;sys.exit({% if hook.action == 'bl
   }) %}
 {% endfor %}
 
+{#- Settings rendered after the hooks block. Attribution goes first so a key in
+    claude_code_additional_settings can still override it. -#}
+{% set claude_code_settings_extra = ({'attribution': claude_code_attribution} if (claude_code_attribution | default({}) | length > 0) else {}) | combine(claude_code_additional_settings) %}
+
 {#- Generate hooks JSON -#}
 {
 {% if hooks_by_event | length > 0 %}
@@ -55,11 +59,11 @@ sys.stderr.write(msg + '\\n') if msg else None;sys.exit({% if hook.action == 'bl
     ]{% if not loop.last %},{% endif %}
 
 {% endfor %}
-  }{% if claude_code_additional_settings | length > 0 %},{% endif %}
+  }{% if claude_code_settings_extra | length > 0 %},{% endif %}
 
 {% endif %}
-{% if claude_code_additional_settings | length > 0 %}
-{% for key, value in claude_code_additional_settings.items() %}
+{% if claude_code_settings_extra | length > 0 %}
+{% for key, value in claude_code_settings_extra.items() %}
   "{{ key }}": {{ value | to_json }}{% if not loop.last %},{% endif %}
 
 {% endfor %}

@@ -61,8 +61,8 @@ squad_pr
 **Format verification — after every `squad_pr`:**
 
 1. Check the PR with `gh pr view`.
-2. Confirm the generated output is clean: **no code fences (```)** in the title or body, and the **title is not duplicated** in the body.
-3. If the output is malformed, the bug is in the `pr` pattern or the filter — both live in `~/cowdogmoo/fabric-patterns-hub` (`patterns/pr/system.md`, `scripts/filter.py`) — fix it at the source and re-run `squad_pr`. Never patch the symptom by hand-editing the PR.
+2. Confirm the generated output is clean: **no code fences (```)** in the title or body, the **title is not duplicated** in the body, and **no AI attribution** anywhere (no robot emoji, no "Generated with Claude Code" line, no `Co-Authored-By` or `Claude-Session` trailer).
+3. If the output is malformed, the bug is in the `pr` pattern or the filter — both live in `~/cowdogmoo/fabric-patterns-hub` (`patterns/pr/system.md`, `scripts/filter.py`) — fix it at the source and re-run `squad_pr`. Never patch the symptom by hand-editing the PR. An attribution footer means the generator leaked it: squad's `claude-code` provider must pass `--settings` hiding attribution (rebuild squad from main) and `scripts/filter.py` must strip attribution lines.
 
 Both `squad_pr` and `fabric_pr` share the same patterns and filters from `~/cowdogmoo/fabric-patterns-hub`, so a source fix applies to both.
 

@@ -86,7 +86,8 @@ claude_code_advanced_hooks_default:
   # forbidden_content: Block commits/PRs with forbidden content (emojis/branding).
   # Inspects the literal command string. Catches `git commit -m "...Co-Authored-By: Claude..."`
   # and `gh pr create --body "...🤖..."` style invocations. Cannot see content passed via
-  # `-F file`, stdin pipes, $variables, or editor commits — `post_commit_check` handles those.
+  # `-F file`, stdin pipes, $variables, or editor commits — `post_commit_check` covers commits
+  # and `post_pr_check` covers pull request bodies created or edited by `squad_pr`.
   forbidden_content:
     event: PreToolUse
     tool: Bash
@@ -159,8 +160,13 @@ claude_code_advanced_hooks_default:
   # `forbidden_content`. The PreToolUse hook only sees the literal command string, so it misses
   # messages passed via `-F file`, stdin pipes (`squad_commit` uses `git commit -F -`),
   # $variables, editor commits, and squash-merges. This PostToolUse hook runs after any
-  # commit-creating command and inspects the resulting commit message; if forbidden content
-  # landed, it tells Claude to amend before pushing.
+  # commit-creating command and inspects the resulting commit message; if an attribution
+  # footer or trailer landed, it tells Claude to amend before pushing.
+  #
+  # Detection is line-anchored: a trailer or footer is always a line of its own, whereas a
+  # commit that *describes* attribution handling ("strip the Generated with Claude Code
+  # footer") is legitimate generated output and must not be blocked. Hook input only carries
+  # the session's cwd, so a command that `cd`s into another repo first is followed there.
   post_commit_check:
     event: PostToolUse
     tool: Bash
@@ -186,6 +192,10 @@ claude_code_advanced_hooks_default:
       if not any(re.search(p, cmd) for p in commit_patterns):
           sys.exit(0)
 
+      # Follow the last 'cd <dir>' in the command; the hook only sees the session cwd.
+      for m in re.finditer(r'(?:^|&&|;|\|\||\s)cd\s+(?:-[qP]+\s+)?([^\s;&|]+)', cmd):
+          cwd = os.path.expanduser(os.path.expandvars(m.group(1).strip(chr(39) + chr(34))))
+
       try:
           msg = subprocess.run(
               ['git', '-C', cwd, 'log', '-1', '--format=%B'],
@@ -194,22 +204,102 @@ claude_code_advanced_hooks_default:
       except Exception:
           sys.exit(0)
 
-      forbidden = [
-          '🤖',
-          'Generated with',
-          'Co-Authored-By: Claude',
-          'Co-authored-by: Claude',
-          'claude.com/claude-code',
-          'noreply@anthropic.com',
+      attribution_lines = [
+          r'^\s*(?:🤖\s*)?Generated with (?:\[Claude Code\]\([^)]*\)|Claude Code)[\s.!]*$',
+          r'^\s*Co-Authored-By:\s*Claude\b.*$',
+          r'^\s*[\w-]+:\s*.*<[^>]*@anthropic\.com>\s*$',
+          r'^\s*Claude-Session:\s*https?://\S+\s*$',
+          r'^\s*https?://claude\.ai/code/session_\S+\s*$',
       ]
-      hits = [f for f in forbidden if f in msg]
+      hits = [
+          ln.strip() for ln in msg.splitlines()
+          if any(re.match(p, ln, re.IGNORECASE) for p in attribution_lines)
+      ]
       if hits:
           err = (
-              f'❌ Last commit contains forbidden content: {hits!r}\\n\\n'
+              f'❌ Last commit contains forbidden content (attribution lines): {hits!r}\\n\\n'
               'Amend it now (do NOT push until fixed):\\n'
               '  git log -1 --format=%B > /tmp/commit_msg\\n'
               '  # edit /tmp/commit_msg and remove the trailers/branding\\n'
               '  git commit --amend -F /tmp/commit_msg\\n'
+          )
+          sys.stderr.write(err + '\\n')
+          sys.exit(2)
+      sys.exit(0)
+      "
+
+  # post_pr_check: Post-PR safety net for pull request bodies. `squad_pr` generates the
+  # body with `claude -p`, and Claude Code's own attribution setting tells that model to end
+  # PR descriptions with "🤖 Generated with [Claude Code](...)". The text never appears in
+  # the literal command string (`squad_pr`), so `forbidden_content` cannot see it, and
+  # `post_commit_check` only inspects commit messages. This PostToolUse hook runs after any
+  # PR-creating or PR-editing command, reads the PR back via `gh pr view`, and blocks if an
+  # attribution footer or trailer landed — with instructions to fix the generator, never
+  # the PR by hand.
+  #
+  # Detection is line-anchored: a footer or trailer is always a line of its own, whereas a
+  # PR that *describes* attribution handling ("strips the Generated with Claude Code
+  # footer") is legitimate and must not be blocked. Hook input only carries the session's
+  # cwd, so a command that `cd`s into another repo before `squad_pr` is followed there.
+  post_pr_check:
+    event: PostToolUse
+    tool: Bash
+    type: command
+    command: |
+      python3 -c "
+      import json, sys, subprocess, re, os
+
+      data = json.load(sys.stdin)
+      tool_input = data.get('tool_input', {})
+      cmd = tool_input.get('command', '')
+      cwd = data.get('cwd') or tool_input.get('cwd') or os.getcwd()
+
+      pr_patterns = [
+          r'\bsquad_pr\b',
+          r'\bfabric_pr\b',
+          r'\bgh\s+pr\s+create\b',
+          r'\bgh\s+pr\s+edit\b',
+      ]
+      if not any(re.search(p, cmd) for p in pr_patterns):
+          sys.exit(0)
+
+      # Follow the last 'cd <dir>' in the command; the hook only sees the session cwd.
+      for m in re.finditer(r'(?:^|&&|;|\|\||\s)cd\s+(?:-[qP]+\s+)?([^\s;&|]+)', cmd):
+          cwd = os.path.expanduser(os.path.expandvars(m.group(1).strip(chr(39) + chr(34))))
+
+      # 'gh pr edit 123 ...' names its target; everything else resolves from the branch.
+      m = re.search(r'\bgh\s+pr\s+edit\s+([^\s-]\S*)', cmd)
+      selector = [m.group(1)] if m else []
+
+      try:
+          out = subprocess.run(
+              ['gh', 'pr', 'view', *selector, '--json', 'title,body'],
+              cwd=cwd, capture_output=True, text=True, timeout=30, check=True,
+          ).stdout
+          pr = json.loads(out)
+      except Exception:
+          sys.exit(0)
+
+      text = (pr.get('title') or '') + chr(10) + (pr.get('body') or '')
+
+      attribution_lines = [
+          r'^\s*(?:🤖\s*)?Generated with (?:\[Claude Code\]\([^)]*\)|Claude Code)[\s.!]*$',
+          r'^\s*Co-Authored-By:\s*Claude\b.*$',
+          r'^\s*[\w-]+:\s*.*<[^>]*@anthropic\.com>\s*$',
+          r'^\s*Claude-Session:\s*https?://\S+\s*$',
+          r'^\s*https?://claude\.ai/code/session_\S+\s*$',
+      ]
+      hits = [
+          ln.strip() for ln in text.splitlines()
+          if any(re.match(p, ln, re.IGNORECASE) for p in attribution_lines)
+      ]
+      if hits:
+          err = (
+              f'❌ Pull request title/body contains forbidden content (attribution lines): {hits!r}\\n\\n'
+              'The PR generator leaked AI attribution. Do NOT hand-edit the PR body.\\n'
+              'Fix the source, then re-run squad_pr to regenerate the body:\\n'
+              '  - squad must pass --settings hiding attribution (rebuild squad from main)\\n'
+              '  - fabric-patterns-hub scripts/filter.py must strip attribution lines\\n'
           )
           sys.stderr.write(err + '\\n')
           sys.exit(2)
@@ -245,6 +335,17 @@ claude_code_advanced_hooks: >-
     (claude_code_advanced_hooks_default | combine(claude_code_advanced_hooks_overrides, recursive=True))
     | dict2items | rejectattr('value', 'none') | map(attribute='value') | list
   }}
+
+# Attribution Claude Code appends on its own: a "Co-Authored-By: Claude ..." trailer on
+# commits and a "Generated with Claude Code" footer on pull request descriptions. Empty
+# strings hide both and sessionUrl: false drops the claude.ai session link. The hooks above
+# forbid exactly this content, so hiding it at the source keeps interactive sessions and
+# `claude -p` runs that inherit user settings from ever producing it. Set to {} to keep
+# Claude Code's defaults. An `attribution` key in claude_code_additional_settings wins.
+claude_code_attribution:
+  commit: ""
+  pr: ""
+  sessionUrl: false
 
 # Additional settings (optional)
 claude_code_additional_settings: {}

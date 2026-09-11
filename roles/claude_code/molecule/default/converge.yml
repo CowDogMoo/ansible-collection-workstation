@@ -123,6 +123,15 @@
             message: "Simple hook only"
         claude_code_advanced_hooks: []
 
+    - name: Test with the role's default advanced hooks (no override)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.claude_code
+      vars:
+        claude_code_username: "{{ container_user }}"
+        claude_code_user_home: "{{ container_home }}"
+        claude_code_config_dir: "{{ container_home }}/.claude-defaults"
+        claude_code_simple_hooks: []
+
     - name: Test with only advanced hooks
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.claude_code
