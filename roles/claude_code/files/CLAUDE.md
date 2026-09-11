@@ -31,8 +31,8 @@ since that hides shared agents, skills, and settings from the team.
 ### Commits
 
 Always use `squad_commit` for commit messages (billed to the Claude
-subscription via squad's claude-code provider). If it fails, fall back to
-`fabric_commit` (API-billed):
+subscription via squad's claude-code provider). There is no fabric fallback;
+if it fails, debug the generator with `git ds | squad_gen commit`:
 
 ```bash
 squad_commit
@@ -47,7 +47,7 @@ squad_commit
 
 ### Pull Requests
 
-Always use `squad_pr` for pull requests — both to **open** them and to **update** them (billed to the Claude subscription; fall back to `fabric_pr` if it fails). `squad_pr` regenerates the title/body from the current `git diff main`, then creates the PR or, if one already exists for the branch, updates that PR in place.
+Always use `squad_pr` for pull requests — both to **open** them and to **update** them (billed to the Claude subscription; if it fails, debug with `git diff main...HEAD | squad_gen pr`). `squad_pr` regenerates the title/body from the current `git diff main`, then creates the PR or, if one already exists for the branch, updates that PR in place.
 
 ```bash
 squad_pr
@@ -62,9 +62,9 @@ squad_pr
 
 1. Check the PR with `gh pr view`.
 2. Confirm the generated output is clean: **no code fences (```)** in the title or body, the **title is not duplicated** in the body, and **no AI attribution** anywhere (no robot emoji, no "Generated with Claude Code" line, no `Co-Authored-By` or `Claude-Session` trailer).
-3. If the output is malformed, the bug is in the `pr` pattern or the filter — both live in `~/cowdogmoo/fabric-patterns-hub` (`patterns/pr/system.md`, `scripts/filter.py`) — fix it at the source and re-run `squad_pr`. Never patch the symptom by hand-editing the PR. An attribution footer means the generator leaked it: squad's `claude-code` provider must pass `--settings` hiding attribution (rebuild squad from main) and `scripts/filter.py` must strip attribution lines.
+3. If the output is malformed, the bug is in the `pr` text agent or the shared filter — both live in `~/cowdogmoo/squad-agents` (`pr/system.md`, `scripts/filter.py`) — fix it at the source and re-run `squad_pr`. Never patch the symptom by hand-editing the PR. An attribution footer means the generator leaked it: squad's `claude-code` provider must pass `--settings` hiding attribution (rebuild squad from main) and `scripts/filter.py` must strip attribution lines.
 
-Both `squad_pr` and `fabric_pr` share the same patterns and filters from `~/cowdogmoo/fabric-patterns-hub`, so a source fix applies to both.
+`squad_gen` resolves the text agents (`commit`, `pr`, `branch`) from `~/cowdogmoo/squad-agents` (override with `SQUAD_AGENTS_DIR`). `fabric-patterns-hub` is the fabric patterns repo; it is not part of this workflow and must never be renamed or narrowed for squad's sake.
 
 ## Modern CLI Tools
 
