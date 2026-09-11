@@ -28,6 +28,7 @@
         name:
           - curl
           - ca-certificates
+          - git
           - nodejs
         state: present
         update_cache: true

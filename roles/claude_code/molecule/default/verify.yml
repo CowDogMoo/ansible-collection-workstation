@@ -475,12 +475,7 @@
         success_msg: "post_pr_check passes clean PR bodies"
 
     # post_commit_check: same line-anchored rule, exercised in a throwaway git repo
-    - name: Check whether git is available for the post_commit_check tests
-      ansible.builtin.command: which git
-      register: claude_code_git_check
-      changed_when: false
-      failed_when: false
-
+    # (git is installed by prepare.yml so these cases can never silently skip)
     - name: Run post_commit_check against a commit carrying a Claude trailer
       ansible.builtin.shell: |
         set -o pipefail
@@ -501,7 +496,6 @@
       register: claude_code_post_commit_check_positive
       changed_when: false
       failed_when: false
-      when: claude_code_git_check.rc == 0
 
     - name: Assert post_commit_check blocks a commit carrying a Claude trailer
       ansible.builtin.assert:
@@ -510,7 +504,6 @@
           - "'forbidden content' in claude_code_post_commit_check_positive.stdout"
         fail_msg: "post_commit_check did not block: rc={{ claude_code_post_commit_check_positive.rc }} out={{ claude_code_post_commit_check_positive.stdout }}"
         success_msg: "post_commit_check blocks attribution trailers"
-      when: claude_code_git_check.rc == 0
 
     - name: Run post_commit_check against a commit that only describes the footer
       ansible.builtin.shell: |
@@ -531,7 +524,6 @@
       register: claude_code_post_commit_check_prose
       changed_when: false
       failed_when: false
-      when: claude_code_git_check.rc == 0
 
     - name: Assert post_commit_check passes a commit that only describes the footer
       ansible.builtin.assert:
@@ -539,4 +531,3 @@
           - claude_code_post_commit_check_prose.rc == 0
         fail_msg: "post_commit_check blocked a legitimate message: {{ claude_code_post_commit_check_prose.stderr }}"
         success_msg: "post_commit_check passes prose mentions"
-      when: claude_code_git_check.rc == 0
