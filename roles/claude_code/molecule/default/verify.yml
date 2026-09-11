@@ -364,3 +364,112 @@
           - "'chrome-devtools' not in mcp_list_result.stdout"
         fail_msg: "MCP server 'chrome-devtools' should have been removed by side_effect: {{ mcp_list_result.stdout }}"
         success_msg: "MCP server 'chrome-devtools' was successfully removed (state: absent verified)"
+
+    # Attribution is hidden in every rendered settings.json, not only the defaults run
+    - name: Assert settings.json hides Claude Code attribution
+      ansible.builtin.assert:
+        that:
+          - claude_code_settings.attribution is defined
+          - claude_code_settings.attribution.commit == ''
+          - claude_code_settings.attribution.pr == ''
+          - claude_code_settings.attribution.sessionUrl is sameas false
+        fail_msg: "settings.json does not hide commit/PR attribution"
+        success_msg: "settings.json hides commit and PR attribution"
+
+    # Test default-hooks scenario: the role's own advanced hook map, nothing overridden
+    - name: Read settings.json from default-hooks test
+      ansible.builtin.slurp:
+        path: "{{ container_home }}/.claude-defaults/settings.json"
+      register: claude_code_defaults_settings_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Parse default-hooks settings.json
+      ansible.builtin.set_fact:
+        claude_code_defaults_settings: "{{ claude_code_defaults_settings_content['content'] | b64decode | from_json }}"
+
+    - name: Collect PostToolUse Bash hook commands from the default-hooks settings
+      ansible.builtin.set_fact:
+        claude_code_defaults_post_cmds: >-
+          {{
+            claude_code_defaults_settings.hooks.PostToolUse
+            | selectattr('matcher', 'equalto', 'Bash')
+            | map(attribute='hooks') | flatten | map(attribute='command') | list
+          }}
+        claude_code_defaults_pre_cmds: >-
+          {{
+            claude_code_defaults_settings.hooks.PreToolUse
+            | selectattr('matcher', 'equalto', 'Bash')
+            | map(attribute='hooks') | flatten | map(attribute='command') | list
+          }}
+
+    - name: Assert default hooks guard commits and pull requests against attribution
+      ansible.builtin.assert:
+        that:
+          - claude_code_defaults_post_cmds | select('search', 'squad_pr') | select('search', 'gh') | list | length == 1
+          - claude_code_defaults_post_cmds | select('search', 'squad_commit') | select('search', 'git') | list | length == 1
+          - claude_code_defaults_pre_cmds | select('search', 'squad_pr') | list | length == 1
+          - claude_code_defaults_pre_cmds | select('search', 'no-verify') | list | length == 1
+          - claude_code_defaults_settings.attribution.pr == ''
+        fail_msg: "Default hooks are missing post_pr_check, post_commit_check, or forbidden_content"
+        success_msg: "Default hooks cover PR bodies, commit messages, and literal commands"
+
+    - name: Run post_pr_check against a PR body carrying the Claude Code footer
+      ansible.builtin.shell: |
+        set -o pipefail
+        tmp=$(mktemp -d)
+        cat > "$tmp/gh" <<'GH'
+        #!/bin/sh
+        printf '%s' '{"title":"docs: x","body":"body\n\nGenerated with [Claude Code](https://claude.com/claude-code)"}'
+        GH
+        chmod +x "$tmp/gh"
+        cat > "$tmp/hook.sh" <<'HOOK'
+        {{ claude_code_defaults_post_cmds | select('search', 'squad_pr') | first }}
+        HOOK
+        printf '%s' '{"tool_input":{"command":"squad_pr"},"cwd":"/tmp"}' | PATH="$tmp:$PATH" sh "$tmp/hook.sh" 2>"$tmp/err"
+        rc=$?
+        cat "$tmp/err"
+        rm -rf "$tmp"
+        exit $rc
+      args:
+        executable: /bin/bash
+      register: claude_code_post_pr_check_positive
+      changed_when: false
+      failed_when: false
+
+    - name: Assert post_pr_check blocks a PR body carrying the footer
+      ansible.builtin.assert:
+        that:
+          - claude_code_post_pr_check_positive.rc == 2
+          - "'forbidden content' in claude_code_post_pr_check_positive.stdout"
+        fail_msg: "post_pr_check did not block: rc={{ claude_code_post_pr_check_positive.rc }} out={{ claude_code_post_pr_check_positive.stdout }}"
+        success_msg: "post_pr_check blocks attribution in PR bodies"
+
+    - name: Run post_pr_check against a clean PR body
+      ansible.builtin.shell: |
+        set -o pipefail
+        tmp=$(mktemp -d)
+        cat > "$tmp/gh" <<'GH'
+        #!/bin/sh
+        printf '%s' '{"title":"docs: x","body":"a clean body"}'
+        GH
+        chmod +x "$tmp/gh"
+        cat > "$tmp/hook.sh" <<'HOOK'
+        {{ claude_code_defaults_post_cmds | select('search', 'squad_pr') | first }}
+        HOOK
+        printf '%s' '{"tool_input":{"command":"squad_pr"},"cwd":"/tmp"}' | PATH="$tmp:$PATH" sh "$tmp/hook.sh"
+        rc=$?
+        rm -rf "$tmp"
+        exit $rc
+      args:
+        executable: /bin/bash
+      register: claude_code_post_pr_check_negative
+      changed_when: false
+      failed_when: false
+
+    - name: Assert post_pr_check passes a clean PR body
+      ansible.builtin.assert:
+        that:
+          - claude_code_post_pr_check_negative.rc == 0
+        fail_msg: "post_pr_check blocked a clean PR: {{ claude_code_post_pr_check_negative.stderr }}"
+        success_msg: "post_pr_check passes clean PR bodies"

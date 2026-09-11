@@ -39,10 +39,15 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_advanced_hooks_default.forbidden_content` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.dangerous_flags` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.post_commit_check` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.post_pr_check` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.stop_sound` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.notify_sound` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_overrides` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks` | str | <code><multiline value: folded_strip></code> | No description |
+| `claude_code_attribution` | dict | <code>{}</code> | No description |
+| `claude_code_attribution.commit` | str | <code></code> | No description |
+| `claude_code_attribution.pr` | str | <code></code> | No description |
+| `claude_code_attribution.sessionUrl` | bool | <code>False</code> | No description |
 | `claude_code_additional_settings` | dict | <code>{}</code> | No description |
 | `claude_code_manage_mcp_servers` | bool | <code>True</code> | No description |
 | `claude_code_mcp_servers` | list | <code>&#91;&#93;</code> | No description |
