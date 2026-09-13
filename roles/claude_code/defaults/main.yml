@@ -133,21 +133,175 @@ claude_code_advanced_hooks_default:
     type: command
     command: |
       python3 -c "
-      import json, sys, re
+      import json, sys, re, shlex
 
       data = json.load(sys.stdin)
       cmd = data.get('tool_input', {}).get('command', '')
 
-      if 'git' not in cmd:
+      if 'git' not in cmd.replace(chr(39), '').replace(chr(34), '').replace(chr(92), ''):
           sys.exit(0)
 
-      # Check for dangerous flags (long flags use simple 'in', short flags use regex)
-      dangerous_long = ['--no-verify', '--no-gpg-sign', '--no-post-rewrite']
-      blocked_flag = next((f for f in dangerous_long if f in cmd), None)
+      # Only flag a dangerous option that is a real argv token of a git invocation,
+      # so merely searching for or documenting the flag is not blocked. Shell and
+      # exec wrappers are followed so they cannot be used to smuggle one past.
+      DANGEROUS = ['--no-verify', '--no-gpg-sign', '--no-post-rewrite']
+      SEPARATORS = set('&|;()<>')
+      STR_WRAPPERS = ('bash', 'sh', 'zsh', 'dash', 'ksh')
+      INTERPRETERS = ('python', 'python2', 'python3', 'perl', 'ruby', 'node',
+                      'php', 'awk')
 
-      # Check for -n flag as standalone only in git commit commands
-      if not blocked_flag and 'git commit' in cmd and re.search(r'(^|\s)-n(\s|$)', cmd):
-          blocked_flag = '-n'
+      def tokenize(text):
+          # Non-posix keeps the quotes on each token, which is what lets a quoted
+          # ';' be told apart from a real command separator.
+          try:
+              lexer = shlex.shlex(text, posix=False, punctuation_chars=True)
+              lexer.whitespace_split = True
+              return list(lexer)
+          except ValueError:
+              return text.split()
+
+      def unquote(tok):
+          # A wrapping pair keeps its contents intact, so a quoted sentence stays one
+          # opaque word. Quotes or escapes spliced into a bare word are removed
+          # instead: the shell concatenates those segments into a single word, so
+          # --no-verif'y' reaches git as --no-verify.
+          if len(tok) > 1 and tok[0] == tok[-1] and tok[0] in (chr(34), chr(39)):
+              return tok[1:-1]
+          out = tok.replace(chr(92), '')
+          # ANSI-C and locale quoting introduce a quoted run that the shell strips
+          # entirely, so drop the dollar introducer together with its quote.
+          out = out.replace(chr(36) + chr(39), '').replace(chr(36) + chr(34), '')
+          # chr(96) is the backtick: shlex neither quotes nor splits on it, so it
+          # stays fused to the adjacent word unless it is stripped here.
+          return (out.replace(chr(34), '')
+                     .replace(chr(39), '')
+                     .replace(chr(96), ''))
+
+      def clauses(toks):
+          out, cur = [], []
+          for tok in toks:
+              if tok and all(ch in SEPARATORS for ch in tok):
+                  out.append(cur)
+                  cur = []
+              else:
+                  cur.append(tok)
+          out.append(cur)
+          return out
+
+      def scan(clause, depth=0):
+          if depth > 8 or not clause:
+              return None
+          vals = [unquote(tok) for tok in clause]
+
+          # A shell or interpreter ANYWHERE in the clause may carry a payload that is
+          # itself a command, so recurse into it. Checking every position rather than
+          # only the first word means an exec-style prefix cannot hide the payload.
+          for j, val in enumerate(vals):
+              word = val.split('/')[-1]
+              rest = vals[j + 1:]
+              if word == 'eval':
+                  hit = scan_command(' '.join(rest), depth + 1)
+                  if hit:
+                      return hit
+              elif word in STR_WRAPPERS:
+                  for k, arg in enumerate(rest):
+                      if arg.startswith('-') and arg.endswith('c') and k + 1 < len(rest):
+                          hit = scan_command(rest[k + 1], depth + 1)
+                          if hit:
+                              return hit
+              elif word in INTERPRETERS:
+                  # An interpreter payload really does run git, but its syntax is not
+                  # shell, so split on anything that cannot be part of a word and look
+                  # for the invocation and the flag together. Short options bundle, so
+                  # -c and -e also arrive as -uc, -Ic, -we.
+                  for k, arg in enumerate(rest):
+                      if (arg.startswith('-') and not arg.startswith('--')
+                              and arg[-1:] in ('c', 'e') and k + 1 < len(rest)):
+                          words = re.split(r'[^A-Za-z0-9_./-]+', rest[k + 1])
+                          if 'git' in [w.split('/')[-1] for w in words]:
+                              for flag in DANGEROUS:
+                                  if flag in words:
+                                      return flag
+
+          # The tool itself, wherever it sits in the clause. Taking the last such
+          # token and treating the remainder as its argv covers every exec-style
+          # wrapper prefix - sudo, env, nohup, flock, chrt, ionice, runuser and any
+          # other - without having to enumerate them.
+          for k in range(len(vals) - 1, -1, -1):
+              if vals[k].split('/')[-1] != 'git':
+                  continue
+              args = vals[k + 1:]
+              for flag in DANGEROUS:
+                  if flag in args or any(a.startswith(flag + '=') for a in args):
+                      return flag
+              if 'commit' in args and '-n' in args:
+                  return '-n'
+              break
+          return None
+
+      def fallback(toks):
+          # xargs, command substitution, variables and friends assemble argv at run
+          # time, so the flag can reach git from a different clause than the
+          # invocation. Only bare tokens count: a quoted mention stays a single
+          # token, so documenting or searching for the flag is still allowed.
+          bare = []
+          for tok in toks:
+              val = unquote(tok)
+              bare.append(val)
+              # a value assigned here can be substituted back in a later clause
+              if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', val):
+                  bare.extend(unquote(t) for t in tokenize(val.split('=', 1)[1]))
+          if 'git' not in [tok.split('/')[-1] for tok in bare]:
+              return None
+          for flag in DANGEROUS:
+              if flag in bare:
+                  return flag
+          return None
+
+      def assembles_at_runtime(text, toks):
+          # The pooled fallback is only safe where argv really can be built at run
+          # time. Without this, two unrelated clauses - git log && echo FLAG - would
+          # be pooled together and wrongly blocked.
+          if chr(36) in text or chr(96) in text:
+              return True
+          for tok in toks:
+              val = unquote(tok)
+              if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', val):
+                  return True
+              if val.split('/')[-1] == 'xargs':
+                  return True
+          return False
+
+      def reads_script_from_stdin(cls):
+          # A bare shell or interpreter with no arguments runs whatever is piped
+          # into it, so an upstream clause is script text, not data.
+          for c in cls:
+              vals = [unquote(tok) for tok in c]
+              if len(vals) == 1 and vals[0].split('/')[-1] in STR_WRAPPERS + INTERPRETERS:
+                  return True
+          return False
+
+      def scan_command(text, depth=0):
+          # Applied to the whole command and to every nested payload, so a wrapper
+          # cannot hide a runtime-assembled flag one level down.
+          toks = tokenize(text)
+          cls = clauses(toks)
+          for clause in cls:
+              hit = scan(clause, depth)
+              if hit:
+                  return hit
+          if reads_script_from_stdin(cls):
+              for c in cls:
+                  vals = [unquote(tok) for tok in c]
+                  if len(vals) > 1:
+                      hit = scan_command(' '.join(vals[1:]), depth + 1)
+                      if hit:
+                          return hit
+          if assembles_at_runtime(text, toks):
+              return fallback(toks)
+          return None
+
+      blocked_flag = scan_command(cmd)
 
       if blocked_flag:
           msg = f'❌ BLOCKED: Cannot use {blocked_flag} flag.\\n\\nThis flag bypasses important safety checks.\\nFix the underlying issues instead.'

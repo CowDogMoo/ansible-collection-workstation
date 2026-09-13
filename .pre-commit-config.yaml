@@ -80,6 +80,13 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: test-dangerous-flags
+        name: Test the dangerous_flags hook in every file that ships it
+        entry: python3 .hooks/test-dangerous-flags.py
+        language: system
+        pass_filenames: false
+        files: ^(roles/(claude_code|antigravity)/defaults/main\.yml|playbooks/workstation/host_vars/.*/main\.yml|\.hooks/test-dangerous-flags\.py)$
+
       - id: update-architecture-diagram
         name: Update Architecture Diagram
         entry: python .hooks/gen-arch-diagram.py

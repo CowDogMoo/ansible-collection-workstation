@@ -531,3 +531,69 @@
           - claude_code_post_commit_check_prose.rc == 0
         fail_msg: "post_commit_check blocked a legitimate message: {{ claude_code_post_commit_check_prose.stderr }}"
         success_msg: "post_commit_check passes prose mentions"
+
+    # dangerous_flags: must still block every bypass form, including shell wrappers
+    # (the exhaustive matrix, including ANSI-C quoted forms, lives in
+    # .hooks/test-dangerous-flags.py, which runs as a pre-commit hook)
+    # that hide the invocation, while leaving commands that merely search for or
+    # document the flag alone. Probes the real hook body from the defaults.
+    - name: Probe dangerous_flags with bypass and documentation commands
+      ansible.builtin.shell: |
+        set -o pipefail
+        tmp=$(mktemp -d)
+        cat > "$tmp/hook.sh" <<'HOOK'
+        {{ claude_code_defaults_pre_cmds | select('search', 'no-verify') | first }}
+        HOOK
+        probe() {
+          python3 -c 'import json,sys; print(json.dumps({"tool_input":{"command":sys.argv[1]}}))' "$1" \
+            | sh "$tmp/hook.sh" >/dev/null 2>&1
+          printf '%s=%s\n' "$2" "$?"
+        }
+        probe 'git commit --no-verify -m x' direct
+        probe 'bash -c "git commit --no-verify"' wrapper
+        probe 'sudo git commit --no-verify' sudowrap
+        probe 'sudo -u dev git commit --no-verify' sudouser
+        probe 'env git commit --no-verify' envwrap
+        probe 'nohup git commit --no-verify' nohupwrap
+        probe '/usr/bin/git commit --no-verify' abspath
+        probe 'git commit -n -m x' shortform
+        probe 'git commit --no-verify; echo hi' semicolon
+        probe '(git commit --no-verify)' subshell
+        probe 'echo "--no-verify" | xargs git commit' xargsstdin
+        probe 'git commit $(echo --no-verify)' cmdsubst
+        probe 'eval "git commit --no-verify"' evalquoted
+        probe 'exec git commit --no-verify' execwrap
+        probe 'git commit --no-verif'"'"'y'"'"'' splicedflag
+        probe "rg -n -- '--no-verify' --hidden -g '!.git' ." search
+        probe "echo 'git commit --no-verify is banned' >> README.md" doc
+        probe 'git commit -m x' clean
+        rm -rf "$tmp"
+      args:
+        executable: /bin/bash
+      register: claude_code_dangerous_flags_probe
+      changed_when: false
+      failed_when: false
+
+    - name: Assert dangerous_flags blocks bypasses without blocking documentation
+      ansible.builtin.assert:
+        that:
+          - "'direct=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'wrapper=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'sudowrap=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'sudouser=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'envwrap=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'nohupwrap=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'abspath=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'shortform=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'semicolon=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'subshell=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'xargsstdin=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'cmdsubst=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'evalquoted=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'execwrap=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'splicedflag=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'search=0' in claude_code_dangerous_flags_probe.stdout"
+          - "'doc=0' in claude_code_dangerous_flags_probe.stdout"
+          - "'clean=0' in claude_code_dangerous_flags_probe.stdout"
+        fail_msg: "dangerous_flags misjudged a command: {{ claude_code_dangerous_flags_probe.stdout }}"
+        success_msg: "dangerous_flags blocks wrapper bypasses and passes documentation"
