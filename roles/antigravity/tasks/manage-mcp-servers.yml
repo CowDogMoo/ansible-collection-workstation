@@ -125,18 +125,24 @@
       changed_when: false
       check_mode: false
 
+    # check_mode: false throughout, matching the staging file's create and remove either
+    # side of this. Both only ever touch the temp file, never the real config, and without
+    # them a --check run leaves the staging file empty and skips the resolve entirely — so
+    # the assert below sees no stdout and fails every time.
     - name: Write MCP configuration for resolution
       ansible.builtin.template:
         src: mcp_config.json.j2
         dest: "{{ antigravity_mcp_staging.path | default('/dev/null') }}"
         mode: "0600"
       changed_when: false
+      check_mode: false
 
     - name: Resolve 1Password references
       ansible.builtin.command:
         cmd: "op inject -i {{ antigravity_mcp_staging.path | default('/dev/null') }}"
       register: antigravity_mcp_injected
       changed_when: false
+      check_mode: false
       no_log: true
 
     - name: Remove the staging file
