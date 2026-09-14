@@ -171,14 +171,30 @@ def extract(rel):
 
 
 def run_hook(body, cmd):
-    """Execute the hook the way the harness does. True means it blocked."""
+    """Execute the hook the way its harness does. True means it blocked.
+
+    Claude Code passes `tool_input.command` and reads a block off exit 2;
+    antigravity passes `toolCall.args` and reads a JSON decision on stdout.
+    The detection core is shared, so both wire contracts get the same matrix.
+    """
+    json_protocol = "toolCall" in body
+    payload = (
+        {"toolCall": {"args": {"CommandLine": cmd}}}
+        if json_protocol
+        else {"tool_input": {"command": cmd}}
+    )
     proc = subprocess.run(
         ["sh", "-c", body],
-        input=json.dumps({"tool_input": {"command": cmd}}),
+        input=json.dumps(payload),
         capture_output=True,
         text=True,
         timeout=30,
     )
+    if json_protocol:
+        try:
+            return json.loads(proc.stdout.strip())["decision"] == "deny"
+        except (ValueError, KeyError) as exc:
+            raise SystemExit(f"hook returned no decision for {cmd!r}: {exc}")
     # `sh` also exits 2 on a syntax error, which would otherwise read as a block.
     if proc.returncode not in (0, 2):
         raise SystemExit(f"hook exited {proc.returncode} for {cmd!r}: {proc.stderr[:200]}")
