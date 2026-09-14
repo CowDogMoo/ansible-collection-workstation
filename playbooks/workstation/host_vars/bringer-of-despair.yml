@@ -1,3 +1,110 @@
 ---
+# The claude_code role renders settings.json from scratch, so anything not named
+# here is dropped on the next converge. The keys below were previously only in
+# ~/.claude/settings.json and would have been wiped.
+#
+# Claude Code writes most of these itself when you change a setting in the TUI
+# (/config, the theme picker, the model picker). Change one in the app and this
+# file is stale - a converge will put the old value back. Re-sync here when that
+# matters; `--check --diff` shows the difference before anything is written.
 claude_code_additional_settings:
   skipDangerousModePermissionPrompt: true
+  model: "opus[1m]"
+  effortLevel: xhigh
+  modelSettings:
+    claude-fable-5-1:
+      effortLevel: high
+  theme: dark
+  tui: fullscreen
+  inputNeededNotifEnabled: true
+  agentPushNotifEnabled: true
+  enabledPlugins: {}
+  extraKnownMarketplaces:
+    cowdogmoo:
+      source:
+        source: github
+        repo: CowDogMoo/squad-skills
+
+# Hooks that belong to this machine only, adopted into Ansible so a converge stops
+# wiping them. Before this, they lived only in ~/.claude/settings.json and the
+# claude_code role - which treats that file as generated output - dropped all of
+# them on every run.
+#
+# Every entry uses `tool: ""`, the role's convention for a hook that is not scoped
+# to one tool: it renders as an empty matcher, which Claude Code reads as "every
+# tool". The cc-status hooks previously carried no matcher key at all; empty and
+# absent both mean the same thing here.
+claude_code_advanced_hooks_overrides:
+
+  # iTerm2 status line. One hook per lifecycle event, all running the same script,
+  # which reads the event off stdin and repaints the bar.
+  iterm2_status_notification:
+    event: Notification
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_permission_request:
+    event: PermissionRequest
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_pre_tool_use:
+    event: PreToolUse
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_post_tool_use:
+    event: PostToolUse
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_session_start:
+    event: SessionStart
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_session_end:
+    event: SessionEnd
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_user_prompt_submit:
+    event: UserPromptSubmit
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_stop:
+    event: Stop
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_stop_failure:
+    event: StopFailure
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  iterm2_status_subagent_stop:
+    event: SubagentStop
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.config/iterm2/cc-status"
+
+  # unlazy skill: its Stop hook decides whether the agent is actually finished.
+  # Installed with the skill, not by this role, so it has to be named here to survive.
+  unlazy_stop:
+    event: Stop
+    tool: ""
+    type: command
+    command: >-
+      '{{ ansible_facts['env']['HOME'] }}/.local/share/mise/shims/node'
+      '{{ ansible_facts['env']['HOME'] }}/.claude/skills/unlazy/scripts/stop-hook.mjs'
+      --unlazy-hook-v2
