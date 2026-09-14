@@ -531,3 +531,57 @@
           - claude_code_post_commit_check_prose.rc == 0
         fail_msg: "post_commit_check blocked a legitimate message: {{ claude_code_post_commit_check_prose.stderr }}"
         success_msg: "post_commit_check passes prose mentions"
+
+    # dangerous_flags: block the shortcuts anyone would actually take - including
+    # the ways of turning hooks off that never name a flag - without blocking
+    # commands that merely search for or document one. Probes the real hook body
+    # from the defaults; the full matrix, and the gaps left open on purpose, live
+    # in .hooks/test-dangerous-flags.py, which runs as a pre-commit hook.
+    - name: Probe dangerous_flags with shortcut and documentation commands
+      ansible.builtin.shell: |
+        set -o pipefail
+        tmp=$(mktemp -d)
+        cat > "$tmp/hook.sh" <<'HOOK'
+        {{ claude_code_defaults_pre_cmds | select('search', 'no-verify') | first }}
+        HOOK
+        probe() {
+          python3 -c 'import json,sys; print(json.dumps({"tool_input":{"command":sys.argv[1]}}))' "$1" \
+            | sh "$tmp/hook.sh" >/dev/null 2>&1
+          printf '%s=%s\n' "$2" "$?"
+        }
+        probe 'git commit --no-verify -m x' direct
+        probe 'git commit -n -m x' shortform
+        probe 'sudo git commit --no-verify' sudowrap
+        probe 'bash -c "git commit --no-verify"' wrapper
+        probe 'git -c core.hooksPath=/dev/null commit -m x' hookspath
+        probe 'SKIP=all git commit -m x' skipenv
+        probe 'HUSKY=0 git commit -m x' huskyenv
+        probe "rg -n -- '--no-verify' --hidden -g '!.git' ." search
+        probe "git commit -m 'note about --no-verify policy'" docmsg
+        probe "git commit -m 'add -n flag to the parser'" dashnmsg
+        probe 'rg --no-verify $PWD && git status' varclause
+        probe 'git commit -m x' clean
+        rm -rf "$tmp"
+      args:
+        executable: /bin/bash
+      register: claude_code_dangerous_flags_probe
+      changed_when: false
+      failed_when: false
+
+    - name: Assert dangerous_flags blocks shortcuts without blocking documentation
+      ansible.builtin.assert:
+        that:
+          - "'direct=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'shortform=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'sudowrap=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'wrapper=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'hookspath=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'skipenv=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'huskyenv=2' in claude_code_dangerous_flags_probe.stdout"
+          - "'search=0' in claude_code_dangerous_flags_probe.stdout"
+          - "'docmsg=0' in claude_code_dangerous_flags_probe.stdout"
+          - "'dashnmsg=0' in claude_code_dangerous_flags_probe.stdout"
+          - "'varclause=0' in claude_code_dangerous_flags_probe.stdout"
+          - "'clean=0' in claude_code_dangerous_flags_probe.stdout"
+        fail_msg: "dangerous_flags misjudged a command: {{ claude_code_dangerous_flags_probe.stdout }}"
+        success_msg: "dangerous_flags blocks the real shortcuts and passes documentation"
