@@ -173,7 +173,7 @@ antigravity_hooks_default:
     matcher: run_command
     command: |
       python3 -c "
-      import json, sys, re
+      import json, sys, shlex, re
 
       data = json.load(sys.stdin)
       args = data.get('toolCall', {}).get('args', {})
@@ -183,13 +183,85 @@ antigravity_hooks_default:
           print(json.dumps({'decision': 'allow'}))
           sys.exit(0)
 
-      # Check for dangerous flags (long flags use simple 'in', short flags use regex)
-      dangerous_long = ['--no-verify', '--no-gpg-sign', '--no-post-rewrite']
-      blocked_flag = next((f for f in dangerous_long if f in cmd), None)
+      # Block an option only where a real git invocation would receive it as argv, so
+      # searching for or documenting a flag is left alone. Disabling hooks by another
+      # name is the same shortcut, so it is caught here too.
+      #
+      # Deliberately out of scope: anything that has to be constructed to slip past
+      # this - a payload nested two levels down, a flag pasted together at runtime
+      # from variables or command substitution. Chasing those means reimplementing a
+      # shell, and the guardrail is against a careless shortcut, not an adversary
+      # who could just as easily edit this file.
+      FLAGS = ['--no-verify', '--no-gpg-sign', '--no-post-rewrite']
+      HOOK_ENV = ('SKIP', 'HUSKY', 'PRE_COMMIT_ALLOW_NO_CONFIG')
+      SHELLS = ('bash', 'sh', 'zsh', 'dash', 'ksh')
+      SEPARATORS = '&|;()<>'
 
-      # Check for -n flag as standalone only in git commit commands
-      if not blocked_flag and 'git commit' in cmd and re.search(r'(^|\s)-n(\s|$)', cmd):
-          blocked_flag = '-n'
+      def tokenize(text):
+          try:
+              lexer = shlex.shlex(text, posix=True, punctuation_chars=True)
+              lexer.whitespace_split = True
+              return list(lexer)
+          except ValueError:
+              return text.split()
+
+      def clauses(toks):
+          out, cur = [], []
+          for tok in toks:
+              if tok and all(ch in SEPARATORS for ch in tok):
+                  out.append(cur)
+                  cur = []
+              else:
+                  cur.append(tok)
+          out.append(cur)
+          return out
+
+      def check(clause):
+          # The last git token is the invocation and the rest is its argv, which
+          # covers exec-style prefixes - sudo, env, timeout, nohup - without
+          # enumerating them.
+          found = [i for i, tok in enumerate(clause) if tok.split('/')[-1] == 'git']
+          if not found:
+              return None
+          args = clause[found[-1] + 1:]
+          for tok in clause:
+              if re.match('^(' + '|'.join(HOOK_ENV) + ')=', tok):
+                  return tok.split('=')[0] + '='
+          for arg in args:
+              if arg.startswith('core.hooksPath='):
+                  return 'core.hooksPath'
+          for flag in FLAGS:
+              if flag in args or any(arg.startswith(flag + '=') for arg in args):
+                  return flag
+          if 'commit' in args and '-n' in args:
+              return '-n'
+          return None
+
+      def scan(text, depth=0):
+          for clause in clauses(tokenize(text)):
+              hit = check(clause)
+              if hit:
+                  return hit
+              if depth:
+                  continue
+              # One level into eval and a shell -c payload. A wrapped command still
+              # reads as an ordinary habit; deeper nesting does not.
+              for i, tok in enumerate(clause):
+                  word, rest = tok.split('/')[-1], clause[i + 1:]
+                  if word == 'eval':
+                      hit = scan(' '.join(rest), depth + 1)
+                  elif word in SHELLS:
+                      payload = next((rest[j + 1] for j, arg in enumerate(rest)
+                                      if arg.startswith('-') and arg.endswith('c')
+                                      and j + 1 < len(rest)), None)
+                      hit = scan(payload, depth + 1) if payload else None
+                  else:
+                      continue
+                  if hit:
+                      return hit
+          return None
+
+      blocked_flag = scan(cmd)
 
       if blocked_flag:
           reason = f'BLOCKED: Cannot use {blocked_flag} flag.\\n\\nThis flag bypasses important safety checks.\\nFix the underlying issues instead.'
@@ -197,7 +269,6 @@ antigravity_hooks_default:
       else:
           print(json.dumps({'decision': 'allow'}))
       "
-
   # post_commit_check: Safety net for forbidden content that slipped past `forbidden_content`.
   # The PreToolUse hook only sees the literal command string, so it misses messages passed
   # via `-F file`, stdin pipes (`squad_commit` uses `git commit -F -`), $variables, editor

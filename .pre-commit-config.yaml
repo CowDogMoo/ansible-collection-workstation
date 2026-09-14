@@ -88,3 +88,14 @@ repos:
         always_run: false
         files: ^(roles/|plugins/|playbooks/).*
         additional_dependencies: []
+
+      - id: test-dangerous-flags
+        name: Test the dangerous_flags Claude Code hook
+        entry: python .hooks/test-dangerous-flags.py
+        language: python
+        pass_filenames: false
+        files: >-
+          ^(\.hooks/test-dangerous-flags\.py
+          |roles/(claude_code|antigravity)/defaults/main\.yml
+          |playbooks/workstation/host_vars/MacBook-Pro-4/main\.yml)$
+        additional_dependencies: []
