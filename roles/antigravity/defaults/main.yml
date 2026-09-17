@@ -89,6 +89,12 @@ antigravity_plugins: []
 #     target: python_debugger@latest
 #     state: present
 
+# Optional Quorum seat driver configuration written to
+# {{ antigravity_quorum_state_dir }}/seat-driver.json when non-empty.
+antigravity_quorum_state_dir: "{{ antigravity_user_home }}/.claude/quorum-state"
+antigravity_quorum_seat_driver: {}
+
+
 # Hooks — custom shell/Python commands bound to agent lifecycle events.
 #
 # Antigravity's hooks.json is keyed by hook name, which lines up with the dict-keyed
