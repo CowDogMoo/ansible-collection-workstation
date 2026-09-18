@@ -39,8 +39,6 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_backup_settings` | bool | <code>True</code> | No description |
 | `antigravity_manage_plugins` | bool | <code>True</code> | No description |
 | `antigravity_plugins` | list | <code>&#91;&#93;</code> | No description |
-| `antigravity_quorum_state_dir` | str | <code>{{ antigravity_user_home }}/.claude/quorum-state</code> | No description |
-| `antigravity_quorum_seat_driver` | dict | <code>{}</code> | No description |
 | `antigravity_hooks_default` | dict | <code>{}</code> | No description |
 | `antigravity_hooks_default.forbidden_content` | dict | <code>{}</code> | No description |
 | `antigravity_hooks_default.dangerous_flags` | dict | <code>{}</code> | No description |
@@ -101,8 +99,6 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Generate Antigravity hooks.json** (ansible.builtin.template) - Conditional
 - **Manage MCP servers** (ansible.builtin.include_tasks) - Conditional
 - **Manage plugins** (ansible.builtin.include_tasks) - Conditional
-- **Create Quorum state directory** (ansible.builtin.file) - Conditional
-- **Configure Quorum seat-driver.json** (ansible.builtin.copy) - Conditional
 - **Display configuration status** (ansible.builtin.debug)
 
 ### manage-mcp-servers.yml
