@@ -418,6 +418,13 @@ claude_code_attribution:
   pr: ""
   sessionUrl: false
 
+# Whether Claude Code skips its confirmation before entering bypass-permissions mode
+# (`--dangerously-skip-permissions`). That prompt is the last check before a session runs
+# every tool without asking, so it stays on unless a host opts out. Always rendered, so a
+# converge also resets a value toggled in the app. A `skipDangerousModePermissionPrompt`
+# key in claude_code_additional_settings wins.
+claude_code_skip_dangerous_mode_permission_prompt: false
+
 # Additional settings (optional)
 claude_code_additional_settings: {}
 

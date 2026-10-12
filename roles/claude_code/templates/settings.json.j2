@@ -31,9 +31,11 @@ sys.stderr.write(msg + '\\n') if msg else None;sys.exit({% if hook.action == 'bl
   }) %}
 {% endfor %}
 
-{#- Settings rendered after the hooks block. Attribution goes first so a key in
-    claude_code_additional_settings can still override it. -#}
-{% set claude_code_settings_extra = ({'attribution': claude_code_attribution} if (claude_code_attribution | default({}) | length > 0) else {}) | combine(claude_code_additional_settings) %}
+{#- Settings rendered after the hooks block. Role-owned keys go first so a key in
+    claude_code_additional_settings can still override them. -#}
+{% set claude_code_settings_extra = {'skipDangerousModePermissionPrompt': claude_code_skip_dangerous_mode_permission_prompt | bool}
+   | combine({'attribution': claude_code_attribution} if (claude_code_attribution | default({}) | length > 0) else {})
+   | combine(claude_code_additional_settings) %}
 
 {#- Generate hooks JSON -#}
 {

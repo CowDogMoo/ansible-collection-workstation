@@ -48,6 +48,7 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_attribution.commit` | str | <code></code> | No description |
 | `claude_code_attribution.pr` | str | <code></code> | No description |
 | `claude_code_attribution.sessionUrl` | bool | <code>False</code> | No description |
+| `claude_code_skip_dangerous_mode_permission_prompt` | bool | <code>False</code> | No description |
 | `claude_code_additional_settings` | dict | <code>{}</code> | No description |
 | `claude_code_manage_mcp_servers` | bool | <code>True</code> | No description |
 | `claude_code_mcp_servers` | list | <code>&#91;&#93;</code> | No description |

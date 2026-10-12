@@ -376,6 +376,13 @@
         fail_msg: "settings.json does not hide commit/PR attribution"
         success_msg: "settings.json hides commit and PR attribution"
 
+    - name: Assert settings.json keeps the bypass-permissions confirmation by default
+      ansible.builtin.assert:
+        that:
+          - claude_code_settings.skipDangerousModePermissionPrompt is sameas false
+        fail_msg: "settings.json should not skip the dangerous-mode prompt unless a host opts in"
+        success_msg: "settings.json keeps the dangerous-mode confirmation prompt"
+
     # Test default-hooks scenario: the role's own advanced hook map, nothing overridden
     - name: Read settings.json from default-hooks test
       ansible.builtin.slurp:
