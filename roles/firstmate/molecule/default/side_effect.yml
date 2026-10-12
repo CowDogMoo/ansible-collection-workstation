@@ -1,0 +1,76 @@
+---
+# An existing checkout doubles as a live firstmate home, so re-running the role with
+# defaults must leave its HEAD and local files alone.
+- name: Side Effect - existing checkout is left untouched
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    firstmate_test_dir: "{{ container_home }}/firstmate"
+    firstmate_test_marker: "{{ container_home }}/firstmate/molecule-local-state"
+  tasks:
+    # The git module cannot commit or report HEAD without touching the remote.
+    - name: Move the checkout ahead of origin with a local commit # noqa: command-instead-of-module
+      ansible.builtin.command: >-
+        git -C {{ firstmate_test_dir | quote }} -c user.name=molecule -c user.email=molecule@localhost
+        commit --quiet --allow-empty -m "molecule local commit"
+      changed_when: true
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Record the checkout revision # noqa: command-instead-of-module
+      ansible.builtin.command: git -C {{ firstmate_test_dir | quote }} rev-parse HEAD
+      register: firstmate_side_effect_before
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Create local state inside the checkout
+      ansible.builtin.copy:
+        dest: "{{ firstmate_test_marker }}"
+        content: "local state\n"
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        mode: "0644"
+      become: true
+
+    - name: Re-run the role with defaults
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.firstmate
+      vars:
+        firstmate_username: "{{ container_user }}"
+        firstmate_user_home: "{{ container_home }}"
+
+    - name: Read the checkout revision after the re-run # noqa: command-instead-of-module
+      ansible.builtin.command: git -C {{ firstmate_test_dir | quote }} rev-parse HEAD
+      register: firstmate_side_effect_after
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Check local state survived
+      ansible.builtin.stat:
+        path: "{{ firstmate_test_marker }}"
+      register: firstmate_side_effect_marker
+
+    - name: Assert the existing checkout was not touched
+      ansible.builtin.assert:
+        that:
+          - firstmate_side_effect_after.stdout == firstmate_side_effect_before.stdout
+          - firstmate_side_effect_marker.stat.exists
+        fail_msg: >-
+          The role changed an existing checkout: HEAD {{ firstmate_side_effect_before.stdout }}
+          -> {{ firstmate_side_effect_after.stdout }}, local state
+          present={{ firstmate_side_effect_marker.stat.exists }}
+
+    - name: Remove local state
+      ansible.builtin.file:
+        path: "{{ firstmate_test_marker }}"
+        state: absent
+      become: true
+
+    - name: Drop the local commit # noqa: command-instead-of-module
+      ansible.builtin.command: git -C {{ firstmate_test_dir | quote }} reset --quiet --hard HEAD~1
+      changed_when: true
+      become: true
+      become_user: "{{ container_user }}"

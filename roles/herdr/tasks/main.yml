@@ -1,0 +1,50 @@
+---
+- name: Fail on unknown install method
+  ansible.builtin.fail:
+    msg: "herdr_install_method must be 'binary' or 'homebrew', got '{{ herdr_install_method }}'"
+  when: herdr_install_method not in ['binary', 'homebrew']
+
+- name: Install herdr with Homebrew
+  community.general.homebrew:
+    name: herdr
+    state: present
+  become: "{{ herdr_username != ansible_facts['user_id'] }}"
+  become_user: "{{ herdr_username }}"
+  when: herdr_install_method == 'homebrew'
+
+# brew is often missing from a non-login PATH, so resolve the prefix with the
+# standard Homebrew locations prepended and run herdr from it by absolute path.
+- name: Resolve Homebrew prefix
+  ansible.builtin.command: brew --prefix
+  environment:
+    PATH: "/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:{{ ansible_facts['env']['PATH'] | default('/usr/bin:/bin') }}"
+  register: herdr_brew_prefix
+  changed_when: false
+  become: "{{ herdr_username != ansible_facts['user_id'] }}"
+  become_user: "{{ herdr_username }}"
+  when: herdr_install_method == 'homebrew'
+
+- name: Install herdr release binary
+  ansible.builtin.include_tasks: install-binary.yml
+  when: herdr_install_method == 'binary'
+
+- name: Set herdr binary path
+  ansible.builtin.set_fact:
+    herdr_binary: >-
+      {{ herdr_install_dir if herdr_install_method == 'binary' else herdr_brew_prefix.stdout + '/bin' }}/herdr
+
+# Only a version query: never start, stop, or attach to a herdr server here.
+- name: Verify herdr installation
+  ansible.builtin.command: "{{ herdr_binary }} --version"
+  register: herdr_version_output
+  changed_when: false
+  become: "{{ herdr_username != ansible_facts['user_id'] }}"
+  become_user: "{{ herdr_username }}"
+
+- name: Display herdr version
+  ansible.builtin.debug:
+    msg: "herdr installed: {{ herdr_version_output.stdout }}"
+
+- name: Install herdr Claude Code integration
+  ansible.builtin.include_tasks: claude-integration.yml
+  when: herdr_claude_integration | bool

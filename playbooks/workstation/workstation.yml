@@ -272,6 +272,23 @@
       # For debugging
       # role: ../../roles/antigravity
 
+    - name: Install herdr agent multiplexer
+      role: cowdogmoo.workstation.herdr
+      tags:
+        - herdr
+      when: herdr_enabled | default(true) | bool
+      # For debugging
+      # role: ../../roles/herdr
+
+    # Clones the firstmate agent distro only; fleet homes and sessions stay manual.
+    - name: Install firstmate agent distro
+      role: cowdogmoo.workstation.firstmate
+      tags:
+        - firstmate
+      when: firstmate_enabled | default(true) | bool
+      # For debugging
+      # role: ../../roles/firstmate
+
     - name: Install Go Task
       role: cowdogmoo.workstation.go_task
       tags:

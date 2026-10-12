@@ -1,0 +1,68 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    firstmate_test_dir: "{{ container_home }}/firstmate"
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Resolve dependencies on PATH
+      ansible.builtin.shell: command -v git && command -v jq
+      args:
+        executable: /bin/bash
+      register: firstmate_deps_which
+      changed_when: false
+      failed_when: false
+
+    - name: Assert dependencies are installed
+      ansible.builtin.assert:
+        that:
+          - firstmate_deps_which.rc == 0
+          - firstmate_deps_which.stdout_lines | length == 2
+        fail_msg: "git and jq must be on PATH, got: {{ firstmate_deps_which.stdout }}"
+
+    - name: Check firstmate checkout
+      ansible.builtin.stat:
+        path: "{{ firstmate_test_dir }}"
+      register: firstmate_dir
+
+    - name: Assert checkout is owned by the user
+      ansible.builtin.assert:
+        that:
+          - firstmate_dir.stat.exists
+          - firstmate_dir.stat.isdir
+          - firstmate_dir.stat.pw_name == container_user
+        fail_msg: >-
+          {{ firstmate_test_dir }} is not a directory owned by {{ container_user }}
+          (owner={{ firstmate_dir.stat.pw_name | default('n/a') }})
+
+    - name: Read checkout state
+      ansible.builtin.shell: |
+        set -euo pipefail
+        git -C {{ firstmate_test_dir | quote }} remote get-url origin
+        git -C {{ firstmate_test_dir | quote }} rev-parse --abbrev-ref HEAD
+        git -C {{ firstmate_test_dir | quote }} rev-parse HEAD
+        git -C {{ firstmate_test_dir | quote }} rev-parse origin/{{ firstmate_version }}
+        git -C {{ firstmate_test_dir | quote }} status --porcelain | wc -l
+      args:
+        executable: /bin/bash
+      register: firstmate_git_state
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert checkout tracks the configured repository and version
+      ansible.builtin.assert:
+        that:
+          - firstmate_git_state.stdout_lines[0] == firstmate_repo_url
+          - firstmate_git_state.stdout_lines[1] == firstmate_version
+          - firstmate_git_state.stdout_lines[2] == firstmate_git_state.stdout_lines[3]
+          - firstmate_git_state.stdout_lines[4] | trim == '0'
+        fail_msg: >-
+          Checkout state is wrong (origin, branch, HEAD, origin/{{ firstmate_version }},
+          dirty file count): {{ firstmate_git_state.stdout_lines }}

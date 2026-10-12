@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  role_name: herdr
+  namespace: cowdogmoo
+  author: Jayson Grace
+  description: Installs herdr, the terminal agent multiplexer, from Homebrew on macOS and pinned, checksum-verified release binaries elsewhere
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+    - name: Fedora
+      versions:
+        - all
+    - name: MacOSX
+      versions:
+        - all
+  galaxy_tags:
+    - herdr
+    - terminal
+    - multiplexer
+    - ai
+    - agents
+
+dependencies: []

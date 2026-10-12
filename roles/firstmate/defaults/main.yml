@@ -1,0 +1,33 @@
+---
+firstmate_username: "{{ ansible_facts['user_id'] | default(ansible_facts['user']) }}"
+firstmate_user_home: >-
+  {{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME']))
+     if (firstmate_username == (ansible_facts['user_id'] | default(ansible_facts['user']) | default('')))
+     else ((ansible_facts['os_family'] == 'Darwin') | ternary('/Users/' + firstmate_username,
+           (firstmate_username == 'root') | ternary('/root', '/home/' + firstmate_username))) }}
+
+# Git repository firstmate is cloned from. firstmate has no installer or release
+# artifacts: upstream documents `git clone` as the install.
+firstmate_repo_url: "https://github.com/kunchenguid/firstmate.git"
+
+# Branch, tag, or commit checked out on the initial clone.
+firstmate_version: "main"
+
+# Where the firstmate checkout lives. Upstream's quick start clones into ./firstmate,
+# and the checkout is also the firstmate home (state/, config/, data/ live inside it).
+firstmate_install_dir: "{{ firstmate_user_home }}/firstmate"
+
+# Fetch and check out firstmate_version on an existing checkout. Off by default:
+# firstmate updates its own checkout (/updatefirstmate), and a running fleet keeps
+# local state in it, so the role only clones when the directory is absent.
+firstmate_update: false
+
+# Install the packages firstmate's scripts need with the system package manager.
+# Linux only: on macOS git comes with the Xcode command line tools and jq from
+# Homebrew (e.g. the package_management role).
+firstmate_manage_dependencies: true
+
+# Packages installed when firstmate_manage_dependencies is true
+firstmate_dependencies:
+  - git
+  - jq

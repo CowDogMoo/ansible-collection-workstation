@@ -1,0 +1,37 @@
+---
+- name: Install firstmate dependencies
+  ansible.builtin.package:
+    name: "{{ firstmate_dependencies }}"
+    state: present
+  become: true
+  when:
+    - firstmate_manage_dependencies | bool
+    - ansible_facts['os_family'] not in ['Darwin', 'Windows']
+    - firstmate_dependencies | length > 0
+
+- name: Check for an existing firstmate checkout
+  ansible.builtin.stat:
+    path: "{{ firstmate_install_dir }}/.git"
+  register: firstmate_checkout
+
+# An existing checkout is left alone unless firstmate_update is set: it is also a
+# live firstmate home whose state a forced checkout could disturb.
+- name: Clone firstmate
+  ansible.builtin.git:
+    repo: "{{ firstmate_repo_url }}"
+    dest: "{{ firstmate_install_dir }}"
+    version: "{{ firstmate_version }}"
+    update: "{{ firstmate_update | bool }}"
+  become: "{{ firstmate_username != ansible_facts['user_id'] }}"
+  become_user: "{{ firstmate_username }}"
+  when: not firstmate_checkout.stat.exists or firstmate_update | bool
+  register: firstmate_clone
+  retries: 3
+  delay: 5
+  until: firstmate_clone is not failed
+
+- name: Display firstmate checkout
+  ansible.builtin.debug:
+    msg: >-
+      firstmate is at {{ firstmate_install_dir }}
+      {%- if firstmate_clone.after is defined %} ({{ firstmate_clone.after[:12] }}){% endif %}

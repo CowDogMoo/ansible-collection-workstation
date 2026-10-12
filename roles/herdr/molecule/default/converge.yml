@@ -1,0 +1,20 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    # Defaults as root: lands in /usr/local/bin so it is on the default PATH.
+    - name: Include role under test (root defaults)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.herdr
+
+    # Unprivileged user: lands in ~/.local/bin, owned by that user.
+    - name: Include role under test (unprivileged user)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.herdr
+      vars:
+        herdr_username: "{{ container_user }}"
+        herdr_usergroup: "{{ container_user }}"
+        herdr_user_home: "{{ container_home }}"

@@ -1,0 +1,37 @@
+---
+argument_specs:
+  main:
+    short_description: Install the firstmate agent distro
+    description:
+      - Clones the firstmate repository, which upstream documents as its install.
+      - Never configures fleet homes or starts firstmate sessions, and leaves an existing checkout untouched unless firstmate_update is set.
+    options:
+      firstmate_username:
+        type: str
+        description: User who owns the firstmate checkout.
+      firstmate_user_home:
+        type: str
+        description: Home directory of firstmate_username.
+      firstmate_repo_url:
+        type: str
+        default: https://github.com/kunchenguid/firstmate.git
+        description: Git repository firstmate is cloned from.
+      firstmate_version:
+        type: str
+        default: main
+        description: Branch, tag, or commit checked out on the initial clone.
+      firstmate_install_dir:
+        type: str
+        description: Where the firstmate checkout lives.
+      firstmate_update:
+        type: bool
+        default: false
+        description: Fetch and check out firstmate_version on an existing checkout.
+      firstmate_manage_dependencies:
+        type: bool
+        default: true
+        description: Install firstmate_dependencies with the system package manager (Linux only).
+      firstmate_dependencies:
+        type: list
+        elements: str
+        description: Packages installed when firstmate_manage_dependencies is true.
