@@ -7,8 +7,11 @@
 # (/config, the theme picker, the model picker). Change one in the app and this
 # file is stale - a converge will put the old value back. Re-sync here when that
 # matters; `--check --diff` shows the difference before anything is written.
+# The role keeps Claude Code's bypass-permissions confirmation on by default;
+# this host opts out of it.
+claude_code_skip_dangerous_mode_permission_prompt: true
+
 claude_code_additional_settings:
-  skipDangerousModePermissionPrompt: true
   model: "opus[1m]"
   effortLevel: xhigh
   modelSettings:
