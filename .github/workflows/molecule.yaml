@@ -45,6 +45,10 @@ env:
   ROLE: ${{ github.event.inputs.ROLE }}
   PLAYBOOK: ${{ github.event.inputs.PLAYBOOK }}
   ANSIBLE_COLLECTIONS_PATH: ~/.ansible/collections
+  # community.docker's 60s default API timeout is too short for dockerd to
+  # remove a privileged systemd container after a full converge on a busy
+  # runner ("Read timed out. (read timeout=60)" in the destroy step).
+  DOCKER_TIMEOUT: "180"
 
 # Permissions block for GitHub App
 permissions:
@@ -320,6 +324,9 @@ jobs:
           ANSIBLE_CONFIG: ${{ env.COLLECTION_PATH }}/ansible.cfg
           ANSIBLE_ROLES_PATH: ${{ env.COLLECTION_PATH }}/roles
           MOLECULE_NO_LOG: "false"
+          # Authenticates GitHub API lookups (e.g. go_task's latest-release
+          # check) so they don't hit the shared runner IP's anonymous limit.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -e
           molecule --version
@@ -446,6 +453,10 @@ jobs:
       - name: Run molecule test
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
+        env:
+          # Authenticates GitHub API lookups (e.g. go_task's latest-release
+          # check) so they don't hit the shared runner IP's anonymous limit.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -ex
           molecule --version
@@ -572,6 +583,9 @@ jobs:
         shell: bash
         env:
           ANSIBLE_CONFIG: ${{ env.COLLECTION_PATH }}/ansible.cfg
+          # Authenticates GitHub API lookups (e.g. go_task's latest-release
+          # check) so they don't hit the shared runner IP's anonymous limit.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -e
           molecule --version
@@ -579,25 +593,27 @@ jobs:
 
           # Retry up to 3 times when failures look like transient network issues
           # (github.com flakes downloading release assets, curl connection
-          # resets) or container-boot races (systemd-tmpfiles wiping /tmp while
+          # resets), container-boot races (systemd-tmpfiles wiping /tmp while
           # the first fact-gathering module is still importing its payload,
-          # which surfaces as "Module result deserialization failed").
+          # which surfaces as "Module result deserialization failed"), or a
+          # Docker API call outliving DOCKER_TIMEOUT ("Read timed out.").
+          # .hooks/test-molecule-retry.py checks this pattern against real logs.
           max_attempts=3
           attempt=1
           run_log=$(mktemp)
           trap 'rm -f "${run_log}"' EXIT
           while true; do
             echo "=== molecule test attempt ${attempt}/${max_attempts} ==="
-            : > "${run_log}"
             set +e
-            MOLECULE_DEBUG=1 molecule test > "${run_log}" 2>&1
-            rc=$?
+            # tee streams the output live (with real timestamps) while keeping
+            # a copy for the transient-failure check below.
+            MOLECULE_DEBUG=1 molecule test 2>&1 | tee "${run_log}"
+            rc=${PIPESTATUS[0]}
             set -e
-            cat "${run_log}"
             if [[ ${rc} -eq 0 ]]; then
               break
             fi
-            if [[ ${attempt} -ge ${max_attempts} ]] || ! grep -qE "Connection failure|Gateway Time-out|read operation timed out|HTTP Error 5[0-9][0-9]|Could not resolve host|Temporary failure in name resolution|Connection reset by peer|Recv failure|Module result deserialization failed" "${run_log}"; then
+            if [[ ${attempt} -ge ${max_attempts} ]] || ! grep -qE "Connection failure|Gateway Time-out|read operation timed out|Read timed out|HTTP Error 5[0-9][0-9]|Could not resolve host|Temporary failure in name resolution|Connection reset by peer|Recv failure|Module result deserialization failed" "${run_log}"; then
               echo "Molecule test failed. Collecting debug information..."
 
               echo "Docker containers:"

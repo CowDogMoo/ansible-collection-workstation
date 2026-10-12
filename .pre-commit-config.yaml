@@ -99,3 +99,11 @@ repos:
           |roles/(claude_code|antigravity)/defaults/main\.yml
           |playbooks/workstation/host_vars/MacBook-Pro-4/main\.yml)$
         additional_dependencies: []
+
+      - id: test-molecule-retry
+        name: Test the Molecule workflow's transient-failure retry
+        entry: python .hooks/test-molecule-retry.py
+        language: python
+        pass_filenames: false
+        files: ^(\.hooks/test-molecule-retry\.py|\.github/workflows/molecule\.yaml)$
+        additional_dependencies: []
