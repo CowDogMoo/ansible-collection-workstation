@@ -2,8 +2,7 @@
 # Base URL for herdr release assets
 herdr_download_base_url: "https://github.com/herdrdev/herdr/releases/download"
 
-# herdr's built-in config.toml defaults (herdr --default-config). The template only
-# writes settings whose value differs from these.
+# herdr's built-in defaults; the template skips settings that match them.
 herdr_config_upstream_defaults:
   onboarding: true
   toast_delivery: "off"
@@ -15,9 +14,7 @@ herdr_config_upstream_defaults:
   theme_auto_switch: false
   prefix: "ctrl+b"
 
-# How each supported herdr integration is installed. agent_dir must exist under the
-# user's home before herdr's installer accepts the agent; staged integrations copy
-# only script from a throwaway HOME because another role owns the agent's config.
+# Staged integrations copy only the hook script, because another role owns the config.
 herdr_integration_specs:
   claude:
     agent_dir: .claude

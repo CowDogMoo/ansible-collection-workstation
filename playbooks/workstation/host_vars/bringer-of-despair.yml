@@ -146,10 +146,7 @@ claude_code_advanced_hooks_overrides:
     command: "bash '{{ ansible_facts['env']['HOME'] }}/.claude/hooks/herdr-agent-state.sh' session"
     timeout: 10
 
-# The antigravity role renders ~/.gemini/config/hooks.json from scratch, so herdr's
-# Antigravity CLI hook has to be registered here or a converge drops it. The herdr
-# role places the script; this matches what `herdr integration install
-# antigravity-cli` writes.
+# herdr's Antigravity CLI hook; the antigravity role drops hooks not listed here.
 antigravity_hooks_overrides:
   herdr:
     event: PreInvocation
@@ -157,7 +154,7 @@ antigravity_hooks_overrides:
     command: "bash '{{ ansible_facts['env']['HOME'] }}/.gemini/config/hooks/herdr-agent-state.sh' session"
     timeout: 10
 
-# herdr UI choices made on this host; everything else stays at herdr's defaults.
+# herdr UI choices for this host.
 herdr_toast_delivery: herdr
 herdr_status_indicators: symbols
 

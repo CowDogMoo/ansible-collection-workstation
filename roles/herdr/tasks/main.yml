@@ -37,8 +37,7 @@
     - herdr_install | bool
     - herdr_install_method == 'binary'
 
-# With herdr_install false the binary comes from elsewhere (a source build, a
-# package), so look it up on the user's PATH with the usual install locations added.
+# With herdr_install false, look for a binary installed some other way.
 - name: Find an existing herdr binary
   ansible.builtin.shell: command -v herdr
   args:

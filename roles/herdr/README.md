@@ -3,7 +3,7 @@
 
 ## Description
 
-Installs and configures herdr, the terminal agent multiplexer, from Homebrew on macOS and pinned, checksum-verified release binaries elsewhere, with its agent integrations
+Installs herdr and configures it and its agent integrations
 
 ## Requirements
 

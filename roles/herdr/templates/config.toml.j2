@@ -1,8 +1,4 @@
-{#-
-  Renders ~/.config/herdr/config.toml. Each setting is written only when it differs
-  from herdr's built-in default (herdr_config_upstream_defaults), so with the role
-  defaults the file matches what herdr's own onboarding writes.
--#}
+{#- Writes only the settings that differ from herdr_config_upstream_defaults. -#}
 {%- set d = herdr_config_upstream_defaults -%}
 {%- set sections = [] -%}
 

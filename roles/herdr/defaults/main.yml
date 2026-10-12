@@ -28,56 +28,39 @@ herdr_install_dir: >-
   {{ ((ansible_facts['os_family'] != 'Darwin') and (herdr_username == 'root'))
      | ternary('/usr/local/bin', herdr_user_home + '/.local/bin') }}
 
-# Path to an existing herdr binary. Empty means: the install method's path when
-# herdr_install is true, otherwise whatever `command -v herdr` finds for the user
-# (falling back to herdr_install_dir/herdr). Tasks that need the binary are skipped
-# when it does not exist.
+# Path to an existing herdr binary; empty finds it automatically.
 herdr_binary_path: ""
 
-# Agents whose herdr integration is installed, each only when that agent's config
-# directory already exists. For agents whose config another role renders (claude:
-# ~/.claude/settings.json via claude_code; antigravity-cli: ~/.gemini/config/hooks.json
-# via antigravity), herdr's installer runs against a throwaway HOME and only the
-# generated hook script is copied in; registering it is left to those roles. Agents no
-# role owns (codex) get `herdr integration install` against the real HOME.
+# Agent integrations to install when the agent is present. claude and
+# antigravity-cli get only the hook script; their roles register it.
 herdr_integrations:
   - claude
   - antigravity-cli
   - codex
 
-# herdr reads ~/.config/herdr/config.toml; a different directory is only read when
-# HERDR_CONFIG_PATH points at it, which this role does not set.
+# herdr only reads another directory when HERDR_CONFIG_PATH points at it.
 herdr_config_dir: "{{ herdr_user_home }}/.config/herdr"
 
-# Optional directory on the controller with agent-detection/*.toml overrides,
-# copied to ~/.config/herdr/agent-detection.
+# Controller directory of agent-detection overrides to copy.
 herdr_agent_detection_src_dir: ""
 
-# Render ~/.config/herdr/config.toml. Only settings that differ from herdr's built-in
-# defaults are written, so the file stays as small as the one herdr writes itself.
+# Render config.toml with only the settings that differ from herdr's defaults.
 herdr_manage_config: true
-
-# Back up an existing config.toml before overwriting it.
 herdr_backup_config: true
 
-# Opt-in tmux-style keymap (last_pane on prefix+l, |/%/" splits, prefix+, rename, ...).
+# Opt-in tmux-style keybindings.
 herdr_tmux_keybindings: false
 
-# Opt-in helper scripts in herdr_config_dir with popup bindings: prefix+/ opens
-# cheatsheet.sh (which documents the tmux-style keymap) and prefix+space runs
-# rotate-split.sh. The scripts need less and python3; on Linux they are installed
-# from herdr_helper_dependencies, on macOS less ships with the OS and python3 comes
-# with the Xcode command line tools.
+# Opt-in cheatsheet (prefix+/) and split-rotation (prefix+space) helpers.
 herdr_manage_helpers: false
+# Installed on Linux when helpers are enabled.
 herdr_helper_dependencies:
   - less
   - python3
 
-# Create a typo-tolerant herder -> herdr symlink in herdr_install_dir.
 herdr_create_herder_alias: true
 
-# config.toml settings. The defaults are herdr's own, except onboarding, which is
-# turned off because the settings it would ask about are managed here.
+# config.toml settings, defaulting to herdr's own except onboarding.
 herdr_onboarding: false
 herdr_toast_delivery: "off"
 herdr_show_agent_labels_on_pane_borders: false

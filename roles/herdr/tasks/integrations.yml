@@ -17,8 +17,7 @@
   become: "{{ herdr_username != ansible_facts['user_id'] }}"
   become_user: "{{ herdr_username }}"
 
-# herdr's installer refuses an agent whose config directory is missing, and an
-# integration for an agent that is not installed has nothing to hook into.
+# herdr's installer refuses an agent whose config directory is missing.
 - name: Check agent config directories
   ansible.builtin.stat:
     path: "{{ herdr_user_home }}/{{ herdr_integration_specs[item].agent_dir }}"
@@ -36,9 +35,8 @@
          | reject('in', herdr_integration_status.stdout | default('') | regex_findall('(?m)^([a-z-]+): current'))
          | list }}
 
-# claude_code and antigravity render the files herdr's installer would register its
-# hook in (~/.claude/settings.json, ~/.gemini/config/hooks.json), so the installer
-# runs against a throwaway HOME and only the generated script is copied in.
+# claude_code and antigravity own the files the installer would register the hook
+# in, so it runs against a throwaway HOME and only the script is copied in.
 - name: Install staged herdr integration scripts
   when:
     - not ansible_check_mode
@@ -94,8 +92,7 @@
         state: absent
       when: herdr_integration_staging.path is defined
 
-# No role owns these agents' config, so herdr's installer writes the hook script
-# and its registration in place.
+# No role owns these agents' config, so herdr installs them in place.
 - name: Install herdr integrations in place
   ansible.builtin.command: "{{ herdr_binary }} integration install {{ item }}"
   environment:
