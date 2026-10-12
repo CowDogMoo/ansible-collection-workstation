@@ -25,6 +25,19 @@ mise_settings:
   ruby:
     compile: false
 
+# Extra backend tools installed after every runtime in mise_plugins, for hosts
+# that need tools the default list doesn't carry without copying that list.
+# Each entry takes the same keys as a mise_plugins package (name, version and an
+# optional scope), and name is any mise backend spec such as "npm:<pkg>" or
+# "github:<owner>/<repo>". Pin exact versions: "latest" re-resolves on every run.
+#
+#   mise_additional_packages:
+#     - name: "npm:gh-axi"
+#       version: "0.1.38"
+#     - name: "github:kunchenguid/no-mistakes"
+#       version: "1.84.0"
+mise_additional_packages: []
+
 mise_install_default_pkg_files: false
 mise_default_pkg_files:
   - src: default-golang-pkgs

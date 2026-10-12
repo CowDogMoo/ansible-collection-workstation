@@ -19,3 +19,6 @@
 "{{ pkg.name }}" = "{{ pkg.version | default('latest') }}"
 {% endfor %}
 {% endfor %}
+{% for pkg in mise_additional_packages %}
+"{{ pkg.name }}" = "{{ pkg.version | default('latest') }}"
+{% endfor %}

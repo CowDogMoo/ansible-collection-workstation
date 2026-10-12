@@ -35,6 +35,7 @@ Installs the mise polyglot tool version manager, wires it into the user's shell,
 | `mise_settings` | dict | <code>{}</code> | No description |
 | `mise_settings.python` | dict | <code>{}</code> | No description |
 | `mise_settings.ruby` | dict | <code>{}</code> | No description |
+| `mise_additional_packages` | list | <code>&#91;&#93;</code> | No description |
 | `mise_install_default_pkg_files` | bool | <code>False</code> | No description |
 | `mise_default_pkg_files` | list | <code>&#91;&#93;</code> | No description |
 | `mise_default_pkg_files.0` | dict | <code>{}</code> | No description |

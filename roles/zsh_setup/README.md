@@ -28,6 +28,7 @@ Installs and configures zsh with oh-my-zsh.
 | `zsh_setup_plugins.5` | str | <code>kubectl</code> | No description |
 | `zsh_setup_plugins.6` | str | <code>zsh-completions</code> | No description |
 | `zsh_setup_manage_zshrc` | bool | <code>True</code> | No description |
+| `zsh_setup_zshenv_exports` | dict | <code>{}</code> | No description |
 | `zsh_setup_backup_zshrc` | bool | <code>True</code> | No description |
 | `zsh_setup_omz_update_frequency` | int | <code>7</code> | No description |
 | `zsh_setup_install_zsh_completions` | bool | <code>True</code> | No description |
@@ -59,6 +60,7 @@ Installs and configures zsh with oh-my-zsh.
 - **Install oh-my-zsh** (ansible.builtin.shell) - Conditional
 - **Remove omz-installer.sh** (ansible.builtin.file) - Conditional
 - **Render ~/.zshrc** (ansible.builtin.template) - Conditional
+- **Export environment variables from ~/.zshenv** (ansible.builtin.blockinfile) - Conditional
 
 ### main.yml
 
