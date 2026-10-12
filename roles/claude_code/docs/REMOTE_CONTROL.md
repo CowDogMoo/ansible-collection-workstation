@@ -71,9 +71,14 @@ The file is the source of truth:
 ## Switching over from terminal tabs
 
 1. Create `~/.config/claude-rc/hosts.yml` listing this machine's directories.
-   It stays on this machine; don't commit it.
-2. Close the iTerm2 tabs running `claude rc` for those directories. Sessions on
-   them end; start new ones from claude.ai/code once the agents are up.
+   It stays on this machine; don't commit it. Tabs started with
+   `claude rc --permission-mode bypassPermissions` need
+   `permission_mode: bypassPermissions` on every entry: without it, spawned
+   sessions fall back to Claude Code's default mode and ask before each tool.
+2. Close the iTerm2 tabs running `claude rc` for those directories. Closing a
+   tab stops that host, and every session it is serving drops with it, so
+   finish or hand off anything in progress first. Start new sessions from
+   claude.ai/code once the agents are up.
 3. Run the workstation playbook with the `claude` tag:
 
    ```bash

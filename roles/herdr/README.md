@@ -15,44 +15,44 @@ Installs herdr and configures it and its agent integrations
 
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
-| `herdr_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | No description |
-| `herdr_usergroup` | str | <code>{{ (ansible_facts&#91;'user_gid'&#93; &#124; default('staff')) if ansible_facts&#91;'os_family'&#93; == 'Darwin' else herdr_username }}</code> | No description |
-| `herdr_user_home` | str | <code><multiline value: folded_strip></code> | No description |
-| `herdr_install` | bool | <code>True</code> | No description |
-| `herdr_install_method` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('homebrew', 'binary') }}</code> | No description |
-| `herdr_version` | str | <code>0.9.3</code> | No description |
-| `herdr_install_dir` | str | <code><multiline value: folded_strip></code> | No description |
-| `herdr_binary_path` | str | <code></code> | No description |
-| `herdr_integrations` | list | <code>&#91;&#93;</code> | No description |
+| `herdr_username` | str | <code>{{ ansible_facts&#91;'user_id'&#93; &#124; default(ansible_facts&#91;'user'&#93;) }}</code> | User who owns the herdr install and config. |
+| `herdr_usergroup` | str | <code>{{ (ansible_facts&#91;'user_gid'&#93; &#124; default('staff')) if ansible_facts&#91;'os_family'&#93; == 'Darwin' else herdr_username }}</code> | Group that owns the herdr install and config. |
+| `herdr_user_home` | str | <code><multiline value: folded_strip></code> | Home directory of herdr_username. |
+| `herdr_install` | bool | <code>True</code> | Install the herdr binary; set false when herdr comes from elsewhere. |
+| `herdr_install_method` | str | <code>{{ (ansible_facts&#91;'os_family'&#93; == 'Darwin') &#124; ternary('homebrew', 'binary') }}</code> | Install the release binary or the Homebrew formula (homebrew on macOS by default). |
+| `herdr_version` | str | <code>0.9.3</code> | herdr release to install with the binary method. |
+| `herdr_install_dir` | str | <code><multiline value: folded_strip></code> | Directory for the release binary and the herder alias. |
+| `herdr_binary_path` | str | <code></code> | Path to an existing herdr binary; empty finds it automatically. |
+| `herdr_integrations` | list | <code>&#91;&#93;</code> | Agent integrations to install when the agent is present. |
 | `herdr_integrations.0` | str | <code>claude</code> | No description |
 | `herdr_integrations.1` | str | <code>antigravity-cli</code> | No description |
 | `herdr_integrations.2` | str | <code>codex</code> | No description |
-| `herdr_config_dir` | str | <code>{{ herdr_user_home }}/.config/herdr</code> | No description |
-| `herdr_agent_detection_src_dir` | str | <code></code> | No description |
-| `herdr_manage_config` | bool | <code>True</code> | No description |
-| `herdr_backup_config` | bool | <code>True</code> | No description |
-| `herdr_tmux_keybindings` | bool | <code>False</code> | No description |
-| `herdr_manage_helpers` | bool | <code>False</code> | No description |
-| `herdr_helper_dependencies` | list | <code>&#91;&#93;</code> | No description |
+| `herdr_config_dir` | str | <code>{{ herdr_user_home }}/.config/herdr</code> | herdr config directory. |
+| `herdr_agent_detection_src_dir` | str | <code></code> | Controller directory of agent-detection overrides to copy. |
+| `herdr_manage_config` | bool | <code>True</code> | Render config.toml. |
+| `herdr_backup_config` | bool | <code>True</code> | Back up config.toml before overwriting it. |
+| `herdr_tmux_keybindings` | bool | <code>False</code> | Add tmux-style keybindings. |
+| `herdr_manage_helpers` | bool | <code>False</code> | Deploy and bind the cheatsheet and split-rotation helper scripts. |
+| `herdr_helper_dependencies` | list | <code>&#91;&#93;</code> | Packages the helper scripts need on Linux. |
 | `herdr_helper_dependencies.0` | str | <code>less</code> | No description |
 | `herdr_helper_dependencies.1` | str | <code>python3</code> | No description |
-| `herdr_create_herder_alias` | bool | <code>True</code> | No description |
-| `herdr_onboarding` | bool | <code>False</code> | No description |
-| `herdr_toast_delivery` | str | <code>off</code> | No description |
-| `herdr_show_agent_labels_on_pane_borders` | bool | <code>False</code> | No description |
-| `herdr_confirm_close` | bool | <code>True</code> | No description |
-| `herdr_agent_panel_sort` | str | <code>spaces</code> | No description |
-| `herdr_status_indicators` | str | <code>dots</code> | No description |
-| `herdr_theme_name` | str | <code>catppuccin</code> | No description |
-| `herdr_theme_auto_switch` | bool | <code>False</code> | No description |
-| `herdr_prefix` | str | <code>ctrl+b</code> | No description |
-| `herdr_checksums` | dict | <code>{}</code> | No description |
-| `herdr_arch_map` | dict | <code>{}</code> | No description |
+| `herdr_create_herder_alias` | bool | <code>True</code> | Create a herder -> herdr symlink. |
+| `herdr_onboarding` | bool | <code>False</code> | Show herdr's first-run onboarding. |
+| `herdr_toast_delivery` | str | <code>off</code> | Background notification delivery. |
+| `herdr_show_agent_labels_on_pane_borders` | bool | <code>False</code> | Show agent labels on pane borders. |
+| `herdr_confirm_close` | bool | <code>True</code> | Confirm before closing panes or tabs. |
+| `herdr_agent_panel_sort` | str | <code>spaces</code> | Agent panel ordering. |
+| `herdr_status_indicators` | str | <code>dots</code> | Agent status indicator style. |
+| `herdr_theme_name` | str | <code>catppuccin</code> | Built-in herdr theme. |
+| `herdr_theme_auto_switch` | bool | <code>False</code> | Follow the host terminal's light/dark appearance. |
+| `herdr_prefix` | str | <code>ctrl+b</code> | Prefix key for herdr keybindings. |
+| `herdr_checksums` | dict | <code>{}</code> | SHA-256 digests of release assets, keyed by version then asset name. |
+| `herdr_arch_map` | dict | <code>{}</code> | Map of ansible_facts architecture to herdr asset architecture. |
 | `herdr_arch_map.x86_64` | str | <code>x86_64</code> | No description |
 | `herdr_arch_map.amd64` | str | <code>x86_64</code> | No description |
 | `herdr_arch_map.aarch64` | str | <code>aarch64</code> | No description |
 | `herdr_arch_map.arm64` | str | <code>aarch64</code> | No description |
-| `herdr_os_map` | dict | <code>{}</code> | No description |
+| `herdr_os_map` | dict | <code>{}</code> | Map of ansible_facts system to herdr asset operating system. |
 | `herdr_os_map.Linux` | str | <code>linux</code> | No description |
 | `herdr_os_map.Darwin` | str | <code>macos</code> | No description |
 
