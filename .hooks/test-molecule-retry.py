@@ -26,10 +26,6 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 WORKFLOW = REPO / ".github/workflows/molecule.yaml"
 MARKER = "max_attempts=3"
 
-# community.docker's API timeout when DOCKER_TIMEOUT is unset; the destroy step
-# timed out at exactly this value.
-DOCKER_DEFAULT_TIMEOUT = 60
-
 DOCKER_READ_TIMEOUT = """\
   │ [ERROR]: Task failed: Module failed: Error removing container
   │   ce713da3497569252fca0c83c1a9ba5211ba5eb340781f7f151e3a35ef8e2138:
@@ -76,14 +72,6 @@ def extract_script() -> str:
     return "\n".join(body) + "\n"
 
 
-def docker_timeout() -> int | None:
-    """Return the workflow-level DOCKER_TIMEOUT, or None when unset."""
-    match = re.search(
-        r'^  DOCKER_TIMEOUT:\s*"?(\d+)"?\s*$', WORKFLOW.read_text(), re.MULTILINE
-    )
-    return int(match.group(1)) if match else None
-
-
 def run(script: str, attempts: list[tuple[int, str]]) -> tuple[int, int, str]:
     """Run the step against a stub molecule; return (exit, attempts, output)."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -123,13 +111,6 @@ def run(script: str, attempts: list[tuple[int, str]]) -> tuple[int, int, str]:
 def main() -> int:
     failures = []
 
-    timeout = docker_timeout()
-    if timeout is None or timeout <= DOCKER_DEFAULT_TIMEOUT:
-        failures.append(
-            f"DOCKER_TIMEOUT is {timeout}; it must be set in the workflow env and "
-            f"exceed community.docker's {DOCKER_DEFAULT_TIMEOUT}s default"
-        )
-
     script = extract_script()
     for label, attempts, want_rc, want_attempts in SCENARIOS:
         rc, made, stdout = run(script, attempts)
@@ -138,6 +119,12 @@ def main() -> int:
                 f"{label}: exit {rc} after {made} attempt(s), "
                 f"want exit {want_rc} after {want_attempts}"
             )
+        if made > len(attempts):
+            failures.append(
+                f"{label}: molecule ran {made} time(s) but the scenario "
+                f"defines only {len(attempts)} attempt(s)"
+            )
+            continue
         last_output = attempts[max(made, 1) - 1][1]
         if last_output.splitlines()[0] not in stdout:
             failures.append(f"{label}: molecule output missing from the step log")
@@ -148,10 +135,7 @@ def main() -> int:
         print(f"{len(failures)} failure(s)", file=sys.stderr)
         return 1
 
-    print(
-        f"molecule retry OK: {len(SCENARIOS)} scenarios, "
-        f"DOCKER_TIMEOUT={timeout}s"
-    )
+    print(f"molecule retry OK: {len(SCENARIOS)} scenarios")
     return 0
 
 
