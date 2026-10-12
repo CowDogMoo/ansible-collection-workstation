@@ -52,6 +52,28 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_additional_settings` | dict | <code>{}</code> | No description |
 | `claude_code_manage_mcp_servers` | bool | <code>True</code> | No description |
 | `claude_code_mcp_servers` | list | <code>&#91;&#93;</code> | No description |
+| `claude_code_manage_remote_control` | bool | <code>True</code> | No description |
+| `claude_code_remote_control_config` | str | <code>{{ claude_code_user_home }}/.config/claude-rc/hosts.yml</code> | No description |
+| `claude_code_remote_control_spawn` | str | <code>worktree</code> | No description |
+| `claude_code_remote_control_capacity` | int | <code>32</code> | No description |
+| `claude_code_remote_control_permission_mode` | str | <code></code> | No description |
+| `claude_code_remote_control_chrome` | bool | <code>True</code> | No description |
+| `claude_code_remote_control_label_prefix` | str | <code>com.cowdogmoo.claude-rc</code> | No description |
+| `claude_code_remote_control_throttle_interval` | int | <code>30</code> | No description |
+| `claude_code_remote_control_log_dir` | str | <code>{{ claude_code_user_home }}/logs/claude-remote-control</code> | No description |
+| `claude_code_remote_control_binary` | str | <code></code> | No description |
+| `claude_code_remote_control_binary_candidates` | list | <code>&#91;&#93;</code> | No description |
+| `claude_code_remote_control_binary_candidates.0` | str | <code>{{ claude_code_user_home }}/.local/bin/claude</code> | No description |
+| `claude_code_remote_control_binary_candidates.1` | str | <code>{{ claude_code_homebrew_prefix }}/bin/claude</code> | No description |
+| `claude_code_remote_control_path` | str | <code><multiline value: folded_strip></code> | No description |
+| `claude_code_remote_control_base_environment` | dict | <code>{}</code> | No description |
+| `claude_code_remote_control_base_environment.HOME` | str | <code>{{ claude_code_user_home }}</code> | No description |
+| `claude_code_remote_control_base_environment.USER` | str | <code>{{ claude_code_username }}</code> | No description |
+| `claude_code_remote_control_base_environment.LOGNAME` | str | <code>{{ claude_code_username }}</code> | No description |
+| `claude_code_remote_control_base_environment.SHELL` | str | <code>{{ ansible_facts&#91;'user_shell'&#93; &#124; default('/bin/zsh') }}</code> | No description |
+| `claude_code_remote_control_base_environment.PATH` | str | <code>{{ claude_code_remote_control_path &#124; trim }}</code> | No description |
+| `claude_code_remote_control_base_environment.LANG` | str | <code>en_US.UTF-8</code> | No description |
+| `claude_code_remote_control_environment` | dict | <code>{}</code> | No description |
 
 ## Tasks
 
@@ -104,6 +126,7 @@ Manages Claude Code CLI configuration including hooks and settings
 - **Create backup of existing settings.json in /tmp** (ansible.builtin.copy) - Conditional
 - **Generate Claude Code settings.json** (ansible.builtin.template) - Conditional
 - **Manage MCP servers** (ansible.builtin.include_tasks) - Conditional
+- **Manage Remote Control LaunchAgents on macOS** (ansible.builtin.include_tasks) - Conditional
 - **Display configuration status** (ansible.builtin.debug)
 
 ### manage-mcp-server.yml
@@ -128,6 +151,33 @@ Manages Claude Code CLI configuration including hooks and settings
 - **Verify the resolved definitions still parse** (ansible.builtin.assert) - Conditional
 - **Use the resolved MCP server definitions** (ansible.builtin.set_fact)
 - **Manage MCP servers** (ansible.builtin.include_tasks)
+
+### remote-control-macos.yml
+
+
+- **Check for the Remote Control hosts file** (ansible.builtin.stat)
+- **Skip Remote Control hosts when there is no hosts file** (ansible.builtin.debug) - Conditional
+- **Manage Remote Control LaunchAgents from the hosts file** (block) - Conditional
+- **Read the Remote Control hosts file** (ansible.builtin.slurp)
+- **Parse the Remote Control hosts file** (ansible.builtin.set_fact)
+- **Validate the Remote Control hosts list** (ansible.builtin.assert)
+- **Validate Remote Control host entries** (ansible.builtin.assert)
+- **Locate the claude binary for Remote Control hosts** (ansible.builtin.stat) - Conditional
+- **Pick the first claude binary that exists** (ansible.builtin.set_fact) - Conditional
+- **Fail when no claude binary was found** (ansible.builtin.fail) - Conditional
+- **Check Remote Control host directories** (ansible.builtin.stat)
+- **Fail when a Remote Control host directory is missing** (ansible.builtin.fail) - Conditional
+- **Check worktree-mode hosts are in a git repository** (ansible.builtin.command) - Conditional
+- **Fail when a worktree-mode host is not in a git repository** (ansible.builtin.fail) - Conditional
+- **Create Remote Control log and LaunchAgents directories** (ansible.builtin.file) - Conditional
+- **Render Remote Control LaunchAgents** (ansible.builtin.template)
+- **Check which Remote Control LaunchAgents are loaded** (ansible.builtin.command)
+- **Unload Remote Control LaunchAgents whose plist changed** (ansible.builtin.command) - Conditional
+- **Load Remote Control LaunchAgents that changed or are not loaded** (ansible.builtin.command) - Conditional
+- **Find Remote Control LaunchAgents under the label prefix** (ansible.builtin.find)
+- **Note Remote Control LaunchAgents the hosts file no longer lists** (ansible.builtin.set_fact)
+- **Unload Remote Control LaunchAgents the hosts file no longer lists** (ansible.builtin.command)
+- **Remove Remote Control LaunchAgents the hosts file no longer lists** (ansible.builtin.file)
 
 ## Example Playbook
 

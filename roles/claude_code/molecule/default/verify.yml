@@ -592,3 +592,113 @@
           - "'clean=0' in claude_code_dangerous_flags_probe.stdout"
         fail_msg: "dangerous_flags misjudged a command: {{ claude_code_dangerous_flags_probe.stdout }}"
         success_msg: "dangerous_flags blocks the real shortcuts and passes documentation"
+
+    # Remote Control hosts are macOS LaunchAgents, which these Linux containers
+    # can't run. Converge left a hosts file in place, so the role must still have
+    # created nothing here.
+    - name: Check for Remote Control LaunchAgent artifacts
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ container_home }}/Library/LaunchAgents"
+        - "{{ container_home }}/logs/claude-remote-control"
+      register: claude_code_rc_linux_stats
+
+    - name: Assert the Remote Control tasks are a no-op on Linux
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} should not exist on Linux"
+        quiet: true
+      loop: "{{ claude_code_rc_linux_stats.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    # Render-only check of the LaunchAgent template: one host using every option,
+    # and one session-mode host relying on defaults (no capacity, no permission
+    # mode, Chrome off).
+    - name: Create a directory for rendered Remote Control plists
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: claude-rc
+      register: claude_code_rc_render_dir
+
+    - name: Render Remote Control LaunchAgent plists
+      ansible.builtin.template:
+        src: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/templates/claude-remote-control.plist.j2"
+        dest: "{{ claude_code_rc_render_dir.path }}/{{ item.label }}.plist"
+        mode: "0644"
+      vars:
+        claude_code_rc_label: "{{ item.label }}"
+        claude_code_rc_binary: /Users/example/.local/bin/claude
+        claude_code_rc_dir: "{{ item.dir }}"
+        claude_code_rc_spawn: "{{ item.spawn }}"
+        claude_code_rc_capacity: "{{ item.capacity }}"
+        claude_code_rc_permission_mode: "{{ item.permission_mode }}"
+        claude_code_rc_chrome: "{{ item.chrome }}"
+        claude_code_rc_log: "/Users/example/logs/claude-remote-control/{{ item.label }}.log"
+        claude_code_rc_environment:
+          HOME: /Users/example
+          PATH: /Users/example/.local/bin:/usr/bin:/bin
+          NOTE: "a & b <c>"
+      loop:
+        - label: com.cowdogmoo.claude-rc.full
+          dir: /Users/example/src/example
+          spawn: worktree
+          capacity: 8
+          permission_mode: bypassPermissions
+          chrome: true
+        - label: com.cowdogmoo.claude-rc.session
+          dir: /Users/example
+          spawn: session
+          capacity: 32
+          permission_mode: ""
+          chrome: false
+
+    - name: Parse rendered Remote Control plists
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json, plistlib, sys
+            with open(sys.argv[1], 'rb') as f:
+                print(json.dumps(plistlib.load(f)))
+          - "{{ claude_code_rc_render_dir.path }}/{{ item }}.plist"
+      loop:
+        - com.cowdogmoo.claude-rc.full
+        - com.cowdogmoo.claude-rc.session
+      register: claude_code_rc_parsed
+      changed_when: false
+
+    - name: Assert the full Remote Control plist carries every option
+      vars:
+        claude_code_rc_plist: "{{ claude_code_rc_parsed.results[0].stdout | from_json }}"
+      ansible.builtin.assert:
+        that:
+          - claude_code_rc_plist.Label == 'com.cowdogmoo.claude-rc.full'
+          - claude_code_rc_plist.ProgramArguments == ['/Users/example/.local/bin/claude', 'remote-control', '--spawn', 'worktree', '--capacity', '8', '--permission-mode', 'bypassPermissions', '--chrome']
+          - claude_code_rc_plist.WorkingDirectory == '/Users/example/src/example'
+          - claude_code_rc_plist.RunAtLoad
+          - claude_code_rc_plist.KeepAlive
+          - claude_code_rc_plist.ThrottleInterval == 30
+          - claude_code_rc_plist.LimitLoadToSessionType == 'Aqua'
+          - claude_code_rc_plist.StandardOutPath == '/Users/example/logs/claude-remote-control/com.cowdogmoo.claude-rc.full.log'
+          - claude_code_rc_plist.StandardErrorPath == claude_code_rc_plist.StandardOutPath
+          - claude_code_rc_plist.EnvironmentVariables.HOME == '/Users/example'
+          - claude_code_rc_plist.EnvironmentVariables.NOTE == 'a & b <c>'
+        fail_msg: "Unexpected full plist: {{ claude_code_rc_plist }}"
+
+    - name: Assert the session-mode Remote Control plist omits unset options
+      vars:
+        claude_code_rc_plist: "{{ claude_code_rc_parsed.results[1].stdout | from_json }}"
+      ansible.builtin.assert:
+        that:
+          - claude_code_rc_plist.ProgramArguments == ['/Users/example/.local/bin/claude', 'remote-control', '--spawn', 'session', '--no-chrome']
+          - claude_code_rc_plist.WorkingDirectory == '/Users/example'
+        fail_msg: "Unexpected session-mode plist: {{ claude_code_rc_plist }}"
+
+    - name: Remove rendered Remote Control plists
+      ansible.builtin.file:
+        path: "{{ claude_code_rc_render_dir.path }}"
+        state: absent

@@ -77,6 +77,24 @@
             owner: "{{ ansible_facts['user_id'] }}"
             group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
 
+          - name: "claude-remote-control"
+            path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/logs/claude-remote-control/*.log"
+            # The claude_code role's Remote Control LaunchAgents log here, and
+            # launchd holds each file open: copytruncate, not create. olddir
+            # keeps rotated files out of the *.log glob so dateext can't stack.
+            olddir: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/logs/claude-remote-control/archive"
+            copytruncate: true
+            create: false
+            maxsize: "10M"
+            rotate: 5
+            frequency: "daily"
+            compress: true
+            missingok: true
+            notifempty: true
+            dateext: true
+            owner: "{{ ansible_facts['user_id'] }}"
+            group: "{{ ansible_facts['user_gid'] | default(ansible_facts['user_id']) }}"
+
         # Optional: Override default LaunchAgent settings for macOS
         logging_launchagent_label: "com.ansible.logrotate"
         logging_logrotate_log_path: "{{ (ansible_facts['user_dir'] | default(ansible_facts['env']['HOME'])) }}/ansible-logs/logrotate"
