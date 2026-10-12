@@ -62,9 +62,17 @@ role/fabric:
   - changed-files:
       - any-glob-to-any-file: "roles/fabric/**/*"
 
+role/firstmate:
+  - changed-files:
+      - any-glob-to-any-file: "roles/firstmate/**/*"
+
 role/go_task:
   - changed-files:
       - any-glob-to-any-file: "roles/go_task/**/*"
+
+role/herdr:
+  - changed-files:
+      - any-glob-to-any-file: "roles/herdr/**/*"
 
 role/logging:
   - changed-files:

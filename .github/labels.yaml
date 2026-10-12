@@ -76,10 +76,20 @@
   description: >-
     Changes made to fabric role
 
+- name: role/firstmate
+  color: "1D3557" # Navy
+  description: >-
+    Changes made to firstmate role
+
 - name: role/go_task
   color: "00ADD8" # Go Cyan
   description: >-
     Changes made to go_task role
+
+- name: role/herdr
+  color: "8D6E63" # Wool Brown
+  description: >-
+    Changes made to herdr role
 
 - name: role/logging
   color: "9933CC" # Purple

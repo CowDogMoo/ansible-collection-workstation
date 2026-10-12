@@ -1,0 +1,3 @@
+---
+# Base URL for herdr release assets
+herdr_download_base_url: "https://github.com/herdrdev/herdr/releases/download"

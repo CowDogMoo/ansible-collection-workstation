@@ -1,0 +1,171 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    herdr_user_bin: "{{ container_home }}/.local/bin/herdr"
+  tasks:
+    - name: Include default variables
+      ansible.builtin.include_vars:
+        file: "../../defaults/main.yml"
+
+    - name: Set expected release asset checksum
+      ansible.builtin.set_fact:
+        herdr_expected_sha256: >-
+          {{ herdr_checksums[herdr_version]['herdr-linux-' + herdr_arch_map[ansible_facts['architecture']]] }}
+
+    # Only version queries below: no herdr server is started, stopped, or attached to.
+    - name: Resolve herdr on the root PATH
+      ansible.builtin.shell: command -v herdr
+      args:
+        executable: /bin/bash
+      register: herdr_root_which
+      changed_when: false
+      failed_when: false
+
+    - name: Check root herdr binary
+      ansible.builtin.stat:
+        path: /usr/local/bin/herdr
+        checksum_algorithm: sha256
+      register: herdr_root_binary
+
+    - name: Assert root herdr binary is installed from the pinned release
+      ansible.builtin.assert:
+        that:
+          - herdr_root_which.rc == 0
+          - herdr_root_which.stdout == '/usr/local/bin/herdr'
+          - herdr_root_binary.stat.exists
+          - herdr_root_binary.stat.executable
+          - herdr_root_binary.stat.mode == '0755'
+          - herdr_root_binary.stat.pw_name == 'root'
+          - herdr_root_binary.stat.checksum == herdr_expected_sha256
+        fail_msg: >-
+          herdr is not installed correctly at /usr/local/bin/herdr
+          (PATH lookup={{ herdr_root_which.stdout | default('') }},
+          exists={{ herdr_root_binary.stat.exists }},
+          mode={{ herdr_root_binary.stat.mode | default('n/a') }},
+          sha256={{ herdr_root_binary.stat.checksum | default('n/a') }},
+          expected={{ herdr_expected_sha256 }})
+
+    - name: Query root herdr version
+      ansible.builtin.command: herdr --version
+      register: herdr_root_version
+      changed_when: false
+      failed_when: false
+
+    - name: Assert root herdr reports the pinned version
+      ansible.builtin.assert:
+        that:
+          - herdr_root_version.rc == 0
+          - herdr_root_version.stdout | trim == 'herdr ' + herdr_version
+        fail_msg: >-
+          Expected 'herdr {{ herdr_version }}', got rc={{ herdr_root_version.rc }}
+          stdout='{{ herdr_root_version.stdout }}' stderr='{{ herdr_root_version.stderr }}'
+
+    - name: Check user herdr binary
+      ansible.builtin.stat:
+        path: "{{ herdr_user_bin }}"
+        checksum_algorithm: sha256
+      register: herdr_user_binary
+
+    - name: Check user bin directory
+      ansible.builtin.stat:
+        path: "{{ herdr_user_bin | dirname }}"
+      register: herdr_user_bin_dir
+
+    - name: Assert user herdr binary is owned by the user
+      ansible.builtin.assert:
+        that:
+          - herdr_user_binary.stat.exists
+          - herdr_user_binary.stat.executable
+          - herdr_user_binary.stat.mode == '0755'
+          - herdr_user_binary.stat.pw_name == container_user
+          - herdr_user_binary.stat.checksum == herdr_expected_sha256
+          - herdr_user_bin_dir.stat.isdir
+          - herdr_user_bin_dir.stat.pw_name == container_user
+        fail_msg: >-
+          herdr is not installed correctly at {{ herdr_user_bin }}
+          (exists={{ herdr_user_binary.stat.exists }},
+          owner={{ herdr_user_binary.stat.pw_name | default('n/a') }},
+          bin dir owner={{ herdr_user_bin_dir.stat.pw_name | default('n/a') }})
+
+    - name: Resolve and query herdr as the user
+      ansible.builtin.shell: command -v herdr && herdr --version
+      args:
+        executable: /bin/bash
+      environment:
+        PATH: "{{ container_home }}/.local/bin:/usr/bin:/bin"
+      register: herdr_user_version
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert user herdr resolves from ~/.local/bin and reports the pinned version
+      ansible.builtin.assert:
+        that:
+          - herdr_user_version.rc == 0
+          - herdr_user_version.stdout_lines[0] == herdr_user_bin
+          - herdr_user_version.stdout_lines[1] | trim == 'herdr ' + herdr_version
+        fail_msg: >-
+          Expected {{ herdr_user_bin }} reporting 'herdr {{ herdr_version }}', got
+          rc={{ herdr_user_version.rc }} stdout='{{ herdr_user_version.stdout }}'
+          stderr='{{ herdr_user_version.stderr }}'
+
+    - name: Check herdr Claude integration scripts
+      ansible.builtin.stat:
+        path: "{{ item.home }}/.claude/hooks/herdr-agent-state.sh"
+      loop:
+        - {user: root, home: /root}
+        - {user: "{{ container_user }}", home: "{{ container_home }}"}
+      register: herdr_claude_scripts
+
+    - name: Check Claude settings were left to the claude_code role
+      ansible.builtin.stat:
+        path: "{{ item }}/.claude/settings.json"
+      loop:
+        - /root
+        - "{{ container_home }}"
+      register: herdr_claude_settings
+
+    - name: Assert herdr Claude integration scripts are installed for each user
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+          - item.stat.executable
+          - item.stat.mode == '0755'
+          - item.stat.pw_name == item.item.user
+        fail_msg: >-
+          {{ item.item.home }}/.claude/hooks/herdr-agent-state.sh is missing or wrong
+          (exists={{ item.stat.exists }}, owner={{ item.stat.pw_name | default('n/a') }},
+          mode={{ item.stat.mode | default('n/a') }})
+      loop: "{{ herdr_claude_scripts.results }}"
+      loop_control:
+        label: "{{ item.item.home }}"
+
+    - name: Assert the role did not write Claude settings
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }}/.claude/settings.json must be left to the claude_code role"
+      loop: "{{ herdr_claude_settings.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Ask herdr whether the user's Claude integration is current
+      ansible.builtin.command: "{{ herdr_user_bin }} integration status"
+      environment:
+        HOME: "{{ container_home }}"
+      register: herdr_user_integration_status
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert herdr reports the user's Claude integration as current
+      ansible.builtin.assert:
+        that:
+          - "herdr_user_integration_status.stdout is search('(?m)^claude: current')"
+        fail_msg: "herdr integration status: {{ herdr_user_integration_status.stdout }}"

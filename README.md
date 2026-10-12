@@ -8,7 +8,7 @@
 This Ansible collection provides a comprehensive setup for my
 workstation environment, covering various aspects, including user setup,
 package management, ZSH configuration, VNC setup, ASDF version manager,
-AI development tools (Fabric, Claude Code), and logging for different applications.
+AI development tools (Fabric, Claude Code, herdr, firstmate), and logging for different applications.
 
 ## Architecture Diagram
 
@@ -26,16 +26,18 @@ graph TD
     Roles --> R3[build_cleanup 🧪]
     Roles --> R4[claude_code 🧪]
     Roles --> R5[fabric 🧪]
-    Roles --> R6[git_setup 🧪]
-    Roles --> R7[go_task 🧪]
-    Roles --> R8[logging 🧪]
-    Roles --> R9[mise 🧪]
-    Roles --> R10[package_management 🧪]
-    Roles --> R11[shell_functions 🧪]
-    Roles --> R12[tmux_setup 🧪]
-    Roles --> R13[user_setup 🧪]
-    Roles --> R14[vnc_setup 🧪]
-    Roles --> R15[zsh_setup 🧪]
+    Roles --> R6[firstmate 🧪]
+    Roles --> R7[git_setup 🧪]
+    Roles --> R8[go_task 🧪]
+    Roles --> R9[herdr 🧪]
+    Roles --> R10[logging 🧪]
+    Roles --> R11[mise 🧪]
+    Roles --> R12[package_management 🧪]
+    Roles --> R13[shell_functions 🧪]
+    Roles --> R14[tmux_setup 🧪]
+    Roles --> R15[user_setup 🧪]
+    Roles --> R16[vnc_setup 🧪]
+    Roles --> R17[zsh_setup 🧪]
     Collection --> Playbooks[📚 Playbooks]
     Playbooks --> PB0[asdf]
     Playbooks --> PB1[mise]
@@ -80,8 +82,10 @@ by hand.
 | [`build_cleanup`](roles/build_cleanup/README.md) | General-purpose, parameterized cleanup role for build artifact minimization |
 | [`claude_code`](roles/claude_code/README.md) | Manages Claude Code CLI configuration including hooks and settings |
 | [`fabric`](roles/fabric/README.md) | Installs and configures Daniel Miessler's Fabric AI framework |
+| [`firstmate`](roles/firstmate/README.md) | Installs the firstmate agent distro by cloning its repository, without configuring fleet homes or starting sessions |
 | [`git_setup`](roles/git_setup/README.md) | Renders ~/.gitconfig with aliases and sane defaults |
 | [`go_task`](roles/go_task/README.md) | Installs go-task (Task runner) on Unix-like and Windows systems |
+| [`herdr`](roles/herdr/README.md) | Installs herdr, the terminal agent multiplexer, from Homebrew on macOS and pinned, checksum-verified release binaries elsewhere |
 | [`logging`](roles/logging/README.md) | Provides flexible logging directories and log rotation for any application or service. |
 | [`mise`](roles/mise/README.md) | Installs the mise polyglot tool version manager, wires it into the user's shell, and installs configured default tools. |
 | [`package_management`](roles/package_management/README.md) | Manage package installations and cleanups on Debian-based and Red Hat-based systems |

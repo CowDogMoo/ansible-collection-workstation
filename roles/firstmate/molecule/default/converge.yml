@@ -1,0 +1,14 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    # Installs the checkout only; no firstmate home is configured and no session started.
+    - name: Include role under test
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.firstmate
+      vars:
+        firstmate_username: "{{ container_user }}"
+        firstmate_user_home: "{{ container_home }}"

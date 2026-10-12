@@ -1,0 +1,74 @@
+---
+- name: Fail on unsupported platform
+  ansible.builtin.fail:
+    msg: >-
+      herdr publishes release binaries for Linux and macOS on x86_64 and aarch64 only,
+      not {{ ansible_facts['system'] }}/{{ ansible_facts['architecture'] }}
+  when: >-
+    ansible_facts['system'] not in herdr_os_map or
+    ansible_facts['architecture'] not in herdr_arch_map
+
+- name: Set herdr release asset name
+  ansible.builtin.set_fact:
+    herdr_asset: >-
+      herdr-{{ herdr_os_map[ansible_facts['system']] }}-{{ herdr_arch_map[ansible_facts['architecture']] }}
+
+- name: Set herdr release checksum
+  ansible.builtin.set_fact:
+    herdr_checksum: "{{ (herdr_checksums[herdr_version] | default({}))[herdr_asset] | default('') }}"
+
+- name: Fail when no checksum is known for the requested release
+  ansible.builtin.fail:
+    msg: >-
+      No SHA-256 for {{ herdr_asset }} at herdr {{ herdr_version }}. Add it to
+      herdr_checksums.
+  when: herdr_checksum | length == 0
+
+- name: Check installed herdr binary
+  ansible.builtin.stat:
+    path: "{{ herdr_install_dir }}/herdr"
+  register: herdr_installed
+
+- name: Check installed herdr version
+  ansible.builtin.command: "{{ herdr_install_dir }}/herdr --version"
+  register: herdr_installed_version
+  changed_when: false
+  failed_when: false
+  when: herdr_installed.stat.exists
+
+# Root installs outside a user's home (e.g. /usr/local/bin) need escalation;
+# installs into the user's own home run as that user.
+- name: Set herdr install escalation facts
+  ansible.builtin.set_fact:
+    herdr_install_in_home: "{{ herdr_install_dir.startswith(herdr_user_home) }}"
+    herdr_needs_install: >-
+      {{ not herdr_installed.stat.exists or
+         (herdr_installed_version.stdout | default('') | trim) != 'herdr ' + herdr_version }}
+
+- name: Ensure herdr install directory exists
+  ansible.builtin.file:
+    path: "{{ herdr_install_dir }}"
+    state: directory
+    owner: "{{ herdr_install_in_home | ternary(herdr_username, omit) }}"
+    group: "{{ herdr_install_in_home | ternary(herdr_usergroup, omit) }}"
+    mode: "0755"
+  become: "{{ herdr_username != ansible_facts['user_id'] or (not herdr_install_in_home and ansible_facts['user_id'] != 'root') }}"
+  register: herdr_install_dir_result
+
+# In check mode a missing install dir is never created, so get_url would fail
+# on the absent destination.
+- name: Download herdr release binary
+  ansible.builtin.get_url:
+    url: "{{ herdr_download_base_url }}/v{{ herdr_version }}/{{ herdr_asset }}"
+    dest: "{{ herdr_install_dir }}/herdr"
+    checksum: "sha256:{{ herdr_checksum }}"
+    force: "{{ herdr_needs_install }}"
+    owner: "{{ herdr_install_in_home | ternary(herdr_username, omit) }}"
+    group: "{{ herdr_install_in_home | ternary(herdr_usergroup, omit) }}"
+    mode: "0755"
+  become: "{{ herdr_username != ansible_facts['user_id'] or (not herdr_install_in_home and ansible_facts['user_id'] != 'root') }}"
+  register: herdr_download
+  when: not (ansible_check_mode and herdr_install_dir_result is changed)
+  retries: 3
+  delay: 5
+  until: herdr_download is not failed
