@@ -3,7 +3,9 @@ galaxy_info:
   role_name: herdr
   namespace: cowdogmoo
   author: Jayson Grace
-  description: Installs herdr, the terminal agent multiplexer, from Homebrew on macOS and pinned, checksum-verified release binaries elsewhere
+  description: >-
+    Installs and configures herdr, the terminal agent multiplexer, from Homebrew on macOS and
+    pinned, checksum-verified release binaries elsewhere, with its agent integrations
   company: CowDogMoo
   license: MIT
   min_ansible_version: "2.15"

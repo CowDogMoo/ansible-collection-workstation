@@ -22,3 +22,27 @@
         state: present
         update_cache: true
       become: true
+
+    # Stand-ins for installed agents: herdr only installs an integration whose
+    # agent config directory exists. root gets Claude Code only, so the gating
+    # for the other agents is exercised too.
+    - name: Create agent config directories for the test user
+      ansible.builtin.file:
+        path: "{{ container_home }}/{{ item }}"
+        state: directory
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        mode: "0755"
+      loop:
+        - .claude
+        - .gemini
+        - .gemini/config
+        - .codex
+      become: true
+
+    - name: Create the Claude Code config directory for root
+      ansible.builtin.file:
+        path: /root/.claude
+        state: directory
+        mode: "0700"
+      become: true

@@ -1,0 +1,77 @@
+{#-
+  Renders ~/.config/herdr/config.toml. Each setting is written only when it differs
+  from herdr's built-in default (herdr_config_upstream_defaults), so with the role
+  defaults the file matches what herdr's own onboarding writes.
+-#}
+{%- set d = herdr_config_upstream_defaults -%}
+{%- set sections = [] -%}
+
+{%- set top = [] -%}
+{%- if (herdr_onboarding | bool) != d.onboarding -%}
+{%-   set _ = top.append('onboarding = ' ~ (herdr_onboarding | bool | lower)) -%}
+{%- endif -%}
+{%- if top -%}{%- set _ = sections.append(top | join('\n')) -%}{%- endif -%}
+
+{%- set ui = [] -%}
+{%- if (herdr_show_agent_labels_on_pane_borders | bool) != d.show_agent_labels_on_pane_borders -%}
+{%-   set _ = ui.append('show_agent_labels_on_pane_borders = ' ~ (herdr_show_agent_labels_on_pane_borders | bool | lower)) -%}
+{%- endif -%}
+{%- if (herdr_confirm_close | bool) != d.confirm_close -%}
+{%-   set _ = ui.append('confirm_close = ' ~ (herdr_confirm_close | bool | lower)) -%}
+{%- endif -%}
+{%- if herdr_agent_panel_sort != d.agent_panel_sort -%}
+{%-   set _ = ui.append('agent_panel_sort = ' ~ (herdr_agent_panel_sort | to_json)) -%}
+{%- endif -%}
+{%- if herdr_status_indicators != d.status_indicators -%}
+{%-   set _ = ui.append('status_indicators = ' ~ (herdr_status_indicators | to_json)) -%}
+{%- endif -%}
+{%- if ui -%}{%- set _ = sections.append((['[ui]'] + ui) | join('\n')) -%}{%- endif -%}
+
+{%- if herdr_toast_delivery != d.toast_delivery -%}
+{%-   set _ = sections.append('[ui.toast]\ndelivery = ' ~ (herdr_toast_delivery | to_json)) -%}
+{%- endif -%}
+
+{%- set theme = [] -%}
+{%- if herdr_theme_name != d.theme_name -%}
+{%-   set _ = theme.append('name = ' ~ (herdr_theme_name | to_json)) -%}
+{%- endif -%}
+{%- if (herdr_theme_auto_switch | bool) != d.theme_auto_switch -%}
+{%-   set _ = theme.append('auto_switch = ' ~ (herdr_theme_auto_switch | bool | lower)) -%}
+{%- endif -%}
+{%- if theme -%}{%- set _ = sections.append((['[theme]'] + theme) | join('\n')) -%}{%- endif -%}
+
+{%- set keys = [] -%}
+{%- if herdr_prefix != d.prefix -%}
+{%-   set _ = keys.append('prefix = ' ~ (herdr_prefix | to_json)) -%}
+{%- endif -%}
+{%- if herdr_tmux_keybindings | bool -%}
+{%-   set _ = keys.extend([
+        '# tmux muscle memory alongside herdr defaults',
+        'last_pane = "prefix+l"',
+        'focus_pane_left = ["prefix+left", "prefix+h"]',
+        'focus_pane_down = ["prefix+down", "prefix+j"]',
+        'focus_pane_up = ["prefix+up", "prefix+k"]',
+        'focus_pane_right = "prefix+right"',
+        'split_vertical = ["prefix+|", "prefix+v", "prefix+%"]',
+        'split_horizontal = ["prefix+minus", "prefix+\\""]',
+        'detach = ["prefix+d", "prefix+q"]',
+        'rename_tab = ["prefix+,", "prefix+shift+t"]',
+      ]) -%}
+{%- endif -%}
+{%- if keys -%}{%- set _ = sections.append((['[keys]'] + keys) | join('\n')) -%}{%- endif -%}
+
+{%- if herdr_manage_helpers | bool -%}
+{%-   set _ = sections.append((['[[keys.command]]',
+        'key = "prefix+slash"',
+        'type = "popup"',
+        'description = "tmux cheatsheet"',
+        'width = "82%"',
+        'height = "80%"',
+        'command = ' ~ ((herdr_config_dir ~ '/cheatsheet.sh') | to_json)]) | join('\n')) -%}
+{%-   set _ = sections.append((['[[keys.command]]',
+        'key = "prefix+space"',
+        'type = "shell"',
+        'description = "rotate split layout"',
+        'command = ' ~ ((herdr_config_dir ~ '/rotate-split.sh') | to_json)]) | join('\n')) -%}
+{%- endif -%}
+{{ sections | join('\n\n') }}

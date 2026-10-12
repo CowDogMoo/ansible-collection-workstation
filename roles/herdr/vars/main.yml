@@ -1,3 +1,32 @@
 ---
 # Base URL for herdr release assets
 herdr_download_base_url: "https://github.com/herdrdev/herdr/releases/download"
+
+# herdr's built-in config.toml defaults (herdr --default-config). The template only
+# writes settings whose value differs from these.
+herdr_config_upstream_defaults:
+  onboarding: true
+  toast_delivery: "off"
+  show_agent_labels_on_pane_borders: false
+  confirm_close: true
+  agent_panel_sort: "spaces"
+  status_indicators: "dots"
+  theme_name: "catppuccin"
+  theme_auto_switch: false
+  prefix: "ctrl+b"
+
+# How each supported herdr integration is installed. agent_dir must exist under the
+# user's home before herdr's installer accepts the agent; staged integrations copy
+# only script from a throwaway HOME because another role owns the agent's config.
+herdr_integration_specs:
+  claude:
+    agent_dir: .claude
+    staged: true
+    script: .claude/hooks/herdr-agent-state.sh
+  antigravity-cli:
+    agent_dir: .gemini/config
+    staged: true
+    script: .gemini/config/hooks/herdr-agent-state.sh
+  codex:
+    agent_dir: .codex
+    staged: false
