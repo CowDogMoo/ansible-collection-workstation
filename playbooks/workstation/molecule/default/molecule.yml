@@ -25,6 +25,15 @@ provisioner:
   name: ansible
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+  inventory:
+    group_vars:
+      all:
+        # Pin the dotfiles clone so a commit landing on l50/dotfiles between
+        # converge and idempotence can't fail the idempotence check. Bump by
+        # hand: dotfiles' own Renovate pins this repo by digest, so having
+        # Renovate track this SHA would make the two repos bump each other in
+        # a loop.
+        shell_functions_repo_version: 04ca4dadb5960eaef51b3dcb475e0075e5c294ea
 
 verifier:
   name: ansible
