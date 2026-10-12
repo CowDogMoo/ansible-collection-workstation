@@ -17,6 +17,14 @@ zsh_setup_plugins:
 # fight with it.
 zsh_setup_manage_zshrc: true
 
+# Environment variables exported from a managed block in ~/.zshenv, which
+# every zsh reads - login, interactive or neither - so they reach scripts and
+# daemons that start a bare `zsh -c` or `zsh -l`, not just terminals.
+#
+#   zsh_setup_zshenv_exports:
+#     DO_NOT_TRACK: "1"
+zsh_setup_zshenv_exports: {}
+
 # Whether to back up an existing ~/.zshrc before overwriting it.
 zsh_setup_backup_zshrc: true
 

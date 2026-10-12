@@ -111,3 +111,78 @@ claude_code_advanced_hooks_overrides:
       '{{ ansible_facts['env']['HOME'] }}/.local/share/mise/shims/node'
       '{{ ansible_facts['env']['HOME'] }}/.claude/skills/unlazy/scripts/stop-hook.mjs'
       --unlazy-hook-v2
+
+  # AXI SessionStart hooks. Each prints a short self-description into the
+  # session's context, so the binary behind it is pinned below in
+  # mise_additional_packages and called through its mise shim, not resolved from
+  # whatever `npm install -g` last put on PATH.
+  gh_axi_session_start:
+    event: SessionStart
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.local/share/mise/shims/gh-axi"
+    timeout: 10
+
+  chrome_devtools_axi_session_start:
+    event: SessionStart
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.local/share/mise/shims/chrome-devtools-axi"
+    timeout: 10
+
+  lavish_axi_session_start:
+    event: SessionStart
+    tool: ""
+    type: command
+    command: "{{ ansible_facts['env']['HOME'] }}/.local/share/mise/shims/lavish-axi"
+    timeout: 10
+
+  # herdr's Claude integration: tells the herdr pane which session it hosts.
+  # herdr owns the script and rewrites it on update; only the registration is here.
+  herdr_agent_state:
+    event: SessionStart
+    tool: "^(startup|resume|clear|compact|fork)$"
+    type: command
+    command: "bash '{{ ansible_facts['env']['HOME'] }}/.claude/hooks/herdr-agent-state.sh' session"
+    timeout: 10
+
+# Tools that would otherwise come from `curl … | sh` installers and unpinned
+# `npm install -g`. mise checks each github: download against the digest GitHub
+# publishes for the release asset, and Renovate proposes bumps (never automerged).
+mise_additional_packages:
+  # renovate: datasource=npm depName=gh-axi
+  - name: "npm:gh-axi"
+    version: "0.1.38"
+  # renovate: datasource=npm depName=chrome-devtools-axi
+  - name: "npm:chrome-devtools-axi"
+    version: "0.1.40"
+  # Found on PATH by chrome-devtools-axi, which otherwise runs
+  # `npx -y chrome-devtools-mcp@latest` on every launch.
+  # renovate: datasource=npm depName=chrome-devtools-mcp
+  - name: "npm:chrome-devtools-mcp"
+    version: "1.10.1"
+  # renovate: datasource=npm depName=lavish-axi
+  - name: "npm:lavish-axi"
+    version: "0.1.87"
+  # renovate: datasource=npm depName=quota-axi
+  - name: "npm:quota-axi"
+    version: "0.1.61"
+  # renovate: datasource=npm depName=tasks-axi
+  - name: "npm:tasks-axi"
+    version: "0.2.6"
+  # renovate: datasource=github-releases depName=kunchenguid/no-mistakes extractVersion=^v(?<version>.*)$
+  - name: "github:kunchenguid/no-mistakes"
+    version: "1.84.0"
+  # renovate: datasource=github-releases depName=kunchenguid/treehouse extractVersion=^v(?<version>.*)$
+  - name: "github:kunchenguid/treehouse"
+    version: "3.1.2"
+
+# Opt-outs for tools above. Both telemetry clients post usage events to
+# a.kunchenguid.com unless told not to, and no-mistakes' own update check is
+# moot when mise owns its version. ~/.zshenv rather than ~/.zshrc: the
+# no-mistakes daemon imports its environment from a login shell at startup, so
+# this reaches it even after it rewrites its own LaunchAgent plist.
+zsh_setup_zshenv_exports:
+  NO_MISTAKES_TELEMETRY: "off"
+  NO_MISTAKES_NO_UPDATE_CHECK: "1"
+  LAVISH_AXI_TELEMETRY: "off"

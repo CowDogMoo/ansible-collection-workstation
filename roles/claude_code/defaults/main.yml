@@ -80,7 +80,8 @@ claude_code_simple_hooks: []
 #         command: 'afplay "$HOME/Jobs Done.mp3"'
 #
 # To remove a default hook entirely on a specific host, set its value to `null`.
-# To add a host-specific hook, give it a new key.
+# To add a host-specific hook, give it a new key. An optional `timeout` (seconds)
+# is rendered as the hook's timeout; without it Claude Code's default applies.
 claude_code_advanced_hooks_default:
 
   # forbidden_content: Block commits/PRs with forbidden content (emojis/branding).

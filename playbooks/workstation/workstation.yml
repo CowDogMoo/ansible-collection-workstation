@@ -230,6 +230,8 @@
 
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup
+      tags:
+        - zsh
       when: zsh_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/zsh_setup

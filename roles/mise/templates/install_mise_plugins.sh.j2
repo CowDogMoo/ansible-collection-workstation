@@ -41,6 +41,9 @@ check_plugin "{{ plugin.name }}" "{{ plugin.version | default('latest') }}"
 check_plugin "{{ pkg.name }}" "{{ pkg.version | default('latest') }}"
 {% endfor %}
 {% endfor %}
+{% for pkg in mise_additional_packages %}
+check_plugin "{{ pkg.name }}" "{{ pkg.version | default('latest') }}"
+{% endfor %}
 
 install_plugin() {
     local plugin=$1
@@ -97,6 +100,20 @@ if [ "$needs_changes" = true ]; then
     mise use --global "{{ pkg.name }}@{{ pkg.version | default('latest') }}"
     {% endif %}
     {% endfor %}
+    {% endfor %}
+
+    # Host-supplied extras, after the runtimes they may need (npm: needs node)
+    {% for pkg in mise_additional_packages %}
+    echo "Installing package: {{ pkg.name }}@{{ pkg.version | default('latest') }}"
+    logfile="{{ mise_user_home }}/.local/share/mise/.install_pkg_$(echo '{{ pkg.name }}' | tr ':/' '__').log"
+    if ! mise install "{{ pkg.name }}@{{ pkg.version | default('latest') }}" > "$logfile" 2>&1; then
+        echo "WARNING: Failed to install {{ pkg.name }}, see $logfile" >&2
+    else
+        rm -f "$logfile"
+    fi
+    {% if pkg.scope | default('global') == 'global' %}
+    mise use --global "{{ pkg.name }}@{{ pkg.version | default('latest') }}"
+    {% endif %}
     {% endfor %}
 
     echo "CHANGED: Updates were applied"

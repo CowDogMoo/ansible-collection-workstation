@@ -102,8 +102,26 @@
         'patch',
       ],
     },
+    {
+      description: 'Review pinned host tools by hand: no automerge, and a week for a bad release to be yanked first',
+      matchFileNames: [
+        'playbooks/workstation/host_vars/**',
+      ],
+      automerge: false,
+      minimumReleaseAge: '7 days',
+    },
   ],
   customManagers: [
+    {
+      customType: 'regex',
+      description: 'Update mise tools pinned in workstation host_vars',
+      managerFilePatterns: [
+        '/^playbooks\\/workstation\\/host_vars\\/.+\\.ya?ml$/',
+      ],
+      matchStrings: [
+        '# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: extractVersion=(?<extractVersion>[^\\s]+))?\\s*\\n\\s*-\\s*name:\\s*"[^"]+"\\s*\\n\\s*version:\\s*"(?<currentValue>[^"]+)"',
+      ],
+    },
     {
       customType: 'regex',
       description: 'Update asdf plugin versions',

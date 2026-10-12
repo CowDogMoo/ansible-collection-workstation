@@ -74,3 +74,17 @@
   become: "{{ zsh_setup_username != ansible_facts['user_id'] }}"
   become_user: "{{ zsh_setup_username }}"
   when: zsh_setup_manage_zshrc | bool
+
+- name: Export environment variables from ~/.zshenv
+  ansible.builtin.blockinfile:
+    path: "{{ zsh_setup_user_home }}/.zshenv"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - ZSH_SETUP EXPORTS"
+    block: |
+      {% for name, value in zsh_setup_zshenv_exports | dictsort %}
+      export {{ name }}={{ value | string | quote }}
+      {% endfor %}
+    create: true
+    mode: "0644"
+  become: "{{ zsh_setup_username != ansible_facts['user_id'] }}"
+  become_user: "{{ zsh_setup_username }}"
+  when: zsh_setup_zshenv_exports | length > 0

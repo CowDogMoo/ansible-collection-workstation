@@ -25,10 +25,14 @@ sys.stderr.write(msg + '\\n') if msg else None;sys.exit({% if hook.action == 'bl
   {% if tool not in hooks_by_event[event] %}
     {% set _ = hooks_by_event[event].update({tool: []}) %}
   {% endif %}
-  {% set _ = hooks_by_event[event][tool].append({
+  {% set hook_entry = {
     'type': hook.type | default('command'),
     'command': hook.command if 'command' in hook else simple_hook_to_python(hook)
-  }) %}
+  } %}
+  {% if hook.timeout is defined %}
+    {% set _ = hook_entry.update({'timeout': hook.timeout | int}) %}
+  {% endif %}
+  {% set _ = hooks_by_event[event][tool].append(hook_entry) %}
 {% endfor %}
 
 {#- Settings rendered after the hooks block. Role-owned keys go first so a key in
@@ -50,7 +54,9 @@ sys.stderr.write(msg + '\\n') if msg else None;sys.exit({% if hook.action == 'bl
 {% for hook_item in hook_list %}
           {
             "type": "{{ hook_item.type }}",
-            "command": {{ hook_item.command | to_json }}
+            "command": {{ hook_item.command | to_json }}{% if hook_item.timeout is defined %},
+            "timeout": {{ hook_item.timeout }}{% endif %}
+
           }{% if not loop.last %},{% endif %}
 
 {% endfor %}
