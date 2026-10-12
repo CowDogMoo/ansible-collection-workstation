@@ -37,6 +37,8 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_manage_scripts` | bool | <code>True</code> | No description |
 | `antigravity_manage_hooks` | bool | <code>True</code> | No description |
 | `antigravity_backup_settings` | bool | <code>True</code> | No description |
+| `antigravity_hooks_backup_dir` | str | <code>{{ antigravity_config_dir }}/backups</code> | No description |
+| `antigravity_hooks_backup_keep` | int | <code>10</code> | No description |
 | `antigravity_manage_plugins` | bool | <code>True</code> | No description |
 | `antigravity_plugins` | list | <code>&#91;&#93;</code> | No description |
 | `antigravity_hooks_default` | dict | <code>{}</code> | No description |
@@ -51,6 +53,16 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_mcp_servers` | list | <code>&#91;&#93;</code> | No description |
 
 ## Tasks
+
+### backup-hooks.yml
+
+
+- **Check for an existing hooks.json** (ansible.builtin.stat)
+- **Back up and prune hooks.json copies** (block) - Conditional
+- **Create hooks.json backup directory** (ansible.builtin.file)
+- **Copy existing hooks.json into the backup directory** (ansible.builtin.copy)
+- **Find hooks.json backups** (ansible.builtin.find)
+- **Prune hooks.json backups beyond the retention limit** (ansible.builtin.file) - Conditional
 
 ### install-linux.yml
 
@@ -93,9 +105,10 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Install Antigravity rules** (ansible.builtin.copy) - Conditional
 - **Create Antigravity scripts directory** (ansible.builtin.file) - Conditional
 - **Install Antigravity scripts** (ansible.builtin.copy) - Conditional
-- **Install custom Antigravity hooks.json from source** (ansible.builtin.copy) - Conditional
+- **Check if custom hooks.json from source will change (dry-run)** (ansible.builtin.copy) - Conditional
 - **Check if hooks.json will change (dry-run)** (ansible.builtin.template) - Conditional
-- **Create backup of existing hooks.json in /tmp** (ansible.builtin.copy) - Conditional
+- **Back up existing hooks.json before it is rewritten** (ansible.builtin.include_tasks) - Conditional
+- **Install custom Antigravity hooks.json from source** (ansible.builtin.copy) - Conditional
 - **Generate Antigravity hooks.json** (ansible.builtin.template) - Conditional
 - **Manage MCP servers** (ansible.builtin.include_tasks) - Conditional
 - **Manage plugins** (ansible.builtin.include_tasks) - Conditional

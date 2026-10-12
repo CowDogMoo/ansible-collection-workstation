@@ -1,0 +1,30 @@
+---
+# Host-specific settings (Claude Code hooks, model, plugins, ...) only load when the
+# inventory hostname matches a file in host_vars/. Running without an inventory
+# targets plain `localhost`, which matches nothing, so roles fall back to their
+# defaults and rewrite config files without the host's settings. Stop before that.
+- name: Look for a host_vars entry for this host
+  ansible.builtin.set_fact:
+    workstation_host_vars_found: >-
+      {{ [workstation_host_vars_dir ~ '/' ~ workstation_host_vars_name ~ '.yml',
+          workstation_host_vars_dir ~ '/' ~ workstation_host_vars_name ~ '.yaml',
+          workstation_host_vars_dir ~ '/' ~ workstation_host_vars_name]
+         | select('exists') | list | length > 0 }}
+  vars:
+    workstation_host_vars_dir: "{{ workstation_host_vars_path | default(playbook_dir ~ '/host_vars') }}"
+    workstation_host_vars_name: "{{ workstation_host_vars_hostname | default(inventory_hostname) }}"
+
+- name: Fail when the target host has no host_vars
+  ansible.builtin.fail:
+    msg: >-
+      No host_vars found for '{{ workstation_host_vars_hostname | default(inventory_hostname) }}' in
+      {{ workstation_host_vars_path | default(playbook_dir ~ '/host_vars') }}, so this run would
+      apply role defaults and overwrite host-specific settings (Claude Code settings.json,
+      hooks, and so on). Target this machine by its hostname instead:
+      ansible-playbook {{ playbook_dir }}/workstation.yml -i '{{ ansible_facts['hostname'] | default('<hostname>') }},' -c local
+      (add a host_vars/{{ ansible_facts['hostname'] | default('<hostname>') }}.yml first if this
+      machine has none). To run with role defaults on purpose, pass
+      -e workstation_allow_missing_host_vars=true.
+  when:
+    - not (workstation_allow_missing_host_vars | default(false) | bool)
+    - not (workstation_host_vars_found | bool)

@@ -34,6 +34,9 @@ provisioner:
         # Renovate track this SHA would make the two repos bump each other in
         # a loop.
         shell_functions_repo_version: 04ca4dadb5960eaef51b3dcb475e0075e5c294ea
+        # The test container has no host_vars file; run on role defaults on
+        # purpose rather than tripping the playbook's missing-host_vars guard.
+        workstation_allow_missing_host_vars: true
 
 verifier:
   name: ansible

@@ -1,6 +1,17 @@
 ---
 - name: Workstation
   hosts: all
+  pre_tasks:
+    # Refuse to run against a host with no host_vars (e.g. plain localhost with no
+    # inventory). Tagged always so a tag-limited run like `--tags claude` hits it too.
+    - name: Require host_vars for the target host
+      ansible.builtin.include_tasks:
+        file: tasks/require-host-vars.yml
+        apply:
+          tags:
+            - always
+      tags:
+        - always
   roles:
     # Bootstrap ~/.ansible.cfg + ~/.ansible/{collections,roles,fact_cache}
     # so subsequent roles (and ad-hoc runs) see a configured environment.

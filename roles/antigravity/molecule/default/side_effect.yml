@@ -71,3 +71,60 @@
           - "'chrome-devtools' not in plugin_list_result.stdout"
         fail_msg: "Plugin 'chrome-devtools' should have been removed but found in: {{ plugin_list_result.stdout }}"
         success_msg: "Plugin 'chrome-devtools' was successfully removed (state: absent works)"
+
+    # Back up hooks.json only when a run changes it. The same hooks twice must
+    # leave no backup; three changes with a retention of 2 must leave the two
+    # newest. verify.yml checks the surviving copies.
+    - name: Render hooks.json twice with the same hooks
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.antigravity
+      vars:
+        antigravity_username: "{{ container_user }}"
+        antigravity_user_home: "{{ container_home }}"
+        antigravity_config_dir: "{{ container_home }}/.gemini/config-backup"
+        antigravity_install: false
+        antigravity_manage_mcp_servers: false
+        antigravity_manage_plugins: false
+        antigravity_hooks_backup_keep: 2
+        antigravity_hooks_overrides:
+          stop_sound:
+            command: "echo backup-marker-{{ antigravity_backup_version }}"
+      loop:
+        - v1
+        - v1
+      loop_control:
+        loop_var: antigravity_backup_version
+
+    - name: Check for a backup directory after unchanged runs
+      ansible.builtin.stat:
+        path: "{{ container_home }}/.gemini/config-backup/backups"
+      register: antigravity_unchanged_backup_dir
+      become: true
+
+    - name: Assert unchanged runs took no backup
+      ansible.builtin.assert:
+        that:
+          - not antigravity_unchanged_backup_dir.stat.exists
+        fail_msg: "A run that left hooks.json unchanged still created a backup"
+        success_msg: "Unchanged runs leave no backup behind"
+
+    - name: Render hooks.json with changing hooks
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.antigravity
+      vars:
+        antigravity_username: "{{ container_user }}"
+        antigravity_user_home: "{{ container_home }}"
+        antigravity_config_dir: "{{ container_home }}/.gemini/config-backup"
+        antigravity_install: false
+        antigravity_manage_mcp_servers: false
+        antigravity_manage_plugins: false
+        antigravity_hooks_backup_keep: 2
+        antigravity_hooks_overrides:
+          stop_sound:
+            command: "echo backup-marker-{{ antigravity_backup_version }}"
+      loop:
+        - v2
+        - v3
+        - v4
+      loop_control:
+        loop_var: antigravity_backup_version

@@ -1,0 +1,42 @@
+---
+- name: Check for an existing hooks.json
+  ansible.builtin.stat:
+    path: "{{ antigravity_hooks_file }}"
+  register: antigravity_hooks_existing
+
+- name: Back up and prune hooks.json copies
+  when: antigravity_hooks_existing.stat.exists
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  block:
+    - name: Create hooks.json backup directory
+      ansible.builtin.file:
+        path: "{{ antigravity_hooks_backup_dir }}"
+        state: directory
+        owner: "{{ antigravity_username }}"
+        group: "{{ antigravity_usergroup }}"
+        mode: "0700"
+
+    # Microsecond timestamps keep two rewrites in the same second from sharing a
+    # name, and sort lexically in creation order for the pruning step below.
+    - name: Copy existing hooks.json into the backup directory
+      ansible.builtin.copy:
+        src: "{{ antigravity_hooks_file }}"
+        dest: "{{ antigravity_hooks_backup_dir }}/hooks.json.{{ now(utc=true, fmt='%Y%m%dT%H%M%S%fZ') }}"
+        owner: "{{ antigravity_username }}"
+        group: "{{ antigravity_usergroup }}"
+        mode: "0600"
+        remote_src: true
+      register: antigravity_backup_result
+
+    - name: Find hooks.json backups
+      ansible.builtin.find:
+        paths: "{{ antigravity_hooks_backup_dir }}"
+        patterns: "hooks.json.*"
+      register: antigravity_hooks_backups
+
+    - name: Prune hooks.json backups beyond the retention limit
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ (antigravity_hooks_backups.files | map(attribute='path') | sort)[:-(antigravity_hooks_backup_keep | int)] }}"
+      when: antigravity_hooks_backup_keep | int > 0
