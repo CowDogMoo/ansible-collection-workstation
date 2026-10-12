@@ -62,6 +62,9 @@ The file is the source of truth:
   untrusted directory logs `Workspace not trusted` and launchd retries it every
   30 seconds. Run `claude` in the directory once and accept the prompt. Trust
   is recorded per directory; a trusted parent does not cover its children.
+- **Your home folder may need a terminal tab.** If Claude Code does not
+  persist trust for your home folder, a host there can't start under launchd.
+  Keep that one in a terminal tab instead of the hosts file.
 - **Worktree mode needs git.** The role fails a host with `spawn: worktree`
   outside a git repository. Use `same-dir` there.
 - **One host per directory.** A LaunchAgent host exits with `This folder is
