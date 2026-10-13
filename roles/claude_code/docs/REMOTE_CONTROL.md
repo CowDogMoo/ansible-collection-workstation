@@ -84,10 +84,11 @@ The file is the source of truth:
    tab stops that host, and every session it is serving drops with it, so
    finish or hand off anything in progress first. Start new sessions from
    claude.ai/code once the agents are up.
-3. Run the workstation playbook with the `claude` tag:
+3. Run the workstation playbook with the `claude` tag from the repo root:
 
    ```bash
-   ansible-playbook playbooks/workstation/workstation.yml --tags claude
+   ansible-playbook playbooks/workstation/workstation.yml \
+     -i "$(hostname -s)," -c local --tags claude
    ```
 
    The `claude` tag only touches this role; the next full run also installs
