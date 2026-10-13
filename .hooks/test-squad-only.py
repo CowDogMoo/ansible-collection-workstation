@@ -81,7 +81,32 @@ DENY = [
     ("gh api graphql -f query=" + SQ + "mutation { updatePullRequest(input: {}) { clientMutationId } }" + SQ,
      "graphql updatePullRequest"),
     (f'bash -c "gh pr edit 12 --body y"', "gh inside a wrapper"),
+    (f"{G} merge -m {SQ}hand text{SQ} feature", "merge with a message"),
+    (f"{G} merge --message=x feature", "merge --message="),
+    (f"{G} merge -F msg.txt feature", "merge message from a file"),
+    (f"{G} merge --file=msg.txt feature", "merge --file="),
+    (f"{G} merge --no-edit -m x feature", "merge --no-edit with a message"),
+    (f"{G} merge --edit feature", "merge with an edited message"),
+    (f"{G} revert --no-edit HEAD", "revert"),
+    (f"{G} revert HEAD", "revert with its default message"),
+    (f"{G} revert -m 1 HEAD", "revert -m is mainline, not --no-commit"),
+    (f"{G} revert -n -e HEAD", "revert --no-commit with --edit"),
+    (f"{G} cherry-pick 0123abc", "cherry-pick"),
+    (f"{G} cherry-pick -x 0123abc", "cherry-pick -x"),
+    (f"{G} cherry-pick --edit 0123abc", "cherry-pick --edit"),
+    (f'{G} rebase -x "{G} commit --amend -m x" HEAD~1', "rebase -x"),
+    (f"{G} rebase --exec=true main", "rebase --exec="),
+    ("gh pr merge 12 --squash --subject x --body y", "gh pr merge subject and body"),
+    ("gh pr merge 12 --squash -t x", "gh pr merge -t"),
+    ("gh pr merge 12 --body-file=b.md", "gh pr merge body file"),
+    ("gh-axi pr merge 12 --squash --body y", "gh-axi pr merge body"),
+    (f"gh api -X PUT {PULLS}/12/merge -f commit_title=x -f commit_message=y", "gh api merge with commit text"),
+    ("gh api graphql -f query=" + SQ + "mutation { mergePullRequest(input: {commitHeadline: x}) { clientMutationId } }" + SQ,
+     "graphql mergePullRequest with a headline"),
+    (f"cat > NOTES.md <<EOF\nfine\nEOF\n{G} commit -m x", "commit after a heredoc"),
 ]
+
+SEQUENCER_DENY = [cmd for cmd, _ in DENY if f"{G} revert" in cmd or f"{G} cherry-pick" in cmd]
 
 # (command, label) - none of these may be denied.
 ALLOW = [
@@ -98,6 +123,23 @@ ALLOW = [
     (f"{G} log -1 --format=%B", "reading a commit message"),
     (f"{G} rebase --continue", "rebase --continue"),
     (f"{G} merge --continue", "merge --continue"),
+    (f"{G} merge feature", "plain merge"),
+    (f"{G} merge --no-edit feature", "merge --no-edit"),
+    (f"{G} pull --no-rebase origin main", "git pull"),
+    (f"{G} rebase main", "plain rebase"),
+    (f"{G} rebase --skip", "rebase --skip"),
+    (f"{G} rebase --abort", "rebase --abort"),
+    (f"{G} revert -n HEAD", "revert -n"),
+    (f"{G} revert --no-commit -m 1 HEAD", "revert --no-commit with mainline"),
+    (f"{G} revert --continue", "revert --continue"),
+    (f"{G} revert --abort", "revert --abort"),
+    (f"{G} cherry-pick --no-commit 0123abc && squad_commit", "cherry-pick --no-commit then squad_commit"),
+    (f"{G} cherry-pick --skip", "cherry-pick --skip"),
+    (f"{G} cherry-pick --quit", "cherry-pick --quit"),
+    ("gh pr merge 12 --squash --delete-branch", "gh pr merge with GitHub's message"),
+    ("gh-axi pr merge 12 --squash", "gh-axi pr merge with GitHub's message"),
+    (f"cat > NOTES.md <<{SQ}EOF{SQ}\nNever run {G} commit by hand; use squad_commit.\nEOF", "heredoc documenting git commit"),
+    (f"cat <<-EOF > NOTES.md\n\tgh pr create and gh pr edit --body are squad_pr's job\n\tEOF\n{G} status", "<<- heredoc then a command"),
     (f"{G} push -u origin HEAD", "git push"),
     (f"{G} add -A", "git add"),
     (f"{G} -C /tmp status", "git -C status"),
@@ -134,6 +176,7 @@ KNOWN_GAPS = [
     (f"echo {SQ}{G} commit -m x{SQ} | sh", "script piped into sh"),
     ("curl -X PATCH https://api.github.com/repos/o/r/pulls/1 -d @b.json", "curl to the API"),
     ("gh api -X PATCH repos/{owner}/{repo}/issues/12 -f body=y", "PR body through the issues endpoint"),
+    (f"sh <<EOF\n{G} commit -m x\nEOF", "script fed to sh through a heredoc"),
 ]
 
 # Attribution must still be blocked on commands the squad rule does not deny.
@@ -237,6 +280,8 @@ def main():
                 failures.append(f"not denied - {label}")
             elif "squad_commit or squad_pr" not in err:
                 failures.append(f"deny message does not name squad_commit or squad_pr - {label}")
+            elif cmd in SEQUENCER_DENY and "--no-commit (-n), then squad_commit" not in err:
+                failures.append(f"deny message does not point at --no-commit - {label}")
         for cmd, label in ALLOW:
             rc, err = run_hook(body, cmd, plain)
             if rc != 0:

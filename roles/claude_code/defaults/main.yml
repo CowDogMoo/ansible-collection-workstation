@@ -94,22 +94,32 @@ claude_code_advanced_hooks_default:
 
   # forbidden_content: Commits and pull request text come from squad, full stop.
   #
-  # Denies any command that makes a commit (`git commit`, `--amend` included, and
-  # `git commit-tree`) or writes a pull request title or body (`gh pr create`,
-  # `gh pr edit --title/--body/--body-file`, the same through gh-axi, and `gh api`
-  # POST/PATCH/PUT to a pulls endpoint or a createPullRequest/updatePullRequest
-  # mutation). `squad_commit` and `squad_pr` pass because the hook only sees the
-  # literal command, never the git and gh calls those functions make inside.
+  # Denies:
+  #   - `git commit` (`--amend` included) and `git commit-tree`
+  #   - `git merge -m/--message/-F/--file/-e/--edit`
+  #   - `git rebase -x/--exec`
+  #   - `git revert` and `git cherry-pick` without `-n/--no-commit`, and with `-e/--edit`
+  #   - `gh pr create`, `gh pr edit --title/--body/--body-file`, and
+  #     `gh pr merge --subject/--body/--body-file`, the same through gh-axi
+  #   - `gh api` POST/PATCH/PUT to a pulls endpoint, a PUT to a pull's merge endpoint
+  #     with commit_title/commit_message, and a GraphQL mutation that creates or
+  #     updates a pull request or carries a commitHeadline/commitBody
   #
-  # The one exemption is `git commit --no-edit` while a merge is in progress: it
-  # concludes the merge with git's own message, carries no hand-written text, and is
-  # the command no-mistakes gives its agent to finish a merge-strategy conflict.
+  # Allowed: `squad_commit` and `squad_pr` (the hook only sees the literal command,
+  # never the git and gh calls those functions make inside), read-only commands,
+  # plain `git merge`/`git pull` and `git merge --no-edit` (git's own message),
+  # `git rebase`/`git revert`/`git cherry-pick` --continue/--skip/--abort/--quit,
+  # `git revert -n` and `git cherry-pick -n` followed by squad_commit, and
+  # `git commit --no-edit` while a merge is in progress: it concludes the merge with
+  # git's own message and is the command no-mistakes gives its agent to finish a
+  # merge-strategy conflict.
   #
   # It also blocks forbidden attribution text in the other write commands it can
   # see. Like dangerous_flags it parses the command into clauses and looks one level
-  # into eval and `sh -c`, so searching for or documenting these commands is left
-  # alone. Out of scope, as anything built to slip past it is: git aliases, command
-  # substitution, deeper nesting, scripts, and API clients other than gh.
+  # into eval and `sh -c`, and it skips heredoc bodies, so searching for or
+  # documenting these commands is left alone. Out of scope, as anything built to
+  # slip past it is: git aliases, command substitution, deeper nesting, scripts
+  # (heredocs fed to a shell included), and API clients other than gh.
   # `post_commit_check` and `post_pr_check` still read back what squad produced.
   forbidden_content:
     event: PreToolUse
@@ -128,10 +138,25 @@ claude_code_advanced_hooks_default:
       SEPARATORS = '&|;()<>'
       GIT_OPTS_WITH_ARG = ('-C', '-c', '--git-dir', '--work-tree', '--namespace', '--super-prefix', '--config-env')
       PR_TEXT_FLAGS = ('-t', '--title', '-b', '--body', '-F', '--body-file')
+      MERGE_TEXT_FLAGS = ('-t', '--subject', '-b', '--body', '-F', '--body-file')
+      SEQUENCER = ('--continue', '--skip', '--abort', '--quit')
       API_BODY_FLAGS = ('-f', '-F', '--field', '--raw-field', '--input')
       API_OPTS_WITH_ARG = ('-H', '--header', '-q', '--jq', '-t', '--template', '-p', '--preview', '--hostname', '--cache')
       METHODS = ('GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD')
       PULLS = re.compile(r'^/?repos/[^/]+/[^/]+/pulls(/[^/?]+)?/?(\?.*)?\Z')
+      PULL_MERGE = re.compile(r'^/?repos/[^/]+/[^/]+/pulls/[^/?]+/merge/?(\?.*)?\Z')
+      HEREDOC = re.compile(r'(?<!<)<<(?!<)-?\s*([^\s;&|<>()]+)')
+
+      def strip_heredocs(text):
+          out, pending = [], []
+          for line in text.split(chr(10)):
+              if pending:
+                  if line.strip() == pending[0]:
+                      pending.pop(0)
+                  continue
+              out.append(line)
+              pending = [d.strip(chr(39) + chr(34) + chr(92)) for d in HEREDOC.findall(line)]
+          return chr(10).join(out)
 
       def tokenize(text):
           try:
@@ -170,12 +195,24 @@ claude_code_advanced_hooks_default:
               if args[j] == '-C' and j + 1 < len(args):
                   workdir = os.path.join(workdir, os.path.expanduser(args[j + 1]))
               j += 2 if args[j] in GIT_OPTS_WITH_ARG else 1
-          if j >= len(args) or args[j] not in ('commit', 'commit-tree'):
+          if j >= len(args):
               return None
-          rest = [a for a in args[j + 1:] if a not in ('-q', '--quiet')]
-          if args[j] == 'commit' and rest == ['--no-edit'] and merge_in_progress(workdir):
-              return None
-          return 'git ' + args[j]
+          sub, rest = args[j], args[j + 1:]
+          if sub in ('commit', 'commit-tree'):
+              quiet = [a for a in rest if a not in ('-q', '--quiet')]
+              if sub == 'commit' and quiet == ['--no-edit'] and merge_in_progress(workdir):
+                  return None
+              return 'git ' + sub
+          if sub == 'merge' and any(a[:2] in ('-m', '-F', '-e') or a.split('=')[0] in ('--message', '--file', '--edit') for a in rest):
+              return 'git merge'
+          if sub == 'rebase' and any(a[:2] == '-x' or a.split('=')[0] == '--exec' for a in rest):
+              return 'git rebase --exec'
+          if sub in ('revert', 'cherry-pick'):
+              if any(a in ('-e', '--edit') for a in rest):
+                  return 'git ' + sub
+              if not any(a in SEQUENCER + ('-n', '--no-commit') for a in rest):
+                  return 'git ' + sub
+          return None
 
       def gh_api(args):
           method, body, positional, j = None, False, [], 0
@@ -205,9 +242,12 @@ claude_code_advanced_hooks_default:
               method = positional.pop(0)
           endpoint = positional[0] if positional else ''
           method = (method or ('POST' if body else 'GET')).upper()
+          joined = ' '.join(args)
           if method in ('POST', 'PATCH', 'PUT') and PULLS.match(endpoint):
               return 'gh api ' + method + ' ' + endpoint
-          if endpoint == 'graphql' and re.search(r'\b(create|update)PullRequest\b', ' '.join(args)):
+          if method == 'PUT' and PULL_MERGE.match(endpoint) and re.search(r'\bcommit_(title|message)=', joined):
+              return 'gh api PUT ' + endpoint
+          if endpoint == 'graphql' and re.search(r'\b(create|update)PullRequest\b|\bcommit(Headline|Body)\b', joined):
               return 'gh api graphql pull request mutation'
           return None
 
@@ -220,6 +260,8 @@ claude_code_advanced_hooks_default:
               return 'gh pr ' + args[1]
           if args[1] == 'edit' and any(a.split('=')[0] in PR_TEXT_FLAGS for a in args[2:]):
               return 'gh pr edit'
+          if args[1] == 'merge' and any(a.split('=')[0] in MERGE_TEXT_FLAGS for a in args[2:]):
+              return 'gh pr merge'
           return None
 
       def check(clause, workdir):
@@ -237,7 +279,7 @@ claude_code_advanced_hooks_default:
           return None
 
       def scan(text, workdir, depth=0):
-          for clause in clauses(tokenize(text)):
+          for clause in clauses(tokenize(strip_heredocs(text))):
               if clause[:1] == ['cd'] and len(clause) > 1:
                   workdir = os.path.join(workdir, os.path.expanduser(clause[1]))
                   continue
@@ -272,6 +314,7 @@ claude_code_advanced_hooks_default:
           sys.stderr.write(
               f'❌ BLOCKED: {op!r} writes commit or pull request text by hand.\\n\\n'
               'Commits and PR titles/bodies come only from squad. Use squad_commit or squad_pr.\\n'
+              + ('Run it with --no-commit (-n), then squad_commit.\\n' if op.endswith(('revert', 'cherry-pick')) else '')
               + USE_SQUAD + '\\n'
           )
           sys.exit(2)

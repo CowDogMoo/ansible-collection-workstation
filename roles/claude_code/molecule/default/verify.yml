@@ -759,6 +759,12 @@
         probe "gh pr edit 12 --body 'hand-written'" ghedit
         probe "gh-axi pr edit 12 --title x" axiedit
         probe 'gh api -X PATCH repos/o/r/pulls/12 -f body=y' apipatch
+        probe "git merge -m 'hand text' feature" mergemsg
+        probe 'git revert --no-edit HEAD' revert
+        probe 'git rebase -x true HEAD~1' rebaseexec
+        probe 'gh pr merge 12 --squash --subject x --body y' ghmerge
+        probe 'git merge --no-edit feature && git revert -n HEAD' gitmsg
+        probe "$(printf 'cat > NOTES.md <<EOF\nnever run git commit by hand\nEOF')" heredocdoc
         probe 'squad_commit' squadcommit
         probe 'squad_pr' squadpr
         probe 'git status --short && git log --oneline -n 5 && git diff main...HEAD' gitread
@@ -781,6 +787,12 @@
           - "'ghedit=2' in claude_code_squad_only_probe.stdout"
           - "'axiedit=2' in claude_code_squad_only_probe.stdout"
           - "'apipatch=2' in claude_code_squad_only_probe.stdout"
+          - "'mergemsg=2' in claude_code_squad_only_probe.stdout"
+          - "'revert=2' in claude_code_squad_only_probe.stdout"
+          - "'rebaseexec=2' in claude_code_squad_only_probe.stdout"
+          - "'ghmerge=2' in claude_code_squad_only_probe.stdout"
+          - "'gitmsg=0' in claude_code_squad_only_probe.stdout"
+          - "'heredocdoc=0' in claude_code_squad_only_probe.stdout"
           - "'squadcommit=0' in claude_code_squad_only_probe.stdout"
           - "'squadpr=0' in claude_code_squad_only_probe.stdout"
           - "'gitread=0' in claude_code_squad_only_probe.stdout"
