@@ -17,6 +17,7 @@ never writes it.
 hosts:
   - name: example # required; LaunchAgent label suffix and log name
     dir: ~/src/example # required; ~ expands to your home directory
+    # Dangerous: skips every permission prompt. Omit it for the default mode.
     permission_mode: bypassPermissions
   - name: notes
     dir: ~/src/notes
@@ -30,7 +31,7 @@ hosts:
 | `dir`             | yes      |                                                 | Existing directory the host serves                               |
 | `spawn`           | no       | `worktree` (`claude_code_remote_control_spawn`) | `same-dir`, `worktree` (needs a git repository), or `session`    |
 | `capacity`        | no       | `32` (`claude_code_remote_control_capacity`)    | Max concurrent sessions; ignored for `session`                   |
-| `permission_mode` | no       | `claude_code_remote_control_permission_mode`    | Permission mode for spawned sessions, e.g. `bypassPermissions`   |
+| `permission_mode` | no       | `claude_code_remote_control_permission_mode`    | Spawned-session mode; `bypassPermissions` skips all prompts       |
 | `chrome`          | no       | `true` (`claude_code_remote_control_chrome`)    | Claude in Chrome for spawned sessions (`--chrome`/`--no-chrome`) |
 
 Each host becomes `~/Library/LaunchAgents/com.cowdogmoo.claude-rc.<name>.plist`
@@ -77,7 +78,8 @@ The file is the source of truth:
    It stays on this machine; don't commit it. Tabs started with
    `claude rc --permission-mode bypassPermissions` need
    `permission_mode: bypassPermissions` on every entry: without it, spawned
-   sessions fall back to Claude Code's default mode and ask before each tool.
+   sessions fall back to Claude Code's default mode and ask before each tool,
+   which is the safer choice.
 2. Close the iTerm2 tabs running `claude rc` for those directories. Closing a
    tab stops that host, and every session it is serving drops with it, so
    finish or hand off anything in progress first. Start new sessions from
