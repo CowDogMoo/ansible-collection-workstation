@@ -100,6 +100,14 @@ repos:
           |playbooks/workstation/host_vars/MacBook-Pro-4/main\.yml)$
         additional_dependencies: []
 
+      - id: test-squad-only
+        name: Test the squad-only rule in the claude_code forbidden_content hook
+        entry: python .hooks/test-squad-only.py
+        language: python
+        pass_filenames: false
+        files: ^(\.hooks/test-squad-only\.py|roles/claude_code/defaults/main\.yml)$
+        additional_dependencies: []
+
       - id: test-molecule-retry
         name: Test the Molecule workflow's transient-failure retry
         entry: python .hooks/test-molecule-retry.py

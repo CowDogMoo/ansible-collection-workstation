@@ -734,3 +734,58 @@
       ansible.builtin.file:
         path: "{{ claude_code_rc_render_dir.path }}"
         state: absent
+
+    # forbidden_content: commits and PR titles/bodies come only from squad_commit and
+    # squad_pr. Probes the real hook body from the defaults; the full matrix, the
+    # merge-conclusion exemption, and the gaps left open on purpose live in
+    # .hooks/test-squad-only.py, which runs as a pre-commit hook.
+    - name: Probe the squad-only rule with commit, PR, and read-only commands
+      ansible.builtin.shell: |
+        set -o pipefail
+        tmp=$(mktemp -d)
+        cat > "$tmp/hook.sh" <<'HOOK'
+        {{ claude_code_defaults_pre_cmds | select('search', 'SQUAD_ONLY') | first }}
+        HOOK
+        probe() {
+          python3 -c 'import json,sys; print(json.dumps({"tool_input":{"command":sys.argv[1]},"cwd":sys.argv[2]}))' "$1" "$tmp" \
+            | sh "$tmp/hook.sh" >/dev/null 2>"$tmp/err"
+          rc=$?
+          if [ "$rc" = 2 ] && ! grep -q 'squad_commit or squad_pr' "$tmp/err"; then rc=nomsg; fi
+          printf '%s=%s\n' "$2" "$rc"
+        }
+        probe "git commit -m 'fix: thing'" rawcommit
+        probe 'git commit --amend --no-edit' amend
+        probe "gh pr create --title x --body 'hand-written'" ghcreate
+        probe "gh pr edit 12 --body 'hand-written'" ghedit
+        probe "gh-axi pr edit 12 --title x" axiedit
+        probe 'gh api -X PATCH repos/o/r/pulls/12 -f body=y' apipatch
+        probe 'squad_commit' squadcommit
+        probe 'squad_pr' squadpr
+        probe 'git status --short && git log --oneline -n 5 && git diff main...HEAD' gitread
+        probe 'gh pr view 12 --json title,body && gh pr checks 12' ghread
+        probe 'gh-axi pr view 12' axiread
+        probe 'gh api repos/o/r/pulls/12' apiread
+        rm -rf "$tmp"
+      args:
+        executable: /bin/bash
+      register: claude_code_squad_only_probe
+      changed_when: false
+      failed_when: false
+
+    - name: Assert the squad-only rule denies hand-written commits and PR text only
+      ansible.builtin.assert:
+        that:
+          - "'rawcommit=2' in claude_code_squad_only_probe.stdout"
+          - "'amend=2' in claude_code_squad_only_probe.stdout"
+          - "'ghcreate=2' in claude_code_squad_only_probe.stdout"
+          - "'ghedit=2' in claude_code_squad_only_probe.stdout"
+          - "'axiedit=2' in claude_code_squad_only_probe.stdout"
+          - "'apipatch=2' in claude_code_squad_only_probe.stdout"
+          - "'squadcommit=0' in claude_code_squad_only_probe.stdout"
+          - "'squadpr=0' in claude_code_squad_only_probe.stdout"
+          - "'gitread=0' in claude_code_squad_only_probe.stdout"
+          - "'ghread=0' in claude_code_squad_only_probe.stdout"
+          - "'axiread=0' in claude_code_squad_only_probe.stdout"
+          - "'apiread=0' in claude_code_squad_only_probe.stdout"
+        fail_msg: "squad-only rule misjudged a command: {{ claude_code_squad_only_probe.stdout }}"
+        success_msg: "squad-only rule denies raw commits and PR text, allows squad and read-only commands"

@@ -92,21 +92,189 @@ claude_code_simple_hooks: []
 # is rendered as the hook's timeout; without it Claude Code's default applies.
 claude_code_advanced_hooks_default:
 
-  # forbidden_content: Block commits/PRs with forbidden content (emojis/branding).
-  # Inspects the literal command string. Catches `git commit -m "...Co-Authored-By: Claude..."`
-  # and `gh pr create --body "...🤖..."` style invocations. Cannot see content passed via
-  # `-F file`, stdin pipes, $variables, or editor commits — `post_commit_check` covers commits
-  # and `post_pr_check` covers pull request bodies created or edited by `squad_pr`.
+  # forbidden_content: Commits and pull request text come from squad, full stop.
+  #
+  # Denies any command that makes a commit (`git commit`, `--amend` included, and
+  # `git commit-tree`) or writes a pull request title or body (`gh pr create`,
+  # `gh pr edit --title/--body/--body-file`, the same through gh-axi, and `gh api`
+  # POST/PATCH/PUT to a pulls endpoint or a createPullRequest/updatePullRequest
+  # mutation). `squad_commit` and `squad_pr` pass because the hook only sees the
+  # literal command, never the git and gh calls those functions make inside.
+  #
+  # The one exemption is `git commit --no-edit` while a merge is in progress: it
+  # concludes the merge with git's own message, carries no hand-written text, and is
+  # the command no-mistakes gives its agent to finish a merge-strategy conflict.
+  #
+  # It also blocks forbidden attribution text in the other write commands it can
+  # see. Like dangerous_flags it parses the command into clauses and looks one level
+  # into eval and `sh -c`, so searching for or documenting these commands is left
+  # alone. Out of scope, as anything built to slip past it is: git aliases, command
+  # substitution, deeper nesting, scripts, and API clients other than gh.
+  # `post_commit_check` and `post_pr_check` still read back what squad produced.
   forbidden_content:
     event: PreToolUse
     tool: Bash
     type: command
     command: |
       python3 -c "
-      import json, sys
+      import json, os, re, shlex, subprocess, sys
 
       data = json.load(sys.stdin)
       cmd = data.get('tool_input', {}).get('command', '')
+      cwd = data.get('cwd') or os.getcwd()
+
+      SQUAD_ONLY = ('squad_commit', 'squad_pr')
+      SHELLS = ('bash', 'sh', 'zsh', 'dash', 'ksh')
+      SEPARATORS = '&|;()<>'
+      GIT_OPTS_WITH_ARG = ('-C', '-c', '--git-dir', '--work-tree', '--namespace', '--super-prefix', '--config-env')
+      PR_TEXT_FLAGS = ('-t', '--title', '-b', '--body', '-F', '--body-file')
+      API_BODY_FLAGS = ('-f', '-F', '--field', '--raw-field', '--input')
+      API_OPTS_WITH_ARG = ('-H', '--header', '-q', '--jq', '-t', '--template', '-p', '--preview', '--hostname', '--cache')
+      METHODS = ('GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD')
+      PULLS = re.compile(r'^/?repos/[^/]+/[^/]+/pulls(/[^/?]+)?/?(\?.*)?\Z')
+
+      def tokenize(text):
+          try:
+              lexer = shlex.shlex(text, posix=True, punctuation_chars=True)
+              lexer.whitespace_split = True
+              return list(lexer)
+          except ValueError:
+              return text.split()
+
+      def clauses(toks):
+          out, cur = [], []
+          for tok in toks:
+              if tok and all(ch in SEPARATORS for ch in tok):
+                  out.append(cur)
+                  cur = []
+              else:
+                  cur.append(tok)
+          out.append(cur)
+          return out
+
+      def word(tok):
+          return tok.split('/')[-1]
+
+      def merge_in_progress(workdir):
+          try:
+              return subprocess.run(
+                  ['git', '-C', workdir, 'rev-parse', '-q', '--verify', 'MERGE_HEAD'],
+                  capture_output=True, timeout=5,
+              ).returncode == 0
+          except Exception:
+              return False
+
+      def git_commit(args, workdir):
+          j = 0
+          while j < len(args) and args[j].startswith('-'):
+              if args[j] == '-C' and j + 1 < len(args):
+                  workdir = os.path.join(workdir, os.path.expanduser(args[j + 1]))
+              j += 2 if args[j] in GIT_OPTS_WITH_ARG else 1
+          if j >= len(args) or args[j] not in ('commit', 'commit-tree'):
+              return None
+          rest = [a for a in args[j + 1:] if a not in ('-q', '--quiet')]
+          if args[j] == 'commit' and rest == ['--no-edit'] and merge_in_progress(workdir):
+              return None
+          return 'git ' + args[j]
+
+      def gh_api(args):
+          method, body, positional, j = None, False, [], 0
+          while j < len(args):
+              a = args[j]
+              if a in ('-X', '--method'):
+                  method = args[j + 1] if j + 1 < len(args) else None
+                  j += 2
+                  continue
+              if a.startswith(('--method=', '-X=')):
+                  method = a.split('=', 1)[1]
+              elif a.startswith('-X') and len(a) > 2:
+                  method = a[2:]
+              elif a in API_BODY_FLAGS:
+                  body = True
+                  j += 2
+                  continue
+              elif a.startswith(('--field=', '--raw-field=', '--input=')) or (a[:2] in ('-f', '-F') and len(a) > 2):
+                  body = True
+              elif a in API_OPTS_WITH_ARG:
+                  j += 2
+                  continue
+              elif not a.startswith('-'):
+                  positional.append(a)
+              j += 1
+          if positional and positional[0].upper() in METHODS:
+              method = positional.pop(0)
+          endpoint = positional[0] if positional else ''
+          method = (method or ('POST' if body else 'GET')).upper()
+          if method in ('POST', 'PATCH', 'PUT') and PULLS.match(endpoint):
+              return 'gh api ' + method + ' ' + endpoint
+          if endpoint == 'graphql' and re.search(r'\b(create|update)PullRequest\b', ' '.join(args)):
+              return 'gh api graphql pull request mutation'
+          return None
+
+      def gh_pr_text(args):
+          if args[:1] == ['api']:
+              return gh_api(args[1:])
+          if args[:1] != ['pr'] or len(args) < 2:
+              return None
+          if args[1] in ('create', 'new'):
+              return 'gh pr ' + args[1]
+          if args[1] == 'edit' and any(a.split('=')[0] in PR_TEXT_FLAGS for a in args[2:]):
+              return 'gh pr edit'
+          return None
+
+      def check(clause, workdir):
+          for i, tok in enumerate(clause):
+              name = word(tok)
+              hit = None
+              if name == 'git':
+                  hit = git_commit(clause[i + 1:], workdir)
+              elif name in ('gh', 'gh-axi'):
+                  hit = gh_pr_text(clause[i + 1:])
+                  if hit and name == 'gh-axi':
+                      hit = 'gh-axi' + hit[2:]
+              if hit:
+                  return hit
+          return None
+
+      def scan(text, workdir, depth=0):
+          for clause in clauses(tokenize(text)):
+              if clause[:1] == ['cd'] and len(clause) > 1:
+                  workdir = os.path.join(workdir, os.path.expanduser(clause[1]))
+                  continue
+              hit = check(clause, workdir)
+              if hit:
+                  return hit
+              if depth:
+                  continue
+              for i, tok in enumerate(clause):
+                  name, rest = word(tok), clause[i + 1:]
+                  if name == 'eval':
+                      hit = scan(' '.join(rest), workdir, depth + 1)
+                  elif name in SHELLS:
+                      payload = next((rest[j + 1] for j, arg in enumerate(rest)
+                                      if arg.startswith('-') and arg.endswith('c')
+                                      and j + 1 < len(rest)), None)
+                      hit = scan(payload, workdir, depth + 1) if payload else None
+                  else:
+                      continue
+                  if hit:
+                      return hit
+          return None
+
+      USE_SQUAD = (
+          '✅ Use ONLY squad output:\\n'
+          '  Commits: squad_commit\\n'
+          '  PRs:     squad_pr  (opens the PR, or regenerates the title and body of an open one)'
+      )
+
+      op = scan(cmd, cwd)
+      if op:
+          sys.stderr.write(
+              f'❌ BLOCKED: {op!r} writes commit or pull request text by hand.\\n\\n'
+              'Commits and PR titles/bodies come only from squad. Use squad_commit or squad_pr.\\n'
+              + USE_SQUAD + '\\n'
+          )
+          sys.exit(2)
 
       forbidden = [
           '🤖',
@@ -121,16 +289,10 @@ claude_code_advanced_hooks_default:
       gh_writes = ['gh pr create', 'gh pr edit', 'gh pr comment', 'gh issue create', 'gh issue edit', 'gh issue comment', 'gh release create', 'gh release edit']
 
       triggered = next((f for f in forbidden if f in cmd), None)
-      op = next((g for g in git_writes + gh_writes if g in cmd), None)
+      write_op = next((g for g in git_writes + gh_writes if g in cmd), None)
 
-      if triggered and op:
-          msg = (
-              f'❌ BLOCKED: forbidden content {triggered!r} in {op!r} command.\\n\\n'
-              '✅ Use ONLY squad output:\\n'
-              '  Commits: squad_commit  (or: git diff --staged | squad_gen commit)\\n'
-              '  PRs:     squad_pr      (or: git diff main...HEAD | squad_gen pr)'
-          )
-          sys.stderr.write(msg + '\\n')
+      if triggered and write_op:
+          sys.stderr.write(f'❌ BLOCKED: forbidden content {triggered!r} in {write_op!r} command.\\n\\n' + USE_SQUAD + '\\n')
           sys.exit(2)
       sys.exit(0)
       "
@@ -241,7 +403,8 @@ claude_code_advanced_hooks_default:
   # messages passed via `-F file`, stdin pipes (`squad_commit` uses `git commit -F -`),
   # $variables, editor commits, and squash-merges. This PostToolUse hook runs after any
   # commit-creating command and inspects the resulting commit message; if an attribution
-  # footer or trailer landed, it tells Claude to amend before pushing.
+  # footer or trailer landed, it tells Claude to fix the generator and regenerate the commit
+  # with `squad_commit`, never to amend it by hand.
   #
   # Detection is line-anchored: a trailer or footer is always a line of its own, whereas a
   # commit that *describes* attribution handling ("strip the Generated with Claude Code
@@ -298,10 +461,10 @@ claude_code_advanced_hooks_default:
       if hits:
           err = (
               f'❌ Last commit contains forbidden content (attribution lines): {hits!r}\\n\\n'
-              'Amend it now (do NOT push until fixed):\\n'
-              '  git log -1 --format=%B > /tmp/commit_msg\\n'
-              '  # edit /tmp/commit_msg and remove the trailers/branding\\n'
-              '  git commit --amend -F /tmp/commit_msg\\n'
+              'The commit generator leaked it. Do NOT amend by hand; forbidden_content denies git commit.\\n'
+              'Fix the source (squad-agents commit agent or scripts/filter.py), then regenerate:\\n'
+              '  git reset --soft HEAD~1 && squad_commit\\n'
+              'If the bad commit was already pushed, follow up with: git push --force-with-lease\\n'
           )
           sys.stderr.write(err + '\\n')
           sys.exit(2)
