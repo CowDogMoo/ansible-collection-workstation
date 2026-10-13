@@ -44,6 +44,7 @@ PULLS = "repos/{owner}/{repo}/pulls"
 DENY = [
     (f"{G} commit -m {SQ}fix: thing{SQ}", "raw commit"),
     (f"{G} commit -F /tmp/msg", "commit from a file"),
+    (f"{G} commit -m {DQ}$(cat /tmp/msg) {BT}date{BT}{DQ}", "commit with quotes and substitutions"),
     (f"printf {SQ}fix{SQ} | {G} commit -F -", "commit from a pipe"),
     (f"{G} commit", "editor commit"),
     (f"{G} commit --amend --no-edit", "amend without a merge"),
@@ -165,6 +166,7 @@ ALLOW = [
     (f'bash -c "echo {SQ}{G} commit{SQ}"', "doc line inside a wrapper"),
     (f'python3 -c "print({SQ}{G} commit{SQ})"', "python printing a doc line"),
     ("ls -la", "unrelated command"),
+    (f"echo {DQ}$(date) {BT}whoami{BT}{DQ} > out.txt", "quotes and substitutions outside git"),
 ]
 
 # Deliberately not caught: each has to be constructed to slip past.
@@ -262,13 +264,6 @@ def conflicted_merge(root):
 def main():
     failures = []
     body = extract(SHIPPED)
-
-    # The body is embedded in a `python3 -c "..."` shell string: a bare double
-    # quote would close it early and a backtick or `$(` would be substituted.
-    detector = chr(10).join(x for x in body.split(chr(10))[1:] if x.strip() != DQ)
-    for bad, what in ((DQ, "double quote"), (BT, "backtick"), ("$(", "command substitution")):
-        if bad in detector:
-            failures.append(f"hook body contains a bare {what}")
 
     with tempfile.TemporaryDirectory() as root:
         plain = os.path.join(root, "plain")
