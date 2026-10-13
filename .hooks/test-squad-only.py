@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test the claude_code forbidden_content hook's squad-only rule.
+"""Test the squad-only rule in every forbidden_content hook that ships it.
 
 Commits and pull request titles and bodies come only from squad_commit and
 squad_pr. The hook must deny every command an agent would actually reach for to
@@ -15,9 +15,10 @@ real repository with and without MERGE_HEAD.
 KNOWN_GAPS records what is deliberately not caught. Each has to be constructed
 on purpose; they are asserted to pass so the boundary stays explicit.
 
-The detector body is extracted from the shipped YAML and executed through `sh`
-exactly as the hook harness runs it, so block-scalar embedding and shell
-escaping are covered too.
+The claude_code and antigravity roles ship the same detector behind different
+wire contracts. Each body is extracted from its shipped YAML and executed
+through `sh` exactly as its harness runs it, so block-scalar embedding and shell
+escaping are covered too, and every case must get the same verdict from both.
 """
 
 from __future__ import annotations
@@ -31,7 +32,10 @@ import sys
 import tempfile
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-SHIPPED = "roles/claude_code/defaults/main.yml"
+SHIPPED = {
+    "claude_code": "roles/claude_code/defaults/main.yml",
+    "antigravity": "roles/antigravity/defaults/main.yml",
+}
 MARKER = "SQUAD_ONLY ="
 
 G = "git"
@@ -218,14 +222,39 @@ def extract(rel):
 
 
 def run_hook(body, cmd, cwd):
-    """Run the hook as Claude Code does. Returns (exit code, stderr)."""
+    """Run the hook the way its harness does. Returns (2 if denied else 0, message).
+
+    Claude Code passes `tool_input.command` plus `cwd` and reads a block off exit 2;
+    antigravity passes `toolCall.args` (CommandLine, Cwd) and reads a JSON decision
+    on stdout, failing closed on anything else. Both are normalized to one verdict.
+    """
+    json_protocol = "toolCall" in body
+    payload = (
+        {"toolCall": {"name": "run_command", "args": {"CommandLine": cmd, "Cwd": cwd}}}
+        if json_protocol
+        else {"tool_input": {"command": cmd}, "cwd": cwd}
+    )
     proc = subprocess.run(
         ["sh", "-c", body],
-        input=json.dumps({"tool_input": {"command": cmd}, "cwd": cwd}),
+        input=json.dumps(payload),
         capture_output=True,
         text=True,
         timeout=30,
     )
+    if json_protocol:
+        if proc.returncode != 0:
+            raise SystemExit(f"hook exited {proc.returncode} for {cmd!r}: {proc.stderr[:300]}")
+        try:
+            out = json.loads(proc.stdout.strip())
+        except ValueError as exc:
+            raise SystemExit(f"hook returned no JSON decision for {cmd!r}: {exc}")
+        if out.get("decision") == "deny":
+            if "BLOCKED" not in out.get("reason", ""):
+                raise SystemExit(f"deny without the hook message for {cmd!r}: {out}")
+            return 2, out["reason"]
+        if out != {"decision": "allow"}:
+            raise SystemExit(f"hook neither allowed nor denied {cmd!r}: {out}")
+        return 0, ""
     # `sh` also exits 2 on a syntax error, which would otherwise read as a block.
     if proc.returncode not in (0, 2):
         raise SystemExit(f"hook exited {proc.returncode} for {cmd!r}: {proc.stderr[:300]}")
@@ -261,51 +290,82 @@ def conflicted_merge(root):
     return repo
 
 
+def check_copy(name, body, root, verdicts):
+    """Run the whole matrix against one shipped copy; record each verdict."""
+    failures = []
+
+    def verdict(cmd, cwd, label):
+        rc, err = run_hook(body, cmd, cwd)
+        verdicts.setdefault(label, {})[name] = rc
+        return rc, err
+
+    plain = os.path.join(root, "plain")
+    os.makedirs(plain, exist_ok=True)
+
+    for cmd, label in DENY:
+        rc, err = verdict(cmd, plain, label)
+        if rc != 2:
+            failures.append(f"{name}: not denied - {label}")
+        elif "squad_commit or squad_pr" not in err:
+            failures.append(f"{name}: deny message does not name squad_commit or squad_pr - {label}")
+        elif cmd in SEQUENCER_DENY and "--no-commit (-n), then squad_commit" not in err:
+            failures.append(f"{name}: deny message does not point at --no-commit - {label}")
+    for cmd, label in ALLOW:
+        rc, err = verdict(cmd, plain, label)
+        if rc != 0:
+            failures.append(f"{name}: false positive - {label}: {err.strip()[:120]}")
+    for cmd, label in KNOWN_GAPS:
+        if verdict(cmd, plain, label)[0] != 0:
+            failures.append(f"{name}: KNOWN_GAPS case now denied - {label}. If intended, move it into DENY.")
+    for cmd, label in ATTRIBUTION:
+        rc, err = verdict(cmd, plain, label)
+        if rc != 2 or "forbidden content" not in err:
+            failures.append(f"{name}: attribution not blocked - {label}")
+
+    # The merge exemption: only the exact conclusion, only mid-merge.
+    repo = conflicted_merge(os.path.join(root, name))
+    merge_cases = [
+        (f"{G} commit --no-edit", 0, "concluding a merge with --no-edit"),
+        (f"{G} add f && {G} commit --no-edit", 0, "stage then conclude"),
+        (f"{G} commit --no-edit -q", 0, "quiet conclusion"),
+        (f"{G} commit -m x", 2, "hand-written message mid-merge"),
+        (f"{G} commit --no-edit -m x", 2, "--no-edit plus a message mid-merge"),
+        (f"{G} commit --amend --no-edit", 2, "amend mid-merge"),
+        (f"cd {repo} && {G} commit --no-edit", 0, "cd into the merging repo"),
+        (f"{G} -C {repo} commit --no-edit", 0, "git -C into the merging repo"),
+    ]
+    for cmd, want, label in merge_cases:
+        cwd = plain if cmd.startswith(("cd ", f"{G} -C ")) else repo
+        if verdict(cmd, cwd, "merge: " + label)[0] != want:
+            failures.append(f"{name}: merge exemption wrong - {label}")
+    return failures
+
+
 def main():
     failures = []
-    body = extract(SHIPPED)
+    bodies = {name: extract(rel) for name, rel in SHIPPED.items()}
+    verdicts = {}
 
     with tempfile.TemporaryDirectory() as root:
-        plain = os.path.join(root, "plain")
-        os.makedirs(plain)
+        for name, body in bodies.items():
+            failures.extend(check_copy(name, body, root, verdicts))
 
-        for cmd, label in DENY:
-            rc, err = run_hook(body, cmd, plain)
-            if rc != 2:
-                failures.append(f"not denied - {label}")
-            elif "squad_commit or squad_pr" not in err:
-                failures.append(f"deny message does not name squad_commit or squad_pr - {label}")
-            elif cmd in SEQUENCER_DENY and "--no-commit (-n), then squad_commit" not in err:
-                failures.append(f"deny message does not point at --no-commit - {label}")
-        for cmd, label in ALLOW:
-            rc, err = run_hook(body, cmd, plain)
-            if rc != 0:
-                failures.append(f"false positive - {label}: {err.strip()[:120]}")
-        for cmd, label in KNOWN_GAPS:
-            if run_hook(body, cmd, plain)[0] != 0:
-                failures.append(f"KNOWN_GAPS case now denied - {label}. If intended, move it into DENY.")
-        for cmd, label in ATTRIBUTION:
-            rc, err = run_hook(body, cmd, plain)
-            if rc != 2 or "forbidden content" not in err:
-                failures.append(f"attribution not blocked - {label}")
+        # Antigravity may omit Cwd; the hook then falls back to the workspace root.
+        repo = os.path.join(root, "antigravity", "repo")
+        payload = {"toolCall": {"name": "run_command", "args": {"CommandLine": f"{G} commit --no-edit"}},
+                   "workspacePaths": [repo]}
+        proc = subprocess.run(["sh", "-c", bodies["antigravity"]], input=json.dumps(payload),
+                              capture_output=True, text=True, timeout=30)
+        if proc.stdout.strip() != json.dumps({"decision": "allow"}):
+            failures.append(f"antigravity: merge exemption ignores workspacePaths: {proc.stdout.strip()}")
+        gemini = f"{G} tag -a v1 -m {SQ}Co-Authored-By: Gemini{SQ}"
+        rc, err = run_hook(bodies["antigravity"], gemini, root)
+        if rc != 2 or "forbidden content" not in err:
+            failures.append("antigravity: Gemini attribution not blocked")
 
-        # The merge exemption: only the exact conclusion, only mid-merge.
-        repo = conflicted_merge(root)
-        merge_cases = [
-            (f"{G} commit --no-edit", 0, "concluding a merge with --no-edit"),
-            (f"{G} add f && {G} commit --no-edit", 0, "stage then conclude"),
-            (f"{G} commit --no-edit -q", 0, "quiet conclusion"),
-            (f"{G} commit -m x", 2, "hand-written message mid-merge"),
-            (f"{G} commit --no-edit -m x", 2, "--no-edit plus a message mid-merge"),
-            (f"{G} commit --amend --no-edit", 2, "amend mid-merge"),
-        ]
-        for cmd, want, label in merge_cases:
-            if run_hook(body, cmd, repo)[0] != want:
-                failures.append(f"merge exemption wrong - {label}")
-        if run_hook(body, f"cd {repo} && {G} commit --no-edit", plain)[0] != 0:
-            failures.append("merge exemption does not follow cd into the merging repo")
-        if run_hook(body, f"{G} -C {repo} commit --no-edit", plain)[0] != 0:
-            failures.append("merge exemption does not follow git -C into the merging repo")
+    for label, seen in verdicts.items():
+        if len(set(seen.values())) != 1:
+            failures.append(f"copies disagree on {label}: {seen}")
 
     if failures:
         for line in failures:
@@ -315,7 +375,8 @@ def main():
 
     print(
         f"squad-only OK: {len(DENY)} denied + {len(ALLOW)} allowed + "
-        f"{len(KNOWN_GAPS)} known gaps + {len(ATTRIBUTION)} attribution + merge exemption"
+        f"{len(KNOWN_GAPS)} known gaps + {len(ATTRIBUTION)} attribution + merge exemption "
+        f"across {len(bodies)} shipped copies"
     )
     return 0
 

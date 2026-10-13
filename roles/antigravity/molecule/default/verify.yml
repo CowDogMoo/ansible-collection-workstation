@@ -284,7 +284,7 @@
           toolCall:
             name: run_command
             args:
-              CommandLine: "git commit -F -"
+              CommandLine: "squad_commit"
       register: antigravity_hook_allow
       changed_when: false
       become: true
@@ -298,6 +298,49 @@
           - (antigravity_hook_allow.stdout | from_json)['decision'] == 'allow'
         fail_msg: "forbidden_content hook failed to allow: {{ antigravity_hook_allow.stdout }}"
         success_msg: "forbidden_content hook allows clean commands"
+
+    # forbidden_content: commits and PR titles/bodies come only from squad_commit and
+    # squad_pr. Probes the deployed hook; the full matrix, the merge-conclusion
+    # exemption, and the gaps left open on purpose live in .hooks/test-squad-only.py,
+    # which runs both this copy and the claude_code one through the same cases.
+    - name: Probe the squad-only rule with commit, PR, and read-only commands
+      ansible.builtin.command:
+        cmd: "{{ antigravity_hooks_parsed['forbidden_content']['PreToolUse'][0]['hooks'][0]['command'] }}"
+        stdin: "{{ {'toolCall': {'name': 'run_command', 'args': {'CommandLine': item.cmd, 'Cwd': '/tmp'}}} | to_json }}"
+      loop:
+        - {cmd: "git commit -m 'fix: thing'", want: deny}
+        - {cmd: "git commit -F -", want: deny}
+        - {cmd: "git commit --amend --no-edit", want: deny}
+        - {cmd: "gh pr create --title x --body 'hand-written'", want: deny}
+        - {cmd: "gh pr edit 12 --body 'hand-written'", want: deny}
+        - {cmd: "gh-axi pr edit 12 --title x", want: deny}
+        - {cmd: "gh pr merge 12 --squash --subject x --body y", want: deny}
+        - {cmd: "git merge -m 'hand text' feature", want: deny}
+        - {cmd: "git revert --no-edit HEAD", want: deny}
+        - {cmd: "gh api -X PATCH repos/o/r/pulls/12 -f body=y", want: deny}
+        - {cmd: "squad_commit", want: allow}
+        - {cmd: "squad_pr", want: allow}
+        - {cmd: "git revert -n HEAD", want: allow}
+        - {cmd: "git merge --no-edit origin/main", want: allow}
+        - {cmd: "git status --short && git log --oneline -n 5", want: allow}
+        - {cmd: "gh pr view 12 --json title,body && gh pr checks 12", want: allow}
+      loop_control:
+        label: "{{ item.cmd }}"
+      register: antigravity_squad_only_probe
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert the squad-only rule denies hand-written commits and PR text only
+      ansible.builtin.assert:
+        that:
+          - (item.stdout | from_json)['decision'] == item.item.want
+          - item.item.want == 'allow' or 'squad_commit or squad_pr' in (item.stdout | from_json)['reason']
+        fail_msg: "squad-only rule misjudged {{ item.item.cmd }}: {{ item.stdout }}"
+        success_msg: "{{ item.item.want }}: {{ item.item.cmd }}"
+      loop: "{{ antigravity_squad_only_probe.results }}"
+      loop_control:
+        label: "{{ item.item.cmd }}"
 
     - name: Check if mcp_config.json exists
       ansible.builtin.stat:

@@ -101,11 +101,11 @@ repos:
         additional_dependencies: []
 
       - id: test-squad-only
-        name: Test the squad-only rule in the claude_code forbidden_content hook
+        name: Test the squad-only rule in the forbidden_content hooks
         entry: python .hooks/test-squad-only.py
         language: python
         pass_filenames: false
-        files: ^(\.hooks/test-squad-only\.py|roles/claude_code/defaults/main\.yml)$
+        files: ^(\.hooks/test-squad-only\.py|roles/(claude_code|antigravity)/defaults/main\.yml)$
         additional_dependencies: []
 
       - id: test-molecule-retry
