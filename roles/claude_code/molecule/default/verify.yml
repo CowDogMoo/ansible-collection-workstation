@@ -251,17 +251,49 @@
         fail_msg: "Matcher is not set to Bash"
         success_msg: "Matcher is correctly set to Bash"
 
-    - name: Check if backup was created in /tmp (if settings existed before)
+    # converge renders the same settings on every run, so nothing should be backed up
+    # Match by name: the CLI keeps its own backups in the same directory
+    - name: Find settings.json backups in the idempotent config dir
       ansible.builtin.find:
-        paths: "/tmp"
-        patterns: "settings.json.*.backup"
+        paths: "{{ claude_code_config_dir }}/backups"
+        patterns: "settings.json.*"
+      register: claude_code_idempotent_backups
+      become: true
+
+    - name: Assert idempotent runs took no settings.json backup
+      ansible.builtin.assert:
+        that:
+          - claude_code_idempotent_backups.matched == 0
+        fail_msg: "settings.json was backed up although no run changed it"
+        success_msg: "Idempotent runs leave no settings.json backup"
+
+    # side_effect.yml rendered v1 twice, then v2, v3 and v4 with a retention of 2
+    - name: Find settings.json backups from the side effect runs
+      ansible.builtin.find:
+        paths: "{{ container_home }}/.claude-backup/backups"
+        patterns: "settings.json.*"
       register: claude_code_backup_files
       become: true
-      become_user: "{{ container_user }}"
 
-    - name: Display backup status
-      ansible.builtin.debug:
-        msg: "Found {{ claude_code_backup_files.matched }} backup file(s) in /tmp"
+    - name: Read the surviving settings.json backups
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      loop: "{{ claude_code_backup_files.files | map(attribute='path') | sort }}"
+      register: claude_code_backup_contents
+      become: true
+
+    - name: Assert settings.json was backed up on each change and pruned to the limit
+      ansible.builtin.assert:
+        that:
+          - claude_code_backup_files.matched == 2
+          - claude_code_backup_files.files | map(attribute='mode') | unique == ['0600']
+          - claude_code_backup_files.files | map(attribute='pw_name') | unique == [container_user]
+          - "'backup-marker-v2' in (claude_code_backup_contents.results[0].content | b64decode)"
+          - "'backup-marker-v3' in (claude_code_backup_contents.results[1].content | b64decode)"
+        fail_msg: >-
+          Expected the two newest backups (v2, v3) with mode 0600, found
+          {{ claude_code_backup_files.files | map(attribute='path') | list }}
+        success_msg: "Each settings.json change was backed up and older backups were pruned"
 
     - name: Verify file ownership
       ansible.builtin.stat:

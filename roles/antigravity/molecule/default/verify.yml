@@ -177,6 +177,50 @@
         fail_msg: "hooks.json does not exist or has wrong permissions/ownership"
         success_msg: "hooks.json exists with correct permissions and ownership"
 
+    # converge renders the same hooks on every run, so nothing should be backed up
+    # Match by name so unrelated files in the directory do not count
+    - name: Find hooks.json backups in the idempotent config dir
+      ansible.builtin.find:
+        paths: "{{ antigravity_config_dir }}/backups"
+        patterns: "hooks.json.*"
+      register: antigravity_idempotent_backups
+      become: true
+
+    - name: Assert idempotent runs took no hooks.json backup
+      ansible.builtin.assert:
+        that:
+          - antigravity_idempotent_backups.matched == 0
+        fail_msg: "hooks.json was backed up although no run changed it"
+        success_msg: "Idempotent runs leave no hooks.json backup"
+
+    # side_effect.yml rendered v1 twice, then v2, v3 and v4 with a retention of 2
+    - name: Find hooks.json backups from the side effect runs
+      ansible.builtin.find:
+        paths: "{{ container_home }}/.gemini/config-backup/backups"
+        patterns: "hooks.json.*"
+      register: antigravity_backup_files
+      become: true
+
+    - name: Read the surviving hooks.json backups
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      loop: "{{ antigravity_backup_files.files | map(attribute='path') | sort }}"
+      register: antigravity_backup_contents
+      become: true
+
+    - name: Assert hooks.json was backed up on each change and pruned to the limit
+      ansible.builtin.assert:
+        that:
+          - antigravity_backup_files.matched == 2
+          - antigravity_backup_files.files | map(attribute='mode') | unique == ['0600']
+          - antigravity_backup_files.files | map(attribute='pw_name') | unique == [container_user]
+          - "'backup-marker-v2' in (antigravity_backup_contents.results[0].content | b64decode)"
+          - "'backup-marker-v3' in (antigravity_backup_contents.results[1].content | b64decode)"
+        fail_msg: >-
+          Expected the two newest backups (v2, v3) with mode 0600, found
+          {{ antigravity_backup_files.files | map(attribute='path') | list }}
+        success_msg: "Each hooks.json change was backed up and older backups were pruned"
+
     - name: Read hooks.json
       ansible.builtin.slurp:
         path: "{{ antigravity_hooks_file }}"

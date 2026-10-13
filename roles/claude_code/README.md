@@ -34,6 +34,8 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_manage_rules` | bool | <code>True</code> | No description |
 | `claude_code_manage_scripts` | bool | <code>True</code> | No description |
 | `claude_code_backup_settings` | bool | <code>True</code> | No description |
+| `claude_code_settings_backup_dir` | str | <code>{{ claude_code_config_dir }}/backups</code> | No description |
+| `claude_code_settings_backup_keep` | int | <code>10</code> | No description |
 | `claude_code_simple_hooks` | list | <code>&#91;&#93;</code> | No description |
 | `claude_code_advanced_hooks_default` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.forbidden_content` | dict | <code>{}</code> | No description |
@@ -54,6 +56,16 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_mcp_servers` | list | <code>&#91;&#93;</code> | No description |
 
 ## Tasks
+
+### backup-settings.yml
+
+
+- **Check for an existing settings.json** (ansible.builtin.stat)
+- **Back up and prune settings.json copies** (block) - Conditional
+- **Create settings.json backup directory** (ansible.builtin.file)
+- **Copy existing settings.json into the backup directory** (ansible.builtin.copy)
+- **Find settings.json backups** (ansible.builtin.find)
+- **Prune settings.json backups beyond the retention limit** (ansible.builtin.file) - Conditional
 
 ### install-linux.yml
 
@@ -99,9 +111,10 @@ Manages Claude Code CLI configuration including hooks and settings
 - **Install Claude Code rules** (ansible.builtin.copy) - Conditional
 - **Create Claude Code scripts directory** (ansible.builtin.file) - Conditional
 - **Install Claude Code scripts** (ansible.builtin.copy) - Conditional
-- **Install custom Claude Code settings.json from source** (ansible.builtin.copy) - Conditional
+- **Check if custom settings.json from source will change (dry-run)** (ansible.builtin.copy) - Conditional
 - **Check if settings.json will change (dry-run)** (ansible.builtin.template) - Conditional
-- **Create backup of existing settings.json in /tmp** (ansible.builtin.copy) - Conditional
+- **Back up existing settings.json before it is rewritten** (ansible.builtin.include_tasks) - Conditional
+- **Install custom Claude Code settings.json from source** (ansible.builtin.copy) - Conditional
 - **Generate Claude Code settings.json** (ansible.builtin.template) - Conditional
 - **Manage MCP servers** (ansible.builtin.include_tasks) - Conditional
 - **Display configuration status** (ansible.builtin.debug)

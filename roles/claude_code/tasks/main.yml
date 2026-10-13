@@ -102,17 +102,24 @@
     - claude_code_manage_scripts | bool
     - claude_code_scripts_src_dir | default('') | length > 0
 
-- name: Install custom Claude Code settings.json from source
+# Both writers below replace settings.json wholesale, so dry-run them first and
+# back up the current file whenever either would change it. A run that targets
+# the wrong host (and so misses its host_vars) would otherwise silently drop
+# every host-specific setting with no copy left to restore from.
+- name: Check if custom settings.json from source will change (dry-run)
   ansible.builtin.copy:
     src: "{{ claude_code_settings_src }}"
     dest: "{{ claude_code_config_dir }}/settings.json"
     owner: "{{ claude_code_username }}"
     group: "{{ claude_code_usergroup }}"
     mode: "0644"
+  check_mode: true
   become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
   when:
     - claude_code_manage_settings | bool
     - claude_code_settings_src | default('') | length > 0
+  register: claude_code_settings_src_check
+  diff: false
 
 - name: Check if settings.json will change (dry-run)
   ansible.builtin.template:
@@ -127,24 +134,26 @@
     - claude_code_manage_settings | bool
     - claude_code_settings_src | default('') | length == 0
   register: claude_code_settings_check
-  changed_when: false
   diff: false
 
-- name: Create backup of existing settings.json in /tmp
-  ansible.builtin.copy:
-    src: "{{ claude_code_config_dir }}/settings.json"
-    dest: "/tmp/settings.json.{{ ansible_facts['date_time']['iso8601_basic_short'] }}.backup"
-    owner: "{{ claude_code_username }}"
-    group: "{{ claude_code_usergroup }}"
-    mode: "0644"
-    remote_src: true
-  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+- name: Back up existing settings.json before it is rewritten
+  ansible.builtin.include_tasks: backup-settings.yml
   when:
     - claude_code_manage_settings | bool
     - claude_code_backup_settings | bool
-    - claude_code_settings_src | default('') | length == 0
-    - claude_code_settings_check is changed
-  register: claude_code_backup_result
+    - (claude_code_settings_src_check is changed) or (claude_code_settings_check is changed)
+
+- name: Install custom Claude Code settings.json from source
+  ansible.builtin.copy:
+    src: "{{ claude_code_settings_src }}"
+    dest: "{{ claude_code_config_dir }}/settings.json"
+    owner: "{{ claude_code_username }}"
+    group: "{{ claude_code_usergroup }}"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  when:
+    - claude_code_manage_settings | bool
+    - claude_code_settings_src | default('') | length > 0
 
 - name: Generate Claude Code settings.json
   ansible.builtin.template:
@@ -171,5 +180,5 @@
       Settings: {{ claude_code_config_dir }}/settings.json |
       Hooks: {{ (claude_code_simple_hooks | length) + (claude_code_advanced_hooks | length) }}
       ({{ claude_code_simple_hooks | length }} simple, {{ claude_code_advanced_hooks | length }} advanced)
-      {% if claude_code_backup_result.dest is defined %}| Backup: {{ claude_code_backup_result.dest }}{% endif %}
+      {% if (claude_code_backup_result | default({})).dest is defined %}| Backup: {{ claude_code_backup_result.dest }}{% endif %}
       | MCP Servers: {{ claude_code_mcp_servers | length }}

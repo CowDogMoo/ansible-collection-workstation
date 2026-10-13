@@ -1,0 +1,56 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    workstation_guard_tasks: "{{ playbook_dir }}/../../tasks/require-host-vars.yml"
+    workstation_guard_host_vars: "{{ playbook_dir }}/../../host_vars"
+  tasks:
+    - name: Run the host_vars guard for a host with no host_vars
+      block:
+        - name: Include the guard with the opt-out disabled
+          ansible.builtin.include_tasks: "{{ workstation_guard_tasks }}"
+          vars:
+            workstation_allow_missing_host_vars: false
+            workstation_host_vars_path: "{{ workstation_guard_host_vars }}"
+            workstation_host_vars_hostname: no-such-host
+
+        - name: Record that the guard let the run through
+          ansible.builtin.set_fact:
+            workstation_guard_missing_failed: false
+      rescue:
+        - name: Record that the guard stopped the run
+          ansible.builtin.set_fact:
+            workstation_guard_missing_failed: true
+            workstation_guard_missing_msg: "{{ ansible_failed_result.msg }}"
+
+    - name: Assert the guard fails a host with no host_vars
+      ansible.builtin.assert:
+        that:
+          - workstation_guard_missing_failed | bool
+          - "'no-such-host' in workstation_guard_missing_msg"
+          - "\"-i '\" ~ ansible_facts['hostname'] ~ \",' -c local\" in workstation_guard_missing_msg"
+          - "'workstation_allow_missing_host_vars=true' in workstation_guard_missing_msg"
+        fail_msg: "The host_vars guard did not stop a run against a host with no host_vars"
+        success_msg: "The host_vars guard stops the run and shows the hostname-targeted command"
+
+    - name: Include the guard for a host that has host_vars
+      ansible.builtin.include_tasks: "{{ workstation_guard_tasks }}"
+      vars:
+        workstation_allow_missing_host_vars: false
+        workstation_host_vars_path: "{{ workstation_guard_host_vars }}"
+        workstation_host_vars_hostname: bringer-of-despair
+
+    - name: Include the guard for a host whose host_vars is a directory
+      ansible.builtin.include_tasks: "{{ workstation_guard_tasks }}"
+      vars:
+        workstation_allow_missing_host_vars: false
+        workstation_host_vars_path: "{{ workstation_guard_host_vars }}"
+        workstation_host_vars_hostname: MacBook-Pro-4
+
+    - name: Include the guard with the opt-out set for a host with no host_vars
+      ansible.builtin.include_tasks: "{{ workstation_guard_tasks }}"
+      vars:
+        workstation_allow_missing_host_vars: true
+        workstation_host_vars_path: "{{ workstation_guard_host_vars }}"
+        workstation_host_vars_hostname: no-such-host

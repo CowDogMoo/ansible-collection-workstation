@@ -75,8 +75,16 @@ antigravity_manage_scripts: true
 # Whether to manage hooks
 antigravity_manage_hooks: true
 
-# Whether to backup existing hooks.json before overwriting
+# Whether to back up hooks.json before the role rewrites it. A backup is only
+# taken when the file exists and the run would change it, so idempotent runs
+# leave no new copies behind.
 antigravity_backup_settings: true
+
+# Where hooks.json backups go, named hooks.json.<UTC timestamp>
+antigravity_hooks_backup_dir: "{{ antigravity_config_dir }}/backups"
+
+# Number of hooks.json backups to keep; older ones are pruned (0 keeps all)
+antigravity_hooks_backup_keep: 10
 
 # Plugin Management
 antigravity_manage_plugins: true  # Whether to manage plugins

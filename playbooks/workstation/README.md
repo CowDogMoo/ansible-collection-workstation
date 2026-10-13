@@ -31,11 +31,25 @@ ansible-playbook workstation.yml -i inventory
 
 ### Local Machine Setup
 
-For setting up your local machine:
+Host-specific settings live in `host_vars/<hostname>.yml` (or a
+`host_vars/<hostname>/` directory) and only load when the inventory hostname
+matches. Target your machine by its short hostname, from the repo root:
 
 ```bash
-ansible-playbook workstation.yml -i inventory --connection=local
+ansible-playbook playbooks/workstation/workstation.yml \
+  -i "$(hostname -s)," -c local
+
+# Limit the run to one role with its tag
+ansible-playbook playbooks/workstation/workstation.yml \
+  -i "$(hostname -s)," -c local --tags claude
 ```
+
+Running without `-i` targets plain `localhost`, which matches no host_vars
+file, so roles would fall back to their defaults and rewrite files such as
+`~/.claude/settings.json` without the machine's settings. The playbook refuses
+that: its first task fails when the target host has no host_vars entry and
+prints the command to use instead. To run on role defaults deliberately (CI, a
+fresh generic machine), pass `-e workstation_allow_missing_host_vars=true`.
 
 ### With specific hosts
 
@@ -66,9 +80,11 @@ molecule destroy     # Clean up test instances
 
 ### Local Setup
 
+Name the host after the machine's hostname so its host_vars load:
+
 ```ini
 [all]
-localhost ansible_connection=local
+bringer-of-despair ansible_connection=local
 ```
 
 ### Remote Workstations

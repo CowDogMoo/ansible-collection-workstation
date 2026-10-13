@@ -4,24 +4,41 @@ This directory contains host-specific variable overrides for the workstation pla
 
 ## How It Works
 
-Ansible automatically loads variables from files matching the hostname:
+Ansible loads variables from the entry matching the **inventory hostname**,
+either a file (`{hostname}.yml`) or a directory (`{hostname}/`):
 
-- When running on `ouroboros`, it loads `ouroboros.yml`
-- When running on your work machine, create a file named `{hostname}.yml`
+- When the inventory host is `ouroboros`, it loads `ouroboros.yml`
+- When the inventory host is `MacBook-Pro-4`, it loads every file in `MacBook-Pro-4/`
+
+The inventory hostname is whatever the run targets, not the machine's real
+hostname. A run with no inventory targets `localhost`, which matches nothing
+here, so the workstation playbook stops with an error rather than rewriting
+your config from role defaults.
+
+## Running for This Machine
+
+From the repo root, target the machine by its short hostname:
+
+```bash
+ansible-playbook playbooks/workstation/workstation.yml -i "$(hostname -s)," -c local
+```
+
+Add `--tags claude` (or any other role tag) to run a single role. The dotfiles
+installer (`~/dotfiles/install_dot_files.sh`) passes the hostname for you.
 
 ## Setup for a New Machine
 
-1. Get your machine's hostname:
+1. Get your machine's short hostname:
 
    ```bash
-   hostname
+   hostname -s
    ```
 
-2. Create a file named `{hostname}.yml` in this directory
+2. Create a file named `{hostname}.yml` (or a `{hostname}/` directory) here
 
-3. Copy the content from `MacBook-Pro-4.yml` or `ouroboros.yml` as a template and customize
+3. Copy the content from `MacBook-Pro-4/` or `ouroboros.yml` as a template and customize
 
-4. Run your dotfiles installer:
+4. Run the playbook for this machine (command above), or your dotfiles installer:
 
    ```bash
    ~/dotfiles/install_dot_files.sh
@@ -54,7 +71,7 @@ command: "osascript -e 'beep 2'"
 Variables are loaded in this order (last wins):
 
 1. `roles/claude_code/defaults/main.yml` - Default for all machines
-2. `playbooks/workstation/host_vars/{hostname}.yml` - This machine's overrides
+2. `playbooks/workstation/host_vars/{hostname}.yml` (or `{hostname}/`) - This machine's overrides
 3. Extra vars passed on command line
 
 ## Adding New Overrides

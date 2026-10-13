@@ -1,0 +1,42 @@
+---
+- name: Check for an existing settings.json
+  ansible.builtin.stat:
+    path: "{{ claude_code_config_dir }}/settings.json"
+  register: claude_code_settings_existing
+
+- name: Back up and prune settings.json copies
+  when: claude_code_settings_existing.stat.exists
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and claude_code_username != ansible_facts['user_id'] }}"
+  block:
+    - name: Create settings.json backup directory
+      ansible.builtin.file:
+        path: "{{ claude_code_settings_backup_dir }}"
+        state: directory
+        owner: "{{ claude_code_username }}"
+        group: "{{ claude_code_usergroup }}"
+        mode: "0700"
+
+    # Microsecond timestamps keep two rewrites in the same second from sharing a
+    # name, and sort lexically in creation order for the pruning step below.
+    - name: Copy existing settings.json into the backup directory
+      ansible.builtin.copy:
+        src: "{{ claude_code_config_dir }}/settings.json"
+        dest: "{{ claude_code_settings_backup_dir }}/settings.json.{{ now(utc=true, fmt='%Y%m%dT%H%M%S%fZ') }}"
+        owner: "{{ claude_code_username }}"
+        group: "{{ claude_code_usergroup }}"
+        mode: "0600"
+        remote_src: true
+      register: claude_code_backup_result
+
+    - name: Find settings.json backups
+      ansible.builtin.find:
+        paths: "{{ claude_code_settings_backup_dir }}"
+        patterns: "settings.json.*"
+      register: claude_code_settings_backups
+
+    - name: Prune settings.json backups beyond the retention limit
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ (claude_code_settings_backups.files | map(attribute='path') | sort)[:-(claude_code_settings_backup_keep | int)] }}"
+      when: claude_code_settings_backup_keep | int > 0
