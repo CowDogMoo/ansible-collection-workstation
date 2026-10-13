@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{{ claude_code_rc_label | e }}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{ claude_code_rc_binary | e }}</string>
+        <string>remote-control</string>
+        <string>--spawn</string>
+        <string>{{ claude_code_rc_spawn | e }}</string>
+{% if claude_code_rc_spawn != 'session' %}
+        <string>--capacity</string>
+        <string>{{ claude_code_rc_capacity | int }}</string>
+{% endif %}
+{% if claude_code_rc_permission_mode | length > 0 %}
+        <string>--permission-mode</string>
+        <string>{{ claude_code_rc_permission_mode | e }}</string>
+{% endif %}
+        <string>{{ '--chrome' if claude_code_rc_chrome | bool else '--no-chrome' }}</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>{{ claude_code_rc_dir | e }}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+{% for key, value in claude_code_rc_environment | dictsort %}
+        <key>{{ key | e }}</key>
+        <string>{{ value | e }}</string>
+{% endfor %}
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>{{ claude_code_remote_control_throttle_interval | int }}</integer>
+    <!-- Only in the logged-in GUI session: the host reads its credentials from
+         the login keychain, and Claude in Chrome talks to the user's browser. -->
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>StandardOutPath</key>
+    <string>{{ claude_code_rc_log | e }}</string>
+    <key>StandardErrorPath</key>
+    <string>{{ claude_code_rc_log | e }}</string>
+</dict>
+</plist>

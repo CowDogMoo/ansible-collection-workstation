@@ -112,7 +112,10 @@ This playbook includes the following roles in order:
 1. **asdf** - Installs ASDF version manager and language runtimes
    (Go, Python, Ruby, etc.)
 1. **fabric** - Installs Fabric AI framework via Go packages
-1. **claude_code** - Installs and configures Claude Code CLI with hooks
+1. **claude_code** - Installs and configures Claude Code CLI with hooks, and on
+   macOS runs `claude remote-control` hosts as LaunchAgents for the directories
+   in a private `~/.config/claude-rc/hosts.yml` (see
+   [the role's Remote Control guide](../../roles/claude_code/docs/REMOTE_CONTROL.md))
 1. **herdr** - Installs herdr and configures it and its agent integrations
 1. **firstmate** - Clones the firstmate agent distro (no fleet setup or sessions)
 1. **go_task** - Installs Go Task runner

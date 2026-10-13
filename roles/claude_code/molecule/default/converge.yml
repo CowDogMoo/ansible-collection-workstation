@@ -14,6 +14,23 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
+    # Remote Control hosts are macOS LaunchAgents. A hosts file is present here
+    # so verify can prove the role still does nothing with it on Linux.
+    - name: Create a Remote Control hosts directory
+      ansible.builtin.file:
+        path: "{{ container_home }}/.config/claude-rc"
+        state: directory
+        mode: "0755"
+
+    - name: Create a Remote Control hosts file with a placeholder host
+      ansible.builtin.copy:
+        dest: "{{ container_home }}/.config/claude-rc/hosts.yml"
+        mode: "0644"
+        content: |
+          hosts:
+            - name: example
+              dir: ~/src/example
+
     - name: Include role under test (first run - simple hooks)
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.claude_code

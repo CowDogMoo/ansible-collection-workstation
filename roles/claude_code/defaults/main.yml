@@ -466,3 +466,73 @@ claude_code_mcp_servers: []
 #     args:
 #       - stdio
 #     state: present
+
+# Remote Control hosts (macOS only). Each host listed in a private hosts file
+# becomes a LaunchAgent that runs `claude remote-control` in its directory,
+# starts at login, and restarts if it exits, so sessions can be started from
+# claude.ai/code or the mobile app without a terminal tab holding the host open.
+#
+# The list of directories lives outside this repository, in a YAML file on the
+# target that the role reads but never writes:
+#
+#   hosts:
+#     - name: example            # required; label suffix and log name ([A-Za-z0-9_.-])
+#       dir: ~/src/example       # required; must exist and already be trusted
+#       spawn: worktree          # optional; same-dir | worktree | session
+#       capacity: 32             # optional; max concurrent sessions
+#       permission_mode: default # optional; permission mode for spawned sessions
+#       chrome: true             # optional; Claude in Chrome for spawned sessions
+#
+# Omitted keys fall back to the claude_code_remote_control_* defaults below.
+# The file is the source of truth: on each run, LaunchAgents under the label
+# prefix that it no longer lists are unloaded and removed, and `hosts: []`
+# removes them all. When the file does not exist the role leaves any existing
+# agents alone and creates none. Ignored on Linux and Windows. See
+# docs/REMOTE_CONTROL.md for prerequisites and switching over from terminal tabs.
+claude_code_manage_remote_control: true
+claude_code_remote_control_config: "{{ claude_code_user_home }}/.config/claude-rc/hosts.yml"
+
+claude_code_remote_control_spawn: worktree
+claude_code_remote_control_capacity: 32
+# Empty leaves Claude Code's own default permission mode.
+claude_code_remote_control_permission_mode: ""
+claude_code_remote_control_chrome: true
+
+# LaunchAgent label is "<prefix>.<name>". Anything installed under this prefix
+# that the hosts file does not list is removed, so keep it unique to this role.
+claude_code_remote_control_label_prefix: "com.cowdogmoo.claude-rc"
+
+# Seconds launchd waits before restarting a host that exited, so a host that
+# fails on start (logged out, untrusted dir) retries slowly instead of spinning.
+claude_code_remote_control_throttle_interval: 30
+
+# Each host appends stdout and stderr to <log dir>/<name>.log. ~/logs is where
+# non-Ansible launchd agents log; rotate it with the logging role (copytruncate,
+# since launchd keeps the file open).
+claude_code_remote_control_log_dir: "{{ claude_code_user_home }}/logs/claude-remote-control"
+
+# Path to the claude binary. Empty resolves the first existing candidate below.
+# The native installer's ~/.local/bin/claude symlink comes first: it follows
+# auto-updates, whereas a versioned path under ~/.local/share/claude/versions is
+# pruned after an update and would leave the agent pointing at nothing.
+claude_code_remote_control_binary: ""
+claude_code_remote_control_binary_candidates:
+  - "{{ claude_code_user_home }}/.local/bin/claude"
+  - "{{ claude_code_homebrew_prefix }}/bin/claude"
+
+# launchd starts agents with a bare PATH and no shell profile. This mirrors the
+# parts of an interactive login shell that the host and its sessions need:
+# claude, git, gh, and mise shims for tools pinned through mise.
+claude_code_remote_control_path: >-
+  {{ claude_code_user_home }}/.local/bin:{{ claude_code_user_home }}/.local/share/mise/shims:{{ claude_code_homebrew_prefix }}/bin:{{ claude_code_homebrew_prefix }}/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
+claude_code_remote_control_base_environment:
+  HOME: "{{ claude_code_user_home }}"
+  USER: "{{ claude_code_username }}"
+  LOGNAME: "{{ claude_code_username }}"
+  SHELL: "{{ ansible_facts['user_shell'] | default('/bin/zsh') }}"
+  PATH: "{{ claude_code_remote_control_path | trim }}"
+  LANG: en_US.UTF-8
+
+# Extra environment variables for every host, merged over the base above.
+claude_code_remote_control_environment: {}

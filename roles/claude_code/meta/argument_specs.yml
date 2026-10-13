@@ -1,0 +1,52 @@
+---
+argument_specs:
+  main:
+    short_description: Manages Claude Code CLI configuration including hooks and settings
+    options:
+      claude_code_manage_remote_control:
+        type: bool
+        description: On macOS, run claude remote-control hosts as LaunchAgents for the directories in the hosts file.
+      claude_code_remote_control_config:
+        type: str
+        description: Private YAML hosts file read on the target; the role never writes it, and skips this step when it is absent.
+      claude_code_remote_control_spawn:
+        type: str
+        choices:
+          - same-dir
+          - worktree
+          - session
+        description: Spawn mode for hosts that don't set spawn; worktree needs a git repository.
+      claude_code_remote_control_capacity:
+        type: int
+        description: Max concurrent sessions for hosts that don't set capacity.
+      claude_code_remote_control_permission_mode:
+        type: str
+        description: Permission mode for spawned sessions when a host doesn't set permission_mode; empty leaves Claude Code's default.
+      claude_code_remote_control_chrome:
+        type: bool
+        description: Give spawned sessions Claude in Chrome when a host doesn't set chrome.
+      claude_code_remote_control_label_prefix:
+        type: str
+        description: LaunchAgent label prefix; agents under it that the hosts file doesn't list are removed.
+      claude_code_remote_control_throttle_interval:
+        type: int
+        description: Seconds launchd waits before restarting a host that exited.
+      claude_code_remote_control_log_dir:
+        type: str
+        description: Directory for each host's combined stdout and stderr log, <name>.log.
+      claude_code_remote_control_binary:
+        type: str
+        description: Path to the claude binary; empty uses the first existing binary candidate.
+      claude_code_remote_control_binary_candidates:
+        type: list
+        elements: str
+        description: Paths tried in order when claude_code_remote_control_binary is empty.
+      claude_code_remote_control_path:
+        type: str
+        description: PATH given to each host, since launchd starts agents without a shell profile.
+      claude_code_remote_control_base_environment:
+        type: dict
+        description: Environment for each host (HOME, USER, LOGNAME, SHELL, PATH, LANG).
+      claude_code_remote_control_environment:
+        type: dict
+        description: Extra environment variables for every host, merged over the base environment.

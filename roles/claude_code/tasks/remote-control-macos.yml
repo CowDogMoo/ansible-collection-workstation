@@ -1,0 +1,244 @@
+---
+# One LaunchAgent per host listed in the private hosts file
+# (claude_code_remote_control_config), each running `claude remote-control` in
+# its directory. The file is the source of truth: agents under the label prefix
+# that it no longer lists are unloaded and removed. A host is only reloaded when
+# its plist changes or it isn't loaded, so a converge never drops live sessions.
+
+- name: Check for the Remote Control hosts file
+  ansible.builtin.stat:
+    path: "{{ claude_code_remote_control_config }}"
+  register: claude_code_rc_config_stat
+
+- name: Skip Remote Control hosts when there is no hosts file
+  ansible.builtin.debug:
+    msg: >-
+      No {{ claude_code_remote_control_config }}; leaving Remote Control LaunchAgents
+      as they are. Create it to run claude remote-control hosts under launchd.
+  when: not claude_code_rc_config_stat.stat.exists
+
+- name: Manage Remote Control LaunchAgents from the hosts file
+  when: claude_code_rc_config_stat.stat.exists
+  block:
+    - name: Read the Remote Control hosts file
+      ansible.builtin.slurp:
+        src: "{{ claude_code_remote_control_config }}"
+      register: claude_code_rc_config_raw
+
+    - name: Parse the Remote Control hosts file
+      ansible.builtin.set_fact:
+        claude_code_rc_hosts: "{{ (claude_code_rc_config_raw.content | b64decode | from_yaml | default({}, true)).hosts | default([], true) }}"
+        claude_code_rc_agents_dir: "{{ claude_code_user_home }}/Library/LaunchAgents"
+        claude_code_rc_domain: "gui/{{ ansible_facts['user_uid'] }}"
+
+    - name: Validate the Remote Control hosts list
+      ansible.builtin.assert:
+        that:
+          - claude_code_rc_hosts is sequence
+          - claude_code_rc_hosts is not string
+          - claude_code_rc_hosts | map(attribute='name', default='') | unique | length == claude_code_rc_hosts | length
+        fail_msg: "{{ claude_code_remote_control_config }} must hold a `hosts:` list with a unique name per entry."
+        quiet: true
+
+    - name: Validate Remote Control host entries
+      ansible.builtin.assert:
+        that:
+          - claude_code_rc_host is mapping
+          - claude_code_rc_host.name is defined
+          - claude_code_rc_host.name is string
+          - claude_code_rc_host.name is match('^[A-Za-z0-9_.-]+$')
+          - claude_code_rc_host.dir is defined
+          - claude_code_rc_host.dir is string
+          - (claude_code_rc_host.spawn | default(claude_code_remote_control_spawn)) in ['same-dir', 'worktree', 'session']
+          - (claude_code_rc_host.capacity | default(claude_code_remote_control_capacity) | string) is match('^[0-9]+$')
+        fail_msg: >-
+          Invalid entry in {{ claude_code_remote_control_config }}: {{ claude_code_rc_host }}.
+          Each host needs a name ([A-Za-z0-9_.-]) and a dir; spawn must be same-dir,
+          worktree, or session, and capacity a whole number.
+        quiet: true
+      loop: "{{ claude_code_rc_hosts }}"
+      loop_control:
+        loop_var: claude_code_rc_host
+        label: "{{ claude_code_rc_host.name | default('unnamed') }}"
+
+    - name: Locate the claude binary for Remote Control hosts
+      ansible.builtin.stat:
+        path: "{{ claude_code_rc_candidate }}"
+      loop: "{{ [claude_code_remote_control_binary] if claude_code_remote_control_binary | length > 0 else claude_code_remote_control_binary_candidates }}"
+      loop_control:
+        loop_var: claude_code_rc_candidate
+      register: claude_code_rc_binary_stats
+      when: claude_code_rc_hosts | length > 0
+
+    - name: Pick the first claude binary that exists
+      ansible.builtin.set_fact:
+        claude_code_rc_binary: >-
+          {{ claude_code_rc_binary_stats.results | selectattr('stat', 'defined')
+             | selectattr('stat.exists') | map(attribute='claude_code_rc_candidate') | first | default('') }}
+      when: claude_code_rc_hosts | length > 0
+
+    - name: Fail when no claude binary was found
+      ansible.builtin.fail:
+        msg: >-
+          No claude binary for Remote Control hosts. Looked at
+          {{ claude_code_rc_binary_stats.results | map(attribute='claude_code_rc_candidate') | join(', ') }}.
+          Install Claude Code or set claude_code_remote_control_binary.
+      when:
+        - claude_code_rc_hosts | length > 0
+        - claude_code_rc_binary | length == 0
+
+    - name: Check Remote Control host directories
+      ansible.builtin.stat:
+        path: "{{ claude_code_rc_host.dir | regex_replace('^~', claude_code_user_home) }}"
+      loop: "{{ claude_code_rc_hosts }}"
+      loop_control:
+        loop_var: claude_code_rc_host
+        label: "{{ claude_code_rc_host.name }}"
+      register: claude_code_rc_dir_stats
+
+    - name: Fail when a Remote Control host directory is missing
+      ansible.builtin.fail:
+        msg: "Remote Control host {{ claude_code_rc_dir_stat.claude_code_rc_host.name }}: {{ claude_code_rc_dir_stat.claude_code_rc_host.dir }} is not a directory"
+      loop: "{{ claude_code_rc_dir_stats.results }}"
+      loop_control:
+        loop_var: claude_code_rc_dir_stat
+        label: "{{ claude_code_rc_dir_stat.claude_code_rc_host.name }}"
+      when: not (claude_code_rc_dir_stat.stat.isdir | default(false))
+
+    # Worktree mode exits at startup outside a git repository, and launchd would
+    # restart it every ThrottleInterval forever. Catch that here instead. The
+    # git module clones and updates; nothing in it only asks whether a path is in
+    # a work tree, hence the noqa.
+    - name: Check worktree-mode hosts are in a git repository # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: git -C "{{ claude_code_rc_host.dir | regex_replace('^~', claude_code_user_home) }}" rev-parse --is-inside-work-tree
+      loop: "{{ claude_code_rc_hosts }}"
+      loop_control:
+        loop_var: claude_code_rc_host
+        label: "{{ claude_code_rc_host.name }}"
+      when: (claude_code_rc_host.spawn | default(claude_code_remote_control_spawn)) == 'worktree'
+      register: claude_code_rc_git_checks
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Fail when a worktree-mode host is not in a git repository
+      ansible.builtin.fail:
+        msg: >-
+          Remote Control host {{ claude_code_rc_git_check.claude_code_rc_host.name }} uses
+          spawn: worktree, but {{ claude_code_rc_git_check.claude_code_rc_host.dir }} is not
+          inside a git repository. Use spawn: same-dir for it.
+      loop: "{{ claude_code_rc_git_checks.results | rejectattr('skipped', 'defined') | list }}"
+      loop_control:
+        loop_var: claude_code_rc_git_check
+        label: "{{ claude_code_rc_git_check.claude_code_rc_host.name }}"
+      when: claude_code_rc_git_check.rc != 0
+
+    - name: Create Remote Control log and LaunchAgents directories
+      ansible.builtin.file:
+        path: "{{ claude_code_rc_path }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ claude_code_remote_control_log_dir }}"
+        - "{{ claude_code_rc_agents_dir }}"
+      loop_control:
+        loop_var: claude_code_rc_path
+      when: claude_code_rc_hosts | length > 0
+
+    - name: Render Remote Control LaunchAgents
+      ansible.builtin.template:
+        src: claude-remote-control.plist.j2
+        dest: "{{ claude_code_rc_agents_dir }}/{{ claude_code_remote_control_label_prefix }}.{{ claude_code_rc_host.name }}.plist"
+        mode: "0644"
+      vars:
+        claude_code_rc_label: "{{ claude_code_remote_control_label_prefix }}.{{ claude_code_rc_host.name }}"
+        claude_code_rc_dir: "{{ claude_code_rc_host.dir | regex_replace('^~', claude_code_user_home) }}"
+        claude_code_rc_spawn: "{{ claude_code_rc_host.spawn | default(claude_code_remote_control_spawn) }}"
+        claude_code_rc_capacity: "{{ claude_code_rc_host.capacity | default(claude_code_remote_control_capacity) }}"
+        claude_code_rc_permission_mode: "{{ claude_code_rc_host.permission_mode | default(claude_code_remote_control_permission_mode) }}"
+        claude_code_rc_chrome: "{{ claude_code_rc_host.chrome | default(claude_code_remote_control_chrome) }}"
+        claude_code_rc_log: "{{ claude_code_remote_control_log_dir }}/{{ claude_code_rc_host.name }}.log"
+        claude_code_rc_environment: "{{ claude_code_remote_control_base_environment | combine(claude_code_remote_control_environment) }}"
+      loop: "{{ claude_code_rc_hosts }}"
+      loop_control:
+        loop_var: claude_code_rc_host
+        label: "{{ claude_code_rc_host.name }}"
+      register: claude_code_rc_plists
+
+    - name: Check which Remote Control LaunchAgents are loaded
+      ansible.builtin.command:
+        cmd: launchctl print {{ claude_code_rc_domain }}/{{ claude_code_remote_control_label_prefix }}.{{ claude_code_rc_host.name }}
+      loop: "{{ claude_code_rc_hosts }}"
+      loop_control:
+        loop_var: claude_code_rc_host
+        label: "{{ claude_code_rc_host.name }}"
+      register: claude_code_rc_loaded
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Unload Remote Control LaunchAgents whose plist changed
+      ansible.builtin.command:
+        cmd: launchctl bootout {{ claude_code_rc_domain }}/{{ claude_code_remote_control_label_prefix }}.{{ claude_code_rc_plist.claude_code_rc_host.name }}
+      loop: "{{ claude_code_rc_plists.results }}"
+      loop_control:
+        loop_var: claude_code_rc_plist
+        index_var: claude_code_rc_index
+        label: "{{ claude_code_rc_plist.claude_code_rc_host.name }}"
+      when:
+        - claude_code_rc_plist is changed
+        - claude_code_rc_loaded.results[claude_code_rc_index].rc == 0
+      changed_when: true
+
+    # bootout returns before the host has finished shutting down, and bootstrap
+    # fails with an I/O error until it has, hence the retries.
+    - name: Load Remote Control LaunchAgents that changed or are not loaded
+      ansible.builtin.command:
+        cmd: >-
+          launchctl bootstrap {{ claude_code_rc_domain }}
+          {{ claude_code_rc_agents_dir }}/{{ claude_code_remote_control_label_prefix }}.{{ claude_code_rc_plist.claude_code_rc_host.name }}.plist
+      loop: "{{ claude_code_rc_plists.results }}"
+      loop_control:
+        loop_var: claude_code_rc_plist
+        index_var: claude_code_rc_index
+        label: "{{ claude_code_rc_plist.claude_code_rc_host.name }}"
+      when: claude_code_rc_plist is changed or claude_code_rc_loaded.results[claude_code_rc_index].rc != 0
+      register: claude_code_rc_bootstrap
+      until: claude_code_rc_bootstrap.rc == 0
+      retries: 10
+      delay: 3
+      changed_when: true
+
+    - name: Find Remote Control LaunchAgents under the label prefix
+      ansible.builtin.find:
+        paths: "{{ claude_code_rc_agents_dir }}"
+        patterns: "{{ claude_code_remote_control_label_prefix }}.*.plist"
+      register: claude_code_rc_installed
+
+    - name: Note Remote Control LaunchAgents the hosts file no longer lists
+      ansible.builtin.set_fact:
+        claude_code_rc_stale: >-
+          {{ claude_code_rc_installed.files | map(attribute='path') | map('basename')
+             | map('regex_replace', '\.plist$', '')
+             | reject('in', claude_code_rc_hosts | map(attribute='name')
+                 | map('regex_replace', '^', claude_code_remote_control_label_prefix + '.') | list)
+             | list }}
+
+    - name: Unload Remote Control LaunchAgents the hosts file no longer lists
+      ansible.builtin.command:
+        cmd: launchctl bootout {{ claude_code_rc_domain }}/{{ claude_code_rc_label }}
+      loop: "{{ claude_code_rc_stale }}"
+      loop_control:
+        loop_var: claude_code_rc_label
+      register: claude_code_rc_bootout
+      changed_when: claude_code_rc_bootout.rc == 0
+      failed_when: false
+
+    - name: Remove Remote Control LaunchAgents the hosts file no longer lists
+      ansible.builtin.file:
+        path: "{{ claude_code_rc_agents_dir }}/{{ claude_code_rc_label }}.plist"
+        state: absent
+      loop: "{{ claude_code_rc_stale }}"
+      loop_control:
+        loop_var: claude_code_rc_label
