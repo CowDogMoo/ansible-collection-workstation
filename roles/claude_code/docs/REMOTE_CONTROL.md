@@ -31,7 +31,7 @@ hosts:
 | `dir`             | yes      |                                                 | Existing directory the host serves                               |
 | `spawn`           | no       | `worktree` (`claude_code_remote_control_spawn`) | `same-dir`, `worktree` (needs a git repository), or `session`    |
 | `capacity`        | no       | `32` (`claude_code_remote_control_capacity`)    | Max concurrent sessions; ignored for `session`                   |
-| `permission_mode` | no       | `claude_code_remote_control_permission_mode`    | Spawned-session mode; `bypassPermissions` skips all prompts       |
+| `permission_mode` | no       | `claude_code_remote_control_permission_mode`    | Spawned-session mode; `bypassPermissions` skips all prompts      |
 | `chrome`          | no       | `true` (`claude_code_remote_control_chrome`)    | Claude in Chrome for spawned sessions (`--chrome`/`--no-chrome`) |
 
 Each host becomes `~/Library/LaunchAgents/com.cowdogmoo.claude-rc.<name>.plist`
