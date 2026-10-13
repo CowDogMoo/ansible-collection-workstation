@@ -15,7 +15,7 @@ The role comes pre-configured with these useful hooks:
 
 ### 1. Content Validation Hook
 
-Blocks git commits and pull requests that contain emojis or Claude branding, ensuring clean commit messages. Suggests using `fabric` patterns for generating proper commit/PR messages.
+Requires that commits and pull request titles and bodies come only from `squad_commit` and `squad_pr`: a hand-written commit or PR text is blocked, along with emojis or Claude branding in other write commands. The `forbidden_content` comment in `defaults/main.yml` lists exactly which commands it denies and which it allows.
 
 ### 2. Sound Notifications (macOS)
 
