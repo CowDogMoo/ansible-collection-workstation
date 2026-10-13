@@ -1,0 +1,104 @@
+---
+- name: Fail on unknown herdr integrations
+  ansible.builtin.fail:
+    msg: >-
+      Unsupported herdr_integrations entries {{ herdr_integrations | difference(herdr_integration_specs.keys()) }};
+      supported: {{ herdr_integration_specs.keys() | list }}
+  when: herdr_integrations | difference(herdr_integration_specs.keys()) | length > 0
+
+- name: Check herdr integration status
+  ansible.builtin.command: "{{ herdr_binary }} integration status"
+  environment:
+    HOME: "{{ herdr_user_home }}"
+  register: herdr_integration_status
+  changed_when: false
+  failed_when: herdr_integration_status.rc != 0 and not ansible_check_mode
+  check_mode: false
+  become: "{{ herdr_username != ansible_facts['user_id'] }}"
+  become_user: "{{ herdr_username }}"
+
+# herdr's installer refuses an agent whose config directory is missing.
+- name: Check agent config directories
+  ansible.builtin.stat:
+    path: "{{ herdr_user_home }}/{{ herdr_integration_specs[item].agent_dir }}"
+  loop: "{{ herdr_integrations }}"
+  register: herdr_agent_dirs
+
+- name: Select herdr integrations to install
+  ansible.builtin.set_fact:
+    herdr_staged_integrations: >-
+      {{ herdr_integration_specs | dict2items | selectattr('value.staged') | map(attribute='key') | list }}
+    herdr_pending_integrations: >-
+      {{ herdr_agent_dirs.results
+         | selectattr('stat.isdir', 'defined') | selectattr('stat.isdir')
+         | map(attribute='item')
+         | reject('in', herdr_integration_status.stdout | default('') | regex_findall('(?m)^([a-z-]+): current'))
+         | list }}
+
+# claude_code and antigravity own the files the installer would register the hook
+# in, so it runs against a throwaway HOME and only the script is copied in.
+- name: Install staged herdr integration scripts
+  when:
+    - not ansible_check_mode
+    - herdr_pending_integrations | select('in', herdr_staged_integrations) | list | length > 0
+  vars:
+    herdr_staged_pending: "{{ herdr_pending_integrations | select('in', herdr_staged_integrations) | list }}"
+  become: "{{ herdr_username != ansible_facts['user_id'] }}"
+  become_user: "{{ herdr_username }}"
+  block:
+    - name: Create herdr integration staging home
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: herdr-integration
+      register: herdr_integration_staging
+
+    - name: Create agent config directories in the staging home
+      ansible.builtin.file:
+        path: "{{ herdr_integration_staging.path }}/{{ herdr_integration_specs[item].agent_dir }}"
+        state: directory
+        mode: "0700"
+      loop: "{{ herdr_staged_pending }}"
+
+    - name: Generate herdr integrations in the staging home
+      ansible.builtin.command: "{{ herdr_binary }} integration install {{ item }}"
+      environment:
+        HOME: "{{ herdr_integration_staging.path }}"
+      loop: "{{ herdr_staged_pending }}"
+      changed_when: false
+
+    - name: Ensure agent hook directories exist
+      ansible.builtin.file:
+        path: "{{ herdr_user_home }}/{{ herdr_integration_specs[item].script | dirname }}"
+        state: directory
+        owner: "{{ herdr_username }}"
+        group: "{{ herdr_usergroup }}"
+        mode: "0755"
+      loop: "{{ herdr_staged_pending }}"
+
+    - name: Copy herdr integration scripts
+      ansible.builtin.copy:
+        src: "{{ herdr_integration_staging.path }}/{{ herdr_integration_specs[item].script }}"
+        dest: "{{ herdr_user_home }}/{{ herdr_integration_specs[item].script }}"
+        remote_src: true
+        owner: "{{ herdr_username }}"
+        group: "{{ herdr_usergroup }}"
+        mode: "0755"
+      loop: "{{ herdr_staged_pending }}"
+
+  always:
+    - name: Remove herdr integration staging home
+      ansible.builtin.file:
+        path: "{{ herdr_integration_staging.path }}"
+        state: absent
+      when: herdr_integration_staging.path is defined
+
+# No role owns these agents' config, so herdr installs them in place.
+- name: Install herdr integrations in place
+  ansible.builtin.command: "{{ herdr_binary }} integration install {{ item }}"
+  environment:
+    HOME: "{{ herdr_user_home }}"
+  loop: "{{ herdr_pending_integrations | reject('in', herdr_staged_integrations) | list }}"
+  changed_when: true
+  when: not ansible_check_mode
+  become: "{{ herdr_username != ansible_facts['user_id'] }}"
+  become_user: "{{ herdr_username }}"

@@ -114,58 +114,196 @@
           rc={{ herdr_user_version.rc }} stdout='{{ herdr_user_version.stdout }}'
           stderr='{{ herdr_user_version.stderr }}'
 
-    - name: Check herdr Claude integration scripts
+    - name: Check herdr alias links
       ansible.builtin.stat:
-        path: "{{ item.home }}/.claude/hooks/herdr-agent-state.sh"
+        path: "{{ item.dir }}/herder"
       loop:
-        - {user: root, home: /root}
-        - {user: "{{ container_user }}", home: "{{ container_home }}"}
-      register: herdr_claude_scripts
+        - {user: root, dir: /usr/local/bin}
+        - {user: "{{ container_user }}", dir: "{{ container_home }}/.local/bin"}
+      register: herdr_alias_links
 
-    - name: Check Claude settings were left to the claude_code role
+    - name: Assert herder links to herdr in the install directory
+      ansible.builtin.assert:
+        that:
+          - item.stat.islnk | default(false)
+          - item.stat.lnk_source == item.item.dir + '/herdr'
+          - item.stat.pw_name == item.item.user
+        fail_msg: >-
+          {{ item.item.dir }}/herder is wrong (link={{ item.stat.islnk | default('n/a') }},
+          target={{ item.stat.lnk_source | default('n/a') }}, owner={{ item.stat.pw_name | default('n/a') }})
+      loop: "{{ herdr_alias_links.results }}"
+      loop_control:
+        label: "{{ item.item.dir }}"
+
+    - name: Query herdr integration status
+      ansible.builtin.command: "{{ item.bin }} integration status"
+      environment:
+        HOME: "{{ item.home }}"
+      loop:
+        - {user: root, home: /root, bin: /usr/local/bin/herdr}
+        - {user: "{{ container_user }}", home: "{{ container_home }}", bin: "{{ herdr_user_bin }}"}
+      register: herdr_integration_status
+      changed_when: false
+      become: true
+      become_user: "{{ item.user }}"
+
+    # root only has ~/.claude, so its other integrations must be skipped; the user
+    # has all three agent directories.
+    - name: Assert integrations are installed exactly where the agent is present
+      ansible.builtin.assert:
+        that:
+          - "herdr_root_status is search('(?m)^claude: current')"
+          - "herdr_root_status is search('(?m)^antigravity-cli: not installed')"
+          - "herdr_root_status is search('(?m)^codex: not installed')"
+          - "herdr_user_status is search('(?m)^claude: current')"
+          - "herdr_user_status is search('(?m)^antigravity-cli: current')"
+          - "herdr_user_status is search('(?m)^codex: current')"
+        fail_msg: "root: {{ herdr_root_status }} | user: {{ herdr_user_status }}"
+      vars:
+        herdr_root_status: "{{ herdr_integration_status.results[0].stdout }}"
+        herdr_user_status: "{{ herdr_integration_status.results[1].stdout }}"
+
+    - name: Check staged integration scripts
       ansible.builtin.stat:
-        path: "{{ item }}/.claude/settings.json"
+        path: "{{ item.home }}/{{ item.script }}"
       loop:
-        - /root
-        - "{{ container_home }}"
-      register: herdr_claude_settings
+        - {user: root, home: /root, script: .claude/hooks/herdr-agent-state.sh}
+        - {user: "{{ container_user }}", home: "{{ container_home }}", script: .claude/hooks/herdr-agent-state.sh}
+        - {user: "{{ container_user }}", home: "{{ container_home }}", script: .gemini/config/hooks/herdr-agent-state.sh}
+      register: herdr_staged_scripts
 
-    - name: Assert herdr Claude integration scripts are installed for each user
+    - name: Assert staged integration scripts are owned by their user
       ansible.builtin.assert:
         that:
           - item.stat.exists
           - item.stat.isreg
-          - item.stat.executable
           - item.stat.mode == '0755'
           - item.stat.pw_name == item.item.user
         fail_msg: >-
-          {{ item.item.home }}/.claude/hooks/herdr-agent-state.sh is missing or wrong
+          {{ item.item.home }}/{{ item.item.script }} is missing or wrong
           (exists={{ item.stat.exists }}, owner={{ item.stat.pw_name | default('n/a') }},
           mode={{ item.stat.mode | default('n/a') }})
-      loop: "{{ herdr_claude_scripts.results }}"
+      loop: "{{ herdr_staged_scripts.results }}"
       loop_control:
-        label: "{{ item.item.home }}"
+        label: "{{ item.item.home }}/{{ item.item.script }}"
 
-    - name: Assert the role did not write Claude settings
+    # Registering the staged scripts belongs to the claude_code and antigravity
+    # roles; root never had an Antigravity or Codex config to install into.
+    - name: Check files the role must leave alone
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /root/.claude/settings.json
+        - "{{ container_home }}/.claude/settings.json"
+        - "{{ container_home }}/.gemini/config/hooks.json"
+        - /root/.gemini
+        - /root/.codex
+      register: herdr_untouched
+
+    - name: Assert the role left other roles' config and absent agents alone
       ansible.builtin.assert:
         that:
           - not item.stat.exists
-        fail_msg: "{{ item.item }}/.claude/settings.json must be left to the claude_code role"
-      loop: "{{ herdr_claude_settings.results }}"
+        fail_msg: "{{ item.item }} must not be created by the herdr role"
+      loop: "{{ herdr_untouched.results }}"
       loop_control:
         label: "{{ item.item }}"
 
-    - name: Ask herdr whether the user's Claude integration is current
-      ansible.builtin.command: "{{ herdr_user_bin }} integration status"
-      environment:
-        HOME: "{{ container_home }}"
-      register: herdr_user_integration_status
-      changed_when: false
-      become: true
-      become_user: "{{ container_user }}"
+    - name: Read the user's Codex hooks
+      ansible.builtin.slurp:
+        src: "{{ container_home }}/.codex/hooks.json"
+      register: herdr_codex_hooks
 
-    - name: Assert herdr reports the user's Claude integration as current
+    - name: Assert herdr registered its Codex hook in place
       ansible.builtin.assert:
         that:
-          - "herdr_user_integration_status.stdout is search('(?m)^claude: current')"
-        fail_msg: "herdr integration status: {{ herdr_user_integration_status.stdout }}"
+          - >-
+            (herdr_codex_hooks.content | b64decode | from_json).hooks.SessionStart
+            | map(attribute='hooks') | flatten | map(attribute='command')
+            | select('search', container_home + '/.codex/herdr-agent-state.sh') | list | length == 1
+        fail_msg: "{{ herdr_codex_hooks.content | b64decode }}"
+
+    - name: Read rendered config files
+      ansible.builtin.slurp:
+        src: "{{ item }}/.config/herdr/config.toml"
+      loop:
+        - /root
+        - "{{ container_home }}"
+      register: herdr_configs
+
+    # Role defaults are herdr's own defaults, so only onboarding is written.
+    - name: Assert root config holds only the non-default settings
+      ansible.builtin.assert:
+        that:
+          - herdr_configs.results[0].content | b64decode == 'onboarding = false\n'
+        fail_msg: "/root/.config/herdr/config.toml: {{ herdr_configs.results[0].content | b64decode }}"
+
+    - name: Assert user config has the requested settings, keymap, and helper bindings
+      ansible.builtin.assert:
+        that:
+          - herdr_user_config is search('(?m)^delivery = "system"$')
+          - herdr_user_config is search('(?m)^name = "terminal"$')
+          - herdr_user_config is not search('status_indicators')
+          - herdr_user_config is search('(?m)^last_pane = "prefix\\+l"$')
+          - herdr_user_config is search('(?m)^command = "' + container_home + '/\\.config/herdr/cheatsheet\\.sh"$')
+          - herdr_user_config is search('(?m)^command = "' + container_home + '/\\.config/herdr/rotate-split\\.sh"$')
+        fail_msg: "{{ container_home }}/.config/herdr/config.toml: {{ herdr_user_config }}"
+      vars:
+        herdr_user_config: "{{ herdr_configs.results[1].content | b64decode }}"
+
+    - name: Check helper scripts
+      ansible.builtin.stat:
+        path: "{{ item.home }}/.config/herdr/{{ item.name }}"
+      loop:
+        - {home: "{{ container_home }}", name: cheatsheet.sh}
+        - {home: "{{ container_home }}", name: rotate-split.sh}
+        - {home: /root, name: cheatsheet.sh}
+        - {home: /root, name: rotate-split.sh}
+      register: herdr_helpers
+
+    - name: Assert helpers are deployed only where enabled
+      ansible.builtin.assert:
+        that: >-
+          (item.stat.exists and item.stat.mode == '0755' and item.stat.pw_name == container_user)
+          if item.item.home == container_home else not item.stat.exists
+        fail_msg: "{{ item.item.home }}/.config/herdr/{{ item.item.name }}: {{ item.stat }}"
+      loop: "{{ herdr_helpers.results }}"
+      loop_control:
+        label: "{{ item.item.home }}/{{ item.item.name }}"
+
+    - name: Resolve helper script dependencies
+      ansible.builtin.shell: command -v less && command -v python3
+      args:
+        executable: /bin/bash
+      register: herdr_helper_deps
+      changed_when: false
+      failed_when: false
+
+    - name: Assert helper script dependencies are installed
+      ansible.builtin.assert:
+        that:
+          - herdr_helper_deps.rc == 0
+        fail_msg: "less or python3 missing: {{ herdr_helper_deps.stdout }}"
+
+    - name: Validate rendered configs with herdr config check
+      ansible.builtin.command: "{{ item.bin }} config check"
+      environment:
+        HOME: "{{ item.home }}"
+      loop:
+        - {user: root, home: /root, bin: /usr/local/bin/herdr}
+        - {user: "{{ container_user }}", home: "{{ container_home }}", bin: "{{ herdr_user_bin }}"}
+      register: herdr_config_check
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ item.user }}"
+
+    - name: Assert herdr config check passes
+      ansible.builtin.assert:
+        that:
+          - item.rc == 0
+          - "'config: ok' in item.stdout"
+        fail_msg: "herdr config check failed for {{ item.item.home }}: {{ item.stdout }} {{ item.stderr }}"
+      loop: "{{ herdr_config_check.results }}"
+      loop_control:
+        label: "{{ item.item.home }}"

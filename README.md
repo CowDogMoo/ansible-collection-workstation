@@ -85,7 +85,7 @@ by hand.
 | [`firstmate`](roles/firstmate/README.md) | Installs the firstmate agent distro by cloning its repository, without configuring fleet homes or starting sessions |
 | [`git_setup`](roles/git_setup/README.md) | Renders ~/.gitconfig with aliases and sane defaults |
 | [`go_task`](roles/go_task/README.md) | Installs go-task (Task runner) on Unix-like and Windows systems |
-| [`herdr`](roles/herdr/README.md) | Installs herdr, the terminal agent multiplexer, from Homebrew on macOS and pinned, checksum-verified release binaries elsewhere |
+| [`herdr`](roles/herdr/README.md) | Installs herdr and configures it and its agent integrations |
 | [`logging`](roles/logging/README.md) | Provides flexible logging directories and log rotation for any application or service. |
 | [`mise`](roles/mise/README.md) | Installs the mise polyglot tool version manager, wires it into the user's shell, and installs configured default tools. |
 | [`package_management`](roles/package_management/README.md) | Manage package installations and cleanups on Debian-based and Red Hat-based systems |

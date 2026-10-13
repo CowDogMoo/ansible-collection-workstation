@@ -10,11 +10,33 @@
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.herdr
 
-    # Unprivileged user: lands in ~/.local/bin, owned by that user.
+    # Unprivileged user: lands in ~/.local/bin, owned by that user, with the
+    # opt-in keymap and helpers and non-default UI settings.
     - name: Include role under test (unprivileged user)
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.herdr
-      vars:
+      vars: &user_vars
         herdr_username: "{{ container_user }}"
         herdr_usergroup: "{{ container_user }}"
         herdr_user_home: "{{ container_home }}"
+        herdr_tmux_keybindings: true
+        herdr_manage_helpers: true
+        herdr_toast_delivery: system
+        herdr_theme_name: terminal
+
+    # herdr_install false with no binary at the configured path: the config is
+    # still rendered and binary-dependent tasks are skipped instead of failing.
+    - name: Include role under test (herdr_install false, no binary)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.herdr
+      vars:
+        herdr_install: false
+        herdr_binary_path: /nonexistent/herdr
+
+    # herdr_install false resolving the user's existing binary from PATH.
+    - name: Include role under test (herdr_install false, binary on PATH)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.herdr
+      vars:
+        <<: *user_vars
+        herdr_install: false
