@@ -6,6 +6,8 @@ group:
     - source: .hooks/
       dest: .hooks/
       deleteOrphaned: true
+      exclude: |
+        .hooks/requirements.txt
     - source: Taskfile.yaml
       dest: Taskfile.yaml
     - source: .editorconfig
