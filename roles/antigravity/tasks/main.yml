@@ -77,6 +77,21 @@
   become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
   when: antigravity_manage_rules | bool
 
+# Runs before the custom rules copy so a same-named file in
+# antigravity_rules_src_dir replaces the bundled generic version.
+- name: Install bundled Antigravity rules
+  ansible.builtin.copy:
+    src: rules/
+    dest: "{{ antigravity_rules_dir }}/"
+    owner: "{{ antigravity_username }}"
+    group: "{{ antigravity_usergroup }}"
+    directory_mode: "0755"
+    mode: "0644"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  when:
+    - antigravity_manage_rules | bool
+    - antigravity_install_bundled_rules | bool
+
 - name: Install Antigravity rules
   ansible.builtin.copy:
     src: "{{ antigravity_rules_src_dir | regex_replace('/+$', '') }}/"

@@ -69,6 +69,11 @@ antigravity_manage_settings: true
 # Whether to manage topic-scoped rule files
 antigravity_manage_rules: true
 
+# Whether to install the generic rule files bundled with this role (files/rules/).
+# They are copied before antigravity_rules_src_dir, so a same-named file from
+# antigravity_rules_src_dir overrides the bundled version.
+antigravity_install_bundled_rules: true
+
 # Whether to manage custom scripts directory
 antigravity_manage_scripts: true
 
