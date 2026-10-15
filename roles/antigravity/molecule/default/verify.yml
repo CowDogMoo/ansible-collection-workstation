@@ -171,7 +171,7 @@
     - name: Assert bundled synthetic fixtures rule content
       ansible.builtin.assert:
         that:
-          - antigravity_bundled_rule_text is match('---\ntrigger: always_on\n')
+          - "antigravity_bundled_rule_text is match('---\\ntrigger: always_on\\n')"
           - "'Placeholder Infrastructure Identifiers' in antigravity_bundled_rule_text"
           - "'Fictional Mock Names Over Mock-Prefixed Real Names' in antigravity_bundled_rule_text"
           - "'Acme Widget Database' in antigravity_bundled_rule_text"
