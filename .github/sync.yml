@@ -6,8 +6,13 @@ group:
     - source: .hooks/
       dest: .hooks/
       deleteOrphaned: true
+      # Exclude paths are relative to source. The test-*.py scripts exercise
+      # roles and workflows that exist only in this repo.
       exclude: |
-        .hooks/requirements.txt
+        requirements.txt
+        test-dangerous-flags.py
+        test-molecule-retry.py
+        test-squad-only.py
     - source: Taskfile.yaml
       dest: Taskfile.yaml
     - source: .editorconfig
