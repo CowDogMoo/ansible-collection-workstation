@@ -575,7 +575,7 @@
     # the ways of turning hooks off that never name a flag - without blocking
     # commands that merely search for or document one. Probes the real hook body
     # from the defaults; the full matrix, and the gaps left open on purpose, live
-    # in .hooks/test-dangerous-flags.py, which runs as a pre-commit hook.
+    # in .hooks/tests/test-dangerous-flags.py, which runs as a pre-commit hook.
     - name: Probe dangerous_flags with shortcut and documentation commands
       ansible.builtin.shell: |
         set -o pipefail
@@ -738,7 +738,7 @@
     # forbidden_content: commits and PR titles/bodies come only from squad_commit and
     # squad_pr. Probes the real hook body from the defaults; the full matrix, the
     # merge-conclusion exemption, and the gaps left open on purpose live in
-    # .hooks/test-squad-only.py, which runs as a pre-commit hook.
+    # .hooks/tests/test-squad-only.py, which runs as a pre-commit hook.
     - name: Probe the squad-only rule with commit, PR, and read-only commands
       ansible.builtin.shell: |
         set -o pipefail

@@ -155,7 +155,7 @@ antigravity_hooks_default:
   #
   # The detector is the same code as the claude_code role's forbidden_content hook; only
   # the wire contract differs (toolCall.args in, a JSON decision on stdout out). Keep the
-  # two in step: .hooks/test-squad-only.py runs one matrix against both copies.
+  # two in step: .hooks/tests/test-squad-only.py runs one matrix against both copies.
   #
   # It also blocks forbidden attribution text in the other write commands it can
   # see. Like dangerous_flags it parses the command into clauses and looks one level

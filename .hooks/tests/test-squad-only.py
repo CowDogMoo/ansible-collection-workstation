@@ -31,7 +31,7 @@ import subprocess
 import sys
 import tempfile
 
-REPO = pathlib.Path(__file__).resolve().parent.parent
+REPO = pathlib.Path(__file__).resolve().parents[2]
 SHIPPED = {
     "claude_code": "roles/claude_code/defaults/main.yml",
     "antigravity": "roles/antigravity/defaults/main.yml",

@@ -6,8 +6,11 @@ group:
     - source: .hooks/
       dest: .hooks/
       deleteOrphaned: true
+      # Exclude paths are relative to source. tests/ holds scripts that
+      # exercise roles and workflows that exist only in this repo.
       exclude: |
-        .hooks/requirements.txt
+        requirements.txt
+        tests
     - source: Taskfile.yaml
       dest: Taskfile.yaml
     - source: .editorconfig
