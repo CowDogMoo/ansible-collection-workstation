@@ -144,6 +144,42 @@
         fail_msg: "Rules directory does not exist or has wrong permissions"
         success_msg: "Rules directory exists with correct permissions"
 
+    - name: Check bundled synthetic fixtures and mocks rule
+      ansible.builtin.stat:
+        path: "{{ antigravity_rules_dir }}/synthetic_fixtures_and_mocks.md"
+      register: antigravity_bundled_rule_stat
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert bundled synthetic fixtures rule is deployed with correct ownership
+      ansible.builtin.assert:
+        that:
+          - antigravity_bundled_rule_stat.stat.exists
+          - antigravity_bundled_rule_stat.stat.isreg
+          - antigravity_bundled_rule_stat.stat.mode == '0644'
+          - antigravity_bundled_rule_stat.stat.pw_name == container_user
+        fail_msg: "Bundled synthetic_fixtures_and_mocks.md rule is missing or has wrong mode/owner"
+        success_msg: "Bundled synthetic fixtures rule deployed with mode 0644"
+
+    - name: Read bundled synthetic fixtures rule
+      ansible.builtin.slurp:
+        src: "{{ antigravity_rules_dir }}/synthetic_fixtures_and_mocks.md"
+      register: antigravity_bundled_rule_content
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert bundled synthetic fixtures rule content
+      ansible.builtin.assert:
+        that:
+          - "antigravity_bundled_rule_text is match('---\\ntrigger: always_on\\n')"
+          - "'Placeholder Infrastructure Identifiers' in antigravity_bundled_rule_text"
+          - "'Fictional Mock Names Over Mock-Prefixed Real Names' in antigravity_bundled_rule_text"
+          - "'Acme Widget Database' in antigravity_bundled_rule_text"
+        fail_msg: "Bundled synthetic fixtures rule is missing its always_on frontmatter or required sections"
+        success_msg: "Bundled synthetic fixtures rule has always_on frontmatter and both sections"
+      vars:
+        antigravity_bundled_rule_text: "{{ antigravity_bundled_rule_content['content'] | b64decode }}"
+
     - name: Check if scripts directory exists
       ansible.builtin.stat:
         path: "{{ antigravity_scripts_dir }}"

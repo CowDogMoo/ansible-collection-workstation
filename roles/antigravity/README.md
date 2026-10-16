@@ -34,6 +34,7 @@ Manages Antigravity CLI configuration including hooks and settings
 | `antigravity_install` | bool | <code>True</code> | No description |
 | `antigravity_manage_settings` | bool | <code>True</code> | No description |
 | `antigravity_manage_rules` | bool | <code>True</code> | No description |
+| `antigravity_install_bundled_rules` | bool | <code>True</code> | No description |
 | `antigravity_manage_scripts` | bool | <code>True</code> | No description |
 | `antigravity_manage_hooks` | bool | <code>True</code> | No description |
 | `antigravity_backup_settings` | bool | <code>True</code> | No description |
@@ -102,6 +103,7 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Create Antigravity configuration directory** (ansible.builtin.file)
 - **Install global GEMINI.md instructions** (ansible.builtin.copy) - Conditional
 - **Create Antigravity rules directory** (ansible.builtin.file) - Conditional
+- **Install bundled Antigravity rules** (ansible.builtin.copy) - Conditional
 - **Install Antigravity rules** (ansible.builtin.copy) - Conditional
 - **Create Antigravity scripts directory** (ansible.builtin.file) - Conditional
 - **Install Antigravity scripts** (ansible.builtin.copy) - Conditional
