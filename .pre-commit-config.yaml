@@ -91,27 +91,27 @@ repos:
 
       - id: test-dangerous-flags
         name: Test the dangerous_flags Claude Code hook
-        entry: python .hooks/test-dangerous-flags.py
+        entry: python .hooks/tests/test-dangerous-flags.py
         language: python
         pass_filenames: false
         files: >-
-          ^(\.hooks/test-dangerous-flags\.py
+          ^(\.hooks/tests/test-dangerous-flags\.py
           |roles/(claude_code|antigravity)/defaults/main\.yml
           |playbooks/workstation/host_vars/MacBook-Pro-4/main\.yml)$
         additional_dependencies: []
 
       - id: test-squad-only
         name: Test the squad-only rule in the forbidden_content hooks
-        entry: python .hooks/test-squad-only.py
+        entry: python .hooks/tests/test-squad-only.py
         language: python
         pass_filenames: false
-        files: ^(\.hooks/test-squad-only\.py|roles/(claude_code|antigravity)/defaults/main\.yml)$
+        files: ^(\.hooks/tests/test-squad-only\.py|roles/(claude_code|antigravity)/defaults/main\.yml)$
         additional_dependencies: []
 
       - id: test-molecule-retry
         name: Test the Molecule workflow's transient-failure retry
-        entry: python .hooks/test-molecule-retry.py
+        entry: python .hooks/tests/test-molecule-retry.py
         language: python
         pass_filenames: false
-        files: ^(\.hooks/test-molecule-retry\.py|\.github/workflows/molecule\.yaml)$
+        files: ^(\.hooks/tests/test-molecule-retry\.py|\.github/workflows/molecule\.yaml)$
         additional_dependencies: []

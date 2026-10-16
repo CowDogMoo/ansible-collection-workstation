@@ -6,13 +6,11 @@ group:
     - source: .hooks/
       dest: .hooks/
       deleteOrphaned: true
-      # Exclude paths are relative to source. The test-*.py scripts exercise
-      # roles and workflows that exist only in this repo.
+      # Exclude paths are relative to source. tests/ holds scripts that
+      # exercise roles and workflows that exist only in this repo.
       exclude: |
         requirements.txt
-        test-dangerous-flags.py
-        test-molecule-retry.py
-        test-squad-only.py
+        tests
     - source: Taskfile.yaml
       dest: Taskfile.yaml
     - source: .editorconfig

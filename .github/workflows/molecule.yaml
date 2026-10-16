@@ -597,7 +597,7 @@ jobs:
           # the first fact-gathering module is still importing its payload,
           # which surfaces as "Module result deserialization failed"), or a
           # Docker API call outliving DOCKER_TIMEOUT ("Read timed out.").
-          # .hooks/test-molecule-retry.py checks this pattern against real logs.
+          # .hooks/tests/test-molecule-retry.py checks this pattern against real logs.
           max_attempts=3
           attempt=1
           run_log=$(mktemp)

@@ -337,7 +337,7 @@
 
     # forbidden_content: commits and PR titles/bodies come only from squad_commit and
     # squad_pr. Probes the deployed hook; the full matrix, the merge-conclusion
-    # exemption, and the gaps left open on purpose live in .hooks/test-squad-only.py,
+    # exemption, and the gaps left open on purpose live in .hooks/tests/test-squad-only.py,
     # which runs both this copy and the claude_code one through the same cases.
     - name: Probe the squad-only rule with commit, PR, and read-only commands
       ansible.builtin.command:

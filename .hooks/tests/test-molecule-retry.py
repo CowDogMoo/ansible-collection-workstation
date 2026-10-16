@@ -22,7 +22,7 @@ import subprocess
 import sys
 import tempfile
 
-REPO = pathlib.Path(__file__).resolve().parent.parent
+REPO = pathlib.Path(__file__).resolve().parents[2]
 WORKFLOW = REPO / ".github/workflows/molecule.yaml"
 MARKER = "max_attempts=3"
 
