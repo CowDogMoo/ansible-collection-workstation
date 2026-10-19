@@ -24,7 +24,10 @@ antigravity_rules_src: "GEMINI.md"
 # If non-empty, this takes precedence over antigravity_rules_src.
 antigravity_rules_content: ""
 
-# Rules directory for topic-scoped rules
+# Rules directory for topic-scoped rules. Unlike ~/.gemini/GEMINI.md (plain Markdown),
+# every .md file here must begin with a YAML frontmatter block declaring `trigger`
+# (always_on, model_decision, glob, or manual), plus `description` for model_decision
+# or `globs` for glob.
 antigravity_rules_dir: "{{ antigravity_config_dir }}/rules"
 
 # Source directory for topic-scoped rules (optional)

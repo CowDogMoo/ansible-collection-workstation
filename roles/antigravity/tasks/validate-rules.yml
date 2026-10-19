@@ -1,0 +1,51 @@
+---
+# Standalone GEMINI.md / AGENTS.md files are plain Markdown, whereas topic-scoped
+# rule files in ~/.gemini/config/rules/*.md require a leading YAML frontmatter block
+# declaring `trigger` (always_on, model_decision, glob, or manual). Without it,
+# Antigravity fails to parse the rule trigger (CORTEX_MEMORY_TRIGGER_UNSPECIFIED)
+# on every invocation and skips the file.
+
+- name: Find installed Antigravity rule files
+  ansible.builtin.find:
+    paths: "{{ antigravity_rules_dir }}"
+    patterns: "*.md"
+  register: antigravity_installed_rules
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+
+- name: Read installed Antigravity rule files
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  loop: "{{ antigravity_installed_rules.files | default([]) | map(attribute='path') | sort }}"
+  register: antigravity_installed_rule_contents
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and antigravity_username != ansible_facts['user_id'] }}"
+  when: (antigravity_installed_rules.matched | default(0)) > 0
+
+- name: Validate YAML frontmatter in Antigravity rule files
+  ansible.builtin.assert:
+    that:
+      - antigravity_rule_frontmatter_blocks | length == 1
+      - antigravity_rule_frontmatter is mapping
+      - (antigravity_rule_frontmatter.trigger | default('')) in ['always_on', 'model_decision', 'glob', 'manual']
+      - >-
+        (antigravity_rule_frontmatter.trigger | default('')) != 'model_decision'
+        or ((antigravity_rule_frontmatter.description | default('') | string | trim | length) > 0)
+      - >-
+        (antigravity_rule_frontmatter.trigger | default('')) != 'glob'
+        or (((antigravity_rule_frontmatter.globs | default(antigravity_rule_frontmatter.glob | default(''))) | string | trim | length) > 0)
+    fail_msg: >-
+      Antigravity rule {{ item.item }} is missing valid YAML frontmatter. Every .md file in
+      {{ antigravity_rules_dir }} must start with a --- frontmatter block declaring
+      `trigger` (always_on, model_decision, glob, or manual), plus `description` when
+      trigger is model_decision or `globs` when trigger is glob.
+    quiet: true
+  loop: "{{ antigravity_installed_rule_contents.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"
+  vars:
+    antigravity_rule_text: "{{ item.content | b64decode }}"
+    antigravity_rule_frontmatter_blocks: >-
+      {{ antigravity_rule_text | regex_findall('\A---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|\Z)') }}
+    antigravity_rule_frontmatter: >-
+      {{ (antigravity_rule_frontmatter_blocks[0] | from_yaml)
+         if (antigravity_rule_frontmatter_blocks | length == 1) else {} }}
+  when: (antigravity_installed_rules.matched | default(0)) > 0
