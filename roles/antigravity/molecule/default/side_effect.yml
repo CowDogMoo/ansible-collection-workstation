@@ -154,12 +154,12 @@
       become: true
 
     - name: Verify validate-rules.yml rejects rule files missing YAML frontmatter
-      vars:
-        antigravity_username: "{{ container_user }}"
-        antigravity_rules_dir: "{{ container_home }}/.gemini/config-invalid-rules/rules"
       block:
         - name: Run rule frontmatter validation against the invalid rules directory
           ansible.builtin.include_tasks: "../../tasks/validate-rules.yml"
+          vars:
+            antigravity_username: "{{ container_user }}"
+            antigravity_rules_dir: "{{ container_home }}/.gemini/config-invalid-rules/rules"
 
         - name: Record unexpected validation pass  # noqa: var-naming[no-role-prefix]
           ansible.builtin.set_fact:
