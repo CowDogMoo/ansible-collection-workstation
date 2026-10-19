@@ -40,6 +40,7 @@
         antigravity_username: "{{ container_user }}"
         antigravity_user_home: "{{ container_home }}"
         antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_rules_src_dir: "{{ playbook_dir }}/files/rules"
         antigravity_mcp_servers: "{{ test_mcp_servers }}"
         antigravity_hooks_overrides: "{{ test_hooks_overrides }}"
         antigravity_plugins:
@@ -54,6 +55,7 @@
         antigravity_username: "{{ container_user }}"
         antigravity_user_home: "{{ container_home }}"
         antigravity_config_dir: "{{ container_home }}/.gemini/config"
+        antigravity_rules_src_dir: "{{ playbook_dir }}/files/rules"
         antigravity_mcp_servers: "{{ test_mcp_servers }}"
         antigravity_hooks_overrides: "{{ test_hooks_overrides }}"
         antigravity_plugins:

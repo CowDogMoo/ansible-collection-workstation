@@ -105,6 +105,10 @@
     - antigravity_manage_rules | bool
     - antigravity_rules_src_dir | default('') | length > 0
 
+- name: Validate Antigravity rules
+  ansible.builtin.include_tasks: validate-rules.yml
+  when: antigravity_manage_rules | bool
+
 - name: Create Antigravity scripts directory
   ansible.builtin.file:
     path: "{{ antigravity_scripts_dir }}"

@@ -105,6 +105,7 @@ Manages Antigravity CLI configuration including hooks and settings
 - **Create Antigravity rules directory** (ansible.builtin.file) - Conditional
 - **Install bundled Antigravity rules** (ansible.builtin.copy) - Conditional
 - **Install Antigravity rules** (ansible.builtin.copy) - Conditional
+- **Validate Antigravity rules** (ansible.builtin.include_tasks) - Conditional
 - **Create Antigravity scripts directory** (ansible.builtin.file) - Conditional
 - **Install Antigravity scripts** (ansible.builtin.copy) - Conditional
 - **Check if custom hooks.json from source will change (dry-run)** (ansible.builtin.copy) - Conditional
@@ -149,6 +150,13 @@ Manages Antigravity CLI configuration including hooks and settings
 
 - **Get list of currently installed plugins** (ansible.builtin.command)
 - **Manage plugins** (ansible.builtin.include_tasks)
+
+### validate-rules.yml
+
+
+- **Find installed Antigravity rule files** (ansible.builtin.find)
+- **Read installed Antigravity rule files** (ansible.builtin.slurp) - Conditional
+- **Validate YAML frontmatter in Antigravity rule files** (ansible.builtin.assert) - Conditional
 
 ## Example Playbook
 

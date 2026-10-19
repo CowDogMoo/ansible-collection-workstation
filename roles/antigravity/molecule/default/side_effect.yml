@@ -128,3 +128,50 @@
         - v4
       loop_control:
         loop_var: antigravity_backup_version
+
+    # Topic-scoped rule files without valid YAML frontmatter (trigger: always_on,
+    # model_decision, glob, or manual) cause Antigravity to log
+    # CORTEX_MEMORY_TRIGGER_UNSPECIFIED and skip the rule. Prove validate-rules.yml
+    # catches a rule missing frontmatter.
+    - name: Create an isolated rules directory with an invalid rule file
+      ansible.builtin.file:
+        path: "{{ container_home }}/.gemini/config-invalid-rules/rules"
+        state: directory
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        mode: "0755"
+      become: true
+
+    - name: Write a rule file without YAML frontmatter
+      ansible.builtin.copy:
+        content: |
+          # Missing Frontmatter Rule
+          - This rule lacks a trigger frontmatter block.
+        dest: "{{ container_home }}/.gemini/config-invalid-rules/rules/unframed.md"
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        mode: "0644"
+      become: true
+
+    - name: Verify validate-rules.yml rejects rule files missing YAML frontmatter
+      block:
+        - name: Run rule frontmatter validation against the invalid rules directory
+          ansible.builtin.include_tasks: "../../tasks/validate-rules.yml"
+          vars:
+            antigravity_username: "{{ container_user }}"
+            antigravity_rules_dir: "{{ container_home }}/.gemini/config-invalid-rules/rules"
+
+        - name: Record unexpected validation pass  # noqa: var-naming[no-role-prefix]
+          ansible.builtin.set_fact:
+            antigravity_invalid_rule_rejected: false
+      rescue:
+        - name: Record expected validation failure  # noqa: var-naming[no-role-prefix]
+          ansible.builtin.set_fact:
+            antigravity_invalid_rule_rejected: true
+
+    - name: Assert rule frontmatter validation rejected the unframed rule
+      ansible.builtin.assert:
+        that:
+          - antigravity_invalid_rule_rejected | default(false) | bool
+        fail_msg: "validate-rules.yml did not reject a rule file missing YAML frontmatter"
+        success_msg: "validate-rules.yml rejected the rule file missing YAML frontmatter"

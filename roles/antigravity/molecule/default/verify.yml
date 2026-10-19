@@ -180,6 +180,29 @@
       vars:
         antigravity_bundled_rule_text: "{{ antigravity_bundled_rule_content['content'] | b64decode }}"
 
+    - name: Check installed topic-scoped rule files
+      ansible.builtin.stat:
+        path: "{{ antigravity_rules_dir }}/{{ item }}"
+      loop:
+        - code_style.md
+        - safety.md
+      register: antigravity_rule_file_stats
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert topic-scoped rule files were installed with correct permissions
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+          - item.stat.mode == '0644'
+          - item.stat.pw_name == container_user
+        fail_msg: "Rule file {{ item.item }} missing or has wrong permissions/ownership"
+        success_msg: "Rule file {{ item.item }} installed with 0644 permissions"
+      loop: "{{ antigravity_rule_file_stats.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
     - name: Check if scripts directory exists
       ansible.builtin.stat:
         path: "{{ antigravity_scripts_dir }}"
