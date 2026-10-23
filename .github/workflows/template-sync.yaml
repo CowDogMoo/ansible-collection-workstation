@@ -38,7 +38,7 @@ jobs:
             ansible-collection-bulwark
 
       - name: Sync files
-        uses: step-security/repo-file-sync-action@25ed98101e502f84b885ff5883bb0b0c14a7b87f # v1.21.3
+        uses: step-security/repo-file-sync-action@864be44bbed421c6313ecc45d2c79e89003f2bd5 # v1.21.4
         with:
           # Pass the app token as GH_PAT (with the oauth: URL prefix) so the
           # action force-pushes with git. Its GH_INSTALLATION_TOKEN API path
