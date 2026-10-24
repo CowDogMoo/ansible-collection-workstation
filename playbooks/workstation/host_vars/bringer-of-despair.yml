@@ -167,7 +167,7 @@ mise_additional_packages:
     version: "0.1.38"
   # renovate: datasource=npm depName=chrome-devtools-axi
   - name: "npm:chrome-devtools-axi"
-    version: "0.1.40"
+    version: "0.1.43"
   # Found on PATH by chrome-devtools-axi, which otherwise runs
   # `npx -y chrome-devtools-mcp@latest` on every launch.
   # renovate: datasource=npm depName=chrome-devtools-mcp
