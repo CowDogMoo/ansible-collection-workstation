@@ -164,7 +164,7 @@ herdr_status_indicators: symbols
 mise_additional_packages:
   # renovate: datasource=npm depName=gh-axi
   - name: "npm:gh-axi"
-    version: "0.1.38"
+    version: "0.1.42"
   # renovate: datasource=npm depName=chrome-devtools-axi
   - name: "npm:chrome-devtools-axi"
     version: "0.1.40"
