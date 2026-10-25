@@ -178,7 +178,7 @@ mise_additional_packages:
     version: "0.1.89"
   # renovate: datasource=npm depName=quota-axi
   - name: "npm:quota-axi"
-    version: "0.1.61"
+    version: "0.1.64"
   # renovate: datasource=npm depName=tasks-axi
   - name: "npm:tasks-axi"
     version: "0.2.6"
