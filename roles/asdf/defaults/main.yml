@@ -49,5 +49,5 @@ asdf_plugins:
     scope: "global"
   # renovate: datasource=node-version depName=nodejs packageName=node
   - name: nodejs
-    version: "24.22.1"
+    version: "24.22.2"
     scope: "global"
