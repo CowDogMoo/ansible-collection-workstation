@@ -29,7 +29,8 @@ tasks:
     desc: "Generate changelog fragment from commits since last release"
     cmds:
       - |
-        # Get the last release tag
+        # Get the last release tag (release tags are created on GitHub, so fetch them first)
+        git fetch --tags --quiet
         LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
         if [ -z "$LAST_TAG" ]; then
