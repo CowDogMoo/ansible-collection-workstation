@@ -172,7 +172,7 @@ mise_additional_packages:
   # `npx -y chrome-devtools-mcp@latest` on every launch.
   # renovate: datasource=npm depName=chrome-devtools-mcp
   - name: "npm:chrome-devtools-mcp"
-    version: "1.11.0"
+    version: "1.12.0"
   # renovate: datasource=npm depName=lavish-axi
   - name: "npm:lavish-axi"
     version: "0.1.90"
