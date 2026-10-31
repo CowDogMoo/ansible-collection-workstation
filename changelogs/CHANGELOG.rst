@@ -41,7 +41,7 @@ Changed
 -------
 
 - Improved tmux status bar formatting and session name display (#1030)
-- Restricted commit and PR text generation in the managed ``CLAUDE.md`` to ``squad_commit`` and ``squad_pr`` (#1028,
+- Restricted commit and PR text generation in the managed ``CLAUDE.md`` to ``squad_commit`` and ``squad_pr`` (#1028, #1093)
 - Reworked the ``dangerous_flags`` hook with shell-aware detection (#1057)
 - Skipped ``become`` when the target user already matches and refined the tmux clipboard flow (#1027)
 - Updated Go to v1.27.3 (#1117, #1119)
