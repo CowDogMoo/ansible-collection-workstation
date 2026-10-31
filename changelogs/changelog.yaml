@@ -858,3 +858,81 @@ releases:
     fragments:
     - 2.7.0.yaml
     release_date: '2026-06-08'
+  2.8.0:
+    changes:
+      added:
+      - Added Antigravity MCP server and hook management, and migrated its rules to
+        ``GEMINI.md`` (#997)
+      - Added YAML frontmatter validation for Antigravity rule files (#1110)
+      - Added ``mise_additional_packages`` and pinned AXI and kunchenguid tools via
+        mise with Renovate tracking (#1082)
+      - Added a ``post_pr_check`` Claude Code hook and hid Claude Code attribution
+        at the source (#1051)
+      - Added a bundled synthetic fixtures and mocks rule to the Antigravity role
+        (#1105)
+      - Added a guard for workstation runs without host_vars, and backups of configs
+        when they change (#1091)
+      - Added a scripts directory and custom config file injection for agent configurations
+        (#1045)
+      - Added a systemd user timer and gating for non-root logging (#1024)
+      - Added a toggle for the Claude Code bypass-permissions confirmation prompt
+        (#1083)
+      - Added a toggle to enforce skipping ``op://`` MCP servers when the 1Password
+        CLI is missing (#999)
+      - Added custom rule sources and content for agent configurations (#1032)
+      - Added herdr configuration and generalized its agent integrations (#1089)
+      - Added log rotation for the iem-decibel-monitor launchd agent (#1006)
+      - Added macOS LaunchAgents to run Claude remote-control hosts (#1092)
+      - Added role enablement toggles and improved non-root execution (#1023)
+      - Added the ``herdr`` and ``firstmate`` roles to the workstation collection
+        (#1084)
+      - Added topic-scoped rules management for agent configurations (#1044)
+      - Adopted the bringer-of-despair Claude Code settings and hooks into Ansible
+        (#1058)
+      changed:
+      - Improved tmux status bar formatting and session name display (#1030)
+      - 'Restricted commit and PR text generation in the managed ``CLAUDE.md`` to ``squad_commit``
+        and ``squad_pr`` (#1028, #1093)'
+      - Reworked the ``dangerous_flags`` hook with shell-aware detection (#1057)
+      - Skipped ``become`` when the target user already matches and refined the tmux
+        clipboard flow (#1027)
+      - 'Updated Go to v1.27.3 (#1117, #1119)'
+      - Updated Helm to v4.3.1 (#1109)
+      - Updated Node.js to v24.22.2 (#1139)
+      - Updated Packer to v1.16.2 (#1129)
+      - Updated Python to v3.14.10 (#1134)
+      - Updated Ruby to v4.0.9 (#1130)
+      - Updated Task to v3.54.0 (#1075)
+      - Updated ``amazon.aws`` collection to v12 (#1101)
+      - Updated ``ansible-core`` to v2.21.5 (#1076)
+      - Updated ``ansible.windows`` collection to v3.9.2 (#1135)
+      - Updated ``community.docker`` collection to v5.2.2 (#1007)
+      - Updated ``community.general`` collection to v13.3.0 (#1014)
+      - Updated kubectl to v1.37.2 (#1142)
+      fixed:
+      - Fixed MCP staging tasks so they run in check mode (#1059)
+      - Fixed ``claude_code`` installation idempotence (#1033)
+      - Fixed ansible-core breakage by pinning the asdf Python back to 3.14 (#1131)
+      - Fixed redundant logrotate installation when it is already present (#1015)
+      - Fixed tmux alternate-screen wheel forwarding in mouse bindings (#1062)
+      - Fixed tmux status-left truncation (#1026)
+      - Fixed tmux wheel-scroll behavior to match pre-3.6 tmux and hardened home path
+        resolution (#1025)
+      - Fixed unparsable Antigravity MCP config handling with block/rescue (#1029)
+      - Fixed user GID handling to be dynamic and used macOS-friendly install paths
+        (#1009)
+      release_summary: 'Adds the herdr and firstmate roles, Antigravity MCP server,
+        hook, and rule
+
+        management, topic-scoped rules and custom config injection for agent tools,
+
+        improved non-root execution, AXI tool pinning via mise, and a broad refresh
+
+        of tool and collection dependencies.
+
+        '
+      removed:
+      - Removed the chrome-devtools MCP server configuration (#1010)
+    fragments:
+    - 2.8.0.yaml
+    release_date: '2026-10-31'
