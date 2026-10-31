@@ -171,7 +171,7 @@ The role converts simple YAML hooks to Python commands automatically. You write 
 
 - **command_contains**: Exact string match (`"git commit"`, `"--force"`)
 - **command_pattern**: Regex (`'git\s+commit'`, `'rm\s+-rf?\s+/'`)
-- **exclude_pattern**: Skip if contains string (`'fabric'`, `'lint'`)
+- **exclude_pattern**: Skip if contains string (`'squad_commit'`, `'lint'`)
 
 **Regex tips**: `\s+` = spaces, `.*` = any chars, `\d+` = numbers
 
@@ -180,11 +180,11 @@ The role converts simple YAML hooks to Python commands automatically. You write 
 ### 1. Enforce Workflow Tools
 
 ```yaml
-- name: "Use fabric for commits"
+- name: "Use squad for commits"
   command_pattern: 'git\s+commit.*-m'
-  exclude_pattern: 'fabric'
+  exclude_pattern: 'squad_commit'
   action: block
-  message: "Generate commit messages with fabric"
+  message: "Generate commit messages with squad_commit"
 ```
 
 ### 2. Safety Checks

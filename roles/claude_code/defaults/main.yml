@@ -585,7 +585,7 @@ claude_code_advanced_hooks_default:
               'The PR generator leaked AI attribution. Do NOT hand-edit the PR body.\\n'
               'Fix the source, then re-run squad_pr to regenerate the body:\\n'
               '  - squad must pass --settings hiding attribution (rebuild squad from main)\\n'
-              '  - fabric-patterns-hub scripts/filter.py must strip attribution lines\\n'
+              '  - squad-agents scripts/filter.py must strip attribution lines\\n'
           )
           sys.stderr.write(err + '\\n')
           sys.exit(2)
