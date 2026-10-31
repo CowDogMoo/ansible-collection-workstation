@@ -7,6 +7,8 @@ This document outlines the process for creating new releases of this Ansible col
 - [Taskfile](https://taskfile.dev/) installed on your system (`brew install go-task/tap/go-task`)
 - [antsibull-changelog](https://github.com/ansible-community/antsibull-changelog)
   installed (`pip install antsibull-changelog`)
+- [squad](https://github.com/CowDogMoo/squad) installed with the
+  `CowDogMoo/squad-agents` agent source (for changelog fragment generation)
 - Git repository with proper credentials configured
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
   installed
@@ -158,7 +160,8 @@ NEXT_VERSION=x.y.z task -y release
 This command will:
 
 1. Create a release branch
-2. Auto-generate changelog from git commits using fabric
+2. Auto-generate a changelog fragment from git commits using the squad
+   `changelog` agent
 3. Update galaxy.yml version
 4. Commit and push changes
 5. Create a pull request
@@ -181,7 +184,7 @@ This will:
 
 ### How It Works
 
-**Changelog Generation**: The `gen-changelog-fragment` task uses a fabric pattern to analyze git commits since the last release and automatically generates a properly formatted changelog fragment with the correct sections (`added`, `changed`, `fixed`, `removed`).
+**Changelog Generation**: The `gen-changelog-fragment` task runs the [squad](https://github.com/CowDogMoo/squad) `changelog` agent (from `CowDogMoo/squad-agents`) over the commits since the last release. It writes a fragment to `changelogs/fragments/<version>.yaml` with the sections from `changelogs/config.yaml` (`added`, `changed`, `fixed`, `removed`). Review the fragment before merging the release PR.
 
 **No Manual Fragments Needed**: You don't need to manually create changelog fragments - the automation extracts this from your commit messages.
 
