@@ -31,8 +31,8 @@ since that hides shared agents, skills, and settings from the team.
 ### Commits
 
 Always use `squad_commit` for commit messages (billed to the Claude
-subscription via squad's claude-code provider). There is no fabric fallback;
-if it fails, debug the generator with `git ds | squad_gen commit`:
+subscription via squad's claude-code provider). If it fails, debug the
+generator with `git ds | squad_gen commit`:
 
 ```bash
 squad_commit
@@ -64,7 +64,7 @@ squad_pr
 2. Confirm the generated output is clean: **no code fences (```)** in the title or body, the **title is not duplicated** in the body, and **no AI attribution** anywhere (no robot emoji, no "Generated with Claude Code" line, no `Co-Authored-By` or `Claude-Session` trailer).
 3. If the output is malformed, the bug is in the `pr` text agent or the shared filter — both live in `~/cowdogmoo/squad-agents` (`pr/system.md`, `scripts/filter.py`) — fix it at the source and re-run `squad_pr`. Never patch the symptom by hand-editing the PR. An attribution footer means the generator leaked it: squad's `claude-code` provider must pass `--settings` hiding attribution (rebuild squad from main) and `scripts/filter.py` must strip attribution lines.
 
-`squad_gen` resolves the text agents (`commit`, `pr`, `branch`) from `~/cowdogmoo/squad-agents` (override with `SQUAD_AGENTS_DIR`). `fabric-patterns-hub` is the fabric patterns repo; it is not part of this workflow and must never be renamed or narrowed for squad's sake.
+`squad_gen` resolves the text agents (`commit`, `pr`, `branch`) from `~/cowdogmoo/squad-agents` (override with `SQUAD_AGENTS_DIR`).
 
 ## Modern CLI Tools
 

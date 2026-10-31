@@ -39,9 +39,9 @@ claude_code_advanced_hooks:
 
       msg = ''
       if 'git commit' in cmd and '-m' in cmd and any(f in cmd for f in forbidden):
-          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff --staged | fabric --pattern commit'
+          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY squad output\\nGenerate: squad_commit'
       elif 'gh pr create' in cmd and '--body' in cmd and any(f in cmd for f in forbidden):
-          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY fabric output\\nGenerate: git diff main...HEAD | fabric --pattern pr'
+          msg = '❌ BLOCKED: Forbidden content (emojis/branding)\\n\\n✅ Use ONLY squad output\\nGenerate: squad_pr'
 
       if msg:
           sys.stderr.write(msg + '\n')

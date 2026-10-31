@@ -44,28 +44,28 @@ require_tool_usage:
 
 # Example 4: Multiple simple hooks together
 git_workflow_hooks:
-  - name: "Require fabric for commits"
+  - name: "Require squad for commits"
     event: PreToolUse
     tool: Bash
     command_pattern: 'git\s+commit.*-m'
-    exclude_pattern: 'fabric'
+    exclude_pattern: 'squad_commit'
     action: block
     message: |
-      ❌ BLOCKED: Use fabric for commit messages
+      ❌ BLOCKED: Use squad for commit messages
 
-      ✅ Generate commit message:
-         git diff --staged | fabric --pattern commit
+      ✅ Generate and create the commit:
+         squad_commit
 
-  - name: "Require fabric for PRs"
+  - name: "Require squad for PRs"
     event: PreToolUse
     tool: Bash
     command_contains: 'gh pr create'
     action: block
     message: |
-      ❌ BLOCKED: Use fabric for PR descriptions
+      ❌ BLOCKED: Use squad for PR titles and descriptions
 
-      ✅ Generate PR description:
-         git diff main...HEAD | fabric --pattern commit
+      ✅ Generate and open the PR:
+         squad_pr
 
   - name: "Warn about force push to main"
     event: PreToolUse
