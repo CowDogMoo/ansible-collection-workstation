@@ -175,7 +175,7 @@ mise_additional_packages:
     version: "1.12.0"
   # renovate: datasource=npm depName=lavish-axi
   - name: "npm:lavish-axi"
-    version: "0.1.92"
+    version: "0.1.93"
   # renovate: datasource=npm depName=quota-axi
   - name: "npm:quota-axi"
     version: "0.1.67"
