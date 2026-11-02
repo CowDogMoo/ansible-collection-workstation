@@ -6,11 +6,10 @@
   ],
   packageRules: [
     {
-      description: 'Review pinned host tools by hand: no automerge, and a week for a bad release to be yanked first',
+      description: 'Wait a week before proposing pinned host tool bumps, so a bad release has time to be yanked first',
       matchFileNames: [
         'playbooks/workstation/host_vars/**',
       ],
-      automerge: false,
       minimumReleaseAge: '7 days',
     },
   ],
