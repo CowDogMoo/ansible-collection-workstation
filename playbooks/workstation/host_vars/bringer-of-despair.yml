@@ -160,7 +160,7 @@ herdr_status_indicators: symbols
 
 # Tools that would otherwise come from `curl … | sh` installers and unpinned
 # `npm install -g`. mise checks each github: download against the digest GitHub
-# publishes for the release asset, and Renovate proposes bumps (never automerged).
+# publishes for the release asset, and Renovate proposes bumps after a 7-day wait.
 mise_additional_packages:
   # renovate: datasource=npm depName=gh-axi
   - name: "npm:gh-axi"
