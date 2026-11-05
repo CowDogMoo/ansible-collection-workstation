@@ -613,7 +613,7 @@ jobs:
             if [[ ${rc} -eq 0 ]]; then
               break
             fi
-            if [[ ${attempt} -ge ${max_attempts} ]] || ! grep -qE "Connection failure|Gateway Time-out|read operation timed out|Read timed out|HTTP Error 5[0-9][0-9]|Could not resolve host|Temporary failure in name resolution|Connection reset by peer|Recv failure|Module result deserialization failed" "${run_log}"; then
+            if [[ ${attempt} -ge ${max_attempts} ]] || ! grep -qE "Connection failure|Bad Gateway|Gateway Time-out|read operation timed out|Read timed out|HTTP Error 5[0-9][0-9]|Could not resolve host|Temporary failure in name resolution|Connection reset by peer|Recv failure|Module result deserialization failed" "${run_log}"; then
               echo "Molecule test failed. Collecting debug information..."
 
               echo "Docker containers:"
