@@ -10,7 +10,9 @@ molecule's turns every failure green.
 
 The step's script is extracted from the shipped workflow and run under
 `bash -eo pipefail`, the way GitHub runs `shell: bash`, with a stub `molecule`
-that replays each scenario's attempts. Failure text is copied from real runs.
+that replays each scenario's attempts. Failure text is copied from real runs;
+the registry blob 502 is a real run's error re-wrapped for a /blobs/ URL, the
+way molecule's console folds it.
 """
 
 from __future__ import annotations
@@ -38,19 +40,27 @@ RATE_LIMIT = """\
   │ [ERROR]: Task failed: Module failed: Status code was 403 and not [200]:
   │   HTTP Error 403: rate limit exceeded"""
 CONNECTION_RESET = "curl: (56) Recv failure: Connection reset by peer"
-REGISTRY_BAD_GATEWAY = """\
+REGISTRY_MANIFEST_BAD_GATEWAY = """\
   │ [ERROR]: Task failed: Module failed: Error pulling
   │   cisagov/docker-kali-ansible - code: None message: unknown: failed to
   │   copy: httpReadSeeker: failed open: unexpected status from GET request to
   │   https://registry-1.docker.io/v2/cisagov/docker-kali-ansible/manifests/sha2
   │   56:640ec1b677c83cabf3bec5812d4bd935227d072b3098258c9e6f4839db7f05f6: 502
   │   Bad Gateway"""
+REGISTRY_BLOB_BAD_GATEWAY = """\
+  │ [ERROR]: Task failed: Module failed: Error pulling
+  │   cisagov/docker-kali-ansible - code: None message: unknown: failed to
+  │   copy: httpReadSeeker: failed open: unexpected status from GET request to
+  │   https://registry-1.docker.io/v2/cisagov/docker-kali-ansible/blobs/sha256:6
+  │   40ec1b677c83cabf3bec5812d4bd935227d072b3098258c9e6f4839db7f05f6: 502 Bad
+  │   Gateway"""
 
 # (label, [(exit code, output) per attempt], expected exit, expected attempts)
 SCENARIOS = [
     ("passes first time", [(0, "ok")], 0, 1),
     ("Docker API read timeout is retried", [(1, DOCKER_READ_TIMEOUT), (0, "ok")], 0, 2),
-    ("registry 502 Bad Gateway is retried", [(2, REGISTRY_BAD_GATEWAY), (0, "ok")], 0, 2),
+    ("registry manifest 502 is retried", [(2, REGISTRY_MANIFEST_BAD_GATEWAY), (0, "ok")], 0, 2),
+    ("registry blob 502 is retried", [(2, REGISTRY_BLOB_BAD_GATEWAY), (0, "ok")], 0, 2),
     ("idempotence failure is not retried", [(2, IDEMPOTENCE)], 1, 1),
     ("API rate limit is not retried", [(2, RATE_LIMIT)], 1, 1),
     ("transient failure gives up after 3", [(1, CONNECTION_RESET)] * 3, 1, 3),
