@@ -592,11 +592,14 @@ jobs:
           molecule list
 
           # Retry up to 3 times when failures look like transient network issues
-          # (github.com flakes downloading release assets, curl connection
-          # resets), container-boot races (systemd-tmpfiles wiping /tmp while
-          # the first fact-gathering module is still importing its payload,
-          # which surfaces as "Module result deserialization failed"), or a
-          # Docker API call outliving DOCKER_TIMEOUT ("Read timed out.").
+          # (github.com flakes downloading release assets, Docker Hub 502s
+          # pulling images, curl connection resets), container-boot races
+          # (systemd-tmpfiles wiping /tmp while the first fact-gathering module
+          # is still importing its payload, which surfaces as "Module result
+          # deserialization failed"), or a Docker API call outliving
+          # DOCKER_TIMEOUT ("Read timed out."). grep matches one line at a time
+          # and molecule's console wraps long registry URLs, so "Bad Gateway"
+          # and "5xx Bad" together cover every split of "502 Bad Gateway".
           # .hooks/tests/test-molecule-retry.py checks this pattern against real logs.
           max_attempts=3
           attempt=1
