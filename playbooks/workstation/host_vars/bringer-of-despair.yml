@@ -184,7 +184,7 @@ mise_additional_packages:
     version: "0.2.6"
   # renovate: datasource=github-releases depName=kunchenguid/no-mistakes extractVersion=^v(?<version>.*)$
   - name: "github:kunchenguid/no-mistakes"
-    version: "1.84.0"
+    version: "1.106.1"
   # renovate: datasource=github-releases depName=kunchenguid/treehouse extractVersion=^v(?<version>.*)$
   - name: "github:kunchenguid/treehouse"
     version: "3.1.8"
