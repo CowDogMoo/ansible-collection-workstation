@@ -35,3 +35,7 @@
     msg: >-
       firstmate is at {{ firstmate_install_dir }}
       {%- if firstmate_clone.after is defined %} ({{ firstmate_clone.after[:12] }}){% endif %}
+
+- name: Install the firstmate dispatch gate
+  ansible.builtin.include_tasks: dispatch-gate.yml
+  when: firstmate_manage_dispatch_gate | bool

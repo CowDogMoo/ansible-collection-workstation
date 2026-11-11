@@ -108,6 +108,14 @@ repos:
         files: ^(\.hooks/tests/test-squad-only\.py|roles/(claude_code|antigravity)/defaults/main\.yml)$
         additional_dependencies: []
 
+      - id: test-fm-dispatch-gate
+        name: Test the firstmate dispatch gate hook
+        entry: python roles/firstmate/files/hooks/test_fm_dispatch_gate.py
+        language: python
+        pass_filenames: false
+        files: ^roles/firstmate/files/hooks/.*\.py$
+        additional_dependencies: []
+
       - id: test-molecule-retry
         name: Test the Molecule workflow's transient-failure retry
         entry: python .hooks/tests/test-molecule-retry.py

@@ -3,7 +3,7 @@
 
 ## Description
 
-Installs the firstmate agent distro by cloning its repository, without configuring fleet homes or starting sessions
+Installs the firstmate agent distro by cloning its repository and installs its dispatch gate, without starting sessions
 
 ## Requirements
 
@@ -25,8 +25,37 @@ Installs the firstmate agent distro by cloning its repository, without configuri
 | `firstmate_dependencies` | list | <code>&#91;&#93;</code> | Packages installed when firstmate_manage_dependencies is true. |
 | `firstmate_dependencies.0` | str | <code>git</code> | No description |
 | `firstmate_dependencies.1` | str | <code>jq</code> | No description |
+| `firstmate_manage_dispatch_gate` | bool | <code>True</code> | Install the dispatch gate files and merge its hook into .claude/settings.local.json. |
+| `firstmate_ship_harnesses` | list | <code>&#91;&#93;</code> | Harnesses allowed to run ship tasks, rendered to config/ship-harnesses. |
+| `firstmate_ship_harnesses.0` | str | <code>claude</code> | No description |
+| `firstmate_crew_dispatch_src` | str | <code>crew-dispatch.json</code> | Role file or controller path installed as config/crew-dispatch.json. |
+| `firstmate_dispatch_gate_hook` | dict | <code>{}</code> | PreToolUse entry merged into .claude/settings.local.json when none of its commands is present. |
+| `firstmate_dispatch_gate_hook.matcher` | str | <code>Bash</code> | No description |
+| `firstmate_dispatch_gate_hook.hooks` | list | <code>&#91;&#93;</code> | No description |
 
 ## Tasks
+
+### dispatch-gate.yml
+
+
+- **Check the firstmate checkout before configuring it** (ansible.builtin.stat)
+- **Report the dispatch gate as skipped without a checkout** (ansible.builtin.debug) - Conditional
+- **Install the dispatch gate** (block) - Conditional
+- **Check for an existing .claude/settings.local.json** (ansible.builtin.stat)
+- **Read the existing .claude/settings.local.json** (ansible.builtin.slurp) - Conditional
+- **Parse .claude/settings.local.json** (ansible.builtin.set_fact)
+- **Assert .claude/settings.local.json holds a JSON object** (ansible.builtin.assert)
+- **Decide whether the dispatch gate hook entry is missing** (ansible.builtin.set_fact)
+- **Check the paths are gitignored by the checkout** (ansible.builtin.command)
+- **Refuse to write paths the checkout does not ignore** (ansible.builtin.assert)
+- **Check the settings backup path is gitignored** (ansible.builtin.command) - Conditional
+- **Locate the checkout's local exclude file** (ansible.builtin.command) - Conditional
+- **Ignore .claude/settings.local.json backups locally** (ansible.builtin.lineinfile) - Conditional
+- **Create the config directories** (ansible.builtin.file)
+- **Install config/crew-dispatch.json** (ansible.builtin.copy)
+- **Render config/ship-harnesses** (ansible.builtin.template)
+- **Install the dispatch gate hook and its test** (ansible.builtin.copy)
+- **Merge the dispatch gate hook into .claude/settings.local.json** (ansible.builtin.copy) - Conditional
 
 ### main.yml
 
@@ -35,6 +64,7 @@ Installs the firstmate agent distro by cloning its repository, without configuri
 - **Check for an existing firstmate checkout** (ansible.builtin.stat)
 - **Clone firstmate** (ansible.builtin.git) - Conditional
 - **Display firstmate checkout** (ansible.builtin.debug)
+- **Install the firstmate dispatch gate** (ansible.builtin.include_tasks) - Conditional
 
 ## Example Playbook
 

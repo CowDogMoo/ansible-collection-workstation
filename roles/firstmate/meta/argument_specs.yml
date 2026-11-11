@@ -1,10 +1,11 @@
 ---
 argument_specs:
   main:
-    short_description: Install the firstmate agent distro
+    short_description: Install the firstmate agent distro and its dispatch gate
     description:
       - Clones the firstmate repository, which upstream documents as its install.
-      - Never configures fleet homes or starts firstmate sessions, and leaves an existing checkout untouched unless firstmate_update is set.
+      - Installs the dispatch gate (crew-dispatch.json, ship-harnesses, the PreToolUse hook and its test) into gitignored paths of the checkout and merges the hook entry into .claude/settings.local.json.
+      - Never starts or restarts firstmate sessions, and leaves the checkout's tracked files untouched unless firstmate_update is set.
     options:
       firstmate_username:
         type: str
@@ -35,3 +36,18 @@ argument_specs:
         type: list
         elements: str
         description: Packages installed when firstmate_manage_dependencies is true.
+      firstmate_manage_dispatch_gate:
+        type: bool
+        default: true
+        description: Install the dispatch gate files and merge its hook into .claude/settings.local.json.
+      firstmate_ship_harnesses:
+        type: list
+        elements: str
+        description: Harnesses allowed to run ship tasks, rendered to config/ship-harnesses.
+      firstmate_crew_dispatch_src:
+        type: str
+        default: crew-dispatch.json
+        description: Role file or controller path installed as config/crew-dispatch.json.
+      firstmate_dispatch_gate_hook:
+        type: dict
+        description: PreToolUse entry merged into .claude/settings.local.json when none of its commands is present.

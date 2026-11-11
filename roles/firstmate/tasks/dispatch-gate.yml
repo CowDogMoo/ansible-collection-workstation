@@ -1,0 +1,174 @@
+---
+# Installs the dispatch gate into the checkout. Nothing here restarts or signals
+# firstmate, herdr, Claude Code, or any agent: hooks are read on each tool call.
+- name: Check the firstmate checkout before configuring it
+  ansible.builtin.stat:
+    path: "{{ firstmate_install_dir }}/.git"
+  register: firstmate_gate_checkout
+
+# Only reachable in check mode on a host that has no checkout yet.
+- name: Report the dispatch gate as skipped without a checkout
+  ansible.builtin.debug:
+    msg: "No checkout at {{ firstmate_install_dir }} yet; the dispatch gate is installed once it is cloned."
+  when: not firstmate_gate_checkout.stat.exists
+
+- name: Install the dispatch gate
+  when: firstmate_gate_checkout.stat.exists
+  become: "{{ firstmate_username != ansible_facts['user_id'] }}"
+  become_user: "{{ firstmate_username }}"
+  vars:
+    firstmate_settings_path: "{{ firstmate_install_dir }}/.claude/settings.local.json"
+    firstmate_gate_commands: "{{ firstmate_dispatch_gate_hook['hooks'] | map(attribute='command') | list }}"
+    # Each written file plus the backup name Ansible would give it. The settings
+    # backup is handled separately below.
+    firstmate_gate_paths:
+      - config/crew-dispatch.json
+      - config/crew-dispatch.json.0.1970-01-01@00:00:00~
+      - config/ship-harnesses
+      - config/ship-harnesses.0.1970-01-01@00:00:00~
+      - config/hooks/fm-dispatch-gate.py
+      - config/hooks/fm-dispatch-gate.py.0.1970-01-01@00:00:00~
+      - config/hooks/test_fm_dispatch_gate.py
+      - config/hooks/test_fm_dispatch_gate.py.0.1970-01-01@00:00:00~
+      - .claude/settings.local.json
+    firstmate_settings_backup_sample: .claude/settings.local.json.0.1970-01-01@00:00:00~
+  block:
+    - name: Check for an existing .claude/settings.local.json
+      ansible.builtin.stat:
+        path: "{{ firstmate_settings_path }}"
+      register: firstmate_settings_stat
+
+    - name: Read the existing .claude/settings.local.json
+      ansible.builtin.slurp:
+        src: "{{ firstmate_settings_path }}"
+      register: firstmate_settings_raw
+      when:
+        - firstmate_settings_stat.stat.exists
+        - firstmate_settings_stat.stat.size > 0
+
+    - name: Parse .claude/settings.local.json
+      ansible.builtin.set_fact:
+        firstmate_settings_current: >-
+          {{ (firstmate_settings_raw.content | b64decode | from_json)
+             if firstmate_settings_raw.content is defined else {} }}
+
+    - name: Assert .claude/settings.local.json holds a JSON object
+      ansible.builtin.assert:
+        that:
+          - firstmate_settings_current is mapping
+          - (firstmate_settings_current.get('hooks') or {}) is mapping
+          - (firstmate_settings_current.get('hooks') or {}).get('PreToolUse') is none
+            or (firstmate_settings_current.get('hooks') or {}).get('PreToolUse') is sequence
+        fail_msg: >-
+          {{ firstmate_settings_path }} is not a JSON object with a hooks.PreToolUse list;
+          fix it by hand, the role will not overwrite it.
+        quiet: true
+
+    - name: Decide whether the dispatch gate hook entry is missing
+      ansible.builtin.set_fact:
+        firstmate_settings_pretooluse: "{{ (firstmate_settings_current.get('hooks') or {}).get('PreToolUse') or [] }}"
+        firstmate_settings_needs_gate: >-
+          {{ ((firstmate_settings_current.get('hooks') or {}).get('PreToolUse') or [])
+             | select('mapping')
+             | map(attribute='hooks', default=[])
+             | flatten(levels=1)
+             | select('mapping')
+             | map(attribute='command', default='')
+             | select('in', firstmate_gate_commands)
+             | list | length == 0 }}
+
+    - name: Check the paths are gitignored by the checkout # noqa: command-instead-of-module
+      ansible.builtin.command:
+        argv: [git, -C, "{{ firstmate_install_dir }}", check-ignore, --quiet, --, "{{ item }}"]
+      loop: "{{ firstmate_gate_paths }}"
+      register: firstmate_gate_ignored
+      changed_when: false
+      failed_when: firstmate_gate_ignored.rc not in [0, 1]
+      check_mode: false
+
+    - name: Refuse to write paths the checkout does not ignore
+      ansible.builtin.assert:
+        that: firstmate_gate_ignored.results | rejectattr('rc', 'equalto', 0) | list | length == 0
+        fail_msg: >-
+          Refusing to write into {{ firstmate_install_dir }}: these paths are not
+          gitignored there:
+          {{ firstmate_gate_ignored.results | rejectattr('rc', 'equalto', 0) | map(attribute='item') | join(', ') }}
+        quiet: true
+
+    - name: Check the settings backup path is gitignored # noqa: command-instead-of-module
+      ansible.builtin.command:
+        argv: [git, -C, "{{ firstmate_install_dir }}", check-ignore, --quiet, --, "{{ firstmate_settings_backup_sample }}"]
+      register: firstmate_settings_backup_ignored
+      changed_when: false
+      failed_when: firstmate_settings_backup_ignored.rc not in [0, 1]
+      check_mode: false
+      when:
+        - firstmate_settings_needs_gate | bool
+        - firstmate_settings_stat.stat.exists
+
+    # The checkout ignores .claude/settings.local.json but not its backups, so the
+    # backup pattern goes in the repository's local exclude file (never a tracked file).
+    - name: Locate the checkout's local exclude file # noqa: command-instead-of-module
+      ansible.builtin.command:
+        argv: [git, -C, "{{ firstmate_install_dir }}", rev-parse, --path-format=absolute, --git-path, info/exclude]
+      register: firstmate_exclude_path
+      changed_when: false
+      check_mode: false
+      when:
+        - firstmate_settings_backup_ignored.rc | default(0) == 1
+
+    - name: Ignore .claude/settings.local.json backups locally
+      ansible.builtin.lineinfile:
+        path: "{{ firstmate_exclude_path.stdout }}"
+        line: /.claude/settings.local.json.*~
+        create: true
+        mode: "0644"
+      when:
+        - firstmate_settings_backup_ignored.rc | default(0) == 1
+
+    - name: Create the config directories
+      ansible.builtin.file:
+        path: "{{ firstmate_install_dir }}/{{ item.path }}"
+        state: directory
+        mode: "{{ item.mode }}"
+      loop:
+        - {path: config, mode: "0755"}
+        - {path: config/hooks, mode: "0700"}
+        - {path: .claude, mode: "0755"}
+
+    - name: Install config/crew-dispatch.json
+      ansible.builtin.copy:
+        src: "{{ firstmate_crew_dispatch_src }}"
+        dest: "{{ firstmate_install_dir }}/config/crew-dispatch.json"
+        mode: "0644"
+        backup: true
+
+    - name: Render config/ship-harnesses
+      ansible.builtin.template:
+        src: ship-harnesses.j2
+        dest: "{{ firstmate_install_dir }}/config/ship-harnesses"
+        mode: "0600"
+        backup: true
+
+    - name: Install the dispatch gate hook and its test
+      ansible.builtin.copy:
+        src: "hooks/{{ item }}"
+        dest: "{{ firstmate_install_dir }}/config/hooks/{{ item }}"
+        mode: "0700"
+        backup: true
+      loop:
+        - fm-dispatch-gate.py
+        - test_fm_dispatch_gate.py
+
+    # Keeps every existing key and hook; appends the gate entry only when absent.
+    - name: Merge the dispatch gate hook into .claude/settings.local.json
+      ansible.builtin.copy:
+        content: |
+          {{ firstmate_settings_current
+             | combine({'hooks': (firstmate_settings_current.get('hooks') or {})
+                 | combine({'PreToolUse': firstmate_settings_pretooluse + [firstmate_dispatch_gate_hook]})})
+             | to_nice_json(indent=2, sort_keys=false) }}
+        dest: "{{ firstmate_settings_path }}"
+        mode: "{{ firstmate_settings_stat.stat.mode | default('0600') }}"
+        backup: true
+      when: firstmate_settings_needs_gate | bool

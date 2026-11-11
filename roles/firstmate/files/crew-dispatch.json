@@ -1,0 +1,160 @@
+{
+  "shared_quota": false,
+  "rules": [
+    {
+      "when": "A frontier read-only investigation or design report with unresolved ambiguity, cross-system architecture, novel security or reliability reasoning, or a prior ordinary scout that failed to settle the question. The deliverable is analysis, not a code change.",
+      "use": [
+        {
+          "harness": "claude",
+          "model": "fable",
+          "effort": "xhigh",
+          "provider": "claude"
+        },
+        {
+          "harness": "codex",
+          "model": "gpt-6-astra",
+          "effort": "xhigh",
+          "provider": "codex"
+        },
+        {
+          "harness": "agy",
+          "model": "gemini-4-carbon-high",
+          "effort": "high",
+          "provider": "agy",
+          "quota_scope": "gemini"
+        }
+      ],
+      "why": "Reserve the frontier tier for genuinely hard research. Fable and Astra are the strongest escalation lanes; Carbon is promising but new, so it belongs here rather than as the default scout."
+    },
+    {
+      "when": "An adversarial code review, pull-request risk analysis, regression hunt, or second-opinion review where the primary deliverable is a written assessment of an existing change rather than implementation.",
+      "use": [
+        {
+          "harness": "codex",
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "provider": "codex"
+        },
+        {
+          "harness": "claude",
+          "model": "opus",
+          "effort": "xhigh",
+          "provider": "claude"
+        }
+      ],
+      "why": "Local and community evidence was strongest for Sol as a reviewer, with Opus as the same-class independent fallback. Keep review effort high because finding subtle omissions matters more than patch speed."
+    },
+    {
+      "when": "A read-only investigation, audit, documentation search, log analysis, repository survey, or ordinary second opinion whose deliverable is a written report and which does not require the frontier tier.",
+      "use": [
+        {
+          "harness": "agy",
+          "model": "gemini-4-argon-high",
+          "effort": "high",
+          "provider": "agy",
+          "quota_scope": "gemini"
+        },
+        {
+          "harness": "codex",
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "provider": "codex"
+        },
+        {
+          "harness": "claude",
+          "model": "opus",
+          "effort": "high",
+          "provider": "claude"
+        }
+      ],
+      "why": "Argon is Google's general software and knowledge-work lane and is a better default scout than the newer Carbon tier. Sol and Opus keep the lane resilient when their live quota and runway are healthier."
+    },
+    {
+      "when": "A frontend, UI, browser-automation, visual-debugging, or computer-use implementation task where understanding rendered state and interaction behavior is central to the change.",
+      "use": [
+        {
+          "harness": "codex",
+          "model": "gpt-6.1-terra",
+          "effort": "high",
+          "provider": "codex"
+        },
+        {
+          "harness": "claude",
+          "model": "sonnet",
+          "effort": "high",
+          "provider": "claude"
+        }
+      ],
+      "why": "Terra is the specialized visual and computer-use lane; Sonnet supplies a fast, capable same-class fallback when Codex quota or runway cannot support the task."
+    },
+    {
+      "when": "A complex implementation with ambiguous requirements, hard debugging, a multi-subsystem change, architecture work, migration, substantial refactor, or meaningful blast radius.",
+      "use": [
+        {
+          "harness": "claude",
+          "model": "opus",
+          "effort": "high",
+          "provider": "claude"
+        },
+        {
+          "harness": "codex",
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "provider": "codex"
+        }
+      ],
+      "why": "Opus and Sol are the reliable long-horizon implementation pair. High effort preserves the reasoning class while live quota and feasible runway decide which provider takes the task."
+    },
+    {
+      "when": "A well-understood, bounded implementation with explicit acceptance criteria, a small or moderate diff, and a concrete verification path.",
+      "use": [
+        {
+          "harness": "codex",
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "provider": "codex"
+        },
+        {
+          "harness": "claude",
+          "model": "sonnet",
+          "effort": "medium",
+          "provider": "claude"
+        }
+      ],
+      "why": "Sol is the balanced coding default and Sonnet is the speed-oriented peer. Medium effort avoids the overengineering seen on routine tasks at unnecessarily high effort."
+    },
+    {
+      "when": "A low-consequence mechanical task such as deterministic extraction, repetitive transformation, obvious boilerplate, formatting, or triage with a strong automated verifier and no architectural judgment.",
+      "use": [
+        {
+          "harness": "codex",
+          "model": "gpt-6-luna",
+          "effort": "medium",
+          "provider": "codex"
+        },
+        {
+          "harness": "agy",
+          "model": "gemini-3.8-flash-medium",
+          "effort": "medium",
+          "provider": "agy",
+          "quota_scope": "gemini"
+        }
+      ],
+      "why": "Luna and Flash are reserved for fast, verifiable mechanical work; they must not be used as quota-driven substitutes for tasks requiring a stronger reasoning class."
+    }
+  ],
+  "default": [
+    {
+      "harness": "claude",
+      "model": "opus",
+      "effort": "medium",
+      "provider": "claude"
+    },
+    {
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "provider": "codex"
+    }
+  ]
+}

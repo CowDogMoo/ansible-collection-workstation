@@ -3,7 +3,7 @@ galaxy_info:
   role_name: firstmate
   namespace: cowdogmoo
   author: Jayson Grace
-  description: Installs the firstmate agent distro by cloning its repository, without configuring fleet homes or starting sessions
+  description: Installs the firstmate agent distro by cloning its repository and installs its dispatch gate, without starting sessions
   company: CowDogMoo
   license: MIT
   min_ansible_version: "2.15"

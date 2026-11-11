@@ -66,3 +66,72 @@
         fail_msg: >-
           Checkout state is wrong (origin, branch, HEAD, origin/{{ firstmate_version }},
           dirty file count): {{ firstmate_git_state.stdout_lines }}
+
+    - name: Check the dispatch gate files
+      ansible.builtin.stat:
+        path: "{{ firstmate_test_dir }}/{{ item.path }}"
+      loop:
+        - {path: config/crew-dispatch.json, mode: "0644"}
+        - {path: config/ship-harnesses, mode: "0600"}
+        - {path: config/hooks, mode: "0700"}
+        - {path: config/hooks/fm-dispatch-gate.py, mode: "0700"}
+        - {path: config/hooks/test_fm_dispatch_gate.py, mode: "0700"}
+        - {path: .claude/settings.local.json, mode: "0600"}
+      register: firstmate_gate_files
+
+    - name: Assert the dispatch gate files are owner-only where expected
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == item.item.mode
+          - item.stat.pw_name == container_user
+        fail_msg: >-
+          {{ item.item.path }}: exists={{ item.stat.exists }}
+          mode={{ item.stat.mode | default('n/a') }} (want {{ item.item.mode }})
+          owner={{ item.stat.pw_name | default('n/a') }}
+        quiet: true
+      loop: "{{ firstmate_gate_files.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"
+
+    - name: Read the installed config files
+      ansible.builtin.slurp:
+        src: "{{ firstmate_test_dir }}/{{ item }}"
+      loop:
+        - config/ship-harnesses
+        - config/crew-dispatch.json
+        - .claude/settings.local.json
+      register: firstmate_gate_contents
+
+    - name: Assert the installed config matches the role
+      vars:
+        firstmate_ship_lines: "{{ (firstmate_gate_contents.results[0].content | b64decode).splitlines() }}"
+        firstmate_dispatch: "{{ firstmate_gate_contents.results[1].content | b64decode | from_json }}"
+        firstmate_settings: "{{ firstmate_gate_contents.results[2].content | b64decode | from_json }}"
+        firstmate_gate_command: "{{ firstmate_dispatch_gate_hook.hooks[0].command }}"
+      ansible.builtin.assert:
+        that:
+          - firstmate_ship_lines[0].startswith('# Harnesses allowed to run ship tasks')
+          - firstmate_ship_lines | reject('match', '^#') | list == firstmate_ship_harnesses
+          - firstmate_dispatch == lookup('ansible.builtin.file', '../../files/crew-dispatch.json') | from_json
+          - firstmate_settings.hooks.PreToolUse | map(attribute='hooks') | flatten(levels=1)
+            | selectattr('command', 'equalto', firstmate_gate_command) | list | length == 1
+        fail_msg: >-
+          Installed config differs from the role: ship-harnesses={{ firstmate_ship_lines }},
+          settings hooks={{ firstmate_settings.hooks | default('missing') }}
+
+    - name: Run the gate tests against the installed copy
+      ansible.builtin.command: python3 {{ firstmate_test_dir | quote }}/config/hooks/test_fm_dispatch_gate.py
+      register: firstmate_gate_tests
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert the gate tests pass
+      ansible.builtin.assert:
+        that:
+          - firstmate_gate_tests.rc == 0
+          - "'failures: 0' in firstmate_gate_tests.stdout_lines"
+          - firstmate_gate_tests.stdout_lines | select('match', '^PASS ') | list | length == 27
+        fail_msg: "Gate tests failed (rc={{ firstmate_gate_tests.rc }}): {{ firstmate_gate_tests.stdout }} {{ firstmate_gate_tests.stderr }}"
