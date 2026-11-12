@@ -14,8 +14,8 @@
     path: "{{ firstmate_install_dir }}/.git"
   register: firstmate_checkout
 
-# An existing checkout is left alone unless firstmate_update is set: it is also a
-# live firstmate home whose state a forced checkout could disturb.
+# An existing checkout's tracked files are left alone unless firstmate_update is set:
+# it is also a live firstmate home whose state a forced checkout could disturb.
 - name: Clone firstmate
   ansible.builtin.git:
     repo: "{{ firstmate_repo_url }}"
