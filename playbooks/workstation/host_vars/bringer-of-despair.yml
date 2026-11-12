@@ -154,6 +154,14 @@ antigravity_hooks_overrides:
     command: "bash '{{ ansible_facts['env']['HOME'] }}/.gemini/config/hooks/herdr-agent-state.sh' session"
     timeout: 10
 
+# Harnesses allowed to run firstmate ship tasks on this host. codex and agy are
+# proven here: raw `git commit`, `gh pr create` and `git commit --no-verify` are
+# refused, and bare `squad_commit` works.
+firstmate_ship_harnesses:
+  - claude
+  - codex
+  - agy
+
 # herdr UI choices for this host.
 herdr_toast_delivery: herdr
 herdr_status_indicators: symbols
