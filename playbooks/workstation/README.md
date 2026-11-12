@@ -116,6 +116,8 @@ This playbook includes the following roles in order:
    macOS runs `claude remote-control` hosts as LaunchAgents for the directories
    in a private `~/.config/claude-rc/hosts.yml` (see
    [the role's Remote Control guide](../../roles/claude_code/docs/REMOTE_CONTROL.md))
+1. **codex** - Installs the Codex CLI and manages its global `AGENTS.md`,
+   execpolicy rules, and hooks (see [the role's README](../../roles/codex/README.md))
 1. **herdr** - Installs herdr and configures it and its agent integrations
 1. **firstmate** - Clones the firstmate agent distro (no fleet setup or sessions)
 1. **go_task** - Installs Go Task runner
