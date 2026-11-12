@@ -17,24 +17,23 @@ codex_homebrew_prefix: >-
        (ansible_facts['architecture'] == 'arm64') | ternary('/opt/homebrew', '/usr/local'),
        '/home/linuxbrew/.linuxbrew') }}
 
-# PATH for the codex commands the role runs
-codex_path: "{{ codex_homebrew_prefix }}/bin:{{ codex_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+# PATH for the codex and npm commands the role runs. The mise shims are on it
+# because a per-user node, and the codex its npm installs, are only reachable there.
+codex_path: "{{ codex_homebrew_prefix }}/bin:{{ codex_user_home }}/.local/bin:{{ codex_user_home }}/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin"
 
-# Whether to install the Codex CLI when `codex` is not already on PATH. An
+# Whether to install the Codex CLI when no working `codex` is on codex_path. An
 # existing install is never upgraded or replaced.
 codex_install: true
 
-# macOS installs the Homebrew cask. Linux installs the npm package globally,
-# which needs node and npm already present.
+# macOS installs the Homebrew cask. Linux installs the npm package globally as
+# codex_username, with the npm found on codex_path: the mise-managed node the
+# workstation playbook provides. Without a working npm there, the role says so
+# and configures Codex without installing it.
 codex_homebrew_cask: codex
 codex_npm_package: "@openai/codex"
 
 # npm version to install on Linux; empty installs the latest release.
 codex_npm_version: ""
-
-# Install the npm package with become. Needed for a system node; turn it off when
-# npm comes from a per-user toolchain such as mise.
-codex_npm_become: true
 
 # Global instructions file. Codex loads $CODEX_HOME/AGENTS.md into every session
 # ahead of any project AGENTS.md.
@@ -67,14 +66,10 @@ codex_rules_dir: "{{ codex_home }}/rules"
 codex_bundled_rules:
   - squad-only.rules
 
-# Extra rule files to install from the controller (absolute paths or paths
-# relative to the playbook's files/).
-codex_rules_extra: []
-
 # Check each installed rule file with the installed codex binary: the file must
 # parse (a parse error in any rules file makes Codex drop every user rule) and
 # each probe below must get the expected decision. Skipped in check mode, and
-# when no codex binary is on PATH.
+# when no working codex is on codex_path.
 codex_validate_rules: true
 
 # Probes for codex_validate_rules: whether `codex execpolicy check` must report

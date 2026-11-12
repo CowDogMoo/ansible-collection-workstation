@@ -6,19 +6,34 @@
     container_user: "{{ ansible_facts['distribution'] | lower }}"
     container_home: "/home/{{ container_user }}"
     codex_dir: "{{ container_home }}/.codex"
+    # The PATH the mise role gives the target user's shell: its shims ahead of the
+    # system directories.
+    codex_verify_path: "{{ container_home }}/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin"
   tasks:
+    - name: Resolve codex for the target user
+      ansible.builtin.command: which codex
+      environment:
+        PATH: "{{ codex_verify_path }}"
+      register: codex_verify_which
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
     - name: Read the installed codex version
       ansible.builtin.command: codex --version
+      environment:
+        PATH: "{{ codex_verify_path }}"
       register: codex_verify_version
       changed_when: false
       become: true
       become_user: "{{ container_user }}"
 
-    - name: Assert the pinned codex was installed from npm
+    - name: Assert the pinned codex was installed through the user's mise toolchain
       ansible.builtin.assert:
         that:
+          - codex_verify_which.stdout == container_home ~ '/.local/share/mise/shims/codex'
           - codex_verify_version.stdout is search('0\.167\.1')
-        fail_msg: "{{ codex_verify_version.stdout }}"
+        fail_msg: "{{ codex_verify_which.stdout }}: {{ codex_verify_version.stdout }}"
 
     # AGENTS.md carries the same commit and PR rules the claude_code role ships.
     - name: Read AGENTS.md
@@ -86,6 +101,7 @@
               '--rules', codex_dir ~ '/rules/squad-only.rules',
               '--resolve-host-executables', '--'] + item.argv }}
       environment:
+        PATH: "{{ codex_verify_path }}"
         CODEX_HOME: "{{ codex_dir }}"
       loop:
         - {argv: [git, commit, -m, x], decision: forbidden}

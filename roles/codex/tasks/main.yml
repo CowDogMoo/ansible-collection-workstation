@@ -57,5 +57,5 @@
     msg: >-
       Codex home: {{ codex_home }}
       | AGENTS.md: {{ (codex_manage_instructions | bool) | ternary(codex_agents_md_file, 'unmanaged') }}
-      | Rules: {{ (codex_manage_rules | bool) | ternary(codex_bundled_rules + (codex_rules_extra | map('basename') | list), 'unmanaged') }}
+      | Rules: {{ (codex_manage_rules | bool) | ternary(codex_bundled_rules, 'unmanaged') }}
       | Hooks: {{ (codex_manage_hooks | bool) | ternary(codex_hooks | list, 'unmanaged') }}

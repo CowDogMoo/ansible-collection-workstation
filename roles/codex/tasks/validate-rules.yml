@@ -3,8 +3,8 @@
 # error in any of them makes it fall back to no user rules at all. So the probes
 # run against the same set Codex reads, default.rules included, and fail the play
 # rather than leave the guard silently off.
-- name: Look for the codex binary
-  ansible.builtin.command: which codex
+- name: Look for a working codex binary
+  ansible.builtin.command: codex --version
   register: codex_validate_bin
   changed_when: false
   failed_when: false
@@ -15,7 +15,7 @@
 
 - name: Report that rule validation was skipped
   ansible.builtin.debug:
-    msg: "codex is not on PATH; skipped checking {{ codex_rules_dir }} with codex execpolicy."
+    msg: "No working codex on PATH; skipped checking {{ codex_rules_dir }} with codex execpolicy."
   when: codex_validate_bin.rc != 0
 
 - name: Check the installed rules with codex execpolicy

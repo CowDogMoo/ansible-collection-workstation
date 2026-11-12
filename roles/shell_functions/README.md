@@ -24,7 +24,6 @@ Deploys the user's dotfiles shell-function library to ~/.dotfiles and exposes ch
 | `shell_functions_payload` | list | <code>&#91;&#93;</code> | No description |
 | `shell_functions_commands` | list | <code>&#91;&#93;</code> | No description |
 | `shell_functions_bin_dir` | str | <code>{{ shell_functions_user_home }}/.local/bin</code> | No description |
-| `shell_functions_command_marker` | str | <code>managed by cowdogmoo.workstation.shell_functions:</code> | No description |
 
 ## Tasks
 

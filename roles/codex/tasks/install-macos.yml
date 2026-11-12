@@ -1,6 +1,6 @@
 ---
 - name: Check if codex is already installed
-  ansible.builtin.command: which codex
+  ansible.builtin.command: codex --version
   environment:
     PATH: "{{ codex_path }}"
   register: codex_check

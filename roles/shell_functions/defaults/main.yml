@@ -40,6 +40,3 @@ shell_functions_commands: []
 # Where the function commands go. It has to be on the PATH the agents inherit;
 # zsh_setup puts ~/.local/bin there.
 shell_functions_bin_dir: "{{ shell_functions_user_home }}/.local/bin"
-
-# First line of every generated command, marking it as managed by this role
-shell_functions_command_marker: "managed by cowdogmoo.workstation.shell_functions:"

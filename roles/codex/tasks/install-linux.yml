@@ -1,6 +1,8 @@
 ---
+# Both checks run the tool rather than look it up: a mise shim stays on PATH after
+# the node it pointed at is gone, and fails only when it is run.
 - name: Check if codex is already installed
-  ansible.builtin.command: which codex
+  ansible.builtin.command: codex --version
   environment:
     PATH: "{{ codex_path }}"
   register: codex_check
@@ -11,11 +13,15 @@
   become_user: "{{ codex_username }}"
 
 - name: Check for npm
-  ansible.builtin.command: which npm
+  ansible.builtin.command: npm --version
+  environment:
+    PATH: "{{ codex_path }}"
   register: codex_npm_check
   changed_when: false
   failed_when: false
   check_mode: false
+  become: "{{ codex_username != ansible_facts['user_id'] }}"
+  become_user: "{{ codex_username }}"
   when: codex_check.rc != 0
 
 - name: Install Codex from npm
@@ -24,7 +30,10 @@
     version: "{{ codex_npm_version if (codex_npm_version | length > 0) else omit }}"
     global: true
     state: present
-  become: "{{ codex_npm_become | bool }}"
+  environment:
+    PATH: "{{ codex_path }}"
+  become: "{{ codex_username != ansible_facts['user_id'] }}"
+  become_user: "{{ codex_username }}"
   when:
     - codex_check.rc != 0
     - codex_npm_check.rc == 0

@@ -20,12 +20,11 @@ Installs the Codex CLI and manages its global AGENTS.md, execpolicy rules, and h
 | `codex_user_home` | str | <code><multiline value: folded_strip></code> | No description |
 | `codex_home` | str | <code>{{ codex_user_home }}/.codex</code> | No description |
 | `codex_homebrew_prefix` | str | <code><multiline value: folded_strip></code> | No description |
-| `codex_path` | str | <code>{{ codex_homebrew_prefix }}/bin:{{ codex_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin</code> | No description |
+| `codex_path` | str | <code>{{ codex_homebrew_prefix }}/bin:{{ codex_user_home }}/.local/bin:{{ codex_user_home }}/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin</code> | No description |
 | `codex_install` | bool | <code>True</code> | No description |
 | `codex_homebrew_cask` | str | <code>codex</code> | No description |
 | `codex_npm_package` | str | <code>@openai/codex</code> | No description |
 | `codex_npm_version` | str | <code></code> | No description |
-| `codex_npm_become` | bool | <code>True</code> | No description |
 | `codex_agents_md_file` | str | <code>{{ codex_home }}/AGENTS.md</code> | No description |
 | `codex_agents_md_src` | str | <code>AGENTS.md</code> | No description |
 | `codex_agents_md_content` | str | <code></code> | No description |
@@ -34,7 +33,6 @@ Installs the Codex CLI and manages its global AGENTS.md, execpolicy rules, and h
 | `codex_rules_dir` | str | <code>{{ codex_home }}/rules</code> | No description |
 | `codex_bundled_rules` | list | <code>&#91;&#93;</code> | No description |
 | `codex_bundled_rules.0` | str | <code>squad-only.rules</code> | No description |
-| `codex_rules_extra` | list | <code>&#91;&#93;</code> | No description |
 | `codex_validate_rules` | bool | <code>True</code> | No description |
 | `codex_rules_probes` | list | <code>&#91;&#93;</code> | No description |
 | `codex_rules_probes.0` | dict | <code>{}</code> | No description |
@@ -97,14 +95,12 @@ Installs the Codex CLI and manages its global AGENTS.md, execpolicy rules, and h
 
 - **Create the Codex rules directory** (ansible.builtin.file)
 - **Install bundled rule files** (ansible.builtin.copy)
-- **Install extra rule files** (ansible.builtin.copy)
-- **Refuse a managed rule file named default.rules** (ansible.builtin.assert)
 - **Validate the installed rules with codex** (ansible.builtin.include_tasks) - Conditional
 
 ### validate-rules.yml
 
 
-- **Look for the codex binary** (ansible.builtin.command)
+- **Look for a working codex binary** (ansible.builtin.command)
 - **Report that rule validation was skipped** (ansible.builtin.debug) - Conditional
 - **Check the installed rules with codex execpolicy** (block) - Conditional
 - **Find the rule files Codex loads** (ansible.builtin.find)

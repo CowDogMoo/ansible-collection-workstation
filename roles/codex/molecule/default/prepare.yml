@@ -13,20 +13,29 @@
         create_home: true
       become: true
 
-    # The role installs Codex from npm on Linux, so the real codex binary is what
-    # validates the rules in converge and verify. The distro node clears Codex's
-    # floor (Ubuntu 24.04 ships 18, Kali 24).
     - name: Install prerequisites
       ansible.builtin.apt:
         name:
           - ca-certificates
           - git
-          - nodejs
-          - npm
           - python3
         state: present
         update_cache: true
       become: true
+
+    # The role installs Codex from npm on Linux, so the real codex binary is what
+    # validates the rules in converge and verify. Node comes the way the
+    # workstation playbook provides it: from the mise role, for the target user,
+    # with npm reachable only through the mise shims.
+    - name: Install node with mise
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.mise
+      vars:
+        mise_username: "{{ container_user }}"
+        mise_plugins:
+          - name: node
+            version: "24.14.0"
+            scope: "global"
 
     - name: Create ~/.codex as another tool would have left it
       ansible.builtin.file:

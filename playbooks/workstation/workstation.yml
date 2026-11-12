@@ -318,6 +318,11 @@
       when: codex_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/codex
+      vars:
+        # The squad-only detector hook for hooks-enabled (interactive) sessions,
+        # merged into ~/.codex/hooks.json. Codex asks once, at the next such
+        # launch, to trust a new or changed hook.
+        codex_manage_hooks: true
 
     - name: Install herdr agent multiplexer
       role: cowdogmoo.workstation.herdr
