@@ -25,13 +25,20 @@ Installs the firstmate agent distro by cloning its repository and installs its d
 | `firstmate_dependencies` | list | <code>&#91;&#93;</code> | Packages installed when firstmate_manage_dependencies is true. |
 | `firstmate_dependencies.0` | str | <code>git</code> | No description |
 | `firstmate_dependencies.1` | str | <code>jq</code> | No description |
-| `firstmate_manage_dispatch_gate` | bool | <code>True</code> | Install the dispatch gate files and merge its hook into .claude/settings.local.json. |
 | `firstmate_ship_harnesses` | list | <code>&#91;&#93;</code> | Harnesses allowed to run ship tasks, rendered to config/ship-harnesses. |
 | `firstmate_ship_harnesses.0` | str | <code>claude</code> | No description |
-| `firstmate_crew_dispatch_src` | str | <code>crew-dispatch.json</code> | Role file or controller path installed as config/crew-dispatch.json. |
-| `firstmate_dispatch_gate_hook` | dict | <code>{}</code> | PreToolUse entry merged into .claude/settings.local.json when none of its commands is present. |
-| `firstmate_dispatch_gate_hook.matcher` | str | <code>Bash</code> | No description |
-| `firstmate_dispatch_gate_hook.hooks` | list | <code>&#91;&#93;</code> | No description |
+
+### Role Variables (main.yml)
+
+| Variable | Type | Value | Description |
+| -------- | ---- | ----- | ----------- |
+| `firstmate_dispatch_gate_hook` | dict | `{}` | No description |
+| `firstmate_dispatch_gate_hook.matcher` | str | `Bash` | No description |
+| `firstmate_dispatch_gate_hook.hooks` | list | `[]` | No description |
+| `firstmate_dispatch_gate_hook.hooks.0` | dict | `{}` | No description |
+| `firstmate_dispatch_gate_hook.hooks.0.type` | str | `command` | No description |
+| `firstmate_dispatch_gate_hook.hooks.0.command` | str | `/usr/bin/python3 "$CLAUDE_PROJECT_DIR"/config/hooks/fm-dispatch-gate.py` | No description |
+| `firstmate_dispatch_gate_hook.hooks.0.timeout` | int | `10` | No description |
 
 ## Tasks
 
@@ -64,7 +71,7 @@ Installs the firstmate agent distro by cloning its repository and installs its d
 - **Check for an existing firstmate checkout** (ansible.builtin.stat)
 - **Clone firstmate** (ansible.builtin.git) - Conditional
 - **Display firstmate checkout** (ansible.builtin.debug)
-- **Install the firstmate dispatch gate** (ansible.builtin.include_tasks) - Conditional
+- **Install the firstmate dispatch gate** (ansible.builtin.include_tasks)
 
 ## Example Playbook
 

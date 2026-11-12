@@ -125,6 +125,12 @@
         hidden: true
       register: firstmate_merged_backups
 
+    - name: Find local exclude backups
+      ansible.builtin.find:
+        paths: "{{ firstmate_test_dir }}/.git/info"
+        patterns: "exclude.*~"
+      register: firstmate_exclude_backups
+
     - name: Read the checkout status # noqa: command-instead-of-module
       ansible.builtin.command: git -C {{ firstmate_test_dir | quote }} status --porcelain
       register: firstmate_merged_status
@@ -145,9 +151,11 @@
           - firstmate_merged.hooks.PreToolUse[1].matcher == 'Bash'
           - firstmate_merged.hooks.PreToolUse[1].hooks[0].command == firstmate_test_gate_command
           - firstmate_merged_backups.matched == 1
+          - firstmate_exclude_backups.matched == 1
           - firstmate_merged_status.stdout | length == 0
         fail_msg: >-
           Merge result is wrong: {{ firstmate_merged }}; backups={{ firstmate_merged_backups.matched }};
+          exclude backups={{ firstmate_exclude_backups.matched }};
           git status={{ firstmate_merged_status.stdout }}
 
     - name: Record the merged settings checksum
@@ -174,12 +182,21 @@
         hidden: true
       register: firstmate_merged_backups_after
 
-    - name: Assert the second run left the settings alone
+    - name: Find local exclude backups after the re-run
+      ansible.builtin.find:
+        paths: "{{ firstmate_test_dir }}/.git/info"
+        patterns: "exclude.*~"
+      register: firstmate_exclude_backups_after
+
+    - name: Assert the second run left the settings and the local exclude file alone
       ansible.builtin.assert:
         that:
           - firstmate_merged_after.stat.checksum == firstmate_merged_before.stat.checksum
           - firstmate_merged_backups_after.matched == 1
-        fail_msg: "A second run rewrote {{ firstmate_test_settings }}"
+          - firstmate_exclude_backups_after.matched == 1
+        fail_msg: >-
+          A second run rewrote {{ firstmate_test_settings }} or the local exclude file
+          (exclude backups={{ firstmate_exclude_backups_after.matched }})
 
 # The role writes only paths the checkout ignores; when one is not ignored it
 # refuses before writing anything.

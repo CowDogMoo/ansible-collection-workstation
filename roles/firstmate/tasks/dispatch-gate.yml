@@ -123,6 +123,7 @@
         line: /.claude/settings.local.json.*~
         create: true
         mode: "0644"
+        backup: true
       when:
         - firstmate_settings_backup_ignored.rc | default(0) == 1
 
@@ -138,7 +139,7 @@
 
     - name: Install config/crew-dispatch.json
       ansible.builtin.copy:
-        src: "{{ firstmate_crew_dispatch_src }}"
+        src: crew-dispatch.json
         dest: "{{ firstmate_install_dir }}/config/crew-dispatch.json"
         mode: "0644"
         backup: true

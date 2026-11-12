@@ -11,6 +11,10 @@
       ansible.builtin.include_vars:
         file: "../../defaults/main.yml"
 
+    - name: Include role variables
+      ansible.builtin.include_vars:
+        file: "../../vars/main.yml"
+
     - name: Resolve dependencies on PATH
       ansible.builtin.shell: command -v git && command -v jq
       args:

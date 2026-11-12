@@ -32,27 +32,8 @@ firstmate_dependencies:
   - git
   - jq
 
-# Install the dispatch gate into the firstmate checkout: config/crew-dispatch.json,
-# config/ship-harnesses, config/hooks/fm-dispatch-gate.py with its test, and the
-# PreToolUse hook entry merged into .claude/settings.local.json. Every path written
-# must be gitignored by the checkout; the role refuses to write otherwise.
-firstmate_manage_dispatch_gate: true
-
 # Harnesses allowed to run ship tasks, rendered one per line to
 # config/ship-harnesses. Add a harness only after its workers are proven to enforce
 # the commit/PR rules (squad_commit, squad_pr, no --no-verify, no AI attribution).
 firstmate_ship_harnesses:
   - claude
-
-# Source of config/crew-dispatch.json: a file in this role's files/ directory, or
-# an absolute path on the controller.
-firstmate_crew_dispatch_src: crew-dispatch.json
-
-# PreToolUse entry merged into .claude/settings.local.json. It is appended only when
-# no existing PreToolUse hook already runs one of its commands.
-firstmate_dispatch_gate_hook:
-  matcher: Bash
-  hooks:
-    - type: command
-      command: '/usr/bin/python3 "$CLAUDE_PROJECT_DIR"/config/hooks/fm-dispatch-gate.py'
-      timeout: 10

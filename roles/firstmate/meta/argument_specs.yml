@@ -36,18 +36,7 @@ argument_specs:
         type: list
         elements: str
         description: Packages installed when firstmate_manage_dependencies is true.
-      firstmate_manage_dispatch_gate:
-        type: bool
-        default: true
-        description: Install the dispatch gate files and merge its hook into .claude/settings.local.json.
       firstmate_ship_harnesses:
         type: list
         elements: str
         description: Harnesses allowed to run ship tasks, rendered to config/ship-harnesses.
-      firstmate_crew_dispatch_src:
-        type: str
-        default: crew-dispatch.json
-        description: Role file or controller path installed as config/crew-dispatch.json.
-      firstmate_dispatch_gate_hook:
-        type: dict
-        description: PreToolUse entry merged into .claude/settings.local.json when none of its commands is present.

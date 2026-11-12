@@ -38,4 +38,3 @@
 
 - name: Install the firstmate dispatch gate
   ansible.builtin.include_tasks: dispatch-gate.yml
-  when: firstmate_manage_dispatch_gate | bool
