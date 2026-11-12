@@ -82,7 +82,7 @@ by hand.
 | [`build_cleanup`](roles/build_cleanup/README.md) | General-purpose, parameterized cleanup role for build artifact minimization |
 | [`claude_code`](roles/claude_code/README.md) | Manages Claude Code CLI configuration including hooks and settings |
 | [`fabric`](roles/fabric/README.md) | Installs and configures Daniel Miessler's Fabric AI framework |
-| [`firstmate`](roles/firstmate/README.md) | Installs the firstmate agent distro by cloning its repository, without configuring fleet homes or starting sessions |
+| [`firstmate`](roles/firstmate/README.md) | Installs the firstmate agent distro by cloning its repository and installs its dispatch gate, without starting sessions |
 | [`git_setup`](roles/git_setup/README.md) | Renders ~/.gitconfig with aliases and sane defaults |
 | [`go_task`](roles/go_task/README.md) | Installs go-task (Task runner) on Unix-like and Windows systems |
 | [`herdr`](roles/herdr/README.md) | Installs herdr and configures it and its agent integrations |

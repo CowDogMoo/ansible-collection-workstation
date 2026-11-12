@@ -74,3 +74,181 @@
       changed_when: true
       become: true
       become_user: "{{ container_user }}"
+
+# .claude/settings.local.json is merged, never replaced: unrelated keys and hooks
+# survive, the gate entry is added once, and a second run changes nothing.
+- name: Side Effect - settings.local.json is merged
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    firstmate_test_dir: "{{ container_home }}/firstmate"
+    firstmate_test_settings: "{{ container_home }}/firstmate/.claude/settings.local.json"
+    firstmate_test_gate_command: '/usr/bin/python3 "$CLAUDE_PROJECT_DIR"/config/hooks/fm-dispatch-gate.py'
+  tasks:
+    - name: Replace settings.local.json with unrelated keys and hooks
+      ansible.builtin.copy:
+        dest: "{{ firstmate_test_settings }}"
+        content: |
+          {
+            "permissions": {"allow": ["Bash(ls:*)"]},
+            "molecule_unrelated": {"keep": true},
+            "hooks": {
+              "PreToolUse": [
+                {"matcher": "Read", "hooks": [{"type": "command", "command": "true"}]}
+              ],
+              "Stop": [
+                {"hooks": [{"type": "command", "command": "true"}]}
+              ]
+            }
+          }
+        owner: "{{ container_user }}"
+        mode: "0600"
+      become: true
+
+    - name: Re-run the role to merge the gate entry
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.firstmate
+      vars:
+        firstmate_username: "{{ container_user }}"
+        firstmate_user_home: "{{ container_home }}"
+
+    - name: Read the merged settings
+      ansible.builtin.slurp:
+        src: "{{ firstmate_test_settings }}"
+      register: firstmate_merged_raw
+
+    - name: Find settings backups
+      ansible.builtin.find:
+        paths: "{{ container_home }}/firstmate/.claude"
+        patterns: "settings.local.json.*~"
+        hidden: true
+      register: firstmate_merged_backups
+
+    - name: Find local exclude backups
+      ansible.builtin.find:
+        paths: "{{ firstmate_test_dir }}/.git/info"
+        patterns: "exclude.*~"
+      register: firstmate_exclude_backups
+
+    - name: Read the checkout status # noqa: command-instead-of-module
+      ansible.builtin.command: git -C {{ firstmate_test_dir | quote }} status --porcelain
+      register: firstmate_merged_status
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert the merge kept existing keys and added the gate once
+      vars:
+        firstmate_merged: "{{ firstmate_merged_raw.content | b64decode | from_json }}"
+      ansible.builtin.assert:
+        that:
+          - firstmate_merged.molecule_unrelated.keep is true
+          - firstmate_merged.permissions.allow == ['Bash(ls:*)']
+          - firstmate_merged.hooks.Stop | length == 1
+          - firstmate_merged.hooks.PreToolUse | length == 2
+          - firstmate_merged.hooks.PreToolUse[0].matcher == 'Read'
+          - firstmate_merged.hooks.PreToolUse[1].matcher == 'Bash'
+          - firstmate_merged.hooks.PreToolUse[1].hooks[0].command == firstmate_test_gate_command
+          - firstmate_merged_backups.matched == 1
+          - firstmate_exclude_backups.matched == 1
+          - firstmate_merged_status.stdout | length == 0
+        fail_msg: >-
+          Merge result is wrong: {{ firstmate_merged }}; backups={{ firstmate_merged_backups.matched }};
+          exclude backups={{ firstmate_exclude_backups.matched }};
+          git status={{ firstmate_merged_status.stdout }}
+
+    - name: Record the merged settings checksum
+      ansible.builtin.stat:
+        path: "{{ firstmate_test_settings }}"
+      register: firstmate_merged_before
+
+    - name: Re-run the role on the merged settings
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.firstmate
+      vars:
+        firstmate_username: "{{ container_user }}"
+        firstmate_user_home: "{{ container_home }}"
+
+    - name: Read the settings checksum after the re-run
+      ansible.builtin.stat:
+        path: "{{ firstmate_test_settings }}"
+      register: firstmate_merged_after
+
+    - name: Find settings backups after the re-run
+      ansible.builtin.find:
+        paths: "{{ container_home }}/firstmate/.claude"
+        patterns: "settings.local.json.*~"
+        hidden: true
+      register: firstmate_merged_backups_after
+
+    - name: Find local exclude backups after the re-run
+      ansible.builtin.find:
+        paths: "{{ firstmate_test_dir }}/.git/info"
+        patterns: "exclude.*~"
+      register: firstmate_exclude_backups_after
+
+    - name: Assert the second run left the settings and the local exclude file alone
+      ansible.builtin.assert:
+        that:
+          - firstmate_merged_after.stat.checksum == firstmate_merged_before.stat.checksum
+          - firstmate_merged_backups_after.matched == 1
+          - firstmate_exclude_backups_after.matched == 1
+        fail_msg: >-
+          A second run rewrote {{ firstmate_test_settings }} or the local exclude file
+          (exclude backups={{ firstmate_exclude_backups_after.matched }})
+
+# The role writes only paths the checkout ignores; when one is not ignored it
+# refuses before writing anything.
+- name: Side Effect - refuse to write paths the checkout does not ignore
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    firstmate_test_dir: "{{ container_home }}/firstmate"
+  tasks:
+    - name: Stop ignoring settings.local.json in the checkout
+      ansible.builtin.lineinfile:
+        path: "{{ firstmate_test_dir }}/.gitignore"
+        line: "!.claude/settings.local.json"
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Run the role and expect a refusal
+      block:
+        - name: Re-run the role with an extra ship harness
+          ansible.builtin.include_role:
+            name: cowdogmoo.workstation.firstmate
+          vars:
+            firstmate_username: "{{ container_user }}"
+            firstmate_user_home: "{{ container_home }}"
+            firstmate_ship_harnesses: [claude, molecule-harness]
+
+        - name: Fail because the role wrote into a tracked path
+          ansible.builtin.set_fact:
+            firstmate_refusal_missing: true
+      rescue:
+        - name: Record the refusal message
+          ansible.builtin.set_fact:
+            firstmate_refusal_msg: "{{ ansible_failed_result.msg | default('') }}"
+      always:
+        - name: Restore the checkout's .gitignore # noqa: command-instead-of-module
+          ansible.builtin.command: git -C {{ firstmate_test_dir | quote }} checkout -- .gitignore
+          changed_when: true
+          become: true
+          become_user: "{{ container_user }}"
+
+    - name: Read ship-harnesses after the refused run
+      ansible.builtin.slurp:
+        src: "{{ firstmate_test_dir }}/config/ship-harnesses"
+      register: firstmate_refused_ship
+
+    - name: Assert the role refused before writing
+      ansible.builtin.assert:
+        that:
+          - firstmate_refusal_missing is not defined
+          - "'.claude/settings.local.json' in firstmate_refusal_msg"
+          - "'molecule-harness' not in (firstmate_refused_ship.content | b64decode)"
+        fail_msg: >-
+          The role did not refuse an unignored path: refused={{ firstmate_refusal_missing is not defined }},
+          message={{ firstmate_refusal_msg | default('none') }}

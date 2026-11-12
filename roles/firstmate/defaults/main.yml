@@ -31,3 +31,9 @@ firstmate_manage_dependencies: true
 firstmate_dependencies:
   - git
   - jq
+
+# Harnesses allowed to run ship tasks, rendered one per line to
+# config/ship-harnesses. Add a harness only after its workers are proven to enforce
+# the commit/PR rules (squad_commit, squad_pr, no --no-verify, no AI attribution).
+firstmate_ship_harnesses:
+  - claude

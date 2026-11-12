@@ -1,0 +1,7 @@
+# Harnesses allowed to run ship tasks (write code: commits, PRs).
+# A harness is listed only once its workers are proven on this Mac to enforce the
+# captain's commit/PR rules: squad_commit, squad_pr, no --no-verify, no AI attribution.
+# Read by config/hooks/fm-dispatch-gate.py (first mate PreToolUse hook).
+{% for firstmate_ship_harness in firstmate_ship_harnesses %}
+{{ firstmate_ship_harness }}
+{% endfor %}

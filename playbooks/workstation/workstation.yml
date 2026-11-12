@@ -309,7 +309,7 @@
       # For debugging
       # role: ../../roles/herdr
 
-    # Clones the firstmate agent distro only; fleet homes and sessions stay manual.
+    # Clones the firstmate agent distro and installs its dispatch gate; sessions stay manual.
     - name: Install firstmate agent distro
       role: cowdogmoo.workstation.firstmate
       tags:

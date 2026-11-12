@@ -1,0 +1,9 @@
+---
+# PreToolUse entry merged into .claude/settings.local.json. It is appended only when
+# no existing PreToolUse hook already runs one of its commands.
+firstmate_dispatch_gate_hook:
+  matcher: Bash
+  hooks:
+    - type: command
+      command: '/usr/bin/python3 "$CLAUDE_PROJECT_DIR"/config/hooks/fm-dispatch-gate.py'
+      timeout: 10
