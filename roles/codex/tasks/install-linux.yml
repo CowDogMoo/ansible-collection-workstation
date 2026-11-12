@@ -1,0 +1,57 @@
+---
+- name: Check if codex is already installed
+  ansible.builtin.command: which codex
+  environment:
+    PATH: "{{ codex_path }}"
+  register: codex_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  become: "{{ codex_username != ansible_facts['user_id'] }}"
+  become_user: "{{ codex_username }}"
+
+- name: Check for npm
+  ansible.builtin.command: which npm
+  register: codex_npm_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: codex_check.rc != 0
+
+- name: Install Codex from npm
+  community.general.npm:
+    name: "{{ codex_npm_package }}"
+    version: "{{ codex_npm_version if (codex_npm_version | length > 0) else omit }}"
+    global: true
+    state: present
+  become: "{{ codex_npm_become | bool }}"
+  when:
+    - codex_check.rc != 0
+    - codex_npm_check.rc == 0
+  register: codex_npm_install
+  retries: 3
+  delay: 5
+  until: codex_npm_install is not failed
+
+- name: Print manual install notice
+  ansible.builtin.debug:
+    msg: "npm is not available; install Codex manually (npm install -g {{ codex_npm_package }})."
+  when:
+    - codex_check.rc != 0
+    - codex_npm_check.rc != 0
+
+- name: Read the codex version
+  ansible.builtin.command: codex --version
+  environment:
+    PATH: "{{ codex_path }}"
+  register: codex_version
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  become: "{{ codex_username != ansible_facts['user_id'] }}"
+  become_user: "{{ codex_username }}"
+
+- name: Display the codex version
+  ansible.builtin.debug:
+    msg: "Codex installed: {{ codex_version.stdout }}"
+  when: codex_version.rc == 0

@@ -2,7 +2,7 @@
 
 This playbook sets up a complete development workstation with user management,
 ZSH configuration, ASDF version manager, AI development tools (Fabric,
-Claude Code, herdr, and firstmate), logging, and Go Task on Ubuntu, Debian, and macOS systems.
+Claude Code, Antigravity, Codex, herdr, and firstmate), logging, and Go Task on Ubuntu, Debian, and macOS systems.
 
 ---
 

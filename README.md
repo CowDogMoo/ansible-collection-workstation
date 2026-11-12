@@ -25,19 +25,20 @@ graph TD
     Roles --> R2[asdf 🧪]
     Roles --> R3[build_cleanup 🧪]
     Roles --> R4[claude_code 🧪]
-    Roles --> R5[fabric 🧪]
-    Roles --> R6[firstmate 🧪]
-    Roles --> R7[git_setup 🧪]
-    Roles --> R8[go_task 🧪]
-    Roles --> R9[herdr 🧪]
-    Roles --> R10[logging 🧪]
-    Roles --> R11[mise 🧪]
-    Roles --> R12[package_management 🧪]
-    Roles --> R13[shell_functions 🧪]
-    Roles --> R14[tmux_setup 🧪]
-    Roles --> R15[user_setup 🧪]
-    Roles --> R16[vnc_setup 🧪]
-    Roles --> R17[zsh_setup 🧪]
+    Roles --> R5[codex 🧪]
+    Roles --> R6[fabric 🧪]
+    Roles --> R7[firstmate 🧪]
+    Roles --> R8[git_setup 🧪]
+    Roles --> R9[go_task 🧪]
+    Roles --> R10[herdr 🧪]
+    Roles --> R11[logging 🧪]
+    Roles --> R12[mise 🧪]
+    Roles --> R13[package_management 🧪]
+    Roles --> R14[shell_functions 🧪]
+    Roles --> R15[tmux_setup 🧪]
+    Roles --> R16[user_setup 🧪]
+    Roles --> R17[vnc_setup 🧪]
+    Roles --> R18[zsh_setup 🧪]
     Collection --> Playbooks[📚 Playbooks]
     Playbooks --> PB0[asdf]
     Playbooks --> PB1[mise]
@@ -81,6 +82,7 @@ by hand.
 | [`asdf`](roles/asdf/README.md) | Installs the asdf version manager, wires it into the user's shell, and installs configured plugins. |
 | [`build_cleanup`](roles/build_cleanup/README.md) | General-purpose, parameterized cleanup role for build artifact minimization |
 | [`claude_code`](roles/claude_code/README.md) | Manages Claude Code CLI configuration including hooks and settings |
+| [`codex`](roles/codex/README.md) | Installs the Codex CLI and manages its global AGENTS.md, execpolicy rules, and hooks |
 | [`fabric`](roles/fabric/README.md) | Installs and configures Daniel Miessler's Fabric AI framework |
 | [`firstmate`](roles/firstmate/README.md) | Installs the firstmate agent distro by cloning its repository, without configuring fleet homes or starting sessions |
 | [`git_setup`](roles/git_setup/README.md) | Renders ~/.gitconfig with aliases and sane defaults |
@@ -89,7 +91,7 @@ by hand.
 | [`logging`](roles/logging/README.md) | Provides flexible logging directories and log rotation for any application or service. |
 | [`mise`](roles/mise/README.md) | Installs the mise polyglot tool version manager, wires it into the user's shell, and installs configured default tools. |
 | [`package_management`](roles/package_management/README.md) | Manage package installations and cleanups on Debian-based and Red Hat-based systems |
-| [`shell_functions`](roles/shell_functions/README.md) | Deploys the user's dotfiles shell-function library to ~/.dotfiles |
+| [`shell_functions`](roles/shell_functions/README.md) | Deploys the user's dotfiles shell-function library to ~/.dotfiles and exposes chosen functions as commands |
 | [`tmux_setup`](roles/tmux_setup/README.md) | Renders ~/.tmux.conf with mouse-friendly bindings and OSC52 clipboard |
 | [`user_setup`](roles/user_setup/README.md) | Sets up user accounts with optional sudo privileges for Unix-like and Windows systems. |
 | [`vnc_setup`](roles/vnc_setup/README.md) | Installs and configures TigerVNC servers with per-user passwords and optional systemd units. |

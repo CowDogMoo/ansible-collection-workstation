@@ -1,0 +1,53 @@
+---
+# Changing what the role writes must back up the replaced file and touch nothing
+# it does not own.
+- name: Side Effect - rewrite AGENTS.md and drop the hook
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Run the role with different AGENTS.md content and no hooks
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.codex
+      vars:
+        codex_username: "{{ container_user }}"
+        codex_user_home: "{{ container_home }}"
+        codex_install: false
+        codex_agents_md_content: "# side effect\n"
+        codex_manage_hooks: true
+        codex_hooks_overrides:
+          forbidden_content: ~
+
+    - name: Find AGENTS.md backups
+      ansible.builtin.find:
+        paths: "{{ container_home }}/.codex"
+        patterns: "AGENTS.md.*~"
+      register: codex_side_agents_backups
+      become: true
+
+    - name: Read hooks.json after the hook was dropped
+      ansible.builtin.slurp:
+        src: "{{ container_home }}/.codex/hooks.json"
+      register: codex_side_hooks
+      become: true
+
+    - name: Assert the old AGENTS.md was backed up and only the managed hook removed
+      ansible.builtin.assert:
+        that:
+          - codex_side_agents_backups.matched == 1
+          - "'PreToolUse' not in codex_side_hooks_doc.hooks"
+          - codex_side_hooks_doc.hooks.SessionStart[0].hooks[0].command is search('herdr-agent-state')
+        fail_msg: "{{ codex_side_hooks_doc | to_nice_json }}"
+      vars:
+        codex_side_hooks_doc: "{{ codex_side_hooks.content | b64decode | from_json }}"
+
+    # Leave the converged state behind for verify.
+    - name: Restore the converged configuration
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.codex
+      vars:
+        codex_username: "{{ container_user }}"
+        codex_user_home: "{{ container_home }}"
+        codex_install: false
+        codex_manage_hooks: true

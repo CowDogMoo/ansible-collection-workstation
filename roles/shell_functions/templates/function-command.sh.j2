@@ -1,0 +1,17 @@
+#!/bin/sh
+# {{ shell_functions_command_marker }} {{ item.name }}
+#
+# Runs the `{{ item.name }}` shell function from {{ item.file }} in shells that never
+# read ~/.zshrc, such as the non-interactive shells coding agents run commands in.
+# An interactive shell already has the function, which takes precedence over this
+# file, so interactive behavior does not change.
+lib={{ (shell_functions_dest ~ '/' ~ item.file) | quote }}
+if [ ! -r "$lib" ]; then
+  echo "{{ item.name }}: $lib not found" >&2
+  exit 127
+fi
+shell=$(command -v zsh || command -v bash) || {
+  echo "{{ item.name }}: needs zsh or bash" >&2
+  exit 127
+}
+exec "$shell" -c '. "$0" && {{ item.name }} "$@"' "$lib" "$@"

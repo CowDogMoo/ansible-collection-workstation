@@ -32,3 +32,60 @@
       ansible.builtin.assert:
         that:
           - (shell_functions_marker.content | b64decode) == "molecule marker\n"
+
+    # Agents run commands in non-interactive shells that never read ~/.zshrc, so
+    # the function has to be reachable as a plain command. Run it from a bare sh
+    # with nothing but PATH set, the way an agent's shell would find it.
+    - name: Stat the squad_commit command
+      ansible.builtin.stat:
+        path: "{{ shell_functions_bin_dir }}/squad_commit"
+      register: shell_functions_command_stat
+
+    - name: Assert the command is installed and executable
+      ansible.builtin.assert:
+        that:
+          - shell_functions_command_stat.stat.exists
+          - shell_functions_command_stat.stat.executable
+          - shell_functions_command_stat.stat.mode == "0755"
+
+    - name: Run squad_commit from a non-interactive shell
+      ansible.builtin.command:
+        argv:
+          - env
+          - -i
+          - "PATH={{ shell_functions_bin_dir }}:/usr/local/bin:/usr/bin:/bin"
+          - "HOME={{ shell_functions_user_home }}"
+          - sh
+          - -c
+          - squad_commit one 'two words'
+      register: shell_functions_command_run
+      changed_when: false
+
+    - name: Assert the function ran with its arguments intact
+      ansible.builtin.assert:
+        that:
+          - shell_functions_command_run.rc == 0
+          - 'shell_functions_command_run.stdout == "squad_commit ran: one two words"'
+        fail_msg: "{{ shell_functions_command_run | to_json }}"
+
+    - name: Run the command with its library missing
+      ansible.builtin.command:
+        argv:
+          - env
+          - -i
+          - PATH=/usr/bin:/bin
+          - sh
+          - -c
+          - >-
+            sed 's|^lib=.*|lib=/nonexistent/git.sh|' {{ shell_functions_bin_dir }}/squad_commit > /tmp/squad_commit_missing
+            && sh /tmp/squad_commit_missing
+      register: shell_functions_command_missing
+      changed_when: false
+      failed_when: false
+
+    - name: Assert a missing library fails loudly instead of silently succeeding
+      ansible.builtin.assert:
+        that:
+          - shell_functions_command_missing.rc == 127
+          - "'not found' in shell_functions_command_missing.stderr"
+        fail_msg: "{{ shell_functions_command_missing | to_json }}"

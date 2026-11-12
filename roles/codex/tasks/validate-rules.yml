@@ -1,0 +1,59 @@
+---
+# Codex loads every *.rules file in the directory into one policy, and a parse
+# error in any of them makes it fall back to no user rules at all. So the probes
+# run against the same set Codex reads, default.rules included, and fail the play
+# rather than leave the guard silently off.
+- name: Look for the codex binary
+  ansible.builtin.command: which codex
+  register: codex_validate_bin
+  changed_when: false
+  failed_when: false
+  environment:
+    PATH: "{{ codex_path }}"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
+  become_user: "{{ codex_username }}"
+
+- name: Report that rule validation was skipped
+  ansible.builtin.debug:
+    msg: "codex is not on PATH; skipped checking {{ codex_rules_dir }} with codex execpolicy."
+  when: codex_validate_bin.rc != 0
+
+- name: Check the installed rules with codex execpolicy
+  when: codex_validate_bin.rc == 0
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
+  become_user: "{{ codex_username }}"
+  block:
+    - name: Find the rule files Codex loads
+      ansible.builtin.find:
+        paths: "{{ codex_rules_dir }}"
+        patterns: "*.rules"
+      register: codex_rule_files
+
+    - name: Evaluate each probe against the installed rules
+      ansible.builtin.command:
+        argv: >-
+          {{ ['codex', 'execpolicy', 'check']
+             + (codex_rule_files.files | map(attribute='path') | sort
+                | map('regex_replace', '^', '--rules=') | list)
+             + ['--']
+             + item.argv }}
+      environment:
+        PATH: "{{ codex_path }}"
+        CODEX_HOME: "{{ codex_home }}"
+      loop: "{{ codex_rules_probes }}"
+      loop_control:
+        label: "{{ item.argv | join(' ') }}"
+      register: codex_rules_probe_results
+      changed_when: false
+
+    - name: Assert each probe got the expected decision
+      ansible.builtin.assert:
+        that:
+          - (((item.stdout | from_json).decision | default('none')) == 'forbidden') == (item.item.forbidden | bool)
+        fail_msg: >-
+          `{{ item.item.argv | join(' ') }}` must {{ '' if item.item.forbidden else 'not ' }}be
+          forbidden by the rules in {{ codex_rules_dir }}: {{ item.stdout }}
+        quiet: true
+      loop: "{{ codex_rules_probe_results.results }}"
+      loop_control:
+        label: "{{ item.item.argv | join(' ') }} -> {{ 'forbidden' if item.item.forbidden else 'not forbidden' }}"

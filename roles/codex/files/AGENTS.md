@@ -1,0 +1,89 @@
+# Global Codex Instructions
+
+## .codex Directory and Version Control
+
+Project-level Codex configuration is team-shared and belongs in git; personal
+state and credentials never do.
+
+**Commit these** (team-shared configuration):
+
+- `.codex/config.toml` — project-scoped settings, when the team shares them
+- `.codex/rules/` — project execpolicy rules
+- `.codex/hooks.json` — project hooks
+- `AGENTS.md` at the repo root (or in a subdirectory) — project instructions
+
+**NEVER commit these** (personal/local state and credentials):
+
+- The global `~/.codex/` directory — it holds `auth.json` credentials, session
+  history, and logs, and belongs to the user, never to a repo
+- `AGENTS.override.md` — a personal override of the shared `AGENTS.md`
+- `.env` files or anything else containing API keys
+
+If a local-only file shows up staged, run `git restore --staged <path>` and add
+it to `.gitignore` — but never blanket-ignore the whole `.codex/` directory,
+since that hides shared settings, rules, and hooks from the team.
+
+## Git Workflow
+
+### Commits
+
+Always use `squad_commit` for commit messages (billed to the Claude
+subscription via squad's claude-code provider). If it fails, debug the
+generator with `git ds | squad_gen commit`:
+
+```bash
+squad_commit
+```
+
+Codex itself refuses `git commit` (every form, `--no-verify` included),
+`git commit-tree`, and `gh pr create`/`gh pr edit` (gh-axi too) through
+`~/.codex/rules/squad-only.rules`, whatever the approval or sandbox mode. Treat a
+refusal as the answer, not an obstacle: never reach for `git -C`, a `VAR=value`
+prefix, a redirect, a wrapper shell, or a script to get a hand-written commit or
+PR text past it. To conclude a conflicted merge with git's own message, run
+`GIT_EDITOR=true git merge --continue`.
+
+**NEVER EVER use --no-verify when committing or there will be dire consequences!**
+
+- Never skip pre-commit hooks with `--no-verify` or `-n`
+- Hooks are there for critical validation and security checks
+- If a commit fails due to hooks, fix the issue and create a NEW commit
+- Bypassing hooks can lead to broken builds, security vulnerabilities, and other serious problems
+
+### Pull Requests
+
+Always use `squad_pr` for pull requests — both to **open** them and to **update** them (billed to the Claude subscription; if it fails, debug with `git diff main...HEAD | squad_gen pr`). `squad_pr` regenerates the title/body from the current `git diff main`, then creates the PR or, if one already exists for the branch, updates that PR in place.
+
+```bash
+squad_pr
+```
+
+**The PR title and body must ALWAYS be `squad_pr`'s generated output. NEVER hand-write or hand-edit them.**
+
+- Any time the branch changes — after a **rebase, amend, new commits, or force-push** — the existing body is stale. Re-run `squad_pr`; it regenerates from the new diff and updates the existing PR. This is the ONLY correct way to refresh a PR body.
+- Do **not** run `gh pr edit --body "..."` (or `--title`) with text you wrote yourself, and do not "clean up", "correct", or "just fix" the body by hand. Substituting your own writing for the generated output breaks this rule no matter how small the change. If the body needs to change, re-run `squad_pr`.
+
+**Format verification — after every `squad_pr`:**
+
+1. Check the PR with `gh pr view`.
+2. Confirm the generated output is clean: **no code fences (```)** in the title or body, the **title is not duplicated** in the body, and **no AI attribution** anywhere (no robot emoji, no "Generated with Claude Code" line, no `Co-Authored-By` or `Claude-Session` trailer).
+3. If the output is malformed, the bug is in the `pr` text agent or the shared filter — both live in `~/cowdogmoo/squad-agents` (`pr/system.md`, `scripts/filter.py`) — fix it at the source and re-run `squad_pr`. Never patch the symptom by hand-editing the PR. An attribution footer means the generator leaked it: squad's `claude-code` provider must pass `--settings` hiding attribution (rebuild squad from main) and `scripts/filter.py` must strip attribution lines.
+
+`squad_gen` resolves the text agents (`commit`, `pr`, `branch`) from `~/cowdogmoo/squad-agents` (override with `SQUAD_AGENTS_DIR`).
+
+## Modern CLI Tools
+
+Prefer these modern equivalents when installed — they are faster and have better defaults. They are **not** strict drop-ins; verify flags before substituting in scripts.
+
+- `rg` (ripgrep) over `grep` — respects `.gitignore`, parallel
+- `fd` over `find` — simpler positional syntax; for quick lookups, not complex `find -exec` chains
+- `bat -pp` over `cat` — `-pp` disables paging and decoration for tool-friendly output
+- `delta` for diffs — pipe `git diff` / `diff -u` through it for readable output
+- `dust` over `du` — tree-style disk usage
+- `duf` over `df` — clearer filesystem summary
+
+Fall back to the classic tool if the modern one is unavailable.
+
+## Notes
+
+- `git d main` shows the diff against the main branch

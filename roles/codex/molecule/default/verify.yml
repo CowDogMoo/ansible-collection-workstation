@@ -1,0 +1,189 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    codex_dir: "{{ container_home }}/.codex"
+  tasks:
+    - name: Read the installed codex version
+      ansible.builtin.command: codex --version
+      register: codex_verify_version
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert the pinned codex was installed from npm
+      ansible.builtin.assert:
+        that:
+          - codex_verify_version.stdout is search('0\.167\.1')
+        fail_msg: "{{ codex_verify_version.stdout }}"
+
+    # AGENTS.md carries the same commit and PR rules the claude_code role ships.
+    - name: Read AGENTS.md
+      ansible.builtin.slurp:
+        src: "{{ codex_dir }}/AGENTS.md"
+      register: codex_verify_agents
+      become: true
+
+    - name: Stat AGENTS.md
+      ansible.builtin.stat:
+        path: "{{ codex_dir }}/AGENTS.md"
+      register: codex_verify_agents_stat
+      become: true
+
+    - name: Assert AGENTS.md carries the squad-only rules
+      ansible.builtin.assert:
+        that:
+          - codex_verify_agents_stat.stat.mode == '0644'
+          - codex_verify_agents_stat.stat.pw_name == container_user
+          - codex_verify_agents_text is search('Always use `squad_commit` for commit messages')
+          - codex_verify_agents_text is search('Always use `squad_pr` for pull requests')
+          - codex_verify_agents_text is search('NEVER EVER use --no-verify')
+          - codex_verify_agents_text is search('no AI attribution')
+          - codex_verify_agents_text is search('rules/squad-only\.rules')
+          - codex_verify_agents_text is not search('Claude in Chrome')
+      vars:
+        codex_verify_agents_text: "{{ codex_verify_agents.content | b64decode }}"
+
+    - name: Stat the installed rules
+      ansible.builtin.stat:
+        path: "{{ codex_dir }}/rules/{{ item }}"
+      loop:
+        - squad-only.rules
+        - default.rules
+      register: codex_verify_rules_stat
+      become: true
+
+    - name: Assert squad-only.rules is installed and default.rules survived
+      ansible.builtin.assert:
+        that:
+          - codex_verify_rules_stat.results[0].stat.exists
+          - codex_verify_rules_stat.results[0].stat.mode == '0644'
+          - codex_verify_rules_stat.results[0].stat.pw_name == container_user
+          - codex_verify_rules_stat.results[1].stat.exists
+
+    - name: Read default.rules
+      ansible.builtin.slurp:
+        src: "{{ codex_dir }}/rules/default.rules"
+      register: codex_verify_default_rules
+      become: true
+
+    - name: Assert default.rules was not rewritten
+      ansible.builtin.assert:
+        that:
+          - (codex_verify_default_rules.content | b64decode) is search('"git", "commit", "-m", "BLA"')
+
+    # The real codex binary evaluates the rules Codex loads (both files, as Codex
+    # merges every *.rules). The approved `git commit -m BLA` in default.rules must
+    # still be refused: the strictest matching rule wins.
+    - name: Evaluate commands against the installed rules
+      ansible.builtin.command:
+        argv: >-
+          {{ ['codex', 'execpolicy', 'check',
+              '--rules', codex_dir ~ '/rules/default.rules',
+              '--rules', codex_dir ~ '/rules/squad-only.rules',
+              '--resolve-host-executables', '--'] + item.argv }}
+      environment:
+        CODEX_HOME: "{{ codex_dir }}"
+      loop:
+        - {argv: [git, commit, -m, x], decision: forbidden}
+        - {argv: [git, commit, --no-verify], decision: forbidden}
+        - {argv: [git, commit, -m, BLA], decision: forbidden}
+        - {argv: [/usr/bin/git, commit, -m, x], decision: forbidden}
+        - {argv: [gh, pr, create, --title, t, --body, b], decision: forbidden}
+        - {argv: [gh-axi, pr, edit, '12', --body, b], decision: forbidden}
+        - {argv: [squad_commit], decision: none}
+        - {argv: [squad_pr], decision: none}
+        - {argv: [git, merge, --continue], decision: none}
+        - {argv: [gh, pr, view, '12'], decision: none}
+        - {argv: [git, status], decision: allow}
+      loop_control:
+        label: "{{ item.argv | join(' ') }}"
+      register: codex_verify_policy
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert each command got the expected decision
+      ansible.builtin.assert:
+        that:
+          - ((item.stdout | from_json).decision | default('none')) == item.item.decision
+        fail_msg: "{{ item.item.argv | join(' ') }}: {{ item.stdout }}"
+        quiet: true
+      loop: "{{ codex_verify_policy.results }}"
+      loop_control:
+        label: "{{ item.item.argv | join(' ') }} -> {{ item.item.decision }}"
+
+    # hooks.json is merged: herdr's entry stays, the role's handler appears once.
+    - name: Read hooks.json
+      ansible.builtin.slurp:
+        src: "{{ codex_dir }}/hooks.json"
+      register: codex_verify_hooks
+      become: true
+
+    - name: Assert hooks.json kept the existing hook and added the guard once
+      ansible.builtin.assert:
+        that:
+          - codex_verify_hooks_doc.hooks.SessionStart | length == 1
+          - codex_verify_hooks_doc.hooks.SessionStart[0].hooks[0].command is search('herdr-agent-state')
+          - codex_verify_hooks_doc.hooks.PreToolUse | length == 1
+          - codex_verify_hooks_doc.hooks.PreToolUse[0].matcher == 'Bash'
+          - codex_verify_hooks_doc.hooks.PreToolUse[0].hooks | length == 1
+          - codex_verify_guard.startswith(codex_verify_marker)
+          - codex_verify_guard is search('SQUAD_ONLY =')
+        fail_msg: "{{ codex_verify_hooks_doc | to_nice_json }}"
+      vars:
+        codex_verify_hooks_doc: "{{ codex_verify_hooks.content | b64decode | from_json }}"
+        codex_verify_guard: "{{ codex_verify_hooks_doc.hooks.PreToolUse[0].hooks[0].command }}"
+        codex_verify_marker: "# managed by cowdogmoo.workstation.codex: forbidden_content\n"
+
+    # Run the installed handler exactly as Codex does: the command string through
+    # the user's shell with -lc, the PreToolUse payload on stdin.
+    - name: Run the installed guard against sample commands
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hooks"]["PreToolUse"][0]["hooks"][0]["command"])' \
+            {{ codex_dir }}/hooks.json > /tmp/codex-guard.sh
+          printf '%s' {{ {'tool_name': 'Bash', 'tool_input': {'command': item.cmd}, 'cwd': '/tmp'} | to_json | quote }} \
+            | bash -lc "$(cat /tmp/codex-guard.sh)"
+        executable: /bin/bash
+      loop:
+        - {cmd: "git commit -m x", rc: 2}
+        - {cmd: "gh pr create --title t --body b", rc: 2}
+        - {cmd: "git -C /tmp commit -m x", rc: 2}
+        - {cmd: "squad_commit", rc: 0}
+        - {cmd: "squad_pr", rc: 0}
+        - {cmd: "git status", rc: 0}
+      loop_control:
+        label: "{{ item.cmd }}"
+      register: codex_verify_guard_runs
+      changed_when: false
+      failed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Assert the guard blocked and allowed as expected
+      ansible.builtin.assert:
+        that:
+          - item.rc == item.item.rc
+          - item.item.rc == 0 or 'squad_commit or squad_pr' in item.stderr
+        fail_msg: "{{ item.item.cmd }}: rc={{ item.rc }} stderr={{ item.stderr }}"
+        quiet: true
+      loop: "{{ codex_verify_guard_runs.results }}"
+      loop_control:
+        label: "{{ item.item.cmd }} -> {{ item.item.rc }}"
+
+    - name: Find hooks.json backups
+      ansible.builtin.find:
+        paths: "{{ codex_dir }}"
+        patterns: "hooks.json.*~"
+      register: codex_verify_hooks_backups
+      become: true
+
+    - name: Assert the backup holds the original hooks.json
+      ansible.builtin.assert:
+        that:
+          - codex_verify_hooks_backups.matched >= 1

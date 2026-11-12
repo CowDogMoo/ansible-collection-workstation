@@ -1,0 +1,44 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+    # The version the execpolicy behavior was verified against.
+    test_codex_npm_version: "0.167.1"
+  tasks:
+    - name: Include role under test (first run)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.codex
+      vars:
+        codex_username: "{{ container_user }}"
+        codex_user_home: "{{ container_home }}"
+        codex_npm_version: "{{ test_codex_npm_version }}"
+        codex_manage_hooks: true
+
+    - name: Include role under test (second run - idempotency test)
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.codex
+      vars:
+        codex_username: "{{ container_user }}"
+        codex_user_home: "{{ container_home }}"
+        codex_npm_version: "{{ test_codex_npm_version }}"
+        codex_manage_hooks: true
+
+    - name: Find backups left by the two runs
+      ansible.builtin.find:
+        paths:
+          - "{{ container_home }}/.codex"
+          - "{{ container_home }}/.codex/rules"
+        patterns: "*~"
+      register: codex_converge_backups
+      become: true
+
+    # The first run replaced the seeded hooks.json, so exactly one backup of it;
+    # AGENTS.md and the rules file were new, so nothing else.
+    - name: Assert only the rewritten hooks.json was backed up
+      ansible.builtin.assert:
+        that:
+          - codex_converge_backups.files | length == 1
+          - (codex_converge_backups.files[0].path | basename) is match('hooks\.json\..*~$')
+        fail_msg: "{{ codex_converge_backups.files | map(attribute='path') | list }}"

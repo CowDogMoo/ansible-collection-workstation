@@ -52,3 +52,10 @@
     mode: preserve
     remote_src: true
   loop: "{{ shell_functions_payload }}"
+
+# Tagged so a scoped run (--tags shell_function_commands) can refresh the commands
+# without re-syncing the dotfiles payload.
+- name: Expose shell functions as commands
+  ansible.builtin.import_tasks: commands.yml
+  tags:
+    - shell_function_commands

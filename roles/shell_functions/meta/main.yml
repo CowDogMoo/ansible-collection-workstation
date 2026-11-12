@@ -3,7 +3,7 @@ galaxy_info:
   role_name: shell_functions
   namespace: cowdogmoo
   author: Jayson Grace
-  description: Deploys the user's dotfiles shell-function library to ~/.dotfiles
+  description: Deploys the user's dotfiles shell-function library to ~/.dotfiles and exposes chosen functions as commands
   company: CowDogMoo
   license: MIT
   min_ansible_version: "2.14"

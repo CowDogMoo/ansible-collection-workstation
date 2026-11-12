@@ -6,6 +6,7 @@
     shell_functions_test_payload:
       - bashutils.sh
       - common.sh
+      - git.sh
       - files
   tasks:
     - name: Create fake source directory
@@ -23,6 +24,10 @@
         - { path: "bashutils.sh", content: "# molecule fake bashutils\n" }
         - { path: "common.sh", content: "# molecule fake common\n" }
         - { path: "files/marker.txt", content: "molecule marker\n" }
+        - path: git.sh
+          content: |
+            #!/usr/bin/env bash
+            squad_commit() { echo "squad_commit ran: $*"; }
 
     - name: Include role under test
       ansible.builtin.include_role:
@@ -30,3 +35,6 @@
       vars:
         shell_functions_source_path: "{{ shell_functions_fake_src }}"
         shell_functions_payload: "{{ shell_functions_test_payload }}"
+        shell_functions_commands:
+          - name: squad_commit
+            file: git.sh

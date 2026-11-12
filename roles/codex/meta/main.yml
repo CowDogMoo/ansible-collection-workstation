@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  role_name: codex
+  namespace: cowdogmoo
+  author: Jayson Grace
+  description: Installs the Codex CLI and manages its global AGENTS.md, execpolicy rules, and hooks
+  company: CowDogMoo
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: MacOSX
+      versions:
+        - all
+  galaxy_tags:
+    - development
+    - codex
+    - ai
+    - configuration
+    - cli
+
+dependencies: []

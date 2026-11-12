@@ -26,3 +26,20 @@ shell_functions_cache_path: "{{ shell_functions_user_home }}/.cache/cowdogmoo/sh
 # list — set this in the calling playbook to the items you want materialized
 # (everything else in the source repo is deliberately left behind).
 shell_functions_payload: []
+
+# Shell functions to expose as commands. Each entry installs an executable named
+# `name` in shell_functions_bin_dir that sources `file` (relative to
+# shell_functions_dest) and calls the function, for shells that never read
+# ~/.zshrc: coding agents run commands in non-interactive `zsh -c`/`zsh -lc`. An
+# interactive shell keeps using its own function, which takes precedence.
+#   shell_functions_commands:
+#     - name: squad_commit
+#       file: git.sh
+shell_functions_commands: []
+
+# Where the function commands go. It has to be on the PATH the agents inherit;
+# zsh_setup puts ~/.local/bin there.
+shell_functions_bin_dir: "{{ shell_functions_user_home }}/.local/bin"
+
+# First line of every generated command, marking it as managed by this role
+shell_functions_command_marker: "managed by cowdogmoo.workstation.shell_functions:"

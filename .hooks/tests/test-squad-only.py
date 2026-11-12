@@ -15,10 +15,21 @@ real repository with and without MERGE_HEAD.
 KNOWN_GAPS records what is deliberately not caught. Each has to be constructed
 on purpose; they are asserted to pass so the boundary stays explicit.
 
-The claude_code and antigravity roles ship the same detector behind different
-wire contracts. Each body is extracted from its shipped YAML and executed
-through `sh` exactly as its harness runs it, so block-scalar embedding and shell
-escaping are covered too, and every case must get the same verdict from both.
+The claude_code, antigravity, and codex roles ship the same detector behind
+different wire contracts. Each body is extracted from its shipped YAML and
+executed through `sh` exactly as its harness runs it, so block-scalar embedding
+and shell escaping are covered too, and every case must get the same verdict
+from all of them.
+
+Codex crewmates run with hooks disabled, so the codex role also ships
+execpolicy rules (roles/codex/files/rules/squad-only.rules) that Codex enforces
+regardless. Those are literal prefix rules, so they catch only part of the
+matrix. When `codex` is on PATH the same matrix runs against them too, and the
+set of denied cases must equal EXECPOLICY_DENIED exactly. Codex splits a
+`zsh -lc` script into separate commands only when it is plain words joined by
+&&, ||, ; or |, and checks anything else as one opaque command;
+codex_commands() mirrors that, and EXECPOLICY_DENIED was recorded from a real
+Codex run of this matrix under firstmate's crewmate launch flags.
 """
 
 from __future__ import annotations
@@ -27,6 +38,8 @@ import json
 import os
 import pathlib
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -35,8 +48,10 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 SHIPPED = {
     "claude_code": "roles/claude_code/defaults/main.yml",
     "antigravity": "roles/antigravity/defaults/main.yml",
+    "codex": "roles/codex/defaults/main.yml",
 }
 MARKER = "SQUAD_ONLY ="
+CODEX_RULES = REPO / "roles/codex/files/rules/squad-only.rules"
 
 G = "git"
 SQ = chr(39)
@@ -192,6 +207,104 @@ ATTRIBUTION = [
 ]
 
 
+# Matrix labels Codex's execpolicy rules refuse. Everything else in the matrix
+# runs as far as the rules are concerned: forms they cannot see (git -C, env or
+# sudo prefixes, wrappers, redirects, substitutions, merge/revert/cherry-pick,
+# gh api) and every ALLOW case except one deliberate overreach, a label-only
+# `gh pr edit`. `git commit --no-edit` is refused mid-merge too.
+EXECPOLICY_DENIED = {
+    "raw commit", "commit from a file", "commit from a pipe", "editor commit",
+    "amend without a merge", "amend with a message",
+    "--no-edit with no merge in progress", "commit all", "absolute path",
+    "after git add", "amend after squad_commit",
+    "gh pr create", "gh pr create --fill", "gh pr new", "gh pr create from a file",
+    "gh pr edit title", "gh pr edit body", "gh pr edit short body",
+    "gh pr edit body file", "gh pr edit title with =",
+    "gh-axi pr create", "gh-axi pr edit body",
+    "gh pr edit label only",
+}
+
+# The commands firstmate's worker proof runs, by exact text.
+EXECPOLICY_MUST = {
+    f"{G} commit -m x": True,
+    "gh pr create --title t --body b": True,
+    f"{G} commit --no-verify": True,
+    f"{G} commit --no-verify -m x": True,
+    "squad_commit": False,
+    "squad_pr": False,
+}
+
+
+def codex_commands(script):
+    """The argv lists Codex checks for `zsh -lc <script>`.
+
+    Plain words joined by && || ; | split into one argv per command; anything
+    else (expansions, redirects, subshells, globs, comments, newlines, a
+    VAR=value prefix) is one opaque command, as in Codex's tree-sitter parser.
+    """
+    opaque = [["/bin/zsh", "-lc", script]]
+    quote = None
+    for ch in script:
+        if quote:
+            if ch == quote:
+                quote = None
+            elif quote == DQ and ch in "$`\\":
+                return opaque
+        elif ch in SQ + DQ:
+            quote = ch
+        elif ch in "$`\\(){}<>\n*?[]~#":
+            return opaque
+    try:
+        lexer = shlex.shlex(script, posix=True, punctuation_chars="&|;")
+        lexer.whitespace_split = True
+        tokens = list(lexer)
+    except ValueError:
+        return opaque
+    commands, current = [], []
+    for tok in tokens:
+        if tok in ("&&", "||", ";", "|"):
+            commands.append(current)
+            current = []
+        elif set(tok) <= set("&|;"):
+            return opaque
+        else:
+            current.append(tok)
+    commands.append(current)
+    commands = [c for c in commands if c]
+    if not commands or any(re.match(r"[A-Za-z_][A-Za-z0-9_]*=", c[0]) for c in commands):
+        return opaque
+    return commands
+
+
+def execpolicy_denies(cmd):
+    """True when Codex's execpolicy would refuse `cmd` under the shipped rules."""
+    for argv in codex_commands(cmd):
+        proc = subprocess.run(
+            ["codex", "execpolicy", "check", "--rules", str(CODEX_RULES),
+             "--resolve-host-executables", "--", *argv],
+            capture_output=True, text=True, timeout=30,
+        )
+        if proc.returncode != 0:
+            raise SystemExit(f"codex execpolicy check failed for {argv!r}: {proc.stderr[:300]}")
+        if json.loads(proc.stdout).get("decision") == "forbidden":
+            return True
+    return False
+
+
+def check_execpolicy():
+    failures = []
+    cases = DENY + ALLOW + KNOWN_GAPS + ATTRIBUTION
+    denied = {label for cmd, label in cases if execpolicy_denies(cmd)}
+    for label in sorted(denied - EXECPOLICY_DENIED):
+        failures.append(f"codex execpolicy: newly denies {label!r}; if intended, add it to EXECPOLICY_DENIED")
+    for label in sorted(EXECPOLICY_DENIED - denied):
+        failures.append(f"codex execpolicy: no longer denies {label!r}")
+    for cmd, want in EXECPOLICY_MUST.items():
+        if execpolicy_denies(cmd) != want:
+            failures.append(f"codex execpolicy: {cmd!r} should be {'denied' if want else 'allowed'}")
+    return failures, len(denied)
+
+
 def block_at(lines, start):
     """Return the dedented body of the block scalar opened on line `start`."""
     base = len(lines[start]) - len(lines[start].lstrip())
@@ -221,12 +334,14 @@ def extract(rel):
     return found[0]
 
 
-def run_hook(body, cmd, cwd):
+def run_hook(body, cmd, cwd, shell="sh"):
     """Run the hook the way its harness does. Returns (2 if denied else 0, message).
 
-    Claude Code passes `tool_input.command` plus `cwd` and reads a block off exit 2;
-    antigravity passes `toolCall.args` (CommandLine, Cwd) and reads a JSON decision
-    on stdout, failing closed on anything else. Both are normalized to one verdict.
+    Claude Code and Codex pass `tool_input.command` plus `cwd` and read a block off
+    exit 2; antigravity passes `toolCall.args` (CommandLine, Cwd) and reads a JSON
+    decision on stdout, failing closed on anything else. All are normalized to one
+    verdict. Codex runs hook commands through $SHELL, so its copy is also run
+    through zsh where zsh is installed.
     """
     json_protocol = "toolCall" in body
     payload = (
@@ -235,7 +350,7 @@ def run_hook(body, cmd, cwd):
         else {"tool_input": {"command": cmd}, "cwd": cwd}
     )
     proc = subprocess.run(
-        ["sh", "-c", body],
+        [shell, "-c", body],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
@@ -362,6 +477,22 @@ def main():
         rc, err = run_hook(bodies["antigravity"], gemini, root)
         if rc != 2 or "forbidden content" not in err:
             failures.append("antigravity: Gemini attribution not blocked")
+        codex_attr = f"{G} tag -a v1 -m {SQ}Co-authored-by: Codex <noreply@openai.com>{SQ}"
+        rc, err = run_hook(bodies["codex"], codex_attr, root)
+        if rc != 2 or "forbidden content" not in err:
+            failures.append("codex: Codex attribution not blocked")
+
+        # Codex runs hooks through the user's $SHELL, zsh on macOS.
+        if shutil.which("zsh"):
+            for cmd, want in ((f"{G} commit -m x", 2), ("squad_commit", 0), (DENY[2][0], 2), (ALLOW[-1][0], 0)):
+                if run_hook(bodies["codex"], cmd, root, shell="zsh")[0] != want:
+                    failures.append(f"codex: wrong verdict under zsh for {cmd!r}")
+
+    execpolicy_note = "codex not on PATH, execpolicy rules not checked"
+    if shutil.which("codex"):
+        ep_failures, ep_denied = check_execpolicy()
+        failures.extend(ep_failures)
+        execpolicy_note = f"codex execpolicy denies {ep_denied} of the same matrix"
 
     for label, seen in verdicts.items():
         if len(set(seen.values())) != 1:
@@ -376,7 +507,7 @@ def main():
     print(
         f"squad-only OK: {len(DENY)} denied + {len(ALLOW)} allowed + "
         f"{len(KNOWN_GAPS)} known gaps + {len(ATTRIBUTION)} attribution + merge exemption "
-        f"across {len(bodies)} shipped copies"
+        f"across {len(bodies)} shipped copies; {execpolicy_note}"
     )
     return 0
 

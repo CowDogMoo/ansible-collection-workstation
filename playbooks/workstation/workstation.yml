@@ -256,6 +256,16 @@
           - python.sh
           - ssh-agent.sh
           - terraform.sh
+        # squad_commit and squad_pr live in git.sh, which ~/.zshrc sources. Coding
+        # agents (Codex, Antigravity) run commands in non-interactive shells that
+        # skip ~/.zshrc, so expose the functions they need as commands on PATH.
+        shell_functions_commands:
+          - name: squad_commit
+            file: git.sh
+          - name: squad_pr
+            file: git.sh
+          - name: squad_gen
+            file: git.sh
 
     - name: Setup ZSH Configuration
       role: cowdogmoo.workstation.zsh_setup
@@ -300,6 +310,14 @@
       when: antigravity_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/antigravity
+
+    - name: Install and configure Codex CLI
+      role: cowdogmoo.workstation.codex
+      tags:
+        - codex
+      when: codex_enabled | default(true) | bool
+      # For debugging
+      # role: ../../roles/codex
 
     - name: Install herdr agent multiplexer
       role: cowdogmoo.workstation.herdr

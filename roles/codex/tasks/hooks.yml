@@ -1,0 +1,32 @@
+---
+- name: Check for an existing hooks.json
+  ansible.builtin.stat:
+    path: "{{ codex_hooks_file }}"
+  register: codex_hooks_stat
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
+
+- name: Read the existing hooks.json
+  ansible.builtin.slurp:
+    src: "{{ codex_hooks_file }}"
+  register: codex_hooks_slurp
+  when: codex_hooks_stat.stat.exists
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
+
+# A file that does not parse fails the play here instead of being rewritten, which
+# would throw away whatever its owner meant to put there.
+- name: Parse the existing hooks.json
+  ansible.builtin.set_fact:
+    codex_hooks_existing: >-
+      {{ (codex_hooks_slurp.content | b64decode | from_json)
+         if codex_hooks_stat.stat.exists else {} }}
+
+- name: Merge the managed hooks into hooks.json
+  ansible.builtin.template:
+    src: hooks.json.j2
+    dest: "{{ codex_hooks_file }}"
+    owner: "{{ codex_username }}"
+    group: "{{ codex_usergroup }}"
+    mode: "0644"
+    backup: true
+  register: codex_hooks_result
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
