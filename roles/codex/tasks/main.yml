@@ -1,0 +1,61 @@
+---
+- name: Check the codex user home directory
+  ansible.builtin.stat:
+    path: "{{ codex_user_home }}"
+  register: codex_home_stat
+
+- name: Fail if the user home directory doesn't exist
+  ansible.builtin.fail:
+    msg: "User home directory {{ codex_user_home }} does not exist"
+  when: not codex_home_stat.stat.exists
+
+- name: Install Codex on macOS
+  ansible.builtin.include_tasks: install-macos.yml
+  when:
+    - ansible_facts['os_family'] == 'Darwin'
+    - codex_install | bool
+
+- name: Install Codex on Linux
+  ansible.builtin.include_tasks: install-linux.yml
+  when:
+    - ansible_facts['os_family'] not in ['Darwin', 'Windows']
+    - codex_install | bool
+
+- name: Create the Codex home directory
+  ansible.builtin.file:
+    path: "{{ codex_home }}"
+    state: directory
+    owner: "{{ codex_username }}"
+    group: "{{ codex_usergroup }}"
+    mode: "0755"
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
+
+- name: Install the global AGENTS.md
+  ansible.builtin.copy:
+    src: "{{ codex_agents_md_src if (codex_agents_md_content | default('') | length == 0) else omit }}"
+    content: "{{ codex_agents_md_content if (codex_agents_md_content | default('') | length > 0) else omit }}"
+    dest: "{{ codex_agents_md_file }}"
+    owner: "{{ codex_username }}"
+    group: "{{ codex_usergroup }}"
+    mode: "0644"
+    backup: true
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
+  when:
+    - codex_manage_instructions | bool
+    - (codex_agents_md_src | default('') | length > 0) or (codex_agents_md_content | default('') | length > 0)
+
+- name: Install execpolicy rules
+  ansible.builtin.include_tasks: rules.yml
+  when: codex_manage_rules | bool
+
+- name: Merge hooks into hooks.json
+  ansible.builtin.include_tasks: hooks.yml
+  when: codex_manage_hooks | bool
+
+- name: Display configuration status
+  ansible.builtin.debug:
+    msg: >-
+      Codex home: {{ codex_home }}
+      | AGENTS.md: {{ (codex_manage_instructions | bool) | ternary(codex_agents_md_file, 'unmanaged') }}
+      | Rules: {{ (codex_manage_rules | bool) | ternary(codex_bundled_rules, 'unmanaged') }}
+      | Hooks: {{ (codex_manage_hooks | bool) | ternary(codex_hooks | list, 'unmanaged') }}

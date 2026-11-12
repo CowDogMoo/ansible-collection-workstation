@@ -3,7 +3,7 @@
 
 ## Description
 
-Deploys the user's dotfiles shell-function library to ~/.dotfiles
+Deploys the user's dotfiles shell-function library to ~/.dotfiles and exposes chosen functions as commands
 
 ## Requirements
 
@@ -22,8 +22,16 @@ Deploys the user's dotfiles shell-function library to ~/.dotfiles
 | `shell_functions_repo_version` | str | <code>main</code> | No description |
 | `shell_functions_cache_path` | str | <code>{{ shell_functions_user_home }}/.cache/cowdogmoo/shell_functions</code> | No description |
 | `shell_functions_payload` | list | <code>&#91;&#93;</code> | No description |
+| `shell_functions_commands` | list | <code>&#91;&#93;</code> | No description |
+| `shell_functions_bin_dir` | str | <code>{{ shell_functions_user_home }}/.local/bin</code> | No description |
 
 ## Tasks
+
+### commands.yml
+
+
+- **Create the function command directory** (ansible.builtin.file) - Conditional
+- **Install function commands** (ansible.builtin.template)
 
 ### main.yml
 
@@ -35,6 +43,7 @@ Deploys the user's dotfiles shell-function library to ~/.dotfiles
 - **Maintain cached clone of dotfiles repo** (ansible.builtin.git) - Conditional
 - **Resolve effective source directory** (ansible.builtin.set_fact)
 - **Copy payload items into destination** (ansible.builtin.copy)
+- **Expose shell functions as commands** (ansible.builtin.import_tasks)
 
 ## Example Playbook
 

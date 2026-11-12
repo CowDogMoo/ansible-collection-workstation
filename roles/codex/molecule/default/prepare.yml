@@ -1,0 +1,85 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  vars:
+    container_user: "{{ ansible_facts['distribution'] | lower }}"
+    container_home: "/home/{{ container_user }}"
+  tasks:
+    - name: Create test user
+      ansible.builtin.user:
+        name: "{{ container_user }}"
+        shell: /bin/bash
+        create_home: true
+      become: true
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - git
+          - python3
+        state: present
+        update_cache: true
+      become: true
+
+    # The role installs Codex from npm on Linux, so the real codex binary is what
+    # validates the rules in converge and verify. Node comes the way the
+    # workstation playbook provides it: from the mise role, for the target user,
+    # with npm reachable only through the mise shims.
+    - name: Install node with mise
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.mise
+      vars:
+        mise_username: "{{ container_user }}"
+        mise_plugins:
+          - name: node
+            version: "24.14.0"
+            scope: "global"
+
+    - name: Create ~/.codex as another tool would have left it
+      ansible.builtin.file:
+        path: "{{ container_home }}/.codex/rules"
+        state: directory
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        mode: "0755"
+      become: true
+
+    # Stand-ins for what is already there on a real machine: herdr's SessionStart
+    # hook, and a default.rules where Codex recorded an "always allow" for a raw
+    # commit. The role must leave both alone, and the allow must not win.
+    - name: Seed an existing hooks.json
+      ansible.builtin.copy:
+        dest: "{{ container_home }}/.codex/hooks.json"
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        mode: "0644"
+        content: |
+          {
+            "hooks": {
+              "SessionStart": [
+                {
+                  "hooks": [
+                    {
+                      "command": "bash '{{ container_home }}/.codex/herdr-agent-state.sh' session",
+                      "timeout": 10,
+                      "type": "command"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+      become: true
+
+    - name: Seed a default.rules with an approved raw commit
+      ansible.builtin.copy:
+        dest: "{{ container_home }}/.codex/rules/default.rules"
+        owner: "{{ container_user }}"
+        group: "{{ container_user }}"
+        mode: "0644"
+        content: |
+          prefix_rule(pattern=["git", "commit", "-m", "BLA"], decision="allow")
+          prefix_rule(pattern=["git", "status"], decision="allow")
+      become: true

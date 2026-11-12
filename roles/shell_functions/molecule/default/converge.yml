@@ -3,9 +3,12 @@
   hosts: all
   vars:
     shell_functions_fake_src: /tmp/shell-functions-fake-src
+    shell_functions_fake_home: /tmp/shell-functions-fake-home
+    shell_functions_stale_bin: /tmp/shell-functions-stale-bin
     shell_functions_test_payload:
       - bashutils.sh
       - common.sh
+      - git.sh
       - files
   tasks:
     - name: Create fake source directory
@@ -23,6 +26,34 @@
         - { path: "bashutils.sh", content: "# molecule fake bashutils\n" }
         - { path: "common.sh", content: "# molecule fake common\n" }
         - { path: "files/marker.txt", content: "molecule marker\n" }
+        - path: git.sh
+          content: |
+            #!/usr/bin/env bash
+            squad_commit() { echo "squad_commit ran: $*"; }
+            squad_gen() { squad "$@"; }
+
+    # Two `squad` executables for verify to tell apart: the mise-managed one under
+    # a home's mise shims, and an older copy in a directory that a login shell
+    # puts earlier on PATH.
+    - name: Create directories for the fake squad executables
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ shell_functions_fake_home }}/.local/share/mise/shims"
+        - "{{ shell_functions_stale_bin }}"
+
+    - name: Seed the fake squad executables
+      ansible.builtin.copy:
+        dest: "{{ item.dir }}/squad"
+        content: |
+          #!/bin/sh
+          echo "{{ item.label }} squad: $*"
+        mode: "0755"
+      loop:
+        - { dir: "{{ shell_functions_fake_home }}/.local/share/mise/shims", label: mise }
+        - { dir: "{{ shell_functions_stale_bin }}", label: stale }
 
     - name: Include role under test
       ansible.builtin.include_role:
@@ -30,3 +61,11 @@
       vars:
         shell_functions_source_path: "{{ shell_functions_fake_src }}"
         shell_functions_payload: "{{ shell_functions_test_payload }}"
+        # squad_pr is deliberately missing from the fake git.sh above.
+        shell_functions_commands:
+          - name: squad_commit
+            file: git.sh
+          - name: squad_gen
+            file: git.sh
+          - name: squad_pr
+            file: git.sh

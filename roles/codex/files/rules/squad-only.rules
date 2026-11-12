@@ -1,0 +1,60 @@
+# Commits and pull request text come from squad, full stop.
+#
+# Codex execpolicy rules. Unlike ~/.codex/hooks.json, these are evaluated for
+# every shell command even when Codex runs with
+# --dangerously-bypass-approvals-and-sandbox and --disable hooks: a
+# `forbidden` decision rejects the command before it runs, whatever the
+# approval policy. squad_commit and squad_pr are shell functions, so the
+# `git commit` and `gh pr` calls they make internally never reach this policy.
+#
+# Prefix rules match literal leading tokens, and Codex only splits a
+# `zsh -lc` script into separate commands when the script is plain words
+# joined by &&, ||, ; or |. Anything else (a redirect such as 2>&1, $(...),
+# a VAR=value prefix, a subshell, `bash -c`, `git -C dir commit`) is checked
+# as one opaque command and is not caught here. The squad-only rule in
+# ~/.codex/AGENTS.md and the forbidden_content hook (when hooks run) cover
+# those. .hooks/tests/test-squad-only.py records the exact boundary.
+#
+# `git commit` is refused in every form, `--no-verify` and `--no-edit`
+# included: a prefix rule cannot see whether a merge is in progress, and the
+# strictest matching rule always wins, so no exemption can be carved out.
+
+prefix_rule(
+    pattern = ["git", ["commit", "commit-tree"]],
+    decision = "forbidden",
+    justification = "Commit messages come only from squad: run squad_commit. To finish a conflicted merge with git's own message, run `GIT_EDITOR=true git merge --continue`.",
+    match = [
+        "git commit -m x",
+        "git commit --no-verify -m x",
+        "git commit --amend --no-edit",
+        "git commit",
+        "git commit-tree HEAD^{tree} -m x",
+    ],
+    not_match = [
+        "git status",
+        "git log -1 --format=%B",
+        "git merge --continue",
+        "git commit-graph write",
+    ],
+)
+
+prefix_rule(
+    pattern = [["gh", "gh-axi"], "pr", ["create", "new", "edit"]],
+    decision = "forbidden",
+    justification = "Pull request titles and bodies come only from squad: run squad_pr (it opens the PR or regenerates an open one). Labels go through `gh api` on the issues endpoint (repos/{owner}/{repo}/issues/{number}/labels), reviewers on the pulls one (repos/{owner}/{repo}/pulls/{number}/requested_reviewers).",
+    match = [
+        "gh pr create --title t --body b",
+        "gh pr create --fill",
+        "gh pr new -t x -b y",
+        "gh pr edit 12 --body y",
+        "gh-axi pr create --title t --body b",
+        "gh-axi pr edit 12 --title x",
+    ],
+    not_match = [
+        "gh pr view 12",
+        "gh pr checks 12",
+        "gh pr list --state open",
+        "gh pr merge 12 --squash",
+        "gh-axi pr view 12",
+    ],
+)

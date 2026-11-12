@@ -1,0 +1,21 @@
+---
+# Agents run commands in non-interactive shells (agy: zsh -c, Codex: zsh -lc) that
+# never read ~/.zshrc, so functions sourced from there are missing. A small
+# executable per function on PATH makes them callable anyway, without adding to
+# every shell's startup the way sourcing from ~/.zshenv would.
+- name: Create the function command directory
+  ansible.builtin.file:
+    path: "{{ shell_functions_bin_dir }}"
+    state: directory
+    mode: "0755"
+  when: shell_functions_commands | length > 0
+
+- name: Install function commands
+  ansible.builtin.template:
+    src: function-command.sh.j2
+    dest: "{{ shell_functions_bin_dir }}/{{ item.name }}"
+    mode: "0755"
+    backup: true
+  loop: "{{ shell_functions_commands }}"
+  loop_control:
+    label: "{{ item.name }} ({{ item.file }})"

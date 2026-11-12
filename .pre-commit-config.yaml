@@ -105,7 +105,7 @@ repos:
         entry: python .hooks/tests/test-squad-only.py
         language: python
         pass_filenames: false
-        files: ^(\.hooks/tests/test-squad-only\.py|roles/(claude_code|antigravity)/defaults/main\.yml)$
+        files: ^(\.hooks/tests/test-squad-only\.py|roles/(claude_code|antigravity|codex)/defaults/main\.yml|roles/codex/files/rules/.*)$
         additional_dependencies: []
 
       - id: test-fm-dispatch-gate
