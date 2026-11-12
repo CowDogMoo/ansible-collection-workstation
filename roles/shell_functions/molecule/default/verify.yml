@@ -2,6 +2,9 @@
 - name: Verify shell_functions role
   hosts: all
   gather_facts: true
+  vars:
+    shell_functions_fake_home: /tmp/shell-functions-fake-home
+    shell_functions_stale_bin: /tmp/shell-functions-stale-bin
   tasks:
     - name: Include default variables
       ansible.builtin.include_vars:
@@ -89,3 +92,58 @@
           - shell_functions_command_missing.rc == 127
           - "'not found' in shell_functions_command_missing.stderr"
         fail_msg: "{{ shell_functions_command_missing | to_json }}"
+
+    # The fake git.sh has no squad_pr. Its command has to say so: calling the bare
+    # name would find this same command on PATH and never return, so the run is
+    # bounded in case it does.
+    - name: Run a command whose library does not define the function
+      ansible.builtin.command:
+        argv:
+          - env
+          - -i
+          - "PATH={{ shell_functions_bin_dir }}:/usr/local/bin:/usr/bin:/bin"
+          - "HOME={{ shell_functions_user_home }}"
+          - timeout
+          - "30"
+          - sh
+          - -c
+          - squad_pr
+      register: shell_functions_command_undefined
+      changed_when: false
+      failed_when: false
+
+    - name: Assert the undefined function is reported instead of looping
+      ansible.builtin.assert:
+        that:
+          - shell_functions_command_undefined.rc == 127
+          - "'does not define squad_pr' in shell_functions_command_undefined.stderr"
+        fail_msg: "{{ shell_functions_command_undefined | to_json }}"
+
+    # A login shell can leave an older squad ahead of the mise-managed one on
+    # PATH. The function still has to get the one under the mise shims, found
+    # through MISE_DATA_DIR when it is set and under HOME otherwise.
+    - name: Run squad_gen with a stale squad earlier on PATH
+      ansible.builtin.command:
+        argv:
+          - env
+          - -i
+          - "PATH={{ shell_functions_bin_dir }}:{{ shell_functions_stale_bin }}:/usr/local/bin:/usr/bin:/bin"
+          - "{{ item }}"
+          - sh
+          - -c
+          - squad_gen commit
+      loop:
+        - "HOME={{ shell_functions_fake_home }}"
+        - "MISE_DATA_DIR={{ shell_functions_fake_home }}/.local/share/mise"
+      register: shell_functions_command_squad
+      changed_when: false
+
+    - name: Assert the mise-managed squad won over the stale one
+      ansible.builtin.assert:
+        that:
+          - 'item.stdout == "mise squad: commit"'
+        fail_msg: "{{ item | to_json }}"
+        quiet: true
+      loop: "{{ shell_functions_command_squad.results }}"
+      loop_control:
+        label: "{{ item.item }}"

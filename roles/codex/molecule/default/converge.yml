@@ -16,6 +16,32 @@
         codex_npm_version: "{{ test_codex_npm_version }}"
         codex_manage_hooks: true
 
+    # herdr rewrites hooks.json in place when it installs its Codex integration:
+    # the same hooks, saved as raw UTF-8 with no trailing newline. Reporting no
+    # change here keeps the idempotence step honest about the second run below.
+    - name: Re-serialize hooks.json the way herdr does
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json, sys
+            path = sys.argv[1]
+            with open(path, encoding="utf-8") as handle:
+                doc = json.load(handle)
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(json.dumps(doc, ensure_ascii=False, indent=2))
+          - "{{ container_home }}/.codex/hooks.json"
+      changed_when: false
+      become: true
+      become_user: "{{ container_user }}"
+
+    - name: Stat hooks.json as herdr left it
+      ansible.builtin.stat:
+        path: "{{ container_home }}/.codex/hooks.json"
+      register: codex_converge_hooks_before
+      become: true
+
     - name: Include role under test (second run - idempotency test)
       ansible.builtin.include_role:
         name: cowdogmoo.workstation.codex
@@ -24,6 +50,18 @@
         codex_user_home: "{{ container_home }}"
         codex_npm_version: "{{ test_codex_npm_version }}"
         codex_manage_hooks: true
+
+    - name: Stat hooks.json after the second run
+      ansible.builtin.stat:
+        path: "{{ container_home }}/.codex/hooks.json"
+      register: codex_converge_hooks_after
+      become: true
+
+    - name: Assert the second run left herdr's copy of hooks.json alone
+      ansible.builtin.assert:
+        that:
+          - codex_converge_hooks_after.stat.checksum == codex_converge_hooks_before.stat.checksum
+          - codex_hooks_result is not changed
 
     - name: Find backups left by the two runs
       ansible.builtin.find:
@@ -34,8 +72,9 @@
       register: codex_converge_backups
       become: true
 
-    # The first run replaced the seeded hooks.json, so exactly one backup of it;
-    # AGENTS.md and the rules file were new, so nothing else.
+    # The first run replaced the seeded hooks.json, so exactly one backup of it:
+    # the second run had nothing to write. AGENTS.md and the rules file were new,
+    # so nothing else.
     - name: Assert only the rewritten hooks.json was backed up
       ansible.builtin.assert:
         that:

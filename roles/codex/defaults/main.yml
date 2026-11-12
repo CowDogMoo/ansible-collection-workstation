@@ -101,7 +101,8 @@ codex_manage_hooks: false
 
 # hooks.json is merged, not replaced: entries written by other tools (herdr's
 # SessionStart hook, for example) are kept, and only the handlers this role wrote
-# before are swapped for the current ones.
+# before are swapped for the current ones. It is rewritten only when that changes
+# the hooks in it, never because another tool saved it with different formatting.
 codex_hooks_file: "{{ codex_home }}/hooks.json"
 
 # Prefixed to every command this role writes into hooks.json, so a later run can

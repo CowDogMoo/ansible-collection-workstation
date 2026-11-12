@@ -41,7 +41,7 @@ prefix_rule(
 prefix_rule(
     pattern = [["gh", "gh-axi"], "pr", ["create", "new", "edit"]],
     decision = "forbidden",
-    justification = "Pull request titles and bodies come only from squad: run squad_pr (it opens the PR or regenerates an open one). Labels and reviewers go through `gh api` on the issues endpoint.",
+    justification = "Pull request titles and bodies come only from squad: run squad_pr (it opens the PR or regenerates an open one). Labels go through `gh api` on the issues endpoint (repos/{owner}/{repo}/issues/{number}/labels), reviewers on the pulls one (repos/{owner}/{repo}/pulls/{number}/requested_reviewers).",
     match = [
         "gh pr create --title t --body b",
         "gh pr create --fill",

@@ -14,4 +14,16 @@ shell=$(command -v zsh || command -v bash) || {
   echo "{{ item.name }}: needs zsh or bash" >&2
   exit 127
 }
-exec "$shell" -c '. "$0" && {{ item.name }} "$@"' "$lib" "$@"
+# The mise shims go first on PATH so the tools the function calls are the
+# mise-managed ones, whatever order the calling shell left PATH in. The function
+# is called only once the library has defined it: as a bare name it would
+# otherwise resolve to this file again.
+exec "$shell" -c '
+export PATH="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims:$PATH"
+. "$0"
+if ! typeset -f {{ item.name }} >/dev/null; then
+  echo "{{ item.name }}: $0 does not define {{ item.name }}" >&2
+  exit 127
+fi
+{{ item.name }} "$@"
+' "$lib" "$@"

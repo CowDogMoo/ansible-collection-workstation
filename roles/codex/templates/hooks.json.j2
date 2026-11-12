@@ -1,52 +1,6 @@
 {#-
-  Merges codex_hooks into an existing Codex hooks.json.
-
-  codex_hooks_existing is the parsed current file (or {}). Every handler whose
-  command starts with codex_hooks_marker was written by an earlier run of this
-  role and is dropped; everything else, including other top-level keys, is kept
-  as it was. The current codex_hooks are then appended, each to its event's list,
-  with the marker as a leading shell comment so the next run can find them.
-
-  Building the document as data and handing it to to_nice_json keeps the output
+  codex_hooks_merged is the document tasks/hooks.yml builds from the existing
+  hooks.json and codex_hooks. Handing it to to_nice_json as data keeps the output
   valid JSON whatever the hook command strings contain.
 -#}
-{% set doc = codex_hooks_existing if codex_hooks_existing is mapping else {} %}
-{% set out = {} %}
-{% for key, value in doc.items() if key != 'hooks' %}
-{%   set _ = out.update({key: value}) %}
-{% endfor %}
-{% set events = {} %}
-{% for event, groups in (doc.get('hooks') or {}).items() %}
-{%   set kept = [] %}
-{%   for group in groups %}
-{%     set handlers = [] %}
-{%     for handler in group.get('hooks', []) %}
-{%       if not ((handler.get('command') or '') is string and (handler.get('command') or '').startswith(codex_hooks_marker)) %}
-{%         set _ = handlers.append(handler) %}
-{%       endif %}
-{%     endfor %}
-{%     if handlers | length > 0 %}
-{%       set kept_group = {} %}
-{%       set _ = kept_group.update(group) %}
-{%       set _ = kept_group.update({'hooks': handlers}) %}
-{%       set _ = kept.append(kept_group) %}
-{%     endif %}
-{%   endfor %}
-{%   if kept | length > 0 %}
-{%     set _ = events.update({event: kept}) %}
-{%   endif %}
-{% endfor %}
-{% for name, hook in codex_hooks.items() %}
-{%   set event = hook.event | default('PreToolUse') %}
-{%   set handler = {'type': 'command', 'command': codex_hooks_marker ~ ' ' ~ name ~ '\n' ~ hook.command} %}
-{%   if hook.timeout is defined %}
-{%     set _ = handler.update({'timeout': hook.timeout}) %}
-{%   endif %}
-{%   set group = {'hooks': [handler]} %}
-{%   if hook.matcher is defined %}
-{%     set _ = group.update({'matcher': hook.matcher}) %}
-{%   endif %}
-{%   set _ = events.update({event: (events.get(event, []) + [group])}) %}
-{% endfor %}
-{% set _ = out.update({'hooks': events}) %}
-{{ out | to_nice_json(indent=2) }}
+{{ codex_hooks_merged | to_nice_json(indent=2) }}

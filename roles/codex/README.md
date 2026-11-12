@@ -57,7 +57,8 @@ Installs the Codex CLI and manages its global AGENTS.md, execpolicy rules, and h
 - **Check for an existing hooks.json** (ansible.builtin.stat)
 - **Read the existing hooks.json** (ansible.builtin.slurp) - Conditional
 - **Parse the existing hooks.json** (ansible.builtin.set_fact)
-- **Merge the managed hooks into hooks.json** (ansible.builtin.template)
+- **Build the merged hooks document** (ansible.builtin.set_fact)
+- **Write the merged hooks.json** (ansible.builtin.template) - Conditional
 
 ### install-linux.yml
 
