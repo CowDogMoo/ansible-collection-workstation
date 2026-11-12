@@ -42,6 +42,42 @@
       vars:
         codex_side_hooks_doc: "{{ codex_side_hooks.content | b64decode | from_json }}"
 
+    # A hook command is data. Text in it that looks like a Jinja expression has to
+    # reach a hooks.json that did not exist before exactly as it was written.
+    - name: Run the role into a fresh Codex home with Jinja delimiters in a hook
+      ansible.builtin.include_role:
+        name: cowdogmoo.workstation.codex
+      vars:
+        codex_username: "{{ container_user }}"
+        codex_user_home: "{{ container_home }}"
+        codex_home: "{{ container_home }}/.codex-fresh"
+        codex_install: false
+        codex_manage_instructions: false
+        codex_manage_rules: false
+        codex_manage_hooks: true
+        codex_hooks_overrides:
+          forbidden_content: ~
+          pr_title:
+            event: PreToolUse
+            matcher: Bash
+            command: "gh pr view --json title --template '{% raw %}{{.title}}{% endraw %}'"
+
+    - name: Read the fresh hooks.json
+      ansible.builtin.slurp:
+        src: "{{ container_home }}/.codex-fresh/hooks.json"
+      register: codex_side_fresh_hooks
+      become: true
+
+    - name: Assert the hook command was written verbatim
+      ansible.builtin.assert:
+        that:
+          - codex_side_fresh_doc.hooks.PreToolUse | length == 1
+          - codex_side_fresh_doc.hooks.PreToolUse[0].hooks[0].command == codex_side_fresh_expected
+        fail_msg: "{{ codex_side_fresh_doc | to_nice_json }}"
+      vars:
+        codex_side_fresh_doc: "{{ codex_side_fresh_hooks.content | b64decode | from_json }}"
+        codex_side_fresh_expected: "# managed by cowdogmoo.workstation.codex: pr_title\ngh pr view --json title --template '{% raw %}{{.title}}{% endraw %}'"
+
     # Leave the converged state behind for verify.
     - name: Restore the converged configuration
       ansible.builtin.include_role:

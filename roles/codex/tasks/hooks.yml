@@ -20,13 +20,32 @@
       {{ (codex_hooks_slurp.content | b64decode | from_json)
          if codex_hooks_stat.stat.exists else {} }}
 
-# Every handler whose command starts with codex_hooks_marker was written by an
-# earlier run of this role and is dropped; everything else, including other
-# top-level keys, is kept as it was. The current codex_hooks are then appended,
-# each to its event's list, with the marker as a leading shell comment so the next
-# run can find them.
-- name: Build the merged hooks document
-  ansible.builtin.set_fact:
+# codex_hooks_merged is the document to write. Every handler whose command starts
+# with codex_hooks_marker was written by an earlier run of this role and is
+# dropped; everything else, including other top-level keys, is kept as it was.
+# The current codex_hooks are then appended, each to its event's list, with the
+# marker as a leading shell comment so the next run can find them.
+#
+# It is a task variable, not a fact, so it is rendered once each time it is read:
+# ansible-core before 2.19 templates a stored fact again, and a hook command may
+# hold text that looks like a Jinja expression.
+#
+# It is compared with the existing file as data, not bytes: another tool that
+# saves the same hooks with its own formatting (herdr writes raw UTF-8 with no
+# trailing newline) has changed nothing, so the file is left as that tool wrote
+# it.
+- name: Write the merged hooks.json
+  ansible.builtin.template:
+    src: hooks.json.j2
+    dest: "{{ codex_hooks_file }}"
+    owner: "{{ codex_username }}"
+    group: "{{ codex_usergroup }}"
+    mode: "0644"
+    backup: true
+  register: codex_hooks_result
+  when: codex_hooks_merged != codex_hooks_existing
+  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"
+  vars:
     codex_hooks_merged: >-
       {%- set doc = codex_hooks_existing if codex_hooks_existing is mapping else {} -%}
       {%- set out = {} -%}
@@ -68,18 +87,3 @@
       {%- endfor -%}
       {%- set _ = out.update({'hooks': events}) -%}
       {{ out }}
-
-# Compared as data, not bytes: another tool that saves the same hooks with its
-# own formatting (herdr writes raw UTF-8 with no trailing newline) has changed
-# nothing, so the file is left as that tool wrote it.
-- name: Write the merged hooks.json
-  ansible.builtin.template:
-    src: hooks.json.j2
-    dest: "{{ codex_hooks_file }}"
-    owner: "{{ codex_username }}"
-    group: "{{ codex_usergroup }}"
-    mode: "0644"
-    backup: true
-  register: codex_hooks_result
-  when: codex_hooks_merged != codex_hooks_existing
-  become: "{{ ansible_facts['os_family'] != 'Darwin' and codex_username != ansible_facts['user_id'] }}"

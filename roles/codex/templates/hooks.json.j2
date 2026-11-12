@@ -1,6 +1,6 @@
 {#-
-  codex_hooks_merged is the document tasks/hooks.yml builds from the existing
-  hooks.json and codex_hooks. Handing it to to_nice_json as data keeps the output
-  valid JSON whatever the hook command strings contain.
+  codex_hooks_merged is the document the write task in tasks/hooks.yml builds from
+  the existing hooks.json and codex_hooks. Handing it to to_nice_json as data keeps
+  the output valid JSON whatever the hook command strings contain.
 -#}
 {{ codex_hooks_merged | to_nice_json(indent=2) }}
