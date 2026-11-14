@@ -36,7 +36,6 @@ platforms:
 
 provisioner:
   name: ansible
-  config_file: ${MOLECULE_PROJECT_DIRECTORY}/../../ansible.cfg
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
   # Uncomment for verbose output
