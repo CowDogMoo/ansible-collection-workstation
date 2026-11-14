@@ -321,7 +321,6 @@ jobs:
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
         env:
-          ANSIBLE_CONFIG: ${{ env.COLLECTION_PATH }}/ansible.cfg
           ANSIBLE_ROLES_PATH: ${{ env.COLLECTION_PATH }}/roles
           MOLECULE_NO_LOG: "false"
           # Authenticates GitHub API lookups (e.g. go_task's latest-release
@@ -582,7 +581,6 @@ jobs:
         working-directory: ${{ env.COLLECTION_PATH }}/${{ matrix.path }}
         shell: bash
         env:
-          ANSIBLE_CONFIG: ${{ env.COLLECTION_PATH }}/ansible.cfg
           # Authenticates GitHub API lookups (e.g. go_task's latest-release
           # check) so they don't hit the shared runner IP's anonymous limit.
           GITHUB_TOKEN: ${{ github.token }}
