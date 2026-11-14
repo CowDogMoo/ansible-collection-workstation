@@ -51,6 +51,18 @@ that: its first task fails when the target host has no host_vars entry and
 prints the command to use instead. To run on role defaults deliberately (CI, a
 fresh generic machine), pass `-e workstation_allow_missing_host_vars=true`.
 
+Run from the repo root, Ansible uses the repo's `ansible.cfg` instead of
+`~/.ansible.cfg`. It enables the `community.general.log_plays` callback, which
+writes each task result to `~/ansible-logs/hosts/<inventory hostname>`.
+Grafana Alloy, set up by this playbook's `alloy` step, tails that directory and
+ships it to Loki for the Ansible dashboard. To keep a throwaway test run off the dashboard, override the
+callback list for that run:
+
+```bash
+ANSIBLE_CALLBACKS_ENABLED=ansible.posix.profile_tasks \
+  ansible-playbook test.yml -i localhost, -c local
+```
+
 ### With specific hosts
 
 ```bash
@@ -73,6 +85,9 @@ molecule idempotence # Test idempotency
 molecule verify      # Run verification tests
 molecule destroy     # Clean up test instances
 ```
+
+Molecule runs Ansible with its own generated config, so test runs don't write
+to `~/ansible-logs/hosts` and don't show up on the Ansible dashboard.
 
 ---
 
