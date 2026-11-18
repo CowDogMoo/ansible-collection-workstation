@@ -1,0 +1,33 @@
+---
+# Runs on macOS right after alloy-loki-auth.yml, which sets
+# workstation_alloy_config_dir and the Loki auth facts, and before the
+# grafana.grafana.alloy role. That role starts or restarts the Homebrew service
+# on every run, so Alloy comes up with these files in place. On a fresh Mac this
+# runs before Homebrew installs Alloy; Homebrew keeps existing etc files and
+# writes its own copies as *.default.
+#
+# The Homebrew wrapper runs `alloy run ... --server.http.listen-addr=0.0.0.0:12345
+# $(cat extra-args.txt)`, and the last --server.http.listen-addr wins, so this file
+# keeps the admin UI off the LAN. Newer formula builds drop the hard-coded flag;
+# the explicit address is harmless there.
+- name: Create the Alloy config directory
+  ansible.builtin.file:
+    path: "{{ workstation_alloy_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Bind the Alloy HTTP server to loopback
+  ansible.builtin.copy:
+    content: "--server.http.listen-addr=127.0.0.1:12345\n"
+    dest: "{{ workstation_alloy_config_dir }}/extra-args.txt"
+    mode: "0644"
+
+# Not named *.alloy: newer formula builds run Alloy on the whole config directory
+# and would try to load it as config.
+- name: Write the Loki push password file
+  ansible.builtin.copy:
+    content: "{{ workstation_alloy_loki_password.stdout }}"
+    dest: "{{ workstation_alloy_loki_password_file }}"
+    mode: "0600"
+  no_log: true
+  when: workstation_alloy_loki_password_fetched | default(false) | bool

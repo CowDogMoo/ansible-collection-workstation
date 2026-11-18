@@ -1,0 +1,82 @@
+---
+# Runs on macOS before the grafana.grafana.alloy role, which renders config.alloy
+# with a basic_auth block only when workstation_alloy_loki_auth_enabled is true.
+#
+# The credential is per producer, so workstation_alloy_loki_username and
+# workstation_alloy_loki_password_ref live in host_vars. A host without them, or
+# without a working 1Password CLI, keeps pushing without credentials rather than
+# failing the play.
+- name: Find the Homebrew prefix
+  ansible.builtin.command: brew --prefix
+  register: workstation_alloy_brew_prefix
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Set the Alloy config directory and password file paths
+  ansible.builtin.set_fact:
+    workstation_alloy_config_dir: "{{ __workstation_alloy_prefix }}/etc/alloy"
+    workstation_alloy_loki_password_file: "{{ __workstation_alloy_prefix }}/etc/alloy/loki-push-password"
+  vars:
+    __workstation_alloy_prefix: >-
+      {{ workstation_alloy_brew_prefix.stdout | trim
+         if (workstation_alloy_brew_prefix.rc | default(1)) == 0
+         and (workstation_alloy_brew_prefix.stdout | default('') | trim | length > 0)
+         else '/opt/homebrew' }}
+
+- name: Check for the 1Password CLI
+  ansible.builtin.command: which op
+  register: workstation_alloy_op_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: workstation_alloy_loki_password_ref | default('') | length > 0
+
+# Read once per run and kept in memory until alloy-harden.yml writes it to the
+# password file. no_log keeps the value out of output and the log_plays callback.
+- name: Read the Loki push password from 1Password
+  ansible.builtin.command:
+    argv:
+      - op
+      - read
+      - "{{ workstation_alloy_loki_password_ref }}"
+  register: workstation_alloy_loki_password
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  no_log: true
+  when:
+    - workstation_alloy_loki_password_ref | default('') | length > 0
+    - (workstation_alloy_op_check.rc | default(1)) == 0
+
+# A password file left by an earlier run keeps auth on when 1Password is out of
+# reach this time, so a run without op doesn't strip credentials Loki may require.
+- name: Check for an existing Loki push password file
+  ansible.builtin.stat:
+    path: "{{ workstation_alloy_loki_password_file }}"
+  register: workstation_alloy_loki_password_stat
+
+- name: Record whether the Loki push password was read
+  ansible.builtin.set_fact:
+    workstation_alloy_loki_password_fetched: >-
+      {{ (workstation_alloy_loki_password.rc | default(1)) == 0
+         and (workstation_alloy_loki_password.stdout | default('') | length > 0) }}
+
+- name: Decide whether Alloy sends basic auth to Loki
+  ansible.builtin.set_fact:
+    workstation_alloy_loki_auth_enabled: >-
+      {{ (workstation_alloy_loki_username | default('') | length > 0)
+         and (workstation_alloy_loki_password_fetched | bool
+              or workstation_alloy_loki_password_stat.stat.exists) }}
+
+- name: Warn that the Loki push password could not be read
+  ansible.builtin.debug:
+    msg: >-
+      Could not read {{ workstation_alloy_loki_password_ref }} with the 1Password CLI
+      (missing, signed out, or no access).
+      {{ 'Keeping the existing ' ~ workstation_alloy_loki_password_file
+         if workstation_alloy_loki_password_stat.stat.exists
+         else 'Alloy will push to Loki without credentials' }}.
+  when:
+    - workstation_alloy_loki_password_ref | default('') | length > 0
+    - not (workstation_alloy_loki_password_fetched | bool)
