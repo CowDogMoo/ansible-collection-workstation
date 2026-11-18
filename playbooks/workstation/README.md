@@ -127,9 +127,9 @@ This playbook includes the following roles in order:
    `workstation_alloy_loki_username` and `workstation_alloy_loki_password_ref`
    (an `op://` reference) it reads that password once per run, writes it to a
    0600 `loki-push-password` file beside `config.alloy`, and adds a
-   `basic_auth` block to the Loki endpoint. Without the 1Password CLI, and with
-   no password file from an earlier run, Alloy keeps pushing without
-   credentials
+   `basic_auth` block to the Loki endpoint. If the 1Password CLI can't read it
+   (missing, signed out, or no access) and no password file is left from an
+   earlier run, Alloy keeps pushing without credentials
 1. **user_setup** - Creates and configures system users
 1. **zsh_setup** - Installs and configures ZSH with Oh-My-Zsh
 1. **asdf** - Installs ASDF version manager and language runtimes
