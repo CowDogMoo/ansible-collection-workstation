@@ -5,6 +5,8 @@
   vars:
     workstation_guard_tasks: "{{ playbook_dir }}/../../tasks/require-host-vars.yml"
     workstation_guard_host_vars: "{{ playbook_dir }}/../../host_vars"
+    workstation_alloy_loki_username: alloy-test
+    workstation_alloy_loki_password_ref: op://test/alloy/password
   tasks:
     - name: Run the host_vars guard for a host with no host_vars
       block:
@@ -54,3 +56,183 @@
         workstation_allow_missing_host_vars: true
         workstation_host_vars_path: "{{ workstation_guard_host_vars }}"
         workstation_host_vars_hostname: no-such-host
+
+    # The Alloy hardening tasks only run on macOS, so exercise them here against a
+    # scratch directory, with a stub `op` standing in for 1Password.
+    - name: Create a scratch Alloy config directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: .alloy
+      register: workstation_alloy_test_dir
+
+    - name: Create a directory for the stub 1Password CLI
+      ansible.builtin.file:
+        path: "{{ workstation_alloy_test_dir.path }}/bin"
+        state: directory
+        mode: "0755"
+
+    - name: Install a stub 1Password CLI
+      ansible.builtin.copy:
+        dest: "{{ workstation_alloy_test_dir.path }}/bin/op"
+        mode: "0755"
+        content: |
+          #!/bin/sh
+          [ "$1 $2" = "read op://test/alloy/password" ] || exit 1
+          printf 'test-push-password'
+
+    - name: Look up the Loki credential with no 1Password CLI on PATH
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../../tasks/alloy-loki-auth.yml"
+        apply:
+          environment:
+            PATH: /usr/bin:/bin
+      vars:
+        workstation_alloy_brew_prefix: &workstation_alloy_fake_brew
+          rc: 0
+          stdout: "{{ workstation_alloy_test_dir.path }}"
+
+    - name: Assert basic auth stays off without 1Password or a password file
+      ansible.builtin.assert:
+        that:
+          - not (workstation_alloy_loki_password_fetched | bool)
+          - not (workstation_alloy_loki_auth_enabled | bool)
+        fail_msg: "Alloy basic auth was enabled with no password available"
+
+    - name: Look up the Loki credential through the stub 1Password CLI
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../../tasks/alloy-loki-auth.yml"
+        apply:
+          environment:
+            PATH: "{{ workstation_alloy_test_dir.path }}/bin:{{ ansible_facts['env']['PATH'] }}"
+      vars:
+        workstation_alloy_brew_prefix: *workstation_alloy_fake_brew
+
+    - name: Assert basic auth turns on once the password is read
+      ansible.builtin.assert:
+        that:
+          - workstation_alloy_loki_password_fetched | bool
+          - workstation_alloy_loki_auth_enabled | bool
+        fail_msg: "Alloy basic auth stayed off after the password was read"
+
+    - name: Point the hardening tasks at the scratch directory
+      ansible.builtin.set_fact:
+        workstation_alloy_config_dir: "{{ workstation_alloy_test_dir.path }}"
+        workstation_alloy_loki_password_file: "{{ workstation_alloy_test_dir.path }}/loki-push-password"
+
+    - name: Run the Alloy hardening tasks
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../tasks/alloy-harden.yml"
+
+    - name: Run notified handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Read the written extra-args.txt
+      ansible.builtin.slurp:
+        src: "{{ workstation_alloy_test_dir.path }}/extra-args.txt"
+      register: workstation_alloy_extra_args
+
+    - name: Read the written password file
+      ansible.builtin.slurp:
+        src: "{{ workstation_alloy_test_dir.path }}/loki-push-password"
+      register: workstation_alloy_password_content
+
+    - name: Stat the written password file
+      ansible.builtin.stat:
+        path: "{{ workstation_alloy_test_dir.path }}/loki-push-password"
+      register: workstation_alloy_password_file_stat
+
+    - name: Assert Alloy listens on loopback and the password file is private
+      ansible.builtin.assert:
+        that:
+          - (workstation_alloy_extra_args.content | b64decode) == '--server.http.listen-addr=127.0.0.1:12345\n'
+          - (workstation_alloy_password_content.content | b64decode) == 'test-push-password'
+          - workstation_alloy_password_file_stat.stat.mode == '0600'
+          - workstation_alloy_restart_notified | default(false) | bool
+        fail_msg: "The Alloy hardening tasks did not write the expected files or restart Alloy"
+
+    # The rendered config is a string inside the playbook, so pull it out with the
+    # controller's Python rather than a lookup, which would template it early.
+    - name: Create a controller scratch directory for the Alloy config template
+      ansible.builtin.tempfile:
+        state: directory
+      register: workstation_alloy_template_dir
+      delegate_to: localhost
+
+    - name: Extract alloy_config from the workstation playbook
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - -c
+          - |
+            import sys, yaml
+            play = yaml.safe_load(open(sys.argv[1]))[0]
+            role = next(r for r in play["roles"] if r["role"] == "grafana.grafana.alloy")
+            open(sys.argv[2], "w").write(role["vars"]["alloy_config"])
+          - "{{ playbook_dir }}/../../workstation.yml"
+          - "{{ workstation_alloy_template_dir.path }}/config.alloy.j2"
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Render the Alloy config with basic auth
+      ansible.builtin.template:
+        src: "{{ workstation_alloy_template_dir.path }}/config.alloy.j2"
+        dest: "{{ workstation_alloy_test_dir.path }}/config.alloy"
+        mode: "0644"
+
+    # A fact, not task vars: the fact set by alloy-loki-auth.yml outranks task vars.
+    - name: Turn basic auth off
+      ansible.builtin.set_fact:
+        workstation_alloy_loki_auth_enabled: false
+
+    - name: Render the Alloy config without basic auth
+      ansible.builtin.template:
+        src: "{{ workstation_alloy_template_dir.path }}/config.alloy.j2"
+        dest: "{{ workstation_alloy_test_dir.path }}/config-noauth.alloy"
+        mode: "0644"
+
+    - name: Read the rendered Alloy configs
+      ansible.builtin.slurp:
+        src: "{{ workstation_alloy_test_dir.path }}/{{ item }}"
+      register: workstation_alloy_rendered
+      loop:
+        - config.alloy
+        - config-noauth.alloy
+
+    - name: Assert the Loki endpoint carries basic auth only when enabled
+      ansible.builtin.assert:
+        that:
+          - >-
+            ('basic_auth {\n' ~
+             '      username      = "alloy-test"\n' ~
+             '      password_file = "' ~ workstation_alloy_test_dir.path ~ '/loki-push-password"\n' ~
+             '    }') in (workstation_alloy_rendered.results[0].content | b64decode)
+          - "'basic_auth' not in (workstation_alloy_rendered.results[1].content | b64decode)"
+        fail_msg: "The rendered Alloy config has the wrong loki.write endpoint"
+
+    # Converge installed Alloy in the container, so let it parse both renders.
+    - name: Check that Alloy parses the rendered configs
+      ansible.builtin.command:
+        argv:
+          - alloy
+          - fmt
+          - "{{ workstation_alloy_test_dir.path }}/{{ item }}"
+      changed_when: false
+      loop:
+        - config.alloy
+        - config-noauth.alloy
+
+    - name: Remove the controller scratch directory
+      ansible.builtin.file:
+        path: "{{ workstation_alloy_template_dir.path }}"
+        state: absent
+      delegate_to: localhost
+
+    - name: Remove the scratch Alloy config directory
+      ansible.builtin.file:
+        path: "{{ workstation_alloy_test_dir.path }}"
+        state: absent
+
+  handlers:
+    - name: Record the Alloy restart
+      ansible.builtin.set_fact:
+        workstation_alloy_restart_notified: true
+      listen: restart alloy macos

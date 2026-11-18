@@ -206,3 +206,10 @@ zsh_setup_zshenv_exports:
   NO_MISTAKES_TELEMETRY: "off"
   NO_MISTAKES_NO_UPDATE_CHECK: "1"
   LAVISH_AXI_TELEMETRY: "off"
+
+# Per-producer basic auth for Alloy's pushes to Loki. tasks/alloy-loki-auth.yml
+# reads the password once per run and writes it to a 0600 file beside
+# config.alloy; without a readable password (and no file from an earlier run)
+# Alloy keeps pushing without credentials.
+workstation_alloy_loki_username: alloy-workstation
+workstation_alloy_loki_password_ref: "op://automation/observability-ingest-alloy-workstation/password"

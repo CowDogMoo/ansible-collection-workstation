@@ -121,7 +121,15 @@ ansible_become=yes
 This playbook includes the following roles in order:
 
 1. **logging** - Sets up log directories and log rotation
-1. **alloy** - Configures Grafana Alloy for log shipping to Loki
+1. **alloy** - Configures Grafana Alloy for log shipping to Loki. On macOS the
+   playbook also binds Alloy's HTTP server (admin UI) to `127.0.0.1:12345`
+   through Homebrew's `etc/alloy/extra-args.txt`, and when a host sets
+   `workstation_alloy_loki_username` and `workstation_alloy_loki_password_ref`
+   (an `op://` reference) it reads that password once per run, writes it to a
+   0600 `loki-push-password` file beside `config.alloy`, and adds a
+   `basic_auth` block to the Loki endpoint. Without the 1Password CLI, and with
+   no password file from an earlier run, Alloy keeps pushing without
+   credentials
 1. **user_setup** - Creates and configures system users
 1. **zsh_setup** - Installs and configures ZSH with Oh-My-Zsh
 1. **asdf** - Installs ASDF version manager and language runtimes

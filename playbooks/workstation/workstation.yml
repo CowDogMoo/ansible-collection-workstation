@@ -12,6 +12,20 @@
             - always
       tags:
         - always
+
+    # Runs before the alloy role renders its config, which only gains a basic_auth
+    # block when this finds a Loki push credential (see the task file).
+    - name: Look up the Loki push credential for Alloy
+      ansible.builtin.include_tasks:
+        file: tasks/alloy-loki-auth.yml
+        apply:
+          tags:
+            - alloy
+      tags:
+        - alloy
+      when:
+        - alloy_enabled | default(true) | bool
+        - ansible_facts['os_family'] == 'Darwin'
   roles:
     # Bootstrap ~/.ansible.cfg + ~/.ansible/{collections,roles,fact_cache}
     # so subsequent roles (and ad-hoc runs) see a configured environment.
@@ -118,6 +132,13 @@
         - alloy
       when: alloy_enabled | default(true) | bool
       become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+      # The role writes config.alloy to the bare Homebrew prefix
+      # (/opt/homebrew/config.alloy), but the Homebrew service reads
+      # <prefix>/etc/alloy/config.alloy, so the rendered config never took effect.
+      # Point it at the directory the service reads. This is a role parameter
+      # rather than an entry under vars: because the role loads its own value with
+      # include_vars, which outranks vars: but not role parameters.
+      __alloy_config_path_default: "{{ workstation_alloy_config_dir | default('/opt/homebrew/etc/alloy') }}"
       vars:
         # Workaround for undefined variable warning on macOS
         # This variable is only used on Linux (RedHat/Debian/Suse), but
@@ -204,6 +225,12 @@
           loki.write "remote" {
             endpoint {
               url = "https://loki.techvomit.xyz/loki/api/v1/push"
+          {% if workstation_alloy_loki_auth_enabled | default(false) | bool %}
+              basic_auth {
+                username      = "{{ workstation_alloy_loki_username }}"
+                password_file = "{{ workstation_alloy_loki_password_file }}"
+              }
+          {% endif %}
             }
           }
         alloy_version: "1.10.1"
@@ -364,3 +391,19 @@
       when: tmux_setup_enabled | default(true) | bool
       # For debugging
       # role: ../../roles/tmux_setup
+
+  post_tasks:
+    # The Homebrew service's wrapper hard-codes --server.http.listen-addr=0.0.0.0:12345
+    # and appends extra-args.txt after it, so a loopback address there wins. Also
+    # writes the Loki push password file that the rendered config points at.
+    - name: Bind Alloy to loopback and write its Loki push password
+      ansible.builtin.include_tasks:
+        file: tasks/alloy-harden.yml
+        apply:
+          tags:
+            - alloy
+      tags:
+        - alloy
+      when:
+        - alloy_enabled | default(true) | bool
+        - ansible_facts['os_family'] == 'Darwin'
