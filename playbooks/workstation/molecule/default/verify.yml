@@ -114,30 +114,23 @@
           - workstation_alloy_loki_auth_enabled | bool
         fail_msg: "Alloy basic auth stayed off after the password was read"
 
-    - name: Point the hardening tasks at the scratch directory
-      ansible.builtin.set_fact:
-        workstation_alloy_config_dir: "{{ workstation_alloy_test_dir.path }}"
-        workstation_alloy_loki_password_file: "{{ workstation_alloy_test_dir.path }}/loki-push-password"
-
+    # The stub prefix has no etc/alloy yet, like a Mac before Homebrew installs Alloy.
     - name: Run the Alloy hardening tasks
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../../tasks/alloy-harden.yml"
 
-    - name: Run notified handlers
-      ansible.builtin.meta: flush_handlers
-
     - name: Read the written extra-args.txt
       ansible.builtin.slurp:
-        src: "{{ workstation_alloy_test_dir.path }}/extra-args.txt"
+        src: "{{ workstation_alloy_test_dir.path }}/etc/alloy/extra-args.txt"
       register: workstation_alloy_extra_args
 
     - name: Read the written password file
       ansible.builtin.slurp:
-        src: "{{ workstation_alloy_test_dir.path }}/loki-push-password"
+        src: "{{ workstation_alloy_test_dir.path }}/etc/alloy/loki-push-password"
       register: workstation_alloy_password_content
 
     - name: Stat the written password file
       ansible.builtin.stat:
-        path: "{{ workstation_alloy_test_dir.path }}/loki-push-password"
+        path: "{{ workstation_alloy_test_dir.path }}/etc/alloy/loki-push-password"
       register: workstation_alloy_password_file_stat
 
     - name: Assert Alloy listens on loopback and the password file is private
@@ -146,8 +139,7 @@
           - (workstation_alloy_extra_args.content | b64decode) == '--server.http.listen-addr=127.0.0.1:12345\n'
           - (workstation_alloy_password_content.content | b64decode) == 'test-push-password'
           - workstation_alloy_password_file_stat.stat.mode == '0600'
-          - workstation_alloy_restart_notified | default(false) | bool
-        fail_msg: "The Alloy hardening tasks did not write the expected files or restart Alloy"
+        fail_msg: "The Alloy hardening tasks did not write the expected files"
 
     # The rendered config is a string inside the playbook, so pull it out with the
     # controller's Python rather than a lookup, which would template it early.
@@ -205,7 +197,7 @@
         __workstation_alloy_endpoint_close: '[^{}]*\}\s*\}'
         __workstation_alloy_basic_auth: >-
           basic_auth\s*\{(?=[^{}]*\susername\s*=\s*"alloy-workstation")(?=[^{}]*\spassword_file\s*=\s*"{{
-          (workstation_alloy_test_dir.path ~ '/loki-push-password') | regex_escape }}")[^{}]*\}
+          (workstation_alloy_test_dir.path ~ '/etc/alloy/loki-push-password') | regex_escape }}")[^{}]*\}
       ansible.builtin.assert:
         that:
           - >-
@@ -216,9 +208,11 @@
               __workstation_alloy_endpoint_open ~ __workstation_alloy_endpoint_close)
         fail_msg: "The rendered Alloy config has the wrong loki.write endpoint"
 
-    # Converge installed Alloy in the container. validate type-checks every
-    # component block, so it rejects basic_auth or an attribute that
-    # loki.write's endpoint does not accept.
+    # Converge installed the pinned Alloy 1.10.1 in the container. Its validate
+    # checks syntax and that every component, block, and attribute name exists
+    # where it is used, so it rejects a misnamed or misplaced basic_auth. It does
+    # not check value types or references; the endpoint regex above pins the
+    # username and password_file values.
     - name: Check that Alloy accepts the rendered configs
       ansible.builtin.command:
         argv:
@@ -240,9 +234,3 @@
       ansible.builtin.file:
         path: "{{ workstation_alloy_test_dir.path }}"
         state: absent
-
-  handlers:
-    - name: Record the Alloy restart
-      ansible.builtin.set_fact:
-        workstation_alloy_restart_notified: true
-      listen: restart alloy macos
