@@ -8,7 +8,7 @@
 # the explicit address is harmless there.
 - name: Bind the Alloy HTTP server to loopback
   ansible.builtin.copy:
-    content: "--server.http.listen-addr={{ workstation_alloy_listen_addr | default('127.0.0.1:12345') }}\n"
+    content: "--server.http.listen-addr=127.0.0.1:12345\n"
     dest: "{{ workstation_alloy_config_dir }}/extra-args.txt"
     mode: "0644"
   notify: restart alloy macos

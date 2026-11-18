@@ -156,7 +156,7 @@
           // Discover and read all non-compressed host log files
           local.file_match "ansible_logs" {
             path_targets = [{
-              __path__ = env("HOME") + "/ansible-logs/hosts/*",
+              __path__ = sys.env("HOME") + "/ansible-logs/hosts/*",
               job      = "ansible",
               environment = "local",
             }]
