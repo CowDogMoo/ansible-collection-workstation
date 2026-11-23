@@ -608,22 +608,32 @@ claude_code_advanced_hooks_default:
   #     somewhere other than the real home: `env -i HOME=...`, `HOME=... claude`,
   #     or an earlier `export HOME=...` in the same command
   #   - touching the allowance directory below, which only keychain_allow_prompt
-  #     writes
+  #     writes, and any Bash command that contains the grant phrase
+  #     `allow keychain access` (a nested `claude -p "allow keychain access ..."`,
+  #     `echo ... | claude`, `tmux send-keys ...`), with or without the allowance
   #
   # Read-only commands like `security list-keychains`, `security find-certificate`
   # or `security show-keychain-info` with no keychain path stay allowed, and Claude
   # Code's own sign-in is not a tool call, so it never reaches this hook.
   #
-  # Explicit permission: when the user's own prompt contains the phrase
-  # `allow keychain access`, keychain_allow_prompt records an allowance for that
-  # session and turn, and these commands run until the turn ends (keychain_allow_clear
-  # on Stop) or the next prompt arrives without the phrase. The allowance comes from
-  # the prompt only; nothing the agent writes can grant it.
+  # Explicit permission: when the user's prompt starts with `allow keychain access`
+  # or has it on a line by itself (case-insensitive, trailing punctuation allowed),
+  # keychain_allow_prompt records an allowance for that session and turn, and these
+  # commands run until the turn ends (keychain_allow_clear on Stop) or the next
+  # prompt arrives without it. A mention inside a sentence, such as "do not allow
+  # keychain access", grants nothing. Only an interactive, top-level `claude`
+  # session can grant: CLAUDE_CODE_ENTRYPOINT must be `cli`,
+  # CLAUDE_CODE_SESSION_ATTENDED must be `1` (each session sets it; `claude -p`,
+  # piped stdin and the SDK get `0`), and CLAUDE_CODE_EXECPATH must be unset (a
+  # Claude Code session exports it to its tools, so a session started from one
+  # inherits it, as it does the parent's entrypoint).
   #
   # Like dangerous_flags, it parses the command into clauses and looks one level
   # into eval and `sh -c`. Out of scope, as anything built to slip past it is:
   # command substitution, deeper nesting, scripts, other languages' keychain
-  # bindings, and paths assembled at runtime.
+  # bindings, paths assembled at runtime, and an interactive claude relaunched
+  # with a stripped environment under a terminal multiplexer or pty and fed the
+  # grant phrase from a file or variable.
   keychain_guard:
     event: PreToolUse
     tool: "Bash|Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob"
@@ -749,6 +759,12 @@ claude_code_advanced_hooks_default:
               'Never create, edit or remove it yourself. Stop and ask the captain (the human user).\\n')
           sys.exit(2)
 
+      if tool == 'Bash' and any(PHRASE in ' '.join(t.lower().split()) for t in texts):
+          sys.stderr.write(
+              '❌ BLOCKED: the keychain grant phrase must come from the captain (the human user) typing it.\\n'
+              'Never pass it to another Claude session, a terminal or a script. Stop and ask the captain.\\n')
+          sys.exit(2)
+
       reason = None
       if any(KEYCHAIN_PATH.search(t) for t in texts):
           reason = 'references the macOS keychain files (Library/Keychains, *.keychain, *.keychain-db)'
@@ -766,13 +782,16 @@ claude_code_advanced_hooks_default:
           'and running claude from a substitute HOME are denied unless the user allows it.\\n'
           'Do not work around this with a blank HOME, symlinks, copies, another tool or a script. '
           'Stop and ask the captain (the human user) for permission.\\n'
-          f'They can allow it for one turn by including the phrase {PHRASE!r} in their own prompt.\\n')
+          'They can allow it for one turn by starting their own prompt in an interactive claude session '
+          f'with {PHRASE!r}, or putting it on a line by itself.\\n')
       sys.exit(2)
       "
 
   # keychain_allow_prompt: Grant keychain_guard's allowance for one turn when the
-  # user's prompt contains `allow keychain access` (case and spacing ignored), and
-  # revoke any earlier one when it does not. Never blocks or alters the prompt.
+  # prompt starts with `allow keychain access` or has it on a line by itself (case
+  # and spacing ignored, trailing punctuation allowed) in an interactive, top-level
+  # session (see keychain_guard), and revoke any earlier one otherwise. Never
+  # blocks or alters the prompt.
   keychain_allow_prompt:
     event: UserPromptSubmit
     tool: ""
@@ -784,10 +803,17 @@ claude_code_advanced_hooks_default:
           data = json.load(sys.stdin)
           sid = re.sub(r'[^A-Za-z0-9_.-]', '', str(data.get('session_id') or ''))
           allow_dir = os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'keychain-allowance')
-          prompt = ' '.join(str(data.get('prompt') or '').lower().split())
+          prompt = str(data.get('prompt') or '').lower()
+          asked = bool(re.match(r'allow keychain access(?![a-z0-9_])', ' '.join(prompt.split()))) or any(
+              re.fullmatch(r'allow keychain access[^a-z0-9_ ]*', ' '.join(line.split()))
+              for line in prompt.splitlines())
+          env = os.environ
+          interactive = (env.get('CLAUDE_CODE_ENTRYPOINT') == 'cli'
+                         and env.get('CLAUDE_CODE_SESSION_ATTENDED') == '1'
+                         and not env.get('CLAUDE_CODE_EXECPATH'))
           if sid:
               path = os.path.join(allow_dir, sid)
-              if 'allow keychain access' in prompt:
+              if asked and interactive:
                   os.makedirs(allow_dir, mode=0o700, exist_ok=True)
                   with open(path, 'w') as fh:
                       fh.write('allowed for the current turn' + chr(10))

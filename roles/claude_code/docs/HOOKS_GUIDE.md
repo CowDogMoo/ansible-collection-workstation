@@ -35,12 +35,22 @@ back to the real one runs a signed-in session that skips every user hook. The
 Read-only listing such as `security list-keychains` still runs, and Claude
 Code's own sign-in is not a tool call, so it never reaches the hook.
 
-To allow keychain access on purpose, put the phrase `allow keychain access` in
-your prompt. The `keychain_allow_prompt` UserPromptSubmit hook records an
-allowance for that session, and `keychain_allow_clear` drops it when the turn
-ends. The next prompt without the phrase also revokes it. Only your prompt can
-grant it: the guard denies any tool call that touches the allowance directory
-(`~/.claude/keychain-allowance/`).
+To allow keychain access on purpose, start your prompt with `allow keychain
+access`, or put it on a line by itself (case doesn't matter, trailing
+punctuation is fine). The `keychain_allow_prompt` UserPromptSubmit hook records
+an allowance for that session, and `keychain_allow_clear` drops it when the turn
+ends. The next prompt without the phrase also revokes it. A mention inside a
+sentence, such as "do not allow keychain access", grants nothing.
+
+Only an interactive, top-level `claude` session in a terminal can grant it. The
+hook checks `CLAUDE_CODE_ENTRYPOINT=cli` and `CLAUDE_CODE_SESSION_ATTENDED=1`
+(`claude -p`, piped stdin and the SDK get `0`), and refuses when
+`CLAUDE_CODE_EXECPATH` is set, which a session inherits when it is started from
+inside another Claude Code session. The guard also denies any tool call that
+touches the allowance directory (`~/.claude/keychain-allowance/`) and any Bash
+command containing the phrase, so an agent can't hand it to a nested `claude`,
+a terminal pane or a script. To search for the phrase, use the Grep tool rather
+than `grep` in Bash.
 
 The full case matrix, including the gaps left open on purpose, lives in
 `.hooks/tests/test-keychain-guard.py`.

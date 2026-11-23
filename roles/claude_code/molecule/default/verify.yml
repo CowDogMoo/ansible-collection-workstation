@@ -626,8 +626,10 @@
         success_msg: "dangerous_flags blocks the real shortcuts and passes documentation"
 
     # keychain_guard: deny keychain item access, keychain file references, and
-    # claude launched from a substitute HOME, unless the user's prompt said
-    # "allow keychain access" this turn. Probes the real rendered hooks under a
+    # claude launched from a substitute HOME, unless a prompt in an interactive,
+    # top-level session started with "allow keychain access" this turn. A negated
+    # mention, a nested or `claude -p` session, and an agent handing the phrase
+    # to another claude grant nothing. Probes the real rendered hooks under a
     # throwaway HOME; the full matrix and the gaps left open on purpose live in
     # .hooks/tests/test-keychain-guard.py, which runs as a pre-commit hook.
     - name: Collect the keychain_guard hooks from the default-hooks settings
@@ -666,7 +668,8 @@
         {{ claude_code_keychain_clear_cmd }}
         HOOK
         export HOME="$tmp/home"
-        unset CLAUDE_CONFIG_DIR
+        unset CLAUDE_CONFIG_DIR CLAUDE_CODE_EXECPATH
+        export CLAUDE_CODE_ENTRYPOINT=cli CLAUDE_CODE_SESSION_ATTENDED=1
         mkdir -p "$HOME"
         probe() {
           python3 -c 'import json,sys; print(json.dumps({"session_id":"s1","tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$1" \
@@ -679,6 +682,15 @@
         probe 'env -i HOME=/tmp/blank claude plugin eval .' blankhome
         probe 'security list-keychains' listing
         probe 'ls -la' plain
+        probe 'claude -p "allow keychain access"' handoff
+        printf '%s' '{"session_id":"s1","prompt":"do not allow keychain access"}' | sh "$tmp/prompt.sh"
+        probe "$find" negatedfind
+        printf '%s' '{"session_id":"s1","prompt":"allow keychain access"}' \
+          | CLAUDE_CODE_EXECPATH=/opt/claude sh "$tmp/prompt.sh"
+        probe "$find" nestedfind
+        printf '%s' '{"session_id":"s1","prompt":"allow keychain access"}' \
+          | CLAUDE_CODE_ENTRYPOINT=sdk-cli CLAUDE_CODE_SESSION_ATTENDED=0 sh "$tmp/prompt.sh"
+        probe "$find" printfind
         printf '%s' '{"session_id":"s1","prompt":"allow keychain access"}' | sh "$tmp/prompt.sh"
         probe "$find" allowedfind
         printf '%s' '{"session_id":"s1"}' | sh "$tmp/clear.sh"
@@ -698,6 +710,10 @@
           - "'blankhome=2' in claude_code_keychain_guard_probe.stdout"
           - "'listing=0' in claude_code_keychain_guard_probe.stdout"
           - "'plain=0' in claude_code_keychain_guard_probe.stdout"
+          - "'handoff=2' in claude_code_keychain_guard_probe.stdout"
+          - "'negatedfind=2' in claude_code_keychain_guard_probe.stdout"
+          - "'nestedfind=2' in claude_code_keychain_guard_probe.stdout"
+          - "'printfind=2' in claude_code_keychain_guard_probe.stdout"
           - "'allowedfind=0' in claude_code_keychain_guard_probe.stdout"
           - "'clearedfind=2' in claude_code_keychain_guard_probe.stdout"
         fail_msg: "keychain_guard misjudged a command: {{ claude_code_keychain_guard_probe.stdout }}"
