@@ -610,25 +610,33 @@ claude_code_advanced_hooks_default:
   #
   # These are denied even with the allowance, because they would let the agent
   # start or steer a claude session that grants itself access:
-  #   - touching the allowance directory below, which only keychain_allow_prompt
-  #     writes
-  #   - a pipeline (pipes and heredocs included) that runs claude with the grant
-  #     phrase `allow keychain access` in it: `claude -p "allow keychain access
-  #     ..."`, `echo ... | claude`. Commands that only mention the phrase (rg,
-  #     `git log --grep`, echo, commit messages) pass
+  #   - touching the allowance directory below. keychain_allow_prompt writes the
+  #     grant there as `<session id>`, and the guard appends the tmux and screen
+  #     names each session creates to `<session id>.panes`. keychain_allow_clear
+  #     removes only the grant, so the .panes files stay after the session ends
+  #     (and a resumed session still knows its names)
+  #   - a pipeline (pipes and heredocs included) in which claude is the command
+  #     word of a stage, after VAR= assignments and env, sudo, nohup, timeout and
+  #     similar prefixes, with the grant phrase `allow keychain access` in it:
+  #     `claude -p "allow keychain access ..."`, `echo ... | claude`. Newlines end
+  #     a command like `;` does. Commands that only mention the phrase or claude
+  #     (rg, `git log --grep`, echo, commit messages, `rg ... | grep claude`) pass
   #   - starting claude through tmux or screen (new-session, new-window,
-  #     split-window, respawn-pane, respawn-window) or a pty wrapper (script,
-  #     unbuffer, expect, socat, dtach, abduco)
+  #     split-window, respawn-pane, respawn-window, screen -X screen) or a pty
+  #     wrapper (script, unbuffer, expect, socat, dtach, abduco)
   #   - tmux send-keys, paste-buffer or load-buffer, or screen -X stuff and the
   #     like, aimed at a session or window this Claude session named when it
-  #     created it (`-s`/`-n`, screen `-S`). The guard records those names under
-  #     the allowance directory. Keys sent to any other pane, including Firstmate's
-  #     own fm-send.sh doorbells, pass
+  #     created it (tmux `-s` sessions and `-n` windows, screen `-S`). A tmux
+  #     target's session part is matched against sessions and its window part
+  #     against windows; a target with no colon, like `k` or `k.0`, against both.
+  #     Keys sent to any other pane, including Firstmate's own fm-send.sh
+  #     doorbells, pass
   #   - the same commands aimed at the agent's own input: tmux with no `-t`, or a
-  #     `-t` that tmux resolves to the agent's TMUX_PANE, and screen -X with no
-  #     `-S` or one naming the agent's STY. Text the agent types into its own
-  #     input arrives as a prompt in its own interactive top-level session, which
-  #     can grant
+  #     `-t` that tmux resolves to the agent's TMUX_PANE (a literal `$TMUX_PANE`
+  #     or `${TMUX_PANE}` included), and screen -X with no `-S` or one naming the
+  #     agent's STY, its pid or its name (`$STY` included). Text the agent types
+  #     into its own input arrives as a prompt in its own interactive top-level
+  #     session, which can grant
   #
   # Read-only commands like `security list-keychains`, `security find-certificate`
   # or `security show-keychain-info` with no keychain path stay allowed, and Claude
@@ -691,9 +699,15 @@ claude_code_advanced_hooks_default:
       KEEP_HOME = (chr(36) + 'HOME', chr(36) + '{HOME}', '~', REAL_HOME, REAL_HOME + '/')
       DECLARE = ('export', 'declare', 'typeset', 'readonly', 'local')
       SHELLS = ('bash', 'sh', 'zsh', 'dash', 'ksh')
-      SEPARATORS = '&|;()<>'
+      SEPARATORS = '&|;()<>' + chr(10)
       BREAKS = ('&', '&&', '||')
       PTY_WRAPPERS = ('script', 'unbuffer', 'expect', 'socat', 'dtach', 'abduco')
+      PREFIXES = {
+          'env': 'uCSP', 'sudo': 'CDgprTUu', 'doas': 'Cu', 'nohup': '', 'timeout': 'ks', 'gtimeout': 'ks',
+          'exec': 'a', 'nice': 'n', 'caffeinate': 'tw', 'stdbuf': 'eio', 'xargs': 'adEIJLnPRsS', 'time': '',
+          'if': '', 'then': '', 'else': '', 'elif': '', 'do': '', 'while': '', 'until': '', '!': '', '{': '',
+      }
+      HEREDOC = re.compile(r'(?<![<])<<(?![<])-?\s*[^A-Za-z0-9_\s]*([A-Za-z0-9_]+)')
       TMUX_CREATE = {
           'new-session': 'cefFnstxy', 'new': 'cefFnstxy', 'new-window': 'cenFt', 'neww': 'cenFt',
           'split-window': 'celFpt', 'splitw': 'celFpt', 'respawn-pane': 'cet', 'respawnp': 'cet',
@@ -706,13 +720,31 @@ claude_code_advanced_hooks_default:
       SCREEN_SEND = ('stuff', 'paste', 'readbuf', 'register', 'eval', 'exec')
       PANES = os.path.join(ALLOW_DIR, sid + '.panes')
 
+      def join_lines(text):
+          # Newlines end clauses, except after a continuation, a pipe or an and-list, or in a heredoc body.
+          out, ends = [], []
+          for line in text.replace(chr(92) + chr(10), ' ').split(chr(10)):
+              if ends:
+                  out[-1] += ' ' + line
+                  if line.strip() == ends[0]:
+                      ends.pop(0)
+                  continue
+              if out and out[-1].rstrip().endswith(('|', '&')):
+                  out[-1] += ' ' + line
+              else:
+                  out.append(line)
+              ends = HEREDOC.findall(line)
+          return chr(10).join(out)
+
       def tokenize(text):
+          text = join_lines(text)
           try:
-              lexer = shlex.shlex(text, posix=True, punctuation_chars=True)
+              lexer = shlex.shlex(text, posix=True, punctuation_chars='();<>|&' + chr(10))
+              lexer.whitespace = ' ' + chr(9) + chr(13)
               lexer.whitespace_split = True
               return list(lexer)
           except ValueError:
-              return text.split()
+              return [t for line in text.split(chr(10)) for t in line.split() + [chr(10)]]
 
       def clauses(toks):
           out, cur = [], []
@@ -730,6 +762,28 @@ claude_code_advanced_hooks_default:
 
       def new_home(tok):
           return tok.startswith('HOME=') and tok[5:] not in KEEP_HOME
+
+      def command(seg):
+          # Index of the command word, past VAR= assignments and env/sudo/nohup/timeout style prefixes.
+          i = 0
+          while i < len(seg):
+              if ASSIGN.match(seg[i]):
+                  i += 1
+                  continue
+              w = word(seg[i])
+              if w not in PREFIXES:
+                  return i
+              i = len(seg) - len(opts(seg[i + 1:], PREFIXES[w])[1])
+              if w in ('timeout', 'gtimeout'):
+                  i += 1
+          return None
+
+      def is_claude(seg):
+          k = command(seg)
+          return k is not None and word(seg[k]) == 'claude'
+
+      def runs_claude(args):
+          return any(is_claude(seg) for seg in clauses(tokenize(' '.join(args))))
 
       def security_hit(clause):
           for i, tok in enumerate(clause):
@@ -758,14 +812,13 @@ claude_code_advanced_hooks_default:
               hit = security_hit(clause)
               if hit:
                   return hit
-              local = home
+              k = command(clause)
+              local = home or any(new_home(t) for t in clause[:len(clause) if k is None else k])
+              if local and is_claude(clause):
+                  return 'claude launched with HOME overridden'
               for i, tok in enumerate(clause):
                   w = word(tok)
-                  if new_home(tok):
-                      local = True
-                  elif w == 'claude' and local:
-                      return 'claude launched with HOME overridden'
-                  elif depth == 0 and w == 'eval':
+                  if depth == 0 and w == 'eval':
                       hit = scan(' '.join(clause[i + 1:]), local, depth + 1)
                       if hit:
                           return hit
@@ -787,7 +840,7 @@ claude_code_advanced_hooks_default:
           # One pipeline per unit, so a heredoc or pipe feeding a command stays with it.
           group = []
           for tok in tokenize(text) + [';']:
-              if tok in BREAKS or (tok and all(ch in SEPARATORS for ch in tok) and any(ch in ';()' for ch in tok)):
+              if tok in BREAKS or (tok and all(ch in SEPARATORS for ch in tok) and any(ch in ';()' + chr(10) for ch in tok)):
                   if group:
                       yield group
                       for i, t in enumerate(group if depth == 0 else []):
@@ -806,23 +859,24 @@ claude_code_advanced_hooks_default:
                   i += 1
                   break
               for k, ch in enumerate(args[i][1:], 2):
-                  if ch in valued:
-                      val = args[i][k:]
-                      if not val and i + 1 < len(args):
-                          i += 1
-                          val = args[i]
-                      found.setdefault(ch, []).append(val)
-                      break
+                  if ch not in valued:
+                      found.setdefault(ch, []).append('')
+                      continue
+                  val = args[i][k:]
+                  if not val and i + 1 < len(args):
+                      i += 1
+                      val = args[i]
+                  found.setdefault(ch, []).append(val)
+                  break
               i += 1
           return found, args[i:]
 
-      def runs_claude(args):
-          return any(p == 'claude' for a in args for p in re.split(r'[^A-Za-z0-9_.-]+', a))
-
-      def aimed(targets, names):
+      def aimed(targets, made):
+          # made holds (kind, name): s a tmux session, n a tmux window. A target with no colon may name either.
           for target in targets:
-              sess, _, rest = target.lstrip('=').partition(':')
-              if {target.lstrip('='), sess, rest.split('.')[0].lstrip('=')} & names:
+              sess, colon, win = target.lstrip('=').partition(':')
+              sess, win = sess.split('.')[0], win.split('.')[0].lstrip('=')
+              if ('s', sess) in made or (('n', win) if colon else ('n', sess)) in made:
                   return target
           return None
 
@@ -842,42 +896,50 @@ claude_code_advanced_hooks_default:
                   return target + ', its own pane'
           return None
 
-      def steer_hit(group, names):
-          # names gains the sessions and windows this command creates.
-          if PHRASE in ' '.join(' '.join(group).lower().split()) and any(word(t) == 'claude' for t in group):
+      def steer_hit(group, made):
+          # made gains the sessions and windows this command creates.
+          segs = clauses(group)
+          if PHRASE in ' '.join(' '.join(group).lower().split()) and any(is_claude(seg) for seg in segs):
               return 'the grant phrase handed to claude'
-          for i, tok in enumerate(group):
-              w = word(tok)
-              if w in PTY_WRAPPERS and runs_claude(group[i + 1:]):
+          for seg in segs:
+              k = command(seg)
+              if k is None:
+                  continue
+              w, args = word(seg[k]), seg[k + 1:]
+              if w in PTY_WRAPPERS and any(
+                      word(p) == 'claude' for a in args for p in re.split(r'[^A-Za-z0-9_./~-]+', a)):
                   return 'claude started through ' + w
               if w == 'tmux':
-                  glob, pos = opts(group[i + 1:], 'cfLST')
+                  glob, pos = opts(args, 'cfLST')
                   sub, args = (pos[0], pos[1:]) if pos else ('', [])
                   if sub in TMUX_CREATE:
                       found, rest = opts(args, TMUX_CREATE[sub])
                       if runs_claude(rest):
                           return 'claude started through tmux ' + sub
-                      names.update(v for k in 'sn' for v in found.get(k, []) if v)
+                      made.update((f, v) for f in 'sn' for v in found.get(f, []) if v)
                   elif sub in TMUX_SEND:
-                      targets = opts(args, TMUX_SEND[sub])[0].get('t', [])
-                      hit = aimed(targets, names)
+                      targets = [os.path.expandvars(t) for t in opts(args, TMUX_SEND[sub])[0].get('t', [])]
+                      hit = aimed(targets, made)
                       if hit:
                           return 'tmux ' + sub + ' into ' + hit + ', which this session created'
                       hit = own_pane(targets, glob)
                       if hit:
                           return 'tmux ' + sub + ' into ' + hit
               if w == 'screen':
-                  found, rest = opts(group[i + 1:], 'cehpsSTX')
-                  if runs_claude(rest):
+                  found, rest = opts(args, 'cehpsST')
+                  sessions = [os.path.expandvars(v) for v in found.get('S', []) if v]
+                  if 'X' not in found:
+                      if runs_claude(rest):
+                          return 'claude started through screen'
+                      made.update(('S', v) for v in sessions)
+                  elif rest[:1] == ['screen'] and runs_claude(rest[1:]):
                       return 'claude started through screen'
-                  if not found.get('X'):
-                      names.update(v for v in found.get('S', []) if v)
-                  elif found['X'][0] in SCREEN_SEND:
+                  elif rest and rest[0] in SCREEN_SEND:
                       sty = os.environ.get('STY', '')
-                      if aimed(found.get('S', []), names):
-                          return 'screen -X ' + found['X'][0] + ' into a session this session created'
-                      if not found.get('S') or {sty, sty.partition('.')[2]} & set(found['S']) - {''}:
-                          return 'screen -X ' + found['X'][0] + ' into its own session'
+                      if any(('S', v) in made or ('S', v.partition('.')[2]) in made for v in sessions):
+                          return 'screen -X ' + rest[0] + ' into a session this session created'
+                      if not sessions or set(sessions) & {sty, *sty.partition('.')[::2]} - {''}:
+                          return 'screen -X ' + rest[0] + ' into its own session'
           return None
 
       def refuse(what):
@@ -904,18 +966,18 @@ claude_code_advanced_hooks_default:
       if cmd:
           try:
               with open(PANES) as fh:
-                  known = set(fh.read().splitlines())
+                  known = {tuple(line.split(' ', 1)) for line in fh.read().splitlines() if ' ' in line}
           except OSError:
               known = set()
-          names = set(known)
+          made = set(known)
           for group in units(cmd):
-              hit = steer_hit(group, names)
+              hit = steer_hit(group, made)
               if hit:
                   refuse(hit)
-          if sid and names - known:
+          if sid and made - known:
               os.makedirs(ALLOW_DIR, mode=0o700, exist_ok=True)
               with open(PANES, 'a') as fh:
-                  fh.writelines(n + chr(10) for n in sorted(names - known))
+                  fh.writelines(f + ' ' + n + chr(10) for f, n in sorted(made - known))
 
       reason = None
       if any(KEYCHAIN_PATH.search(t) for t in texts):

@@ -55,21 +55,30 @@ The guard also denies these, even while the allowance is active, because each
 would let an agent start or steer a session that grants itself access:
 
 - any tool call that touches the allowance directory
-  (`~/.claude/keychain-allowance/`)
-- a pipeline or heredoc that runs `claude` with the phrase in it
-  (`claude -p "allow keychain access ..."`, `echo ... | claude`). Commands
-  that only mention the phrase, such as `rg`, `git log --grep`, `echo` or a
-  commit message, still run
+  (`~/.claude/keychain-allowance/`). `keychain_allow_prompt` writes the grant
+  there as `<session id>`, and the guard appends the tmux and screen names each
+  session creates to `<session id>.panes`. `keychain_allow_clear` removes only
+  the grant, so the `.panes` files stay after the session ends
+- a pipeline or heredoc in which `claude` is the command of a stage (after
+  `VAR=` assignments and `env`, `sudo`, `nohup`, `timeout` and similar
+  prefixes) and the phrase appears (`claude -p "allow keychain access ..."`,
+  `echo ... | claude`). A newline ends a command like `;` does. Commands that
+  only mention the phrase or `claude`, such as `rg`, `git log --grep`, `echo`,
+  a commit message or `rg ... | grep claude`, still run
 - `claude` started through tmux or screen (`new-session`, `new-window`,
-  `split-window`, `respawn-pane`, `respawn-window`) or a pty wrapper (`script`,
-  `unbuffer`, `expect`, `socat`, `dtach`, `abduco`)
+  `split-window`, `respawn-pane`, `respawn-window`, screen `-X screen`) or a pty
+  wrapper (`script`, `unbuffer`, `expect`, `socat`, `dtach`, `abduco`)
 - tmux `send-keys`, `paste-buffer` or `load-buffer`, or screen `-X stuff` and
   similar, aimed at a session or window the same Claude session named when it
-  created it (`-s`/`-n`, screen `-S`). Keys sent to any other pane still go
-  through, so Firstmate's `fm-send.sh` doorbells keep working
+  created it (tmux `-s` sessions and `-n` windows, screen `-S`). A target's
+  session part is matched against sessions and its window part against windows;
+  a target with no colon, like `k` or `k.0`, against both. Keys sent to any
+  other pane still go through, so Firstmate's `fm-send.sh` doorbells keep
+  working
 - the same commands aimed at the agent's own input: tmux with no `-t`, or a
-  `-t` that tmux resolves to the agent's `$TMUX_PANE`, and screen `-X` with no
-  `-S` or one naming the agent's `$STY`
+  `-t` that tmux resolves to the agent's `$TMUX_PANE` (a literal
+  `"$TMUX_PANE"` included), and screen `-X` with no `-S` or one naming the
+  agent's `$STY`, its pid or its name
 
 This is a speed bump against an agent working around a refusal, not a security
 boundary. It reads the command text, so known routes past it remain: command
