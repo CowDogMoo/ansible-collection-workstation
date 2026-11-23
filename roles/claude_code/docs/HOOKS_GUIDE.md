@@ -46,7 +46,10 @@ Only an interactive, top-level `claude` session in a terminal can grant it. The
 hook checks `CLAUDE_CODE_ENTRYPOINT=cli` and `CLAUDE_CODE_SESSION_ATTENDED=1`
 (`claude -p`, piped stdin and the SDK get `0`), and refuses when
 `CLAUDE_CODE_EXECPATH` is set, which a session inherits when it is started from
-inside another Claude Code session.
+inside another Claude Code session. The agent's own session is interactive and
+top-level too, so the phrase typed into the agent's own input grants access,
+whoever typed it. The guard denies the direct ways an agent could do that (see
+below), not every way.
 
 The guard also denies these, even while the allowance is active, because each
 would let an agent start or steer a session that grants itself access:
@@ -64,6 +67,9 @@ would let an agent start or steer a session that grants itself access:
   similar, aimed at a session or window the same Claude session named when it
   created it (`-s`/`-n`, screen `-S`). Keys sent to any other pane still go
   through, so Firstmate's `fm-send.sh` doorbells keep working
+- the same commands aimed at the agent's own input: tmux with no `-t`, or a
+  `-t` that tmux resolves to the agent's `$TMUX_PANE`, and screen `-X` with no
+  `-S` or one naming the agent's `$STY`
 
 This is a speed bump against an agent working around a refusal, not a security
 boundary. It reads the command text, so known routes past it remain: command
@@ -71,8 +77,10 @@ substitution and variables, nesting deeper than one `sh -c` or `eval`, scripts
 and other languages (including a script that drives tmux, screen or a pty, or a
 keychain library), paths assembled at runtime, tmux commands chained with `\;`
 in one invocation, keys sent to a pane created without a name or addressed by
-index or pane id, typing the phrase into a pane the session did not create, and
-a terminal app opened with `osascript` or `open` that runs `claude`.
+index or pane id, typing the phrase into a pane the session did not create,
+typing it into the agent's own pane through a script, a chained tmux command or
+`osascript` keystrokes, and a terminal app opened with `osascript` or `open`
+that runs `claude`.
 
 The full case matrix, including the gaps left open on purpose, lives in
 `.hooks/tests/test-keychain-guard.py`.

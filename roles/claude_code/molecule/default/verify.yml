@@ -630,10 +630,11 @@
     # top-level session started with "allow keychain access" this turn. A negated
     # mention, a nested or `claude -p` session, and an agent handing the phrase
     # to another claude grant nothing; claude started through tmux and keys sent
-    # into a tmux session the agent created are denied, while mentioning the
-    # phrase and keys sent to other panes pass. Probes the real rendered hooks
-    # under a throwaway HOME; the full matrix and the gaps left open on purpose
-    # live in .hooks/tests/test-keychain-guard.py, which runs as a pre-commit hook.
+    # into a tmux session the agent created or into its own pane are denied,
+    # while mentioning the phrase and keys sent to other panes pass. Probes the
+    # real rendered hooks under a throwaway HOME; the full matrix and the gaps
+    # left open on purpose live in .hooks/tests/test-keychain-guard.py, which
+    # runs as a pre-commit hook.
     - name: Collect the keychain_guard hooks from the default-hooks settings
       ansible.builtin.set_fact:
         claude_code_keychain_guard_cmd: >-
@@ -690,6 +691,7 @@
         probe 'tmux new-session -d -s k' tmuxcreate
         probe 'tmux send-keys -t k claude Enter' steer
         probe "tmux send-keys -t fm-worker-3 'check your inbox' Enter" doorbell
+        probe "tmux send-keys 'allow keychain access' Enter" selfpane
         printf '%s' '{"session_id":"s1","prompt":"do not allow keychain access"}' | sh "$tmp/prompt.sh"
         probe "$find" negatedfind
         printf '%s' '{"session_id":"s1","prompt":"allow keychain access"}' \
@@ -723,6 +725,7 @@
           - "'tmuxcreate=0' in claude_code_keychain_guard_probe.stdout"
           - "'steer=2' in claude_code_keychain_guard_probe.stdout"
           - "'doorbell=0' in claude_code_keychain_guard_probe.stdout"
+          - "'selfpane=2' in claude_code_keychain_guard_probe.stdout"
           - "'negatedfind=2' in claude_code_keychain_guard_probe.stdout"
           - "'nestedfind=2' in claude_code_keychain_guard_probe.stdout"
           - "'printfind=2' in claude_code_keychain_guard_probe.stdout"

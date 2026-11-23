@@ -16,7 +16,8 @@ So an agent cannot start or steer a session that grants itself access, the
 guard also denies, even with the allowance, a pipeline that runs claude with
 the grant phrase, claude started through tmux, screen or a pty wrapper, and
 keys sent into a tmux or screen session this Claude session named when it
-created it (STEER). Commands that only mention the phrase, and keys sent to
+created it (STEER), and keys sent into the agent's own pane, whose input would
+arrive as a prompt in its own interactive top-level session (SELF_PANE). Commands that only mention the phrase, and keys sent to
 any other pane (Firstmate's fm-send.sh doorbells), still pass.
 
 The guard has to stay narrow: Claude Code keeps its own login token in the
@@ -40,6 +41,7 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -192,9 +194,37 @@ KNOWN_GAPS = [
     ("Bash", f"bash -c {SQ}bash -c {DQ}security dump-keychain{DQ}{SQ}", "two levels of wrapping"),
     ("Bash", f"tmux send-keys -t s {DQ}{DOLLAR}(cat grant.txt){DQ} Enter", "grant phrase read from a file"),
     ("Bash", f"tmux send-keys -t s {SQ}allow keychain access{SQ} Enter", "phrase typed into a pane it did not create"),
-    ("Bash", "tmux send-keys -t 3 claude Enter", "pane addressed by index"),
+    ("Bash", "tmux send-keys -t 3 claude Enter", "a pane it created without a name, addressed by index"),
+    ("Bash", f"osascript -e {SQ}tell application {DQ}System Events{DQ} to keystroke {DQ}allow keychain access{DQ}{SQ}",
+     "keystrokes into its own terminal via osascript"),
+    ("Bash", f"bin/nudge.sh {SQ}allow keychain access{SQ}", "a script that types into its own pane"),
     ("Bash", f"tmux new -d -s k {BS}; send-keys -t k claude Enter", "tmux commands chained with \\;"),
     ("Bash", f"osascript -e {SQ}tell app {DQ}Terminal{DQ} to do script {DQ}claude{DQ}{SQ}", "terminal app via osascript"),
+]
+
+# (command, environment, label) - keys into the agent's own input, denied even
+# with the allowance. IN_TMUX points at a socket with no server, so only a
+# target that names TMUX_PANE directly resolves to it.
+IN_TMUX = {"TMUX": "/nonexistent/keychain-guard-test,1,0", "TMUX_PANE": "%5"}
+IN_SCREEN = {"STY": "4242.work"}
+SELF_PANE = [
+    (f"tmux send-keys {SQ}allow keychain access{SQ} Enter", IN_TMUX, "send-keys with no target"),
+    ("tmux send-keys -t %5 allow Space keychain Space access Enter", IN_TMUX, "send-keys naming its own pane id"),
+    ("tmux -L work send -t %5 -l x", IN_TMUX, "send alias with a socket flag"),
+    ("tmux paste-buffer", IN_TMUX, "paste-buffer with no target"),
+    ("tmux load-buffer /tmp/p", IN_TMUX, "load-buffer with no target"),
+    (f"tmux send-keys {SQ}allow keychain access{SQ} Enter", {}, "send-keys with no target outside tmux"),
+    (f"screen -X stuff {SQ}allow keychain access{SQ}", IN_SCREEN, "screen stuff with no session"),
+    ("screen -S work -X stuff x", IN_SCREEN, "screen stuff naming its own session"),
+    ("screen -S 4242.work -X paste .", IN_SCREEN, "screen paste naming its full STY"),
+]
+
+# (command, environment, label) - keys into other panes still pass.
+OTHER_PANE = [
+    (f"tmux send-keys -t %6 {SQ}check your inbox{SQ} Enter", IN_TMUX, "another pane by id"),
+    (f"tmux send-keys -t fm-worker-3 {SQ}check your inbox{SQ} Enter", IN_TMUX, "Firstmate worker pane"),
+    (f'~/firstmate/bin/fm-send.sh worker-3 "check your inbox"', IN_TMUX, "fm-send doorbell from inside tmux"),
+    ("screen -S other -X stuff hi", IN_SCREEN, "another screen session"),
 ]
 
 # Hook-process environments observed in real sessions. A session sets
@@ -272,10 +302,11 @@ def extract(key):
 def run(body, payload, home, session=None):
     """Run a hook body through sh with HOME pointed at a throwaway directory.
 
-    Claude Code variables from the session running this test are dropped, and
-    `session` supplies the hook-process environment under test instead.
+    Claude Code, tmux and screen variables from the session running this test
+    are dropped, and `session` supplies the hook-process environment under test.
     """
-    env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith("CLAUDE") and k not in ("TMUX", "TMUX_PANE", "STY")}
     env.update(session or {})
     env["HOME"] = home
     return subprocess.run(
@@ -288,11 +319,11 @@ def run(body, payload, home, session=None):
     )
 
 
-def denied(body, tool, tool_input, home, sid="s1"):
+def denied(body, tool, tool_input, home, sid="s1", session=None):
     """True when the guard denies the call. Fails loudly on anything but 0 or 2."""
     if isinstance(tool_input, str):
         tool_input = {"command": tool_input}
-    proc = run(body, {"session_id": sid, "tool_name": tool, "tool_input": tool_input}, home)
+    proc = run(body, {"session_id": sid, "tool_name": tool, "tool_input": tool_input}, home, session)
     if proc.returncode not in (0, 2):
         raise SystemExit(f"guard exited {proc.returncode} for {tool_input!r}: {proc.stderr[:300]}")
     if proc.returncode == 2 and "BLOCKED" not in proc.stderr:
@@ -350,6 +381,14 @@ def main():
             if setup and denied(guard, "Bash", steer, home, sid=f"other{n}"):
                 failures.append(f"steer: leaked to another session - {label}")
 
+        for cmd, session, label in SELF_PANE:
+            if not denied(guard, "Bash", cmd, home, session=session):
+                failures.append(f"self pane: not denied - {label}")
+        for cmd, session, label in OTHER_PANE:
+            if denied(guard, "Bash", cmd, home, session=session):
+                failures.append(f"self pane: false positive - {label}")
+        failures += self_pane_resolved(guard, home)
+
         legacy_fp = [lbl for tool, inp, lbl in ALLOW if denied_legacy(inp, home)]
         if not legacy_fp:
             failures.append("control: substring scanner cleared ALLOW, so it cannot fail")
@@ -389,6 +428,9 @@ def main():
             failures.append("allowance: tmux setup denied")
         if not denied(guard, "Bash", "tmux send-keys -t kk claude Enter", home):
             failures.append("allowance: lifted send-keys into a session it created")
+        for cmd, session, label in SELF_PANE:
+            if not denied(guard, "Bash", cmd, home, session=session):
+                failures.append(f"allowance: lifted keys into its own pane - {label}")
         if not denied(guard, *probe, home, sid="s2"):
             failures.append("allowance: leaked to another session")
         if not denied(guard, *probe, home, sid=""):
@@ -425,12 +467,42 @@ def main():
 
     print(
         f"keychain_guard OK: {len(BLOCK) + len(ALWAYS_BLOCK)} denied + {len(ALLOW) + 1} allowed + "
-        f"{len(STEER)} steering sequences denied; {len(KNOWN_GAPS)} known gaps; allowance granted only by {len(GRANTING_PROMPTS)} prompt forms "
+        f"{len(STEER)} steering sequences and {len(SELF_PANE)} own-pane sends denied; {len(KNOWN_GAPS)} known gaps; allowance granted only by {len(GRANTING_PROMPTS)} prompt forms "
         f"in an interactive top-level session, never by {len(NON_GRANTING_PROMPTS)} other prompts or "
         f"{len(SESSIONS_THAT_NEVER_GRANT)} other sessions, per session, cleared on Stop; "
         f"substring control fails {len(legacy_fp)} of the allowed cases"
     )
     return 0
+
+
+def self_pane_resolved(guard, home):
+    """Against a real tmux server: a -t that resolves to TMUX_PANE is denied."""
+    if not shutil.which("tmux"):
+        print("tmux not installed: skipped the resolved-target cases", file=sys.stderr)
+        return []
+    sock = os.path.join(home, "tmux.sock")
+
+    def tmux(*args):
+        return subprocess.run(["tmux", "-S", sock, "-f", "/dev/null", *args],
+                              capture_output=True, text=True, timeout=10, check=True).stdout.strip()
+
+    failures = []
+    try:
+        tmux("new-session", "-d", "-s", "self", "-x", "80", "-y", "24")
+        tmux("new-window", "-d", "-t", "self", "-n", "other")
+        me = tmux("display-message", "-p", "-t", "self:0.0", "#{pane_id}")
+        inside = {"TMUX": f"{sock},1,0", "TMUX_PANE": me}
+        for cmd, session, label, want in [
+            (f"tmux send-keys -t self:0 {SQ}allow keychain access{SQ} Enter", inside, "window index of its own pane", True),
+            ("tmux paste-buffer -t self", inside, "session holding its own pane", True),
+            (f"tmux -S {sock} send-keys -t self:0.0 x", {"TMUX_PANE": me}, "socket given with -S", True),
+            ("tmux send-keys -t self:other hi Enter", inside, "another window on the same server", False),
+        ]:
+            if denied(guard, "Bash", cmd, home, sid="resolve", session=session) != want:
+                failures.append(f"self pane: resolved target misjudged - {label}")
+    finally:
+        subprocess.run(["tmux", "-S", sock, "kill-server"], capture_output=True, timeout=10)
+    return failures
 
 
 def denied_legacy(tool_input, home):

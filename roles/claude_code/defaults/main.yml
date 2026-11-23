@@ -624,6 +624,11 @@ claude_code_advanced_hooks_default:
   #     created it (`-s`/`-n`, screen `-S`). The guard records those names under
   #     the allowance directory. Keys sent to any other pane, including Firstmate's
   #     own fm-send.sh doorbells, pass
+  #   - the same commands aimed at the agent's own input: tmux with no `-t`, or a
+  #     `-t` that tmux resolves to the agent's TMUX_PANE, and screen -X with no
+  #     `-S` or one naming the agent's STY. Text the agent types into its own
+  #     input arrives as a prompt in its own interactive top-level session, which
+  #     can grant
   #
   # Read-only commands like `security list-keychains`, `security find-certificate`
   # or `security show-keychain-info` with no keychain path stay allowed, and Claude
@@ -635,7 +640,8 @@ claude_code_advanced_hooks_default:
   # first list above runs until the turn ends (keychain_allow_clear on Stop) or
   # the next prompt arrives without it. A mention inside a sentence, such as "do not allow
   # keychain access", grants nothing. Only an interactive, top-level `claude`
-  # session can grant: CLAUDE_CODE_ENTRYPOINT must be `cli`,
+  # session can grant, and the agent's own session is one, so the phrase typed
+  # into its own input by any route the guard misses grants too: CLAUDE_CODE_ENTRYPOINT must be `cli`,
   # CLAUDE_CODE_SESSION_ATTENDED must be `1` (each session sets it; `claude -p`,
   # piped stdin and the SDK get `0`), and CLAUDE_CODE_EXECPATH must be unset (a
   # Claude Code session exports it to its tools, so a session started from one
@@ -649,15 +655,16 @@ claude_code_advanced_hooks_default:
   # screen or a pty, or calls a keychain library), paths assembled at runtime,
   # tmux commands chained with `\;` in one invocation, keys sent to a pane created
   # without a name or addressed by index or pane id, typing the phrase into a pane
-  # this session did not create, and a terminal app opened by osascript or `open`
-  # that runs claude.
+  # this session did not create, typing it into the agent's own pane through a
+  # script, a chained tmux command or osascript keystrokes, and a terminal app
+  # opened by osascript or `open` that runs claude.
   keychain_guard:
     event: PreToolUse
     tool: "Bash|Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob"
     type: command
     command: |
       python3 -c "
-      import json, os, re, shlex, sys
+      import json, os, re, shlex, subprocess, sys
 
       data = json.load(sys.stdin)
       tool = data.get('tool_name') or 'Bash'
@@ -819,6 +826,22 @@ claude_code_advanced_hooks_default:
                   return target
           return None
 
+      def own_pane(targets, glob):
+          # The agent's own input: no target, or one tmux resolves to TMUX_PANE.
+          if not targets:
+              return 'the current pane'
+          me = os.environ.get('TMUX_PANE')
+          flags = [f for k in 'LS' for v in glob.get(k, []) for f in ('-' + k, v)]
+          for target in targets if me else []:
+              try:
+                  out = subprocess.run(['tmux'] + flags + ['display-message', '-p', '-t', target, '#{pane_id}'],
+                                       capture_output=True, text=True, timeout=3).stdout.strip()
+              except (OSError, subprocess.SubprocessError):
+                  out = ''
+              if me in (target, out):
+                  return target + ', its own pane'
+          return None
+
       def steer_hit(group, names):
           # names gains the sessions and windows this command creates.
           if PHRASE in ' '.join(' '.join(group).lower().split()) and any(word(t) == 'claude' for t in group):
@@ -828,7 +851,7 @@ claude_code_advanced_hooks_default:
               if w in PTY_WRAPPERS and runs_claude(group[i + 1:]):
                   return 'claude started through ' + w
               if w == 'tmux':
-                  pos = opts(group[i + 1:], 'cfLST')[1]
+                  glob, pos = opts(group[i + 1:], 'cfLST')
                   sub, args = (pos[0], pos[1:]) if pos else ('', [])
                   if sub in TMUX_CREATE:
                       found, rest = opts(args, TMUX_CREATE[sub])
@@ -836,17 +859,25 @@ claude_code_advanced_hooks_default:
                           return 'claude started through tmux ' + sub
                       names.update(v for k in 'sn' for v in found.get(k, []) if v)
                   elif sub in TMUX_SEND:
-                      hit = aimed(opts(args, TMUX_SEND[sub])[0].get('t', []), names)
+                      targets = opts(args, TMUX_SEND[sub])[0].get('t', [])
+                      hit = aimed(targets, names)
                       if hit:
                           return 'tmux ' + sub + ' into ' + hit + ', which this session created'
+                      hit = own_pane(targets, glob)
+                      if hit:
+                          return 'tmux ' + sub + ' into ' + hit
               if w == 'screen':
                   found, rest = opts(group[i + 1:], 'cehpsSTX')
                   if runs_claude(rest):
                       return 'claude started through screen'
                   if not found.get('X'):
                       names.update(v for v in found.get('S', []) if v)
-                  elif found['X'][0] in SCREEN_SEND and aimed(found.get('S', []), names):
-                      return 'screen -X ' + found['X'][0] + ' into a session this session created'
+                  elif found['X'][0] in SCREEN_SEND:
+                      sty = os.environ.get('STY', '')
+                      if aimed(found.get('S', []), names):
+                          return 'screen -X ' + found['X'][0] + ' into a session this session created'
+                      if not found.get('S') or {sty, sty.partition('.')[2]} & set(found['S']) - {''}:
+                          return 'screen -X ' + found['X'][0] + ' into its own session'
           return None
 
       def refuse(what):
