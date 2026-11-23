@@ -17,7 +17,84 @@ The role comes pre-configured with these useful hooks:
 
 Requires that commits and pull request titles and bodies come only from `squad_commit` and `squad_pr`: a hand-written commit or PR text is blocked, along with emojis or Claude branding in other write commands. The `forbidden_content` comment in `defaults/main.yml` lists exactly which commands it denies and which it allows.
 
-### 2. Sound Notifications (macOS)
+### 2. Keychain Guard
+
+Keeps agents away from the macOS keychain unless you ask. Claude Code keeps its
+login token in the keychain, so a blank `HOME` with `Library/Keychains` linked
+back to the real one runs a signed-in session that skips every user hook. The
+`keychain_guard` PreToolUse hook denies, and tells the agent to stop and ask:
+
+- `security` subcommands that read, export, import, unlock, add, delete or
+  re-permission keychain items (`find-generic-password`, `dump-keychain`,
+  `export`, `unlock-keychain`, `add-`/`delete-*-password` and similar)
+- any `Library/Keychains`, `.keychain` or `.keychain-db` reference in a Bash
+  command (`ln`, `cp`, `rsync`, ...) or a file tool's path
+- `claude` launched with `HOME` pointed elsewhere (`env -i HOME=...`,
+  `HOME=... claude`, `claude plugin eval` included)
+
+Read-only listing such as `security list-keychains` still runs, and Claude
+Code's own sign-in is not a tool call, so it never reaches the hook.
+
+To allow keychain access on purpose, start your prompt with `allow keychain
+access`, or put it on a line by itself (case doesn't matter, trailing
+punctuation is fine). The `keychain_allow_prompt` UserPromptSubmit hook records
+an allowance for that session, and `keychain_allow_clear` drops it when the turn
+ends. The next prompt without the phrase also revokes it. A mention inside a
+sentence, such as "do not allow keychain access", grants nothing.
+
+Only an interactive, top-level `claude` session in a terminal can grant it. The
+hook checks `CLAUDE_CODE_ENTRYPOINT=cli` and `CLAUDE_CODE_SESSION_ATTENDED=1`
+(`claude -p`, piped stdin and the SDK get `0`), and refuses when
+`CLAUDE_CODE_EXECPATH` is set, which a session inherits when it is started from
+inside another Claude Code session. The agent's own session is interactive and
+top-level too, so the phrase typed into the agent's own input grants access,
+whoever typed it. The guard denies the direct ways an agent could do that (see
+below), not every way.
+
+The guard also denies these, even while the allowance is active, because each
+would let an agent start or steer a session that grants itself access:
+
+- any tool call that touches the allowance directory
+  (`~/.claude/keychain-allowance/`). `keychain_allow_prompt` writes the grant
+  there as `<session id>`, and the guard appends the tmux and screen names each
+  session creates to `<session id>.panes`. `keychain_allow_clear` removes only
+  the grant, so the `.panes` files stay after the session ends
+- a pipeline or heredoc in which `claude` is the command of a stage (after
+  `VAR=` assignments and `env`, `sudo`, `nohup`, `timeout` and similar
+  prefixes) and the phrase appears (`claude -p "allow keychain access ..."`,
+  `echo ... | claude`). A newline ends a command like `;` does. Commands that
+  only mention the phrase or `claude`, such as `rg`, `git log --grep`, `echo`,
+  a commit message or `rg ... | grep claude`, still run
+- `claude` started through tmux or screen (`new-session`, `new-window`,
+  `split-window`, `respawn-pane`, `respawn-window`, screen `-X screen`) or a pty
+  wrapper (`script`, `unbuffer`, `expect`, `socat`, `dtach`, `abduco`)
+- tmux `send-keys`, `paste-buffer` or `load-buffer`, or screen `-X stuff` and
+  similar, aimed at a session or window the same Claude session named when it
+  created it (tmux `-s` sessions and `-n` windows, screen `-S`). A target's
+  session part is matched against sessions and its window part against windows;
+  a target with no colon, like `k` or `k.0`, against both. Keys sent to any
+  other pane still go through, so Firstmate's `fm-send.sh` doorbells keep
+  working
+- the same commands aimed at the agent's own input: tmux with no `-t`, or a
+  `-t` that tmux resolves to the agent's `$TMUX_PANE` (a literal
+  `"$TMUX_PANE"` included), and screen `-X` with no `-S` or one naming the
+  agent's `$STY`, its pid or its name
+
+This is a speed bump against an agent working around a refusal, not a security
+boundary. It reads the command text, so known routes past it remain: command
+substitution and variables, nesting deeper than one `sh -c` or `eval`, scripts
+and other languages (including a script that drives tmux, screen or a pty, or a
+keychain library), paths assembled at runtime, tmux commands chained with `\;`
+in one invocation, keys sent to a pane created without a name or addressed by
+index or pane id, typing the phrase into a pane the session did not create,
+typing it into the agent's own pane through a script, a chained tmux command or
+`osascript` keystrokes, and a terminal app opened with `osascript` or `open`
+that runs `claude`.
+
+The full case matrix, including the gaps left open on purpose, lives in
+`.hooks/tests/test-keychain-guard.py`.
+
+### 3. Sound Notifications (macOS)
 
 - **Stop Hook**: Plays 2 beeps when Claude finishes a task or stops working
 - **Notification Hook**: Plays 1 beep when Claude needs your input

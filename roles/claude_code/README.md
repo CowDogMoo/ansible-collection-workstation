@@ -42,6 +42,9 @@ Manages Claude Code CLI configuration including hooks and settings
 | `claude_code_advanced_hooks_default.dangerous_flags` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.post_commit_check` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.post_pr_check` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.keychain_guard` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.keychain_allow_prompt` | dict | <code>{}</code> | No description |
+| `claude_code_advanced_hooks_default.keychain_allow_clear` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.stop_sound` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_default.notify_sound` | dict | <code>{}</code> | No description |
 | `claude_code_advanced_hooks_overrides` | dict | <code>{}</code> | No description |

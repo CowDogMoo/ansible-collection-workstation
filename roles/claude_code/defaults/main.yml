@@ -592,6 +592,471 @@ claude_code_advanced_hooks_default:
       sys.exit(0)
       "
 
+  # keychain_guard: Keep agents away from the macOS keychain unless the user asks.
+  #
+  # Claude Code signs in with a token it keeps in the login keychain, so a blank
+  # HOME with Library/Keychains linked back to the real one is enough to run a
+  # session that skips every user hook while still signed in. This guard denies,
+  # with a reason that tells the agent to stop and ask:
+  #   - `security` subcommands that read, export, import, unlock, lock, add, delete
+  #     or re-permission keychain items (find-generic-password, dump-keychain,
+  #     export, unlock-keychain, add-/delete-*-password and similar), `security -i`,
+  #     and changing the keychain search list or default keychain with `-s`
+  #   - any reference to Library/Keychains or a .keychain/.keychain-db file, in a
+  #     Bash command (ln, cp, rsync, cat, ...) or a file tool's path
+  #   - launching `claude` (including `claude plugin eval`) with HOME pointed
+  #     somewhere other than the real home: `env -i HOME=...`, `HOME=... claude`,
+  #     or an earlier `export HOME=...` in the same command
+  #
+  # These are denied even with the allowance, because they would let the agent
+  # start or steer a claude session that grants itself access:
+  #   - touching the allowance directory below. keychain_allow_prompt writes the
+  #     grant there as `<session id>`, and the guard appends the tmux and screen
+  #     names each session creates to `<session id>.panes`. keychain_allow_clear
+  #     removes only the grant, so the .panes files stay after the session ends
+  #     (and a resumed session still knows its names)
+  #   - a pipeline (pipes and heredocs included) in which claude is the command
+  #     word of a stage, after VAR= assignments and env, sudo, nohup, timeout and
+  #     similar prefixes, with the grant phrase `allow keychain access` in it:
+  #     `claude -p "allow keychain access ..."`, `echo ... | claude`. Newlines end
+  #     a command like `;` does. Commands that only mention the phrase or claude
+  #     (rg, `git log --grep`, echo, commit messages, `rg ... | grep claude`) pass
+  #   - starting claude through tmux or screen (new-session, new-window,
+  #     split-window, respawn-pane, respawn-window, screen -X screen) or a pty
+  #     wrapper (script, unbuffer, expect, socat, dtach, abduco)
+  #   - tmux send-keys, paste-buffer or load-buffer, or screen -X stuff and the
+  #     like, aimed at a session or window this Claude session named when it
+  #     created it (tmux `-s` sessions and `-n` windows, screen `-S`). A tmux
+  #     target's session part is matched against sessions and its window part
+  #     against windows; a target with no colon, like `k` or `k.0`, against both.
+  #     Keys sent to any other pane, including Firstmate's own fm-send.sh
+  #     doorbells, pass
+  #   - the same commands aimed at the agent's own input: tmux with no `-t`, or a
+  #     `-t` that tmux resolves to the agent's TMUX_PANE (a literal `$TMUX_PANE`
+  #     or `${TMUX_PANE}` included), and screen -X with no `-S` or one naming the
+  #     agent's STY, its pid or its name (`$STY` included). Text the agent types
+  #     into its own input arrives as a prompt in its own interactive top-level
+  #     session, which can grant
+  #
+  # Read-only commands like `security list-keychains`, `security find-certificate`
+  # or `security show-keychain-info` with no keychain path stay allowed, and Claude
+  # Code's own sign-in is not a tool call, so it never reaches this hook.
+  #
+  # Explicit permission: when the user's prompt starts with `allow keychain access`
+  # or has it on a line by itself (case-insensitive, trailing punctuation allowed),
+  # keychain_allow_prompt records an allowance for that session and turn, and the
+  # first list above runs until the turn ends (keychain_allow_clear on Stop) or
+  # the next prompt arrives without it. A mention inside a sentence, such as "do not allow
+  # keychain access", grants nothing. Only an interactive, top-level `claude`
+  # session can grant, and the agent's own session is one, so the phrase typed
+  # into its own input by any route the guard misses grants too: CLAUDE_CODE_ENTRYPOINT must be `cli`,
+  # CLAUDE_CODE_SESSION_ATTENDED must be `1` (each session sets it; `claude -p`,
+  # piped stdin and the SDK get `0`), and CLAUDE_CODE_EXECPATH must be unset (a
+  # Claude Code session exports it to its tools, so a session started from one
+  # inherits it, as it does the parent's entrypoint).
+  #
+  # This is a speed bump against an agent working around a refusal, not a security
+  # boundary: an agent determined to get past it can. Like dangerous_flags, it
+  # parses the command into clauses and looks one level into eval and `sh -c`.
+  # Known routes it does not catch: command substitution and variables, deeper
+  # nesting, scripts and other languages (including a script that drives tmux,
+  # screen or a pty, or calls a keychain library), paths assembled at runtime,
+  # tmux commands chained with `\;` in one invocation, keys sent to a pane created
+  # without a name or addressed by index or pane id, typing the phrase into a pane
+  # this session did not create, typing it into the agent's own pane through a
+  # script, a chained tmux command or osascript keystrokes, and a terminal app
+  # opened by osascript or `open` that runs claude.
+  keychain_guard:
+    event: PreToolUse
+    tool: "Bash|Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob"
+    type: command
+    command: |
+      python3 -c "
+      import json, os, re, shlex, subprocess, sys
+
+      data = json.load(sys.stdin)
+      tool = data.get('tool_name') or 'Bash'
+      tin = data.get('tool_input') or {}
+      sid = re.sub(r'[^A-Za-z0-9_.-]', '', str(data.get('session_id') or ''))
+
+      PHRASE = 'allow keychain access'
+      ALLOW_DIR = os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'keychain-allowance')
+      SECURITY_DENY = (
+          'find-generic-password', 'find-internet-password', 'find-key', 'dump-keychain',
+          'export', 'import', 'unlock-keychain', 'lock-keychain', 'create-keychain',
+          'delete-keychain', 'set-keychain-password', 'set-keychain-settings',
+          'add-generic-password', 'add-internet-password', 'add-certificates',
+          'add-trusted-cert', 'remove-trusted-cert', 'delete-generic-password',
+          'delete-internet-password', 'delete-certificate', 'delete-identity',
+          'set-generic-password-partition-list', 'set-internet-password-partition-list',
+          'set-key-partition-list', 'set-identity-preference', 'create-keypair',
+      )
+      SECURITY_SEARCH_LIST = ('list-keychains', 'default-keychain', 'login-keychain')
+      KEYCHAIN_PATH = re.compile(r'Library/+Keychains|[.]keychain(-db)?(?![A-Za-z0-9_])', re.I)
+      ALLOWANCE_PATH = re.compile(r'keychain-allowance', re.I)
+      ASSIGN = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+      REAL_HOME = os.path.expanduser('~').rstrip('/')
+      KEEP_HOME = (chr(36) + 'HOME', chr(36) + '{HOME}', '~', REAL_HOME, REAL_HOME + '/')
+      DECLARE = ('export', 'declare', 'typeset', 'readonly', 'local')
+      SHELLS = ('bash', 'sh', 'zsh', 'dash', 'ksh')
+      SEPARATORS = '&|;()<>' + chr(10)
+      BREAKS = ('&', '&&', '||')
+      PTY_WRAPPERS = ('script', 'unbuffer', 'expect', 'socat', 'dtach', 'abduco')
+      PREFIXES = {
+          'env': 'uCSP', 'sudo': 'CDgprTUu', 'doas': 'Cu', 'nohup': '', 'timeout': 'ks', 'gtimeout': 'ks',
+          'exec': 'a', 'nice': 'n', 'caffeinate': 'tw', 'stdbuf': 'eio', 'xargs': 'adEIJLnPRsS', 'time': '',
+          'if': '', 'then': '', 'else': '', 'elif': '', 'do': '', 'while': '', 'until': '', '!': '', '{': '',
+      }
+      HEREDOC = re.compile(r'(?<![<])<<(?![<])-?\s*[^A-Za-z0-9_\s]*([A-Za-z0-9_]+)')
+      TMUX_CREATE = {
+          'new-session': 'cefFnstxy', 'new': 'cefFnstxy', 'new-window': 'cenFt', 'neww': 'cenFt',
+          'split-window': 'celFpt', 'splitw': 'celFpt', 'respawn-pane': 'cet', 'respawnp': 'cet',
+          'respawn-window': 'cet', 'respawnw': 'cet',
+      }
+      TMUX_SEND = {
+          'send-keys': 'cNt', 'send': 'cNt', 'paste-buffer': 'bst', 'pasteb': 'bst',
+          'load-buffer': 'bt', 'loadb': 'bt',
+      }
+      SCREEN_SEND = ('stuff', 'paste', 'readbuf', 'register', 'eval', 'exec')
+      PANES = os.path.join(ALLOW_DIR, sid + '.panes')
+
+      def join_lines(text):
+          # Newlines end clauses, except after a continuation, a pipe or an and-list, or in a heredoc body.
+          out, ends = [], []
+          for line in text.replace(chr(92) + chr(10), ' ').split(chr(10)):
+              if ends:
+                  out[-1] += ' ' + line
+                  if line.strip() == ends[0]:
+                      ends.pop(0)
+                  continue
+              if out and out[-1].rstrip().endswith(('|', '&')):
+                  out[-1] += ' ' + line
+              else:
+                  out.append(line)
+              ends = HEREDOC.findall(line)
+          return chr(10).join(out)
+
+      def tokenize(text):
+          text = join_lines(text)
+          try:
+              lexer = shlex.shlex(text, posix=True, punctuation_chars='();<>|&' + chr(10))
+              lexer.whitespace = ' ' + chr(9) + chr(13)
+              lexer.whitespace_split = True
+              return list(lexer)
+          except ValueError:
+              return [t for line in text.split(chr(10)) for t in line.split() + [chr(10)]]
+
+      def clauses(toks):
+          out, cur = [], []
+          for tok in toks:
+              if tok and all(ch in SEPARATORS for ch in tok):
+                  out.append(cur)
+                  cur = []
+              else:
+                  cur.append(tok)
+          out.append(cur)
+          return out
+
+      def word(tok):
+          return tok.split('/')[-1]
+
+      def new_home(tok):
+          return tok.startswith('HOME=') and tok[5:] not in KEEP_HOME
+
+      def command(seg):
+          # Index of the command word, past VAR= assignments and env/sudo/nohup/timeout style prefixes.
+          i = 0
+          while i < len(seg):
+              if ASSIGN.match(seg[i]):
+                  i += 1
+                  continue
+              w = word(seg[i])
+              if w not in PREFIXES:
+                  return i
+              i = len(seg) - len(opts(seg[i + 1:], PREFIXES[w])[1])
+              if w in ('timeout', 'gtimeout'):
+                  i += 1
+          return None
+
+      def is_claude(seg):
+          k = command(seg)
+          return k is not None and word(seg[k]) == 'claude'
+
+      def runs_claude(args):
+          return any(is_claude(seg) for seg in clauses(tokenize(' '.join(args))))
+
+      def security_hit(clause):
+          for i, tok in enumerate(clause):
+              if word(tok) != 'security':
+                  continue
+              rest, j, interactive = clause[i + 1:], 0, False
+              while j < len(rest) and rest[j].startswith('-'):
+                  if not rest[j].startswith('--') and 'i' in rest[j][1:]:
+                      interactive = True
+                  j += 2 if rest[j] == '-p' else 1
+              if j >= len(rest):
+                  if interactive:
+                      return 'security -i reads keychain commands from stdin'
+                  continue
+              sub, args = rest[j], rest[j + 1:]
+              if sub in SECURITY_DENY:
+                  return 'security ' + sub + ' touches keychain items'
+              if sub in SECURITY_SEARCH_LIST and any(
+                      a.startswith('-') and not a.startswith('--') and 's' in a[1:] for a in args):
+                  return 'security ' + sub + ' -s changes which keychains are used'
+          return None
+
+      def scan(text, home=False, depth=0):
+          # home carries a HOME override set by an earlier assignment-only or export clause.
+          for clause in clauses(tokenize(text)):
+              hit = security_hit(clause)
+              if hit:
+                  return hit
+              k = command(clause)
+              local = home or any(new_home(t) for t in clause[:len(clause) if k is None else k])
+              if local and is_claude(clause):
+                  return 'claude launched with HOME overridden'
+              for i, tok in enumerate(clause):
+                  w = word(tok)
+                  if depth == 0 and w == 'eval':
+                      hit = scan(' '.join(clause[i + 1:]), local, depth + 1)
+                      if hit:
+                          return hit
+                  elif depth == 0 and w in SHELLS:
+                      inner = payload(clause[i + 1:])
+                      hit = scan(inner, local, depth + 1) if inner else None
+                      if hit:
+                          return hit
+              if clause and (all(ASSIGN.match(t) for t in clause) or clause[0] in DECLARE):
+                  if any(new_home(t) for t in clause):
+                      home = True
+          return None
+
+      def payload(rest):
+          return next((rest[k + 1] for k, arg in enumerate(rest)
+                       if arg.startswith('-') and arg.endswith('c') and k + 1 < len(rest)), None)
+
+      def units(text, depth=0):
+          # One pipeline per unit, so a heredoc or pipe feeding a command stays with it.
+          group = []
+          for tok in tokenize(text) + [';']:
+              if tok in BREAKS or (tok and all(ch in SEPARATORS for ch in tok) and any(ch in ';()' + chr(10) for ch in tok)):
+                  if group:
+                      yield group
+                      for i, t in enumerate(group if depth == 0 else []):
+                          inner = ' '.join(group[i + 1:]) if word(t) == 'eval' else (
+                              payload(group[i + 1:]) if word(t) in SHELLS else None)
+                          if inner:
+                              yield from units(inner, depth + 1)
+                  group = []
+              else:
+                  group.append(tok)
+
+      def opts(args, valued):
+          found, i = {}, 0
+          while i < len(args) and args[i].startswith('-') and args[i] != '-':
+              if args[i] == '--':
+                  i += 1
+                  break
+              for k, ch in enumerate(args[i][1:], 2):
+                  if ch not in valued:
+                      found.setdefault(ch, []).append('')
+                      continue
+                  val = args[i][k:]
+                  if not val and i + 1 < len(args):
+                      i += 1
+                      val = args[i]
+                  found.setdefault(ch, []).append(val)
+                  break
+              i += 1
+          return found, args[i:]
+
+      def aimed(targets, made):
+          # made holds (kind, name): s a tmux session, n a tmux window. A target with no colon may name either.
+          for target in targets:
+              sess, colon, win = target.lstrip('=').partition(':')
+              sess, win = sess.split('.')[0], win.split('.')[0].lstrip('=')
+              if ('s', sess) in made or (('n', win) if colon else ('n', sess)) in made:
+                  return target
+          return None
+
+      def own_pane(targets, glob):
+          # The agent's own input: no target, or one tmux resolves to TMUX_PANE.
+          if not targets:
+              return 'the current pane'
+          me = os.environ.get('TMUX_PANE')
+          flags = [f for k in 'LS' for v in glob.get(k, []) for f in ('-' + k, v)]
+          for target in targets if me else []:
+              try:
+                  out = subprocess.run(['tmux'] + flags + ['display-message', '-p', '-t', target, '#{pane_id}'],
+                                       capture_output=True, text=True, timeout=3).stdout.strip()
+              except (OSError, subprocess.SubprocessError):
+                  out = ''
+              if me in (target, out):
+                  return target + ', its own pane'
+          return None
+
+      def steer_hit(group, made):
+          # made gains the sessions and windows this command creates.
+          segs = clauses(group)
+          if PHRASE in ' '.join(' '.join(group).lower().split()) and any(is_claude(seg) for seg in segs):
+              return 'the grant phrase handed to claude'
+          for seg in segs:
+              k = command(seg)
+              if k is None:
+                  continue
+              w, args = word(seg[k]), seg[k + 1:]
+              if w in PTY_WRAPPERS and any(
+                      word(p) == 'claude' for a in args for p in re.split(r'[^A-Za-z0-9_./~-]+', a)):
+                  return 'claude started through ' + w
+              if w == 'tmux':
+                  glob, pos = opts(args, 'cfLST')
+                  sub, args = (pos[0], pos[1:]) if pos else ('', [])
+                  if sub in TMUX_CREATE:
+                      found, rest = opts(args, TMUX_CREATE[sub])
+                      if runs_claude(rest):
+                          return 'claude started through tmux ' + sub
+                      made.update((f, v) for f in 'sn' for v in found.get(f, []) if v)
+                  elif sub in TMUX_SEND:
+                      targets = [os.path.expandvars(t) for t in opts(args, TMUX_SEND[sub])[0].get('t', [])]
+                      hit = aimed(targets, made)
+                      if hit:
+                          return 'tmux ' + sub + ' into ' + hit + ', which this session created'
+                      hit = own_pane(targets, glob)
+                      if hit:
+                          return 'tmux ' + sub + ' into ' + hit
+              if w == 'screen':
+                  found, rest = opts(args, 'cehpsST')
+                  sessions = [os.path.expandvars(v) for v in found.get('S', []) if v]
+                  if 'X' not in found:
+                      if runs_claude(rest):
+                          return 'claude started through screen'
+                      made.update(('S', v) for v in sessions)
+                  elif rest[:1] == ['screen'] and runs_claude(rest[1:]):
+                      return 'claude started through screen'
+                  elif rest and rest[0] in SCREEN_SEND:
+                      sty = os.environ.get('STY', '')
+                      if any(('S', v) in made or ('S', v.partition('.')[2]) in made for v in sessions):
+                          return 'screen -X ' + rest[0] + ' into a session this session created'
+                      if not sessions or set(sessions) & {sty, *sty.partition('.')[::2]} - {''}:
+                          return 'screen -X ' + rest[0] + ' into its own session'
+          return None
+
+      def refuse(what):
+          sys.stderr.write(
+              f'❌ BLOCKED: {what}.\\n'
+              'A claude session started or steered this way could grant itself keychain access.\\n'
+              'Do not work around this. Stop and ask the captain (the human user).\\n')
+          sys.exit(2)
+
+      if tool == 'Bash':
+          cmd = str(tin.get('command') or '')
+          texts = [cmd, ' '.join(tokenize(cmd))]
+      else:
+          keys = ('file_path', 'notebook_path', 'path') + (('pattern',) if tool == 'Glob' else ())
+          texts = [str(tin.get(k)) for k in keys if tin.get(k)]
+          cmd = ''
+
+      if any(ALLOWANCE_PATH.search(t) for t in texts):
+          sys.stderr.write(
+              '❌ BLOCKED: the keychain allowance is set only by the user prompt.\\n'
+              'Never create, edit or remove it yourself. Stop and ask the captain (the human user).\\n')
+          sys.exit(2)
+
+      if cmd:
+          try:
+              with open(PANES) as fh:
+                  known = {tuple(line.split(' ', 1)) for line in fh.read().splitlines() if ' ' in line}
+          except OSError:
+              known = set()
+          made = set(known)
+          for group in units(cmd):
+              hit = steer_hit(group, made)
+              if hit:
+                  refuse(hit)
+          if sid and made - known:
+              os.makedirs(ALLOW_DIR, mode=0o700, exist_ok=True)
+              with open(PANES, 'a') as fh:
+                  fh.writelines(f + ' ' + n + chr(10) for f, n in sorted(made - known))
+
+      reason = None
+      if any(KEYCHAIN_PATH.search(t) for t in texts):
+          reason = 'references the macOS keychain files (Library/Keychains, *.keychain, *.keychain-db)'
+      elif cmd:
+          reason = scan(cmd)
+
+      if not reason:
+          sys.exit(0)
+      if sid and os.path.isfile(os.path.join(ALLOW_DIR, sid)):
+          sys.exit(0)
+
+      sys.stderr.write(
+          f'❌ BLOCKED: keychain access - {reason}.\\n\\n'
+          'Reading, exporting, unlocking, adding or deleting keychain items, touching keychain files, '
+          'and running claude from a substitute HOME are denied unless the user allows it.\\n'
+          'Do not work around this with a blank HOME, symlinks, copies, another tool or a script. '
+          'Stop and ask the captain (the human user) for permission.\\n'
+          'They can allow it for one turn by starting their own prompt in an interactive claude session '
+          f'with {PHRASE!r}, or putting it on a line by itself.\\n')
+      sys.exit(2)
+      "
+
+  # keychain_allow_prompt: Grant keychain_guard's allowance for one turn when the
+  # prompt starts with `allow keychain access` or has it on a line by itself (case
+  # and spacing ignored, trailing punctuation allowed) in an interactive, top-level
+  # session (see keychain_guard), and revoke any earlier one otherwise. Never
+  # blocks or alters the prompt.
+  keychain_allow_prompt:
+    event: UserPromptSubmit
+    tool: ""
+    type: command
+    command: |
+      python3 -c "
+      import json, os, re, sys
+      try:
+          data = json.load(sys.stdin)
+          sid = re.sub(r'[^A-Za-z0-9_.-]', '', str(data.get('session_id') or ''))
+          allow_dir = os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'keychain-allowance')
+          prompt = str(data.get('prompt') or '').lower()
+          asked = bool(re.match(r'allow keychain access(?![a-z0-9_])', ' '.join(prompt.split()))) or any(
+              re.fullmatch(r'allow keychain access[^a-z0-9_ ]*', ' '.join(line.split()))
+              for line in prompt.splitlines())
+          env = os.environ
+          interactive = (env.get('CLAUDE_CODE_ENTRYPOINT') == 'cli'
+                         and env.get('CLAUDE_CODE_SESSION_ATTENDED') == '1'
+                         and not env.get('CLAUDE_CODE_EXECPATH'))
+          if sid:
+              path = os.path.join(allow_dir, sid)
+              if asked and interactive:
+                  os.makedirs(allow_dir, mode=0o700, exist_ok=True)
+                  with open(path, 'w') as fh:
+                      fh.write('allowed for the current turn' + chr(10))
+              elif os.path.lexists(path):
+                  os.remove(path)
+      except Exception:
+          pass
+      sys.exit(0)
+      "
+
+  # keychain_allow_clear: End keychain_guard's allowance when the turn ends.
+  keychain_allow_clear:
+    event: Stop
+    tool: ""
+    type: command
+    command: |
+      python3 -c "
+      import json, os, re, sys
+      try:
+          data = json.load(sys.stdin)
+          sid = re.sub(r'[^A-Za-z0-9_.-]', '', str(data.get('session_id') or ''))
+          allow_dir = os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'keychain-allowance')
+          if sid and os.path.lexists(os.path.join(allow_dir, sid)):
+              os.remove(os.path.join(allow_dir, sid))
+      except Exception:
+          pass
+      sys.exit(0)
+      "
+
   # stop_sound: Sound notification when Claude finishes a task.
   stop_sound:
     event: Stop

@@ -108,6 +108,14 @@ repos:
         files: ^(\.hooks/tests/test-squad-only\.py|roles/(claude_code|antigravity|codex)/defaults/main\.yml|roles/codex/files/rules/.*)$
         additional_dependencies: []
 
+      - id: test-keychain-guard
+        name: Test the keychain_guard Claude Code hooks
+        entry: python .hooks/tests/test-keychain-guard.py
+        language: python
+        pass_filenames: false
+        files: ^(\.hooks/tests/test-keychain-guard\.py|roles/claude_code/defaults/main\.yml)$
+        additional_dependencies: []
+
       - id: test-fm-dispatch-gate
         name: Test the firstmate dispatch gate hook
         entry: python roles/firstmate/files/hooks/test_fm_dispatch_gate.py
