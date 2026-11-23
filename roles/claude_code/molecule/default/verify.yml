@@ -625,6 +625,84 @@
         fail_msg: "dangerous_flags misjudged a command: {{ claude_code_dangerous_flags_probe.stdout }}"
         success_msg: "dangerous_flags blocks the real shortcuts and passes documentation"
 
+    # keychain_guard: deny keychain item access, keychain file references, and
+    # claude launched from a substitute HOME, unless the user's prompt said
+    # "allow keychain access" this turn. Probes the real rendered hooks under a
+    # throwaway HOME; the full matrix and the gaps left open on purpose live in
+    # .hooks/tests/test-keychain-guard.py, which runs as a pre-commit hook.
+    - name: Collect the keychain_guard hooks from the default-hooks settings
+      ansible.builtin.set_fact:
+        claude_code_keychain_guard_cmd: >-
+          {{
+            claude_code_defaults_settings.hooks.PreToolUse
+            | selectattr('matcher', 'search', '^Bash[|]')
+            | map(attribute='hooks') | flatten | map(attribute='command')
+            | select('search', 'SECURITY_DENY') | first
+          }}
+        claude_code_keychain_prompt_cmd: >-
+          {{
+            claude_code_defaults_settings.hooks.UserPromptSubmit
+            | map(attribute='hooks') | flatten | map(attribute='command')
+            | select('search', 'keychain-allowance') | first
+          }}
+        claude_code_keychain_clear_cmd: >-
+          {{
+            claude_code_defaults_settings.hooks.Stop
+            | map(attribute='hooks') | flatten | map(attribute='command')
+            | select('search', 'keychain-allowance') | first
+          }}
+
+    - name: Probe keychain_guard with and without the prompt allowance
+      ansible.builtin.shell: |
+        set -o pipefail
+        tmp=$(mktemp -d)
+        cat > "$tmp/guard.sh" <<'HOOK'
+        {{ claude_code_keychain_guard_cmd }}
+        HOOK
+        cat > "$tmp/prompt.sh" <<'HOOK'
+        {{ claude_code_keychain_prompt_cmd }}
+        HOOK
+        cat > "$tmp/clear.sh" <<'HOOK'
+        {{ claude_code_keychain_clear_cmd }}
+        HOOK
+        export HOME="$tmp/home"
+        unset CLAUDE_CONFIG_DIR
+        mkdir -p "$HOME"
+        probe() {
+          python3 -c 'import json,sys; print(json.dumps({"session_id":"s1","tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$1" \
+            | sh "$tmp/guard.sh" >/dev/null 2>&1
+          printf '%s=%s\n' "$2" "$?"
+        }
+        find='security find-generic-password -s keychain-guard-test-nonexistent-item'
+        probe "$find" find
+        probe 'ln -s ~/Library/Keychains /tmp/x' link
+        probe 'env -i HOME=/tmp/blank claude plugin eval .' blankhome
+        probe 'security list-keychains' listing
+        probe 'ls -la' plain
+        printf '%s' '{"session_id":"s1","prompt":"allow keychain access"}' | sh "$tmp/prompt.sh"
+        probe "$find" allowedfind
+        printf '%s' '{"session_id":"s1"}' | sh "$tmp/clear.sh"
+        probe "$find" clearedfind
+        rm -rf "$tmp"
+      args:
+        executable: /bin/bash
+      register: claude_code_keychain_guard_probe
+      changed_when: false
+      failed_when: false
+
+    - name: Assert keychain_guard denies by default and honors the prompt allowance
+      ansible.builtin.assert:
+        that:
+          - "'find=2' in claude_code_keychain_guard_probe.stdout"
+          - "'link=2' in claude_code_keychain_guard_probe.stdout"
+          - "'blankhome=2' in claude_code_keychain_guard_probe.stdout"
+          - "'listing=0' in claude_code_keychain_guard_probe.stdout"
+          - "'plain=0' in claude_code_keychain_guard_probe.stdout"
+          - "'allowedfind=0' in claude_code_keychain_guard_probe.stdout"
+          - "'clearedfind=2' in claude_code_keychain_guard_probe.stdout"
+        fail_msg: "keychain_guard misjudged a command: {{ claude_code_keychain_guard_probe.stdout }}"
+        success_msg: "keychain_guard denies keychain access unless the prompt allows it"
+
     # Remote Control hosts are macOS LaunchAgents, which these Linux containers
     # can't run. Converge left a hosts file in place, so the role must still have
     # created nothing here.

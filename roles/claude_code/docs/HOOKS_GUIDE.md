@@ -17,7 +17,35 @@ The role comes pre-configured with these useful hooks:
 
 Requires that commits and pull request titles and bodies come only from `squad_commit` and `squad_pr`: a hand-written commit or PR text is blocked, along with emojis or Claude branding in other write commands. The `forbidden_content` comment in `defaults/main.yml` lists exactly which commands it denies and which it allows.
 
-### 2. Sound Notifications (macOS)
+### 2. Keychain Guard
+
+Keeps agents away from the macOS keychain unless you ask. Claude Code keeps its
+login token in the keychain, so a blank `HOME` with `Library/Keychains` linked
+back to the real one runs a signed-in session that skips every user hook. The
+`keychain_guard` PreToolUse hook denies, and tells the agent to stop and ask:
+
+- `security` subcommands that read, export, import, unlock, add, delete or
+  re-permission keychain items (`find-generic-password`, `dump-keychain`,
+  `export`, `unlock-keychain`, `add-`/`delete-*-password` and similar)
+- any `Library/Keychains`, `.keychain` or `.keychain-db` reference in a Bash
+  command (`ln`, `cp`, `rsync`, ...) or a file tool's path
+- `claude` launched with `HOME` pointed elsewhere (`env -i HOME=...`,
+  `HOME=... claude`, `claude plugin eval` included)
+
+Read-only listing such as `security list-keychains` still runs, and Claude
+Code's own sign-in is not a tool call, so it never reaches the hook.
+
+To allow keychain access on purpose, put the phrase `allow keychain access` in
+your prompt. The `keychain_allow_prompt` UserPromptSubmit hook records an
+allowance for that session, and `keychain_allow_clear` drops it when the turn
+ends. The next prompt without the phrase also revokes it. Only your prompt can
+grant it: the guard denies any tool call that touches the allowance directory
+(`~/.claude/keychain-allowance/`).
+
+The full case matrix, including the gaps left open on purpose, lives in
+`.hooks/tests/test-keychain-guard.py`.
+
+### 3. Sound Notifications (macOS)
 
 - **Stop Hook**: Plays 2 beeps when Claude finishes a task or stops working
 - **Notification Hook**: Plays 1 beep when Claude needs your input

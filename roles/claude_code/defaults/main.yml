@@ -592,6 +592,231 @@ claude_code_advanced_hooks_default:
       sys.exit(0)
       "
 
+  # keychain_guard: Keep agents away from the macOS keychain unless the user asks.
+  #
+  # Claude Code signs in with a token it keeps in the login keychain, so a blank
+  # HOME with Library/Keychains linked back to the real one is enough to run a
+  # session that skips every user hook while still signed in. This guard denies,
+  # with a reason that tells the agent to stop and ask:
+  #   - `security` subcommands that read, export, import, unlock, lock, add, delete
+  #     or re-permission keychain items (find-generic-password, dump-keychain,
+  #     export, unlock-keychain, add-/delete-*-password and similar), `security -i`,
+  #     and changing the keychain search list or default keychain with `-s`
+  #   - any reference to Library/Keychains or a .keychain/.keychain-db file, in a
+  #     Bash command (ln, cp, rsync, cat, ...) or a file tool's path
+  #   - launching `claude` (including `claude plugin eval`) with HOME pointed
+  #     somewhere other than the real home: `env -i HOME=...`, `HOME=... claude`,
+  #     or an earlier `export HOME=...` in the same command
+  #   - touching the allowance directory below, which only keychain_allow_prompt
+  #     writes
+  #
+  # Read-only commands like `security list-keychains`, `security find-certificate`
+  # or `security show-keychain-info` with no keychain path stay allowed, and Claude
+  # Code's own sign-in is not a tool call, so it never reaches this hook.
+  #
+  # Explicit permission: when the user's own prompt contains the phrase
+  # `allow keychain access`, keychain_allow_prompt records an allowance for that
+  # session and turn, and these commands run until the turn ends (keychain_allow_clear
+  # on Stop) or the next prompt arrives without the phrase. The allowance comes from
+  # the prompt only; nothing the agent writes can grant it.
+  #
+  # Like dangerous_flags, it parses the command into clauses and looks one level
+  # into eval and `sh -c`. Out of scope, as anything built to slip past it is:
+  # command substitution, deeper nesting, scripts, other languages' keychain
+  # bindings, and paths assembled at runtime.
+  keychain_guard:
+    event: PreToolUse
+    tool: "Bash|Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob"
+    type: command
+    command: |
+      python3 -c "
+      import json, os, re, shlex, sys
+
+      data = json.load(sys.stdin)
+      tool = data.get('tool_name') or 'Bash'
+      tin = data.get('tool_input') or {}
+      sid = re.sub(r'[^A-Za-z0-9_.-]', '', str(data.get('session_id') or ''))
+
+      PHRASE = 'allow keychain access'
+      ALLOW_DIR = os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'keychain-allowance')
+      SECURITY_DENY = (
+          'find-generic-password', 'find-internet-password', 'find-key', 'dump-keychain',
+          'export', 'import', 'unlock-keychain', 'lock-keychain', 'create-keychain',
+          'delete-keychain', 'set-keychain-password', 'set-keychain-settings',
+          'add-generic-password', 'add-internet-password', 'add-certificates',
+          'add-trusted-cert', 'remove-trusted-cert', 'delete-generic-password',
+          'delete-internet-password', 'delete-certificate', 'delete-identity',
+          'set-generic-password-partition-list', 'set-internet-password-partition-list',
+          'set-key-partition-list', 'set-identity-preference', 'create-keypair',
+      )
+      SECURITY_SEARCH_LIST = ('list-keychains', 'default-keychain', 'login-keychain')
+      KEYCHAIN_PATH = re.compile(r'Library/+Keychains|[.]keychain(-db)?(?![A-Za-z0-9_])', re.I)
+      ALLOWANCE_PATH = re.compile(r'keychain-allowance', re.I)
+      ASSIGN = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+      REAL_HOME = os.path.expanduser('~').rstrip('/')
+      KEEP_HOME = (chr(36) + 'HOME', chr(36) + '{HOME}', '~', REAL_HOME, REAL_HOME + '/')
+      DECLARE = ('export', 'declare', 'typeset', 'readonly', 'local')
+      SHELLS = ('bash', 'sh', 'zsh', 'dash', 'ksh')
+      SEPARATORS = '&|;()<>'
+
+      def tokenize(text):
+          try:
+              lexer = shlex.shlex(text, posix=True, punctuation_chars=True)
+              lexer.whitespace_split = True
+              return list(lexer)
+          except ValueError:
+              return text.split()
+
+      def clauses(toks):
+          out, cur = [], []
+          for tok in toks:
+              if tok and all(ch in SEPARATORS for ch in tok):
+                  out.append(cur)
+                  cur = []
+              else:
+                  cur.append(tok)
+          out.append(cur)
+          return out
+
+      def word(tok):
+          return tok.split('/')[-1]
+
+      def new_home(tok):
+          return tok.startswith('HOME=') and tok[5:] not in KEEP_HOME
+
+      def security_hit(clause):
+          for i, tok in enumerate(clause):
+              if word(tok) != 'security':
+                  continue
+              rest, j, interactive = clause[i + 1:], 0, False
+              while j < len(rest) and rest[j].startswith('-'):
+                  if not rest[j].startswith('--') and 'i' in rest[j][1:]:
+                      interactive = True
+                  j += 2 if rest[j] == '-p' else 1
+              if j >= len(rest):
+                  if interactive:
+                      return 'security -i reads keychain commands from stdin'
+                  continue
+              sub, args = rest[j], rest[j + 1:]
+              if sub in SECURITY_DENY:
+                  return 'security ' + sub + ' touches keychain items'
+              if sub in SECURITY_SEARCH_LIST and any(
+                      a.startswith('-') and not a.startswith('--') and 's' in a[1:] for a in args):
+                  return 'security ' + sub + ' -s changes which keychains are used'
+          return None
+
+      def scan(text, home=False, depth=0):
+          # home carries a HOME override set by an earlier assignment-only or export clause.
+          for clause in clauses(tokenize(text)):
+              hit = security_hit(clause)
+              if hit:
+                  return hit
+              local = home
+              for i, tok in enumerate(clause):
+                  w = word(tok)
+                  if new_home(tok):
+                      local = True
+                  elif w == 'claude' and local:
+                      return 'claude launched with HOME overridden'
+                  elif depth == 0 and w == 'eval':
+                      hit = scan(' '.join(clause[i + 1:]), local, depth + 1)
+                      if hit:
+                          return hit
+                  elif depth == 0 and w in SHELLS:
+                      rest = clause[i + 1:]
+                      payload = next((rest[k + 1] for k, arg in enumerate(rest)
+                                      if arg.startswith('-') and arg.endswith('c')
+                                      and k + 1 < len(rest)), None)
+                      hit = scan(payload, local, depth + 1) if payload else None
+                      if hit:
+                          return hit
+              if clause and (all(ASSIGN.match(t) for t in clause) or clause[0] in DECLARE):
+                  if any(new_home(t) for t in clause):
+                      home = True
+          return None
+
+      if tool == 'Bash':
+          cmd = str(tin.get('command') or '')
+          texts = [cmd, ' '.join(tokenize(cmd))]
+      else:
+          keys = ('file_path', 'notebook_path', 'path') + (('pattern',) if tool == 'Glob' else ())
+          texts = [str(tin.get(k)) for k in keys if tin.get(k)]
+          cmd = ''
+
+      if any(ALLOWANCE_PATH.search(t) for t in texts):
+          sys.stderr.write(
+              '❌ BLOCKED: the keychain allowance is set only by the user prompt.\\n'
+              'Never create, edit or remove it yourself. Stop and ask the captain (the human user).\\n')
+          sys.exit(2)
+
+      reason = None
+      if any(KEYCHAIN_PATH.search(t) for t in texts):
+          reason = 'references the macOS keychain files (Library/Keychains, *.keychain, *.keychain-db)'
+      elif cmd:
+          reason = scan(cmd)
+
+      if not reason:
+          sys.exit(0)
+      if sid and os.path.isfile(os.path.join(ALLOW_DIR, sid)):
+          sys.exit(0)
+
+      sys.stderr.write(
+          f'❌ BLOCKED: keychain access - {reason}.\\n\\n'
+          'Reading, exporting, unlocking, adding or deleting keychain items, touching keychain files, '
+          'and running claude from a substitute HOME are denied unless the user allows it.\\n'
+          'Do not work around this with a blank HOME, symlinks, copies, another tool or a script. '
+          'Stop and ask the captain (the human user) for permission.\\n'
+          f'They can allow it for one turn by including the phrase {PHRASE!r} in their own prompt.\\n')
+      sys.exit(2)
+      "
+
+  # keychain_allow_prompt: Grant keychain_guard's allowance for one turn when the
+  # user's prompt contains `allow keychain access` (case and spacing ignored), and
+  # revoke any earlier one when it does not. Never blocks or alters the prompt.
+  keychain_allow_prompt:
+    event: UserPromptSubmit
+    tool: ""
+    type: command
+    command: |
+      python3 -c "
+      import json, os, re, sys
+      try:
+          data = json.load(sys.stdin)
+          sid = re.sub(r'[^A-Za-z0-9_.-]', '', str(data.get('session_id') or ''))
+          allow_dir = os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'keychain-allowance')
+          prompt = ' '.join(str(data.get('prompt') or '').lower().split())
+          if sid:
+              path = os.path.join(allow_dir, sid)
+              if 'allow keychain access' in prompt:
+                  os.makedirs(allow_dir, mode=0o700, exist_ok=True)
+                  with open(path, 'w') as fh:
+                      fh.write('allowed for the current turn' + chr(10))
+              elif os.path.lexists(path):
+                  os.remove(path)
+      except Exception:
+          pass
+      sys.exit(0)
+      "
+
+  # keychain_allow_clear: End keychain_guard's allowance when the turn ends.
+  keychain_allow_clear:
+    event: Stop
+    tool: ""
+    type: command
+    command: |
+      python3 -c "
+      import json, os, re, sys
+      try:
+          data = json.load(sys.stdin)
+          sid = re.sub(r'[^A-Za-z0-9_.-]', '', str(data.get('session_id') or ''))
+          allow_dir = os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'keychain-allowance')
+          if sid and os.path.lexists(os.path.join(allow_dir, sid)):
+              os.remove(os.path.join(allow_dir, sid))
+      except Exception:
+          pass
+      sys.exit(0)
+      "
+
   # stop_sound: Sound notification when Claude finishes a task.
   stop_sound:
     event: Stop
