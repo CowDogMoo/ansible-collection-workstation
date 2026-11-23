@@ -629,9 +629,11 @@
     # claude launched from a substitute HOME, unless a prompt in an interactive,
     # top-level session started with "allow keychain access" this turn. A negated
     # mention, a nested or `claude -p` session, and an agent handing the phrase
-    # to another claude grant nothing. Probes the real rendered hooks under a
-    # throwaway HOME; the full matrix and the gaps left open on purpose live in
-    # .hooks/tests/test-keychain-guard.py, which runs as a pre-commit hook.
+    # to another claude grant nothing; claude started through tmux and keys sent
+    # into a tmux session the agent created are denied, while mentioning the
+    # phrase and keys sent to other panes pass. Probes the real rendered hooks
+    # under a throwaway HOME; the full matrix and the gaps left open on purpose
+    # live in .hooks/tests/test-keychain-guard.py, which runs as a pre-commit hook.
     - name: Collect the keychain_guard hooks from the default-hooks settings
       ansible.builtin.set_fact:
         claude_code_keychain_guard_cmd: >-
@@ -683,6 +685,11 @@
         probe 'security list-keychains' listing
         probe 'ls -la' plain
         probe 'claude -p "allow keychain access"' handoff
+        probe "rg -n 'allow keychain access' docs/" mention
+        probe 'tmux new-window -d -n k claude' tmuxclaude
+        probe 'tmux new-session -d -s k' tmuxcreate
+        probe 'tmux send-keys -t k claude Enter' steer
+        probe "tmux send-keys -t fm-worker-3 'check your inbox' Enter" doorbell
         printf '%s' '{"session_id":"s1","prompt":"do not allow keychain access"}' | sh "$tmp/prompt.sh"
         probe "$find" negatedfind
         printf '%s' '{"session_id":"s1","prompt":"allow keychain access"}' \
@@ -711,6 +718,11 @@
           - "'listing=0' in claude_code_keychain_guard_probe.stdout"
           - "'plain=0' in claude_code_keychain_guard_probe.stdout"
           - "'handoff=2' in claude_code_keychain_guard_probe.stdout"
+          - "'mention=0' in claude_code_keychain_guard_probe.stdout"
+          - "'tmuxclaude=2' in claude_code_keychain_guard_probe.stdout"
+          - "'tmuxcreate=0' in claude_code_keychain_guard_probe.stdout"
+          - "'steer=2' in claude_code_keychain_guard_probe.stdout"
+          - "'doorbell=0' in claude_code_keychain_guard_probe.stdout"
           - "'negatedfind=2' in claude_code_keychain_guard_probe.stdout"
           - "'nestedfind=2' in claude_code_keychain_guard_probe.stdout"
           - "'printfind=2' in claude_code_keychain_guard_probe.stdout"

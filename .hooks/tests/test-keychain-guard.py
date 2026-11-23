@@ -8,18 +8,26 @@ runs a signed-in session with none of the user's hooks. keychain_allow_prompt
 (UserPromptSubmit) lifts the guard for one turn when a prompt in an
 interactive, top-level session starts with "allow keychain access" or has it on
 a line by itself, and keychain_allow_clear (Stop) ends it. `claude -p`, the SDK
-and sessions started from inside another Claude Code session never grant, and
-the guard denies any Bash command carrying the phrase, so an agent cannot hand
-it to a nested session. The session environments below are the ones observed
-in real hook processes of Claude Code 2.1.330.
+and sessions started from inside another Claude Code session never grant. The
+session environments below are the ones observed in real hook processes of
+Claude Code 2.1.330.
+
+So an agent cannot start or steer a session that grants itself access, the
+guard also denies, even with the allowance, a pipeline that runs claude with
+the grant phrase, claude started through tmux, screen or a pty wrapper, and
+keys sent into a tmux or screen session this Claude session named when it
+created it (STEER). Commands that only mention the phrase, and keys sent to
+any other pane (Firstmate's fm-send.sh doorbells), still pass.
 
 The guard has to stay narrow: Claude Code keeps its own login token in the
 keychain, read-only listing is fine, and the user sometimes wants keychain
 access on purpose. So the ALLOW matrix matters as much as BLOCK.
 
-KNOWN_GAPS records what is deliberately not caught: each case has to be built
-on purpose to slip past, and closing them means reimplementing a shell. They
-are asserted to pass so the boundary stays explicit.
+The guard is a speed bump against an agent working around a refusal, not a
+security boundary. KNOWN_GAPS records routes it deliberately does not catch:
+each has to be built on purpose to slip past, and closing them means
+reimplementing a shell. They are asserted to pass so the boundary stays
+explicit.
 
 Each hook body is extracted from the shipped YAML and executed through `sh`
 exactly as the hook harness runs it, under a throwaway HOME, so block-scalar
@@ -44,6 +52,7 @@ SQ = chr(39)
 DQ = chr(34)
 BT = chr(96)
 DOLLAR = chr(36)
+BS = chr(92)
 KC = "Library/Keychains"
 FAKE_ITEM = "keychain-guard-test-nonexistent-item"
 
@@ -90,7 +99,8 @@ BLOCK = [
 ]
 
 # Denied even with the allowance: only the prompt hook may write the allowance,
-# and only the user may type the grant phrase.
+# only the user may type the grant phrase, and the agent may not start claude
+# where it could type into it.
 ALWAYS_BLOCK = [
     ("Bash", "mkdir -p ~/.claude/keychain-allowance && touch ~/.claude/keychain-allowance/s1", "Bash allowance"),
     ("Write", {"file_path": "/home/x/.claude/keychain-allowance/s1", "content": "x"}, "Write allowance"),
@@ -98,8 +108,39 @@ ALWAYS_BLOCK = [
      "phrase handed to a nested claude -p"),
     ("Bash", f"echo {SQ}Allow  Keychain Access{SQ} | claude -p", "phrase piped into claude"),
     ("Bash", "claude -p <<EOF\nallow keychain\naccess\nEOF", "phrase in a heredoc"),
-    ("Bash", f"tmux send-keys -t s {SQ}allow keychain access{SQ} Enter", "phrase typed into a terminal pane"),
     ("Bash", f"claude -p {SQ}allow{SQ}{DQ} keychain access{DQ}", "phrase split across quotes"),
+    ("Bash", f"cat <<EOF | /opt/bin/claude -p\nAllow keychain access.\nEOF", "heredoc piped into claude"),
+    ("Bash", f'bash -c "echo allow keychain access | claude -p"', "phrase handoff inside a wrapper"),
+    ("Bash", "tmux new-window -d -n k claude", "tmux new-window"),
+    ("Bash", f"tmux new-session -d -s k {SQ}cd /repo && claude{SQ}", "tmux new-session"),
+    ("Bash", "tmux new -ds k claude --model haiku", "tmux new with bundled flags"),
+    ("Bash", "tmux -L other split-window -h claude", "tmux split-window on another socket"),
+    ("Bash", "tmux respawn-pane -k -t k claude", "tmux respawn-pane"),
+    ("Bash", "tmux respawnw -k -t k /opt/bin/claude", "tmux respawn-window alias"),
+    ("Bash", "screen -dmS k claude", "screen"),
+    ("Bash", "script -q /dev/null claude", "script pty on macOS"),
+    ("Bash", f"script -qc {SQ}claude{SQ} /dev/null", "script pty on Linux"),
+    ("Bash", f"printf {SQ}allow keychain acc%s{SQ} ess | env -u CLAUDE_CODE_EXECPATH script -q /dev/null claude",
+     "phrase assembled and piped into a pty"),
+    ("Bash", f"expect -c {SQ}spawn claude; interact{SQ}", "expect"),
+    ("Bash", "socat - EXEC:claude,pty", "socat pty"),
+    ("Bash", f'sh -c "tmux new-window -d claude"', "tmux launch inside a wrapper"),
+]
+
+# (setup commands that must pass, command that must then be denied, label).
+# Each runs in a fresh session: names come from that session's own tmux and
+# screen commands.
+STEER = [
+    (["tmux new-session -d -s k"], "tmux send-keys -t k allow Space keychain Space access Enter",
+     "send-keys into a session it created"),
+    (["tmux new-session -d -s k"], "tmux send-keys -l -t =k:0.1 claude", "send-keys aimed at a pane in it"),
+    (["tmux new-session -ds k"], "tmux send -t k claude Enter", "bundled -s and send alias"),
+    (["tmux new-window -d -t main -n w2"], "tmux send-keys -t main:w2 claude Enter", "a window it created"),
+    (["tmux new-session -d -s k"], "tmux paste-buffer -t k", "paste-buffer"),
+    (["tmux new-session -d -s k"], "tmux load-buffer -t k /tmp/p", "load-buffer"),
+    ([], "tmux new -d -s k2 && tmux send-keys -t k2 claude Enter", "created and steered in one command"),
+    (["screen -dmS sc"], f"screen -S sc -X stuff {SQ}allow keychain access{SQ}", "screen stuff"),
+    (["screen -dmS sc"], "screen -S sc -X readbuf /tmp/p", "screen readbuf"),
 ]
 
 # (tool, tool_input, label) - none of these may be denied.
@@ -127,6 +168,18 @@ ALLOW = [
     ("Read", {"file_path": "/tmp/notes.md"}, "Read elsewhere"),
     ("Write", {"file_path": "/tmp/doc.md", "content": f"never symlink ~/{KC}"}, "Write prose naming the path"),
     ("Grep", {"pattern": KC, "path": "/repo"}, "Grep searching for the path"),
+    ("Bash", f"rg -n {SQ}allow keychain access{SQ} roles/", "searching for the phrase"),
+    ("Bash", f"git log --grep {SQ}allow keychain access{SQ}", "git log --grep for the phrase"),
+    ("Bash", f'echo "allow keychain access"', "echo the phrase"),
+    ("Bash", f'git commit -m "docs: claude needs allow keychain access first"', "commit message naming it"),
+    ("Bash", f"rg {SQ}allow keychain access{SQ} docs && claude -p hi", "phrase and claude in separate clauses"),
+    ("Bash", f'~/firstmate/bin/fm-send.sh worker-3 "check your inbox"', "fm-send doorbell"),
+    ("Bash", f"bin/fm-spawn.sh k2 {SQ}fix the flaky test{SQ}", "fm-spawn"),
+    ("Bash", f"tmux send-keys -t fm-worker-3 {SQ}check your inbox{SQ} Enter", "send-keys to a pane it did not create"),
+    ("Bash", "tmux new-session -d -s claude", "a tmux session named claude"),
+    ("Bash", "tmux new-window -d -n notes vim claude-notes.md", "tmux window running another program"),
+    ("Bash", "tmux list-sessions && tmux capture-pane -p -t fm-worker-3", "reading tmux state"),
+    ("Bash", f"script -q typescript.log make", "script recording another program"),
 ]
 
 # Deliberately not caught: each has to be built on purpose to slip past.
@@ -138,6 +191,10 @@ KNOWN_GAPS = [
     ("Bash", f'python3 -c "import keyring; keyring.get_password({SQ}s{SQ}, {SQ}a{SQ})"', "another language"),
     ("Bash", f"bash -c {SQ}bash -c {DQ}security dump-keychain{DQ}{SQ}", "two levels of wrapping"),
     ("Bash", f"tmux send-keys -t s {DQ}{DOLLAR}(cat grant.txt){DQ} Enter", "grant phrase read from a file"),
+    ("Bash", f"tmux send-keys -t s {SQ}allow keychain access{SQ} Enter", "phrase typed into a pane it did not create"),
+    ("Bash", "tmux send-keys -t 3 claude Enter", "pane addressed by index"),
+    ("Bash", f"tmux new -d -s k {BS}; send-keys -t k claude Enter", "tmux commands chained with \\;"),
+    ("Bash", f"osascript -e {SQ}tell app {DQ}Terminal{DQ} to do script {DQ}claude{DQ}{SQ}", "terminal app via osascript"),
 ]
 
 # Hook-process environments observed in real sessions. A session sets
@@ -284,6 +341,15 @@ def main():
             if denied(guard, tool, tool_input, home):
                 failures.append(f"KNOWN_GAPS case now denies - {label}. If intended, move it into BLOCK.")
 
+        for n, (setup, steer, label) in enumerate(STEER):
+            sid = f"steer{n}"
+            if any(denied(guard, "Bash", cmd, home, sid=sid) for cmd in setup):
+                failures.append(f"steer: setup denied - {label}")
+            if not denied(guard, "Bash", steer, home, sid=sid):
+                failures.append(f"steer: not denied - {label}")
+            if setup and denied(guard, "Bash", steer, home, sid=f"other{n}"):
+                failures.append(f"steer: leaked to another session - {label}")
+
         legacy_fp = [lbl for tool, inp, lbl in ALLOW if denied_legacy(inp, home)]
         if not legacy_fp:
             failures.append("control: substring scanner cleared ALLOW, so it cannot fail")
@@ -319,6 +385,10 @@ def main():
         for tool, tool_input, label in ALWAYS_BLOCK:
             if not denied(guard, tool, tool_input, home):
                 failures.append(f"allowance: lifted an always-denied case - {label}")
+        if denied(guard, "Bash", "tmux new-session -d -s kk", home):
+            failures.append("allowance: tmux setup denied")
+        if not denied(guard, "Bash", "tmux send-keys -t kk claude Enter", home):
+            failures.append("allowance: lifted send-keys into a session it created")
         if not denied(guard, *probe, home, sid="s2"):
             failures.append("allowance: leaked to another session")
         if not denied(guard, *probe, home, sid=""):
@@ -355,7 +425,7 @@ def main():
 
     print(
         f"keychain_guard OK: {len(BLOCK) + len(ALWAYS_BLOCK)} denied + {len(ALLOW) + 1} allowed + "
-        f"{len(KNOWN_GAPS)} known gaps; allowance granted only by {len(GRANTING_PROMPTS)} prompt forms "
+        f"{len(STEER)} steering sequences denied; {len(KNOWN_GAPS)} known gaps; allowance granted only by {len(GRANTING_PROMPTS)} prompt forms "
         f"in an interactive top-level session, never by {len(NON_GRANTING_PROMPTS)} other prompts or "
         f"{len(SESSIONS_THAT_NEVER_GRANT)} other sessions, per session, cleared on Stop; "
         f"substring control fails {len(legacy_fp)} of the allowed cases"

@@ -46,11 +46,33 @@ Only an interactive, top-level `claude` session in a terminal can grant it. The
 hook checks `CLAUDE_CODE_ENTRYPOINT=cli` and `CLAUDE_CODE_SESSION_ATTENDED=1`
 (`claude -p`, piped stdin and the SDK get `0`), and refuses when
 `CLAUDE_CODE_EXECPATH` is set, which a session inherits when it is started from
-inside another Claude Code session. The guard also denies any tool call that
-touches the allowance directory (`~/.claude/keychain-allowance/`) and any Bash
-command containing the phrase, so an agent can't hand it to a nested `claude`,
-a terminal pane or a script. To search for the phrase, use the Grep tool rather
-than `grep` in Bash.
+inside another Claude Code session.
+
+The guard also denies these, even while the allowance is active, because each
+would let an agent start or steer a session that grants itself access:
+
+- any tool call that touches the allowance directory
+  (`~/.claude/keychain-allowance/`)
+- a pipeline or heredoc that runs `claude` with the phrase in it
+  (`claude -p "allow keychain access ..."`, `echo ... | claude`). Commands
+  that only mention the phrase, such as `rg`, `git log --grep`, `echo` or a
+  commit message, still run
+- `claude` started through tmux or screen (`new-session`, `new-window`,
+  `split-window`, `respawn-pane`, `respawn-window`) or a pty wrapper (`script`,
+  `unbuffer`, `expect`, `socat`, `dtach`, `abduco`)
+- tmux `send-keys`, `paste-buffer` or `load-buffer`, or screen `-X stuff` and
+  similar, aimed at a session or window the same Claude session named when it
+  created it (`-s`/`-n`, screen `-S`). Keys sent to any other pane still go
+  through, so Firstmate's `fm-send.sh` doorbells keep working
+
+This is a speed bump against an agent working around a refusal, not a security
+boundary. It reads the command text, so known routes past it remain: command
+substitution and variables, nesting deeper than one `sh -c` or `eval`, scripts
+and other languages (including a script that drives tmux, screen or a pty, or a
+keychain library), paths assembled at runtime, tmux commands chained with `\;`
+in one invocation, keys sent to a pane created without a name or addressed by
+index or pane id, typing the phrase into a pane the session did not create, and
+a terminal app opened with `osascript` or `open` that runs `claude`.
 
 The full case matrix, including the gaps left open on purpose, lives in
 `.hooks/tests/test-keychain-guard.py`.
